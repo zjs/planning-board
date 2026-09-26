@@ -31,9 +31,12 @@ test('cards show badges for values that are not on an axis', async ({ page }) =>
   await expect(c.locator('.attr[data-property="size"]')).toHaveText('XL');
   await expect(c.locator('.attr[data-property="time"]')).toHaveText('27.4');
   await expect(c.locator('.attr[data-property="time"]')).toHaveAttribute('title', 'Time: Q2 2027 › 27.4');
-  await expect(c.locator('.attr[data-property="system"]')).toHaveCount(0);
+  // The rows show the area; the component is more precise, so it gets a badge.
+  await expect(c.locator('.attr[data-property="system"]')).toHaveText('SSO');
 
   await pickAxes(page, 'time', 'size');
   await expect(c.locator('.attr[data-property="system"]')).toHaveText('SSO');
+  // Size is shown exactly by the rows; the release is more precise than the quarter columns.
   await expect(c.locator('.attr[data-property="size"]')).toHaveCount(0);
+  await expect(c.locator('.attr[data-property="time"]')).toHaveText('27.4');
 });

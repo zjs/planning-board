@@ -12,6 +12,16 @@ describe('gapKeys', () => {
     expect(new Set(merged).size).toBe(merged.length);
   });
 
+  it("never hands out a key that a hidden item already uses", () => {
+    // 'a3' belongs to a group child that isn't on the board; the gap between a2 and a4 must avoid it.
+    const [, between] = gapKeys(['a2', 'a4'], ['a2', 'a3', 'a4']);
+    expect(between! > 'a2' && between! < 'a3').toBe(true);
+  });
+
+  it('ignores malformed keys instead of throwing', () => {
+    expect(() => gapKeys(['a0', '!!'], ['a0', '!!', 'a10'])).not.toThrow();
+  });
+
   it('gives one starting key when there are no columns yet', () => {
     expect(gapKeys([])).toHaveLength(1);
   });

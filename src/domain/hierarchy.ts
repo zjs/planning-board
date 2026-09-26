@@ -39,6 +39,11 @@ function comparePaths(a: ValueNode[], b: ValueNode[]): number {
   return a.length - b.length;
 }
 
+/** Compare two values of a property by their position in the tree (parents' order first). */
+export function compareTreeOrder(property: SelectProperty, a: ValueId, b: ValueId): number {
+  return comparePaths(pathTo(property, a), pathTo(property, b));
+}
+
 /** All values at `level`, in tree order (parents' order first, then their own). */
 export function valuesAtLevel(property: SelectProperty, level: number): ValueNode[] {
   return Object.values(property.values)

@@ -5,6 +5,7 @@
 import * as Y from 'yjs';
 import type { Dependency, Item, Plan, Property, ValueNode } from '../domain/model.ts';
 import { compareOrderKeys } from '../domain/model.ts';
+import { isOrderKey } from '../domain/sequence.ts';
 
 /** Bump when the layout changes incompatibly; persistence keys include it. */
 export const SCHEMA_VERSION = 1;
@@ -72,6 +73,8 @@ export function valueSet(ids: readonly string[]): ValueSet {
 
 const str = (value: unknown, fallback: string): string => (typeof value === 'string' ? value : fallback);
 const strOrNull = (value: unknown): string | null => (typeof value === 'string' ? value : null);
+/** A malformed key (a bug, or a bad peer in M2) reads as "no position" rather than breaking layout. */
+const orderKeyOrNull = (value: unknown): string | null => (typeof value === 'string' && isOrderKey(value) ? value : null);
 
 /** Plain snapshot of the document. */
 export function readPlan(doc: Y.Doc): Plan {
@@ -113,7 +116,7 @@ export function readPlan(doc: Y.Doc): Plan {
       title: str(map.get('title'), ''),
       description: str(map.get('description'), ''),
       parent: strOrNull(map.get('parent')),
-      sequence: strOrNull(map.get('sequence')),
+      sequence: orderKeyOrNull(map.get('sequence')),
       values,
     };
   });

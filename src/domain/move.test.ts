@@ -10,10 +10,29 @@ const timeBySize: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: S
 
 describe('planDrop into a cell', () => {
   it('sets both axis values', () => {
-    const p = plan(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
+    const p = plan(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }), item('b', { sequence: 'a1' }));
     expect(planDrop(p, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'cell', x: 'a1', y: 'pay' })).toEqual({
       sequence: 'a1',
       values: { [SYSTEM]: ['pay'] },
+    });
+  });
+
+  it("is a no-op when a card alone in its column drops into the gap beside it", () => {
+    const p = plan(
+      item('a', { sequence: 'a1', values: { [SYSTEM]: ['id'] } }),
+      item('b', { sequence: 'a0' }),
+      item('c', { sequence: 'a2' }),
+    );
+    const card = { itemId: 'a', x: 'a1', y: 'id' };
+    expect(planDrop(p, seqBySystem, card, { kind: 'cell', x: 'a1V', y: 'id' })).toBeNull();
+    expect(planDrop(p, seqBySystem, card, { kind: 'cell', x: 'a0V', y: 'id' })).toBeNull();
+    // Past a neighbor it's a real move.
+    expect(planDrop(p, seqBySystem, card, { kind: 'cell', x: 'a2V', y: 'id' })).toEqual({ sequence: 'a2V', values: {} });
+    // Sharing its column, stepping into the gap splits it off: also a real move.
+    const shared = plan(item('a', { sequence: 'a1', values: { [SYSTEM]: ['id'] } }), item('b', { sequence: 'a1' }));
+    expect(planDrop(shared, seqBySystem, { itemId: 'a', x: 'a1', y: 'id' }, { kind: 'cell', x: 'a1V', y: 'id' })).toEqual({
+      sequence: 'a1V',
+      values: {},
     });
   });
 

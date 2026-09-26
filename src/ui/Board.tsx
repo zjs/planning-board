@@ -1,5 +1,5 @@
 import { memo, useMemo, type PointerEvent, type ReactNode, type RefObject } from 'react';
-import { cardAttributes } from '../domain/attributes.ts';
+import { badgeProperties, cardAttributes, type CardAttribute } from '../domain/attributes.ts';
 import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
@@ -45,7 +45,9 @@ const sameCopy = (a: CardRef, b: CardRef) => a.itemId === b.itemId && a.x === b.
  */
 type Track = { kind: 'lane'; lane: Lane; index: number } | { kind: 'gap'; key: string };
 
-function tracks(lanes: Lane[], gaps: string[] | null): Track[] {
+function tracks(lanes: Lane[], layoutGaps: string[] | null): Track[] {
+  // One gap per lane plus one at the end; anything else would misplace drops, so show no gaps.
+  const gaps = layoutGaps?.length === lanes.length + 1 ? layoutGaps : null;
   const out: Track[] = [];
   lanes.forEach((lane, index) => {
     if (gaps) out.push({ kind: 'gap', key: gaps[index]! });
@@ -75,6 +77,12 @@ export const Board = memo(function Board({
 }: Props) {
   const counts = useMemo(() => childCounts(plan), [plan]);
   const areas = useMemo(() => areaIndexes(plan), [plan]);
+  const attributes = useMemo(() => {
+    const properties = badgeProperties(plan);
+    const out = new Map<ItemId, CardAttribute[]>();
+    for (const item of Object.values(plan.items)) out.set(item.id, cardAttributes(plan, item, view, properties));
+    return out;
+  }, [plan, view]);
   const renderCard = (ref: CardRef) => {
     const item = plan.items[ref.itemId]!;
     return (
@@ -83,7 +91,7 @@ export const Board = memo(function Board({
         item={item}
         childCount={counts.get(ref.itemId) ?? 0}
         areaIndex={areas.get(ref.itemId) ?? null}
-        attributes={cardAttributes(plan, item, view)}
+        attributes={attributes.get(ref.itemId) ?? []}
         lifted={lifted !== null && sameCopy(lifted, ref)}
         justMoved={justMoved === ref.itemId}
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title)}
@@ -113,7 +121,15 @@ export const Board = memo(function Board({
     const rowKey = trackKey(row);
     const columnKey = trackKey(column);
     const isGap = row.kind === 'gap' || column.kind === 'gap';
-    const classes = ['cell', isGap && 'gap', isGap && row.kind === 'gap' && 'gap-row', isTarget(rowKey, columnKey) && 'drop-target'];
+    // With no sequence lanes yet, the single gap is a full-size cell, so there's somewhere obvious to drop.
+    const lone = isGap && (row.kind === 'gap' ? layout.rows.length === 0 : layout.columns.length === 0);
+    const classes = [
+      'cell',
+      isGap && !lone && 'gap',
+      isGap && !lone && row.kind === 'gap' && 'gap-row',
+      lone && 'lone-gap',
+      isTarget(rowKey, columnKey) && 'drop-target',
+    ];
     return (
       <div
         key={`${rowKey}|${columnKey}`}
@@ -124,6 +140,7 @@ export const Board = memo(function Board({
         aria-label={`${trackName(row, yLabel)}, ${trackName(column, xLabel)}`}
       >
         {row.kind === 'lane' && column.kind === 'lane' && layout.cells[row.index]![column.index]!.map(renderCard)}
+        {lone && <span className="lone-hint">Drop a card here to start the sequence</span>}
       </div>
     );
   };
@@ -171,7 +188,7 @@ export const Board = memo(function Board({
                   {row.lane.label}
                 </div>
               ) : (
-                <div key={`h-${row.key}`} className="row-header gap-row" />
+                <div key={`h-${row.key}`} className={layout.rows.length === 0 ? 'row-header' : 'row-header gap-row'} />
               ),
               ...columnTracks.map((column) => cell(row, column)),
             ])}

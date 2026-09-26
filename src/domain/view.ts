@@ -112,7 +112,13 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
       }
     }
   }
+  const allKeys = Object.values(plan.items).flatMap((item) => (item.sequence === null ? [] : [item.sequence]));
   const gapsFor = (axis: AxisSpec, lanes: Lane[]) =>
-    plan.properties[axis.property]?.kind === 'sequence' ? gapKeys(lanes.map((lane) => lane.key)) : null;
+    plan.properties[axis.property]?.kind === 'sequence'
+      ? gapKeys(
+          lanes.map((lane) => lane.key),
+          allKeys,
+        )
+      : null;
   return { columns, rows, cells, holding, gaps: { x: gapsFor(view.x, columns), y: gapsFor(view.y, rows) } };
 }
