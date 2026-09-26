@@ -50,6 +50,12 @@ Entry format:
 - Recommendation: the minimal badge row. It's small, it's read-only, and testers need it to trust what the drag did.
 - Status: open. Building the badge row in slice 3 unless the PM says no.
 
+### Q10: Dropping a card from the holding area when it already has a value on one axis
+- Context: Requirements 2, 3, and 5. A card sits in the holding area if it's missing a value on either axis, but it may still have values on the other one. In time × system, a card tagged Identity with no quarter sits in holding. If it's dropped in the Billing row, Q2 column, should it lose Identity? Slice 2 needs an answer.
+- Options: (a) replace: the card ends up in exactly the cell where it was dropped; (b) on a multi-valued axis, add the dropped lane to the existing values and keep the old ones, while single-valued axes are replaced; (c) only fill the missing axis and ignore the other.
+- Recommendation: (b). Nothing is lost silently, and for single-valued axes it's the same as (a). The catch is that after the drop the card also shows in its old lane, which may surprise people. The user session will tell.
+- Status: open. Building (b) as a reversible default in slice 2.
+
 ## Answered
 
 ### Q5: Where do builds go so the PM can click through them?
