@@ -61,14 +61,21 @@ test('cards made inside a group become its children; dragging one to the breadcr
   await page.keyboard.press('Enter');
   const created = page.locator('.card', { hasText: 'Residency audit trail' });
   await expect(created).toBeVisible();
+  // With something selected, the first Esc only clears the selection.
+  await expect(created).toHaveClass(/selected/);
+  await page.keyboard.press('Escape');
+  await expect(created).not.toHaveClass(/selected/);
+  await expect(zoomBar(page)).toBeVisible();
 
+  await card(page, 'eu-invoice-storage').first().click();
   await dragTo(page, card(page, 'eu-invoice-storage').first(), crumb(page, 'Plan'));
   await expect(card(page, 'eu-invoice-storage')).toHaveCount(0);
   await expect(page.getByTestId('notice')).toContainText('Moved “EU invoice storage” out to the plan');
+  // It left the view, so it's no longer selected: Delete can't reach it.
+  await page.keyboard.press('Delete');
+  await expect(page.getByTestId('notice')).toContainText('Moved');
 
-  // The new card is still selected, so the first Esc clears it and the second zooms out.
-  await page.keyboard.press('Escape');
-  await expect(zoomBar(page)).toBeVisible();
+  // Nothing is selected any more, so Esc zooms straight out.
   await page.keyboard.press('Escape');
   // 4 children, plus the new one, minus the one moved out.
   await expect(card(page, EU).locator('.child-count')).toHaveText('4');
@@ -83,6 +90,12 @@ test('any card can be zoomed into, and its first child makes it a group (Q20)', 
   await openApp(page);
   const plain = card(page, 'idp-initiated-login');
   await expect(plain.locator('.child-count')).toHaveCount(0);
+  await plain.click();
+  // The toolbar button works too, and Esc still zooms out with the button focused.
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await expect(zoomBar(page)).toContainText('Nothing inside yet');
+  await page.keyboard.press('Escape');
+  await expect(zoomBar(page)).toHaveCount(0);
   await plain.click();
   await page.keyboard.press('ControlOrMeta+ArrowDown');
   await expect(zoomBar(page)).toContainText('Nothing inside yet');

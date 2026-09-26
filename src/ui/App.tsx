@@ -120,6 +120,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       }
       // Dropped on the breadcrumb: move the card out to that level. It leaves this view, so say where it went.
       if (moveToParent(store, [card.itemId], target.parent).length === 0) return;
+      // It's no longer on screen, so it mustn't stay selected where Delete or ⌘G could reach it.
+      setSelection((current) => new Set([...current].filter((id) => id !== card.itemId)));
       const title = plan.items[card.itemId]?.title ?? 'card';
       const to = target.parent === null ? 'the plan' : (plan.items[target.parent]?.title ?? 'the plan');
       setNotice({ text: `Moved “${title}” out to ${to}`, step: store.undoManager.undoStack.at(-1) });
@@ -259,6 +261,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         e.preventDefault();
         return;
       }
+      if (e.key === 'Escape') {
+        // Esc clears the selection first, then zooms out a level. Buttons don't use Esc, so this works with one focused.
+        if (selected.size > 0) clearSelection();
+        else zoomOut();
+        return;
+      }
       // Enter and Delete on a focused button belong to the button.
       if (focus?.closest('button, a')) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -271,10 +279,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         if (id === null) return;
         e.preventDefault();
         setEditing({ kind: 'rename', card: card ?? { itemId: id, x: null, y: null } });
-      } else if (e.key === 'Escape') {
-        // Esc clears the selection first, then zooms out a level.
-        if (selected.size > 0) clearSelection();
-        else zoomOut();
       }
     };
     window.addEventListener('keydown', onKey);
