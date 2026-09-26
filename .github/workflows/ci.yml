@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Every main commit keeps its build artifact; superseded branch pushes are cancelled.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build single-file app
+        run: npm run build
+
+      - name: Install Chromium for end-to-end tests
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests (against dist/index.html over file://)
+        run: npm run e2e
+
+      - name: Attach build
+        uses: actions/upload-artifact@v4
+        with:
+          name: planning-board-${{ github.sha }}
+          path: dist/index.html
+          if-no-files-found: error
+
+      - name: Build summary
+        run: |
+          {
+            echo "### Build ready"
+            echo
+            echo "Download **planning-board-${GITHUB_SHA}** from the Artifacts section below, unzip it, and open \`index.html\` in a browser."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore

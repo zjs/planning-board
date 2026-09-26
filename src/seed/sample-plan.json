@@ -1,0 +1,1936 @@
+{
+  "format": "planning-board",
+  "version": 1,
+  "properties": [
+    {
+      "id": "system",
+      "name": "System",
+      "levels": [
+        "Area",
+        "Component"
+      ],
+      "multi": true,
+      "values": [
+        {
+          "id": "identity",
+          "label": "Identity & Access",
+          "children": [
+            {
+              "id": "identity/sso",
+              "label": "SSO"
+            },
+            {
+              "id": "identity/mfa",
+              "label": "MFA"
+            },
+            {
+              "id": "identity/scim",
+              "label": "Directory Sync"
+            },
+            {
+              "id": "identity/rbac",
+              "label": "Roles & Permissions"
+            }
+          ]
+        },
+        {
+          "id": "billing",
+          "label": "Billing",
+          "children": [
+            {
+              "id": "billing/invoicing",
+              "label": "Invoicing"
+            },
+            {
+              "id": "billing/gateway",
+              "label": "Payment Gateway"
+            },
+            {
+              "id": "billing/tax",
+              "label": "Tax Engine"
+            },
+            {
+              "id": "billing/subscriptions",
+              "label": "Subscriptions"
+            }
+          ]
+        },
+        {
+          "id": "data",
+          "label": "Data Platform",
+          "children": [
+            {
+              "id": "data/pipeline",
+              "label": "Event Pipeline"
+            },
+            {
+              "id": "data/export",
+              "label": "Warehouse Export"
+            },
+            {
+              "id": "data/search",
+              "label": "Search"
+            },
+            {
+              "id": "data/audit",
+              "label": "Audit Log"
+            }
+          ]
+        },
+        {
+          "id": "cx",
+          "label": "Customer Experience",
+          "children": [
+            {
+              "id": "cx/console",
+              "label": "Admin Console"
+            },
+            {
+              "id": "cx/notify",
+              "label": "Notifications"
+            },
+            {
+              "id": "cx/api",
+              "label": "Public API"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "time",
+      "name": "Time",
+      "levels": [
+        "Quarter",
+        "Release"
+      ],
+      "values": [
+        {
+          "id": "q1",
+          "label": "Q1 2027",
+          "children": [
+            {
+              "id": "q1/r1",
+              "label": "27.1"
+            },
+            {
+              "id": "q1/r2",
+              "label": "27.2"
+            }
+          ]
+        },
+        {
+          "id": "q2",
+          "label": "Q2 2027",
+          "children": [
+            {
+              "id": "q2/r1",
+              "label": "27.3"
+            },
+            {
+              "id": "q2/r2",
+              "label": "27.4"
+            }
+          ]
+        },
+        {
+          "id": "q3",
+          "label": "Q3 2027",
+          "children": [
+            {
+              "id": "q3/r1",
+              "label": "27.5"
+            },
+            {
+              "id": "q3/r2",
+              "label": "27.6"
+            }
+          ]
+        },
+        {
+          "id": "q4",
+          "label": "Q4 2027",
+          "children": [
+            {
+              "id": "q4/r1",
+              "label": "27.7"
+            },
+            {
+              "id": "q4/r2",
+              "label": "27.8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "name": "Size",
+      "levels": [
+        "Size"
+      ],
+      "values": [
+        {
+          "id": "xs",
+          "label": "XS"
+        },
+        {
+          "id": "s",
+          "label": "S"
+        },
+        {
+          "id": "m",
+          "label": "M"
+        },
+        {
+          "id": "l",
+          "label": "L"
+        },
+        {
+          "id": "xl",
+          "label": "XL"
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "saml-metadata-auto-refresh",
+      "title": "SAML metadata auto-refresh",
+      "values": {
+        "system": [
+          "identity/sso"
+        ]
+      }
+    },
+    {
+      "id": "oidc-provider-support",
+      "title": "OIDC provider support",
+      "values": {
+        "system": [
+          "identity/sso"
+        ],
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "just-in-time-user-provisioning",
+      "title": "Just-in-time user provisioning",
+      "values": {
+        "system": [
+          "identity/sso"
+        ],
+        "time": "q4"
+      },
+      "sequence": 10
+    },
+    {
+      "id": "sso-enforcement-per-workspace",
+      "title": "SSO enforcement per workspace",
+      "values": {
+        "system": [
+          "identity/sso"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "idp-initiated-login",
+      "title": "IdP-initiated login",
+      "values": {
+        "system": [
+          "identity/sso"
+        ],
+        "size": "xl",
+        "time": "q2/r2"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "multiple-idps-per-tenant",
+      "title": "Multiple IdPs per tenant",
+      "values": {
+        "system": [
+          "identity/sso"
+        ]
+      },
+      "sequence": 7
+    },
+    {
+      "id": "sso-session-timeout-policy",
+      "title": "SSO session timeout policy",
+      "values": {
+        "system": [
+          "identity/sso"
+        ],
+        "size": "m",
+        "time": "q2/r2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "totp-enrollment-rework",
+      "title": "TOTP enrollment rework",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ],
+        "size": "m",
+        "time": "q2/r1"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "retire-sms-codes",
+      "title": "Retire SMS codes",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ]
+      },
+      "sequence": 6
+    },
+    {
+      "id": "admin-enforced-mfa",
+      "title": "Admin-enforced MFA",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ]
+      },
+      "sequence": 4
+    },
+    {
+      "id": "remember-trusted-devices",
+      "title": "Remember trusted devices",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ],
+        "size": "l"
+      }
+    },
+    {
+      "id": "self-service-mfa-reset",
+      "title": "Self-service MFA reset",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ]
+      }
+    },
+    {
+      "id": "step-up-auth-for-sensitive-actions",
+      "title": "Step-up auth for sensitive actions",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ],
+        "size": "s",
+        "time": "q3"
+      }
+    },
+    {
+      "id": "scim-2-0-group-push",
+      "title": "SCIM 2.0 group push",
+      "values": {
+        "system": [
+          "identity/scim"
+        ],
+        "size": "m",
+        "time": "q1"
+      },
+      "sequence": 1
+    },
+    {
+      "id": "directory-sync-health-dashboard",
+      "title": "Directory sync health dashboard",
+      "values": {
+        "system": [
+          "identity/scim"
+        ],
+        "size": "xs",
+        "time": "q2/r1"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "deprovisioning-grace-period",
+      "title": "Deprovisioning grace period",
+      "values": {
+        "system": [
+          "identity/scim"
+        ],
+        "size": "l"
+      },
+      "sequence": 6
+    },
+    {
+      "id": "custom-attribute-mapping",
+      "title": "Custom attribute mapping",
+      "values": {
+        "system": [
+          "identity/scim"
+        ]
+      },
+      "sequence": 9
+    },
+    {
+      "id": "entra-id-sync-performance",
+      "title": "Entra ID sync performance",
+      "values": {
+        "system": [
+          "identity/scim"
+        ]
+      },
+      "sequence": 8
+    },
+    {
+      "id": "nested-group-flattening",
+      "title": "Nested group flattening",
+      "values": {
+        "system": [
+          "identity/scim"
+        ],
+        "size": "m",
+        "time": "q1"
+      }
+    },
+    {
+      "id": "custom-roles",
+      "title": "Custom roles",
+      "values": {
+        "system": [
+          "identity/rbac"
+        ],
+        "size": "s"
+      },
+      "sequence": 0
+    },
+    {
+      "id": "permission-audit-report",
+      "title": "Permission audit report",
+      "values": {
+        "system": [
+          "identity/rbac"
+        ],
+        "size": "xs",
+        "time": "q2"
+      }
+    },
+    {
+      "id": "resource-level-permissions",
+      "title": "Resource-level permissions",
+      "values": {
+        "system": [
+          "identity/rbac"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "role-templates-for-new-workspaces",
+      "title": "Role templates for new workspaces",
+      "values": {
+        "system": [
+          "identity/rbac"
+        ]
+      }
+    },
+    {
+      "id": "delegated-admin",
+      "title": "Delegated admin",
+      "values": {
+        "system": [
+          "identity/rbac"
+        ]
+      },
+      "sequence": 3
+    },
+    {
+      "id": "least-privilege-default-role",
+      "title": "Least-privilege default role",
+      "values": {
+        "system": [
+          "identity/rbac"
+        ]
+      },
+      "sequence": 0
+    },
+    {
+      "id": "invoice-pdf-redesign",
+      "title": "Invoice PDF redesign",
+      "values": {
+        "system": [
+          "billing/invoicing"
+        ]
+      },
+      "sequence": 4
+    },
+    {
+      "id": "multi-currency-invoices",
+      "title": "Multi-currency invoices",
+      "values": {
+        "system": [
+          "billing/invoicing"
+        ],
+        "size": "m"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "credit-notes",
+      "title": "Credit notes",
+      "values": {
+        "system": [
+          "billing/invoicing"
+        ],
+        "size": "m",
+        "time": "q1"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "consolidated-invoicing-for-parent-accounts",
+      "title": "Consolidated invoicing for parent accounts",
+      "values": {
+        "system": [
+          "billing/invoicing"
+        ],
+        "size": "m",
+        "time": "q2"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "scheduled-invoice-emails",
+      "title": "Scheduled invoice emails",
+      "values": {
+        "system": [
+          "billing/invoicing"
+        ],
+        "size": "s"
+      },
+      "sequence": 0
+    },
+    {
+      "id": "po-numbers-on-invoices",
+      "title": "PO numbers on invoices",
+      "values": {
+        "system": [
+          "billing/invoicing"
+        ],
+        "size": "l"
+      }
+    },
+    {
+      "id": "second-payment-processor",
+      "title": "Second payment processor",
+      "values": {
+        "system": [
+          "billing/gateway"
+        ],
+        "size": "m"
+      },
+      "sequence": 1
+    },
+    {
+      "id": "3-d-secure-2-flows",
+      "title": "3-D Secure 2 flows",
+      "values": {
+        "system": [
+          "billing/gateway"
+        ],
+        "size": "m",
+        "time": "q3/r1"
+      },
+      "sequence": 7
+    },
+    {
+      "id": "smarter-retries-for-failed-payments",
+      "title": "Smarter retries for failed payments",
+      "values": {
+        "system": [
+          "billing/gateway"
+        ]
+      }
+    },
+    {
+      "id": "ach-direct-debit",
+      "title": "ACH direct debit",
+      "values": {
+        "system": [
+          "billing/gateway"
+        ]
+      },
+      "sequence": 4
+    },
+    {
+      "id": "payment-method-vaulting",
+      "title": "Payment method vaulting",
+      "values": {
+        "system": [
+          "billing/gateway"
+        ]
+      },
+      "sequence": 2
+    },
+    {
+      "id": "gateway-failover",
+      "title": "Gateway failover",
+      "values": {
+        "system": [
+          "billing/gateway"
+        ],
+        "size": "xs",
+        "time": "q1"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "wallet-payments-at-checkout",
+      "title": "Wallet payments at checkout",
+      "values": {
+        "system": [
+          "billing/gateway"
+        ],
+        "size": "l",
+        "time": "q4"
+      },
+      "sequence": 9
+    },
+    {
+      "id": "vat-oss-reporting",
+      "title": "VAT OSS reporting",
+      "values": {
+        "system": [
+          "billing/tax"
+        ],
+        "size": "m",
+        "time": "q2"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "us-sales-tax-nexus-rules",
+      "title": "US sales tax nexus rules",
+      "values": {
+        "system": [
+          "billing/tax"
+        ]
+      },
+      "sequence": 4
+    },
+    {
+      "id": "tax-exempt-certificates",
+      "title": "Tax-exempt certificates",
+      "values": {
+        "system": [
+          "billing/tax"
+        ]
+      }
+    },
+    {
+      "id": "reverse-charge-handling",
+      "title": "Reverse charge handling",
+      "values": {
+        "system": [
+          "billing/tax"
+        ],
+        "size": "xl",
+        "time": "q3"
+      },
+      "sequence": 6
+    },
+    {
+      "id": "tax-engine-vendor-migration",
+      "title": "Tax engine vendor migration",
+      "values": {
+        "system": [
+          "billing/tax"
+        ]
+      },
+      "sequence": 10
+    },
+    {
+      "id": "tax-calculation-caching",
+      "title": "Tax calculation caching",
+      "values": {
+        "system": [
+          "billing/tax"
+        ]
+      },
+      "sequence": 6
+    },
+    {
+      "id": "mid-cycle-plan-changes",
+      "title": "Mid-cycle plan changes",
+      "values": {
+        "system": [
+          "billing/subscriptions"
+        ],
+        "size": "m",
+        "time": "q4/r2"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "proration-preview",
+      "title": "Proration preview",
+      "values": {
+        "system": [
+          "billing/subscriptions"
+        ],
+        "size": "m",
+        "time": "q2"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "annual-prepay-discounts",
+      "title": "Annual prepay discounts",
+      "values": {
+        "system": [
+          "billing/subscriptions"
+        ]
+      }
+    },
+    {
+      "id": "seat-based-add-ons",
+      "title": "Seat-based add-ons",
+      "values": {
+        "system": [
+          "billing/subscriptions"
+        ],
+        "size": "s"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "trial-to-paid-conversion-flow",
+      "title": "Trial-to-paid conversion flow",
+      "values": {
+        "system": [
+          "billing/subscriptions"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "subscription-pause",
+      "title": "Subscription pause",
+      "values": {
+        "system": [
+          "billing/subscriptions"
+        ],
+        "size": "s"
+      }
+    },
+    {
+      "id": "exactly-once-event-delivery",
+      "title": "Exactly-once event delivery",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "schema-registry",
+      "title": "Schema registry",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "size": "s"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "backfill-tooling",
+      "title": "Backfill tooling",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "size": "m",
+        "time": "q1/r2"
+      }
+    },
+    {
+      "id": "dead-letter-queue-replay",
+      "title": "Dead-letter queue replay",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ]
+      },
+      "sequence": 7
+    },
+    {
+      "id": "pipeline-lag-alerting",
+      "title": "Pipeline lag alerting",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "size": "s",
+        "time": "q2"
+      }
+    },
+    {
+      "id": "event-retention-tiers",
+      "title": "Event retention tiers",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ]
+      }
+    },
+    {
+      "id": "snowflake-export-connector",
+      "title": "Snowflake export connector",
+      "values": {
+        "system": [
+          "data/export"
+        ],
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "bigquery-export-connector",
+      "title": "BigQuery export connector",
+      "values": {
+        "system": [
+          "data/export"
+        ],
+        "size": "xl",
+        "time": "q3"
+      },
+      "sequence": 8
+    },
+    {
+      "id": "incremental-export",
+      "title": "Incremental export",
+      "values": {
+        "system": [
+          "data/export"
+        ],
+        "size": "xs"
+      },
+      "sequence": 5
+    },
+    {
+      "id": "export-column-selection",
+      "title": "Export column selection",
+      "values": {
+        "system": [
+          "data/export"
+        ]
+      },
+      "sequence": 3
+    },
+    {
+      "id": "parquet-output",
+      "title": "Parquet output",
+      "values": {
+        "system": [
+          "data/export"
+        ]
+      },
+      "sequence": 9
+    },
+    {
+      "id": "zero-downtime-index-rebuild",
+      "title": "Zero-downtime index rebuild",
+      "values": {
+        "system": [
+          "data/search"
+        ],
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "typo-tolerant-search",
+      "title": "Typo-tolerant search",
+      "values": {
+        "system": [
+          "data/search"
+        ],
+        "size": "s",
+        "time": "q2"
+      },
+      "sequence": 5
+    },
+    {
+      "id": "permission-aware-search-results",
+      "title": "Permission-aware search results",
+      "values": {
+        "system": [
+          "data/search"
+        ],
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "search-inside-attachments",
+      "title": "Search inside attachments",
+      "values": {
+        "system": [
+          "data/search"
+        ],
+        "size": "xl",
+        "time": "q2"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "saved-searches",
+      "title": "Saved searches",
+      "values": {
+        "system": [
+          "data/search"
+        ],
+        "size": "xs",
+        "time": "q2"
+      }
+    },
+    {
+      "id": "search-analytics-for-admins",
+      "title": "Search analytics for admins",
+      "values": {
+        "system": [
+          "data/search"
+        ],
+        "size": "l",
+        "time": "q2"
+      }
+    },
+    {
+      "id": "audit-log-export-api",
+      "title": "Audit log export API",
+      "values": {
+        "system": [
+          "data/audit"
+        ],
+        "size": "xl"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "tamper-evident-audit-log",
+      "title": "Tamper-evident audit log",
+      "values": {
+        "system": [
+          "data/audit"
+        ],
+        "size": "s",
+        "time": "q1"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "audit-retention-settings",
+      "title": "Audit retention settings",
+      "values": {
+        "system": [
+          "data/audit"
+        ]
+      },
+      "sequence": 2
+    },
+    {
+      "id": "siem-streaming",
+      "title": "SIEM streaming",
+      "values": {
+        "system": [
+          "data/audit"
+        ]
+      },
+      "sequence": 6
+    },
+    {
+      "id": "admin-action-audit-coverage",
+      "title": "Admin action audit coverage",
+      "values": {
+        "system": [
+          "data/audit"
+        ],
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "audit-log-search-filters",
+      "title": "Audit log search filters",
+      "values": {
+        "system": [
+          "data/audit"
+        ]
+      }
+    },
+    {
+      "id": "console-navigation-redesign",
+      "title": "Console navigation redesign",
+      "values": {
+        "system": [
+          "cx/console"
+        ],
+        "size": "l"
+      },
+      "sequence": 0
+    },
+    {
+      "id": "bulk-user-actions",
+      "title": "Bulk user actions",
+      "values": {
+        "system": [
+          "cx/console"
+        ]
+      }
+    },
+    {
+      "id": "settings-search",
+      "title": "Settings search",
+      "values": {
+        "system": [
+          "cx/console"
+        ],
+        "size": "l"
+      },
+      "sequence": 1
+    },
+    {
+      "id": "dark-mode",
+      "title": "Dark mode",
+      "values": {
+        "system": [
+          "cx/console"
+        ]
+      }
+    },
+    {
+      "id": "usage-overview-page",
+      "title": "Usage overview page",
+      "values": {
+        "system": [
+          "cx/console"
+        ]
+      },
+      "sequence": 3
+    },
+    {
+      "id": "onboarding-checklist",
+      "title": "Onboarding checklist",
+      "values": {
+        "system": [
+          "cx/console"
+        ],
+        "size": "s",
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "notification-preferences-center",
+      "title": "Notification preferences center",
+      "values": {
+        "system": [
+          "cx/notify"
+        ]
+      },
+      "sequence": 9
+    },
+    {
+      "id": "slack-notifications",
+      "title": "Slack notifications",
+      "values": {
+        "system": [
+          "cx/notify"
+        ],
+        "size": "xs",
+        "time": "q2"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "digest-emails",
+      "title": "Digest emails",
+      "values": {
+        "system": [
+          "cx/notify"
+        ]
+      },
+      "sequence": 3
+    },
+    {
+      "id": "in-app-notification-inbox",
+      "title": "In-app notification inbox",
+      "values": {
+        "system": [
+          "cx/notify"
+        ],
+        "size": "m"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "notification-rate-limiting",
+      "title": "Notification rate limiting",
+      "values": {
+        "system": [
+          "cx/notify"
+        ]
+      },
+      "sequence": 6
+    },
+    {
+      "id": "microsoft-teams-notifications",
+      "title": "Microsoft Teams notifications",
+      "values": {
+        "system": [
+          "cx/notify"
+        ],
+        "size": "m",
+        "time": "q4/r1"
+      }
+    },
+    {
+      "id": "consistent-api-pagination",
+      "title": "Consistent API pagination",
+      "values": {
+        "system": [
+          "cx/api"
+        ]
+      }
+    },
+    {
+      "id": "idempotency-keys",
+      "title": "Idempotency keys",
+      "values": {
+        "system": [
+          "cx/api"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "api-versioning-policy",
+      "title": "API versioning policy",
+      "values": {
+        "system": [
+          "cx/api"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "python-sdk",
+      "title": "Python SDK",
+      "values": {
+        "system": [
+          "cx/api"
+        ]
+      },
+      "sequence": 4
+    },
+    {
+      "id": "go-sdk",
+      "title": "Go SDK",
+      "values": {
+        "system": [
+          "cx/api"
+        ],
+        "size": "xl",
+        "time": "q2/r1"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "sandbox-environments",
+      "title": "Sandbox environments",
+      "values": {
+        "system": [
+          "cx/api"
+        ],
+        "size": "s",
+        "time": "q4/r1"
+      },
+      "sequence": 10
+    },
+    {
+      "id": "customer-managed-encryption-keys",
+      "title": "Customer-managed encryption keys",
+      "values": {
+        "system": [
+          "data/pipeline",
+          "data/export",
+          "data/search",
+          "data/audit"
+        ],
+        "size": "m",
+        "time": "q1"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "tenant-data-deletion-gdpr",
+      "title": "Tenant data deletion (GDPR)",
+      "values": {
+        "system": [
+          "data/pipeline",
+          "data/search",
+          "billing/invoicing",
+          "identity/scim"
+        ]
+      },
+      "sequence": 3
+    },
+    {
+      "id": "audit-events-for-billing-changes",
+      "title": "Audit events for billing changes",
+      "values": {
+        "system": [
+          "data/audit",
+          "billing/subscriptions"
+        ],
+        "size": "s"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "seat-sync-from-directory",
+      "title": "Seat sync from directory",
+      "values": {
+        "system": [
+          "identity/scim",
+          "billing/subscriptions"
+        ],
+        "size": "l",
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "role-based-invoice-access",
+      "title": "Role-based invoice access",
+      "values": {
+        "system": [
+          "identity/rbac",
+          "billing/invoicing"
+        ],
+        "time": "q1"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "console-wide-search",
+      "title": "Console-wide search",
+      "values": {
+        "system": [
+          "data/search",
+          "cx/console"
+        ]
+      },
+      "sequence": 6
+    },
+    {
+      "id": "failed-payment-alerts",
+      "title": "Failed-payment alerts",
+      "values": {
+        "system": [
+          "billing/gateway",
+          "cx/notify"
+        ]
+      },
+      "sequence": 2
+    },
+    {
+      "id": "login-anomaly-alerts",
+      "title": "Login anomaly alerts",
+      "values": {
+        "system": [
+          "identity/mfa",
+          "cx/notify",
+          "data/audit"
+        ],
+        "time": "q3/r2"
+      },
+      "sequence": 6
+    },
+    {
+      "id": "export-job-status-in-api",
+      "title": "Export job status in API",
+      "values": {
+        "system": [
+          "data/export",
+          "cx/api"
+        ]
+      }
+    },
+    {
+      "id": "product-analytics-events",
+      "title": "Product analytics events",
+      "values": {
+        "system": [
+          "data/pipeline",
+          "cx/console"
+        ],
+        "size": "l",
+        "time": "q1/r1"
+      },
+      "sequence": 1
+    },
+    {
+      "id": "sso-bound-api-tokens",
+      "title": "SSO-bound API tokens",
+      "values": {
+        "system": [
+          "identity/sso",
+          "cx/api"
+        ],
+        "size": "s",
+        "time": "q3"
+      }
+    },
+    {
+      "id": "tax-ids-collected-at-checkout",
+      "title": "Tax IDs collected at checkout",
+      "values": {
+        "system": [
+          "billing/tax",
+          "cx/console"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "permission-checks-in-search-and-export",
+      "title": "Permission checks in search and export",
+      "values": {
+        "system": [
+          "identity/rbac",
+          "data/search",
+          "data/export"
+        ],
+        "size": "xl"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "webhook-secret-rotation",
+      "title": "Webhook secret rotation",
+      "values": {
+        "system": [
+          "cx/api",
+          "identity/rbac"
+        ],
+        "size": "s",
+        "time": "q4"
+      },
+      "sequence": 10
+    },
+    {
+      "id": "accessibility-audit-fixes",
+      "title": "Accessibility audit fixes",
+      "sequence": 9,
+      "values": {
+        "size": "m",
+        "time": "q4"
+      }
+    },
+    {
+      "id": "pen-test-remediation",
+      "title": "Pen-test remediation",
+      "sequence": 4,
+      "values": {
+        "size": "xs",
+        "time": "q2"
+      }
+    },
+    {
+      "id": "onboarding-docs-refresh",
+      "title": "Onboarding docs refresh",
+      "values": {
+        "time": "q2/r1"
+      }
+    },
+    {
+      "id": "pricing-page-experiment",
+      "title": "Pricing page experiment"
+    },
+    {
+      "id": "soc-2-type-ii-evidence-collection",
+      "title": "SOC 2 Type II evidence collection",
+      "sequence": 8,
+      "values": {
+        "size": "m",
+        "time": "q3"
+      }
+    },
+    {
+      "id": "german-and-french-localization",
+      "title": "German and French localization",
+      "sequence": 7,
+      "values": {
+        "size": "xs",
+        "time": "q3"
+      }
+    },
+    {
+      "id": "advisory-board-feedback-triage",
+      "title": "Advisory board feedback triage",
+      "values": {
+        "size": "s",
+        "time": "q4"
+      }
+    },
+    {
+      "id": "faster-ci-builds",
+      "title": "Faster CI builds",
+      "sequence": 3
+    },
+    {
+      "id": "node-24-upgrade",
+      "title": "Node 24 upgrade",
+      "sequence": 9
+    },
+    {
+      "id": "incident-review-follow-ups",
+      "title": "Incident review follow-ups",
+      "sequence": 5
+    },
+    {
+      "id": "partner-program-portal",
+      "title": "Partner program portal",
+      "sequence": 3,
+      "values": {
+        "size": "s",
+        "time": "q2/r1"
+      }
+    },
+    {
+      "id": "churn-survey-in-cancellation-flow",
+      "title": "Churn survey in cancellation flow",
+      "sequence": 10,
+      "values": {
+        "time": "q4"
+      }
+    },
+    {
+      "id": "page-load-performance-budget",
+      "title": "Page-load performance budget",
+      "values": {
+        "size": "m",
+        "time": "q1"
+      }
+    },
+    {
+      "id": "design-system-tokens",
+      "title": "Design system tokens",
+      "sequence": 9
+    },
+    {
+      "id": "support-macro-cleanup",
+      "title": "Support macro cleanup",
+      "sequence": 9,
+      "values": {
+        "size": "s",
+        "time": "q4"
+      }
+    },
+    {
+      "id": "sales-demo-environment",
+      "title": "Sales demo environment",
+      "sequence": 0,
+      "values": {
+        "size": "s",
+        "time": "q1/r2"
+      }
+    },
+    {
+      "id": "eu-data-residency",
+      "title": "EU data residency",
+      "values": {
+        "system": [
+          "data"
+        ],
+        "size": "xl",
+        "time": "q2/r1"
+      },
+      "sequence": 9
+    },
+    {
+      "id": "regional-pipeline-shards",
+      "title": "Regional pipeline shards",
+      "parent": "eu-data-residency",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "size": "m",
+        "time": "q2"
+      }
+    },
+    {
+      "id": "region-routing-for-events",
+      "title": "Region routing for events",
+      "parent": "regional-pipeline-shards",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ]
+      },
+      "sequence": 3
+    },
+    {
+      "id": "eu-kafka-cluster",
+      "title": "EU Kafka cluster",
+      "parent": "regional-pipeline-shards",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "cross-region-replication-guardrails",
+      "title": "Cross-region replication guardrails",
+      "parent": "regional-pipeline-shards",
+      "values": {
+        "system": [
+          "data/pipeline",
+          "data/audit"
+        ],
+        "size": "m",
+        "time": "q2"
+      },
+      "sequence": 5
+    },
+    {
+      "id": "eu-invoice-storage",
+      "title": "EU invoice storage",
+      "parent": "eu-data-residency",
+      "values": {
+        "system": [
+          "billing/invoicing"
+        ]
+      },
+      "sequence": 4
+    },
+    {
+      "id": "region-pinned-directory-sync",
+      "title": "Region-pinned directory sync",
+      "parent": "eu-data-residency",
+      "values": {
+        "system": [
+          "identity/scim"
+        ],
+        "time": "q3/r2"
+      },
+      "sequence": 8
+    },
+    {
+      "id": "residency-setting-in-console",
+      "title": "Residency setting in console",
+      "parent": "eu-data-residency",
+      "values": {
+        "system": [
+          "cx/console"
+        ],
+        "size": "xl"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "usage-based-pricing",
+      "title": "Usage-based pricing",
+      "values": {
+        "system": [
+          "billing"
+        ],
+        "size": "xl",
+        "time": "q4/r1"
+      }
+    },
+    {
+      "id": "metering",
+      "title": "Metering",
+      "parent": "usage-based-pricing",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "size": "xs",
+        "time": "q4"
+      },
+      "sequence": 10
+    },
+    {
+      "id": "metering-event-schema",
+      "title": "Metering event schema",
+      "parent": "metering",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "size": "m"
+      },
+      "sequence": 4
+    },
+    {
+      "id": "meter-aggregation-job",
+      "title": "Meter aggregation job",
+      "parent": "metering",
+      "values": {
+        "system": [
+          "data/pipeline"
+        ],
+        "size": "m"
+      },
+      "sequence": 6
+    },
+    {
+      "id": "rated-usage-on-invoices",
+      "title": "Rated usage on invoices",
+      "parent": "usage-based-pricing",
+      "values": {
+        "system": [
+          "billing/invoicing",
+          "billing/subscriptions"
+        ],
+        "size": "s",
+        "time": "q3"
+      },
+      "sequence": 8
+    },
+    {
+      "id": "usage-dashboard",
+      "title": "Usage dashboard",
+      "parent": "usage-based-pricing",
+      "values": {
+        "system": [
+          "cx/console"
+        ],
+        "time": "q4/r2"
+      },
+      "sequence": 9
+    },
+    {
+      "id": "overage-notifications",
+      "title": "Overage notifications",
+      "parent": "usage-based-pricing",
+      "values": {
+        "system": [
+          "cx/notify"
+        ]
+      },
+      "sequence": 10
+    },
+    {
+      "id": "passwordless-login",
+      "title": "Passwordless login",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ],
+        "size": "m",
+        "time": "q1/r1"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "webauthn-enrollment",
+      "title": "WebAuthn enrollment",
+      "parent": "passwordless-login",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ]
+      },
+      "sequence": 1
+    },
+    {
+      "id": "passkey-login-flow",
+      "title": "Passkey login flow",
+      "parent": "passwordless-login",
+      "values": {
+        "system": [
+          "identity/sso",
+          "identity/mfa"
+        ],
+        "size": "m",
+        "time": "q1/r1"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "account-recovery-codes",
+      "title": "Account recovery codes",
+      "parent": "passwordless-login",
+      "values": {
+        "system": [
+          "identity/mfa"
+        ],
+        "size": "l",
+        "time": "q1"
+      },
+      "sequence": 0
+    },
+    {
+      "id": "public-api-v2",
+      "title": "Public API v2",
+      "values": {
+        "system": [
+          "cx/api"
+        ],
+        "size": "l",
+        "time": "q3/r1"
+      }
+    },
+    {
+      "id": "api-auth",
+      "title": "API auth",
+      "parent": "public-api-v2",
+      "values": {
+        "system": [
+          "cx/api"
+        ],
+        "size": "l",
+        "time": "q4"
+      },
+      "sequence": 9
+    },
+    {
+      "id": "oauth-client-credentials",
+      "title": "OAuth client credentials",
+      "parent": "api-auth",
+      "values": {
+        "system": [
+          "identity/sso",
+          "cx/api"
+        ]
+      },
+      "sequence": 3
+    },
+    {
+      "id": "scoped-api-tokens",
+      "title": "Scoped API tokens",
+      "parent": "api-auth",
+      "values": {
+        "system": [
+          "identity/rbac",
+          "cx/api"
+        ],
+        "size": "s",
+        "time": "q1"
+      },
+      "sequence": 2
+    },
+    {
+      "id": "token-usage-audit",
+      "title": "Token usage audit",
+      "parent": "api-auth",
+      "values": {
+        "system": [
+          "data/audit",
+          "cx/api"
+        ],
+        "size": "xs",
+        "time": "q1/r1"
+      }
+    },
+    {
+      "id": "rate-limiting-v2",
+      "title": "Rate limiting v2",
+      "parent": "public-api-v2",
+      "values": {
+        "system": [
+          "cx/api"
+        ],
+        "size": "m",
+        "time": "q2"
+      },
+      "sequence": 5
+    },
+    {
+      "id": "webhooks-v2",
+      "title": "Webhooks v2",
+      "parent": "public-api-v2",
+      "values": {
+        "system": [
+          "cx/api",
+          "cx/notify"
+        ],
+        "size": "m",
+        "time": "q2"
+      },
+      "sequence": 3
+    },
+    {
+      "id": "openapi-3-1-spec",
+      "title": "OpenAPI 3.1 spec",
+      "parent": "public-api-v2",
+      "values": {
+        "system": [
+          "cx/api"
+        ],
+        "time": "q1"
+      },
+      "sequence": 2
+    }
+  ],
+  "dependencies": [
+    [
+      "schema-registry",
+      "metering-event-schema"
+    ],
+    [
+      "metering-event-schema",
+      "meter-aggregation-job"
+    ],
+    [
+      "exactly-once-event-delivery",
+      "meter-aggregation-job"
+    ],
+    [
+      "meter-aggregation-job",
+      "rated-usage-on-invoices"
+    ],
+    [
+      "rated-usage-on-invoices",
+      "usage-dashboard"
+    ],
+    [
+      "rated-usage-on-invoices",
+      "overage-notifications"
+    ],
+    [
+      "custom-roles",
+      "scoped-api-tokens"
+    ],
+    [
+      "scoped-api-tokens",
+      "webhooks-v2"
+    ],
+    [
+      "oauth-client-credentials",
+      "rate-limiting-v2"
+    ],
+    [
+      "idempotency-keys",
+      "webhooks-v2"
+    ],
+    [
+      "resource-level-permissions",
+      "permission-aware-search-results"
+    ],
+    [
+      "resource-level-permissions",
+      "permission-checks-in-search-and-export"
+    ],
+    [
+      "scim-2-0-group-push",
+      "seat-sync-from-directory"
+    ],
+    [
+      "seat-sync-from-directory",
+      "seat-based-add-ons"
+    ],
+    [
+      "eu-kafka-cluster",
+      "region-routing-for-events"
+    ],
+    [
+      "region-routing-for-events",
+      "cross-region-replication-guardrails"
+    ],
+    [
+      "region-routing-for-events",
+      "eu-invoice-storage"
+    ],
+    [
+      "tamper-evident-audit-log",
+      "audit-log-export-api"
+    ],
+    [
+      "audit-log-export-api",
+      "siem-streaming"
+    ],
+    [
+      "webauthn-enrollment",
+      "passkey-login-flow"
+    ],
+    [
+      "account-recovery-codes",
+      "passkey-login-flow"
+    ],
+    [
+      "payment-method-vaulting",
+      "ach-direct-debit"
+    ],
+    [
+      "multi-currency-invoices",
+      "consolidated-invoicing-for-parent-accounts"
+    ],
+    [
+      "tax-engine-vendor-migration",
+      "vat-oss-reporting"
+    ],
+    [
+      "tax-engine-vendor-migration",
+      "us-sales-tax-nexus-rules"
+    ],
+    [
+      "mid-cycle-plan-changes",
+      "proration-preview"
+    ],
+    [
+      "api-versioning-policy",
+      "openapi-3-1-spec"
+    ],
+    [
+      "openapi-3-1-spec",
+      "python-sdk"
+    ],
+    [
+      "openapi-3-1-spec",
+      "go-sdk"
+    ],
+    [
+      "notification-preferences-center",
+      "slack-notifications"
+    ],
+    [
+      "notification-preferences-center",
+      "digest-emails"
+    ],
+    [
+      "console-navigation-redesign",
+      "settings-search"
+    ],
+    [
+      "zero-downtime-index-rebuild",
+      "typo-tolerant-search"
+    ],
+    [
+      "customer-managed-encryption-keys",
+      "tenant-data-deletion-gdpr"
+    ],
+    [
+      "audit-events-for-billing-changes",
+      "siem-streaming"
+    ],
+    [
+      "product-analytics-events",
+      "usage-overview-page"
+    ]
+  ]
+}

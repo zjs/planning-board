@@ -42,4 +42,10 @@ Sprint 0. Scope is in `docs/sprint-0.md`; the slice plan and review process are 
 
 ## Commands
 
-_To be filled in once the project is scaffolded: install, dev server, test, lint, build, deploy._
+- Install: `npm install` (Node 22+)
+- Dev server: `npm run dev`
+- All fast checks (what CI runs first): `npm run check` = `npm run typecheck && npm run lint && npm test`
+- Build the single-file app: `npm run build` → `dist/index.html`
+- End-to-end tests: `npm run build && npm run e2e`. Playwright runs Chromium against `dist/index.html` over `file://`. Locally, the config uses `/opt/pw-browsers/chromium` if it exists; don't run `playwright install` in the cloud container.
+- Regenerate the sample plan: `npm run seed`
+- Deploy: none yet. CI attaches `dist/index.html` to every run as the `planning-board-<sha>` artifact.

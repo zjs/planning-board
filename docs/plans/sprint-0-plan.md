@@ -1,6 +1,6 @@
 # Sprint 0 — engineering plan
 
-Status: **proposed, awaiting PM approval.** Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
+Status: **approved 2026-09-26.** Slice 1 in progress. Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
 
 ## What this milestone has to prove
 
@@ -21,9 +21,8 @@ Slice 1 comes before dragging on purpose. Seeing the seed plan pivot, and seeing
 
 ### ADR schedule
 
-- **Slice 1:** frontend framework + build, rendering, scenario representation, group tree representation. The last two shape the data model, so they're settled before the types are.
+- **Slice 1:** frontend framework + build, rendering, scenario representation, group tree representation, and plan file format. Scenarios and the group tree shape the data model, so they're settled before the types are. The plan file format was originally slated for slice 4. It moved up because the seed JSON needed a format, and it's the same one.
 - **Slice 2:** CRDT library, drag-and-drop approach.
-- **Slice 4:** plan file format. It isn't used until save/open exists, so it's written last.
 
 ## Engineering defaults (my call, recorded in ADRs; flag anything you'd veto)
 
@@ -44,7 +43,7 @@ Slice 1 comes before dragging on purpose. Seeing the seed plan pivot, and seeing
 
 ## Risks I'm tracking
 
-- **IndexedDB when the file is opened from disk** (`file://`). Chrome supports it _(recalled)_. Firefox and Safari are less certain _(priors)_. Slice 1 includes a spike to confirm. The fallback is to store the Yjs state in `localStorage`, which is plenty for a few hundred items.
+- **IndexedDB when the file is opened from disk** (`file://`). Confirmed in Chromium: `e2e/storage-spike.spec.ts` writes, reloads, and reads back. Firefox and Safari are still unverified _(priors)_ and get a manual check in slice 4. The fallback is to store the Yjs state in `localStorage`, which is plenty for a few hundred items.
 - **Workflow artifacts are zipped and need a GitHub login** _(recalled)_. That's fine for you, but awkward for testers, so for sessions you'll send them the unzipped HTML file directly. Artifacts also expire (90 days by default, _recalled_), which is fine at this stage.
 - **Cross-browser testing:** only Chromium is automated here. Firefox and Safari are checked by hand in slice 4. If testers bring Safari, that check matters.
 - **Holding-area overload:** with sizes and quarters on only half the items, time × system puts about 75 cards in the holding area. That's deliberate (requirement 21), but it may swamp the view. I'll make the holding area scroll and collapse, and we'll watch it in the session.
