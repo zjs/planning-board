@@ -50,7 +50,7 @@ export function resetPlan(store: PlanStore): void {
 }
 
 /**
- * Drop one copy of a card on a cell or a holding-area zone. Returns false
+ * Drop one copy of a card on a cell or a holding lane. Returns false
  * when the drop changes nothing, so no undo step is recorded.
  */
 export function dropCard(

@@ -3,9 +3,10 @@ import type { DropMode, DropTarget } from '../domain/move.ts';
 import type { CardRef } from '../domain/view.ts';
 
 // Pointer-event drag and drop (docs/decisions/0007-drag-and-drop.md).
-// Drop targets are DOM elements carrying data-drop:
-//   data-drop="cell" data-row=… data-column=…   a board cell
-//   data-drop="clear-x" | "clear-y"             holding-area "remove value" zones
+// Drop targets are DOM elements carrying data-drop="cell", with data-row and
+// data-column lane keys. A holding lane leaves out the axis it has no value
+// on, which reads as null. The pinned edges of the board (.corner,
+// .holding-head, .holding-row-header) bound the area that edge-scrolls.
 
 export interface DragState {
   card: CardRef;
@@ -30,25 +31,37 @@ const EDGE_DWELL_MS = 200;
 function targetAt(x: number, y: number): DropTarget | null {
   const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop]');
   if (!el) return null;
-  const kind = el.dataset.drop;
-  if (kind === 'cell' && el.dataset.row !== undefined && el.dataset.column !== undefined) {
-    return { kind: 'cell', x: el.dataset.column, y: el.dataset.row };
-  }
-  if (kind === 'clear-x') return { kind: 'clear', axis: 'x' };
-  if (kind === 'clear-y') return { kind: 'clear', axis: 'y' };
-  return null;
+  if (el.dataset.drop !== 'cell') return null;
+  return { x: el.dataset.column ?? null, y: el.dataset.row ?? null };
 }
 
 export function sameTarget(a: DropTarget | null, b: DropTarget | null): boolean {
   if (a === null || b === null) return a === b;
-  if (a.kind === 'cell') return b.kind === 'cell' && a.x === b.x && a.y === b.y;
-  return b.kind === 'clear' && a.axis === b.axis;
+  return a.x === b.x && a.y === b.y;
+}
+
+/**
+ * The part of the board that scrolls under the pinned headers and holding
+ * lanes. Hovering a pinned edge never scrolls, so the lane under the pointer
+ * stays put while you aim for it.
+ */
+function scrollingArea(scroller: HTMLElement): { left: number; top: number; right: number; bottom: number } {
+  const rect = scroller.getBoundingClientRect();
+  const edge = (selector: string) => scroller.querySelector(selector)?.getBoundingClientRect();
+  const corner = edge('.corner');
+  const right = edge('.holding-head');
+  const bottom = edge('.holding-row-header');
+  return {
+    left: corner?.right ?? rect.left,
+    top: corner?.bottom ?? rect.top,
+    right: Math.min(right?.left ?? rect.right, rect.right),
+    bottom: Math.min(bottom?.top ?? rect.bottom, rect.bottom),
+  };
 }
 
 /**
  * Scroll speed for a pointer near an inside edge of [start, end]: negative,
- * zero, or positive. Zero outside the range, so hovering the holding area
- * next to the board doesn't scroll it.
+ * zero, or positive. Zero outside the range.
  */
 export function edgeSpeed(pos: number, start: number, end: number): number {
   if (pos < start || pos > end) return 0;
@@ -98,11 +111,11 @@ export function useCardDrag(
       const current = dragRef.current;
       const scroller = scrollRef.current;
       if (!current || !scroller) return;
-      const rect = scroller.getBoundingClientRect();
+      const area = scrollingArea(scroller);
       const inside =
-        current.x >= rect.left && current.x <= rect.right && current.y >= rect.top && current.y <= rect.bottom;
-      const dx = inside ? edgeSpeed(current.x, rect.left, rect.right) : 0;
-      const dy = inside ? edgeSpeed(current.y, rect.top, rect.bottom) : 0;
+        current.x >= area.left && current.x <= area.right && current.y >= area.top && current.y <= area.bottom;
+      const dx = inside ? edgeSpeed(current.x, area.left, area.right) : 0;
+      const dy = inside ? edgeSpeed(current.y, area.top, area.bottom) : 0;
       if (dx === 0 && dy === 0) {
         edgeSince.current = null;
         return;

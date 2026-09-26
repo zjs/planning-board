@@ -40,7 +40,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 | Time → Release | Built-in, ordered, hierarchical | Checked against dependencies; contention measured here |
 | Team, Customer, Theme, etc. | Custom select or tag, any depth | None; usable as axes and filters |
 
-**View.** A choice of X and Y axes, each a property at some level of its hierarchy. Other properties show as attributes on the card. Every view has a holding area for cards with no value on its axes yet.
+**View.** A choice of X and Y axes, each a property at some level of its hierarchy. Other properties show as attributes on the card. Every view has holding lanes along its right and bottom edges for cards with no value on one or both axes yet.
 
 **Zoom.** Moving one level down a hierarchy: within a property (area → service), along an axis (quarter → release), or into the item tree (a group → its children).
 
@@ -54,9 +54,9 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 1. Users can pick any two properties, at any hierarchy level, as the X and Y axes of a view.
 2. Dragging a card into a cell sets that card's values for both axis properties.
-3. A card with several values on an axis appears in each matching lane. Dragging one copy replaces only that lane's value. Dropping with a modifier key adds a value instead. Dragging a copy to the holding area removes only that value.
+3. A card with several values on an axis appears in each matching lane. Dragging one copy replaces only that lane's value. Dropping with a modifier key adds a value instead. Dragging a copy to a holding lane removes only that copy's value on the lane's missing axis.
 4. Cards show non-axis properties as compact attributes, such as a size badge in the sequence view.
-5. Each view has a holding area for cards missing a value on either axis.
+5. Each view has holding lanes for cards missing a value, pinned to the board's edges. A lane at the end of each row holds cards with that row but no column, a lane under each column holds cards with that column but no row, and the corner holds cards with neither. Dropping a card in a holding lane sets the axis it names and clears the other. Holding lanes can show full cards or compact chips.
 6. Sequence views show no step numbers or column labels, so placement doesn't read as a claim of order between unlinked items.
 7. Users can zoom into a lane or column to see the next hierarchy level, and zoom back out.
 8. Users can save named views and switch between them in one step.

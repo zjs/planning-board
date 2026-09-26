@@ -9,6 +9,8 @@ interface Props {
   areaIndex: number | null;
   /** Values of properties that aren't on an axis (requirement 4). */
   attributes: CardAttribute[];
+  /** A one-line chip: title and child count only (holding lanes, when chosen). */
+  compact?: boolean;
   /** This copy is the one being dragged. */
   lifted?: boolean;
   /** Briefly highlighted after a drop, so you can see where it landed. */
@@ -16,9 +18,11 @@ interface Props {
   onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void;
 }
 
-export function Card({ item, childCount, areaIndex, attributes, lifted, justMoved, onPointerDown }: Props) {
+export function Card({ item, childCount, areaIndex, attributes, compact, lifted, justMoved, onPointerDown }: Props) {
   const isGroup = childCount > 0;
-  const classes = ['card', isGroup && 'group', lifted && 'lifted', justMoved && 'just-moved'].filter(Boolean);
+  const classes = ['card', compact && 'chip', isGroup && 'group', lifted && 'lifted', justMoved && 'just-moved'].filter(
+    Boolean,
+  );
   return (
     <div
       className={classes.join(' ')}
@@ -35,7 +39,7 @@ export function Card({ item, childCount, areaIndex, attributes, lifted, justMove
           </span>
         )}
       </div>
-      {attributes.length > 0 && (
+      {!compact && attributes.length > 0 && (
         <div className="card-attrs">
           {attributes.map((a) => (
             <span key={a.property} className="attr" data-property={a.property} title={a.title}>

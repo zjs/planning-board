@@ -3,12 +3,16 @@ import type { Item, OrderKey, Plan, PropertyId, ValueId } from './model.ts';
 import { itemValues } from './model.ts';
 import type { AxisSpec, CardRef, ViewSpec } from './view.ts';
 
-/** Where a dragged card copy was dropped. */
-export type DropTarget =
-  /** A board cell, by lane keys. */
-  | { kind: 'cell'; x: string; y: string }
-  /** The holding area's "remove this value" zone for one axis (questions.md Q11). */
-  | { kind: 'clear'; axis: 'x' | 'y' };
+/**
+ * Where a dragged card copy was dropped, by lane key on each axis. Null is
+ * that axis's holding lane: a cell is { x, y }, the holding lane at the end
+ * of a row is { x: null, y }, the one under a column is { x, y: null }, and
+ * the corner is both null (questions.md Q10, Q11).
+ */
+export interface DropTarget {
+  x: string | null;
+  y: string | null;
+}
 
 /** `add` is the modifier-key drop: add a lane instead of moving out of the current one (requirement 3). */
 export type DropMode = 'replace' | 'add';
@@ -24,13 +28,13 @@ export interface ItemChange {
  * changes. Pure, so every drag rule is unit-tested here and the command
  * layer only applies the result.
  *
- * Rules, per axis:
+ * The copy ends up with the target's values. Rules, per axis:
  * - Values more precise than the view level survive when the lane doesn't
  *   change: moving a Billing/Tax card along the time axis keeps Billing/Tax.
  * - Single-valued properties and sequence are replaced.
  * - Multi-valued: replacing moves this copy's lane only; `add` keeps it.
- *   A card coming from the holding area has no lane to move out of, so its
- *   existing values are kept (questions.md Q10).
+ * - A holding lane (null) removes this copy's value on that axis, and only
+ *   that one, whatever the mode.
  */
 export function planDrop(
   plan: Plan,
@@ -41,15 +45,14 @@ export function planDrop(
 ): ItemChange | null {
   const item = plan.items[card.itemId];
   if (!item) return null;
-  const results: [AxisSpec, AxisResult][] = [];
-  if (target.kind === 'cell') {
-    results.push([view.x, moveOnAxis(plan, item, view.x, card.x, target.x, mode)]);
-    results.push([view.y, moveOnAxis(plan, item, view.y, card.y, target.y, mode)]);
-  } else {
-    const axis = view[target.axis];
-    const from = card[target.axis];
-    if (from !== null) results.push([axis, clearOnAxis(plan, item, axis, from)]);
-  }
+  const onAxis = (axis: AxisSpec, from: string | null, to: string | null): AxisResult => {
+    if (to !== null) return moveOnAxis(plan, item, axis, from, to, mode);
+    return from === null ? UNCHANGED : clearOnAxis(plan, item, axis, from);
+  };
+  const results: [AxisSpec, AxisResult][] = [
+    [view.x, onAxis(view.x, card.x, target.x)],
+    [view.y, onAxis(view.y, card.y, target.y)],
+  ];
 
   const change: ItemChange = { values: {} };
   let changed = false;
@@ -92,6 +95,7 @@ function moveOnAxis(
     // Keep a more precise value (a release inside the target quarter) if it's already in the lane.
     return alreadyThere && current.length === 1 ? UNCHANGED : { values: [to] };
   }
+  // A copy with no lane on this axis has nothing to move out of.
   if (mode === 'add' || from === null) {
     return alreadyThere ? UNCHANGED : { values: [...current, to] };
   }

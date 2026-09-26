@@ -41,8 +41,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dd>Adds that area instead of moving there.</dd>
         <dt>Drop in the gap between sequence columns</dt>
         <dd>Opens a new position there. Sequence columns have no numbers on purpose.</dd>
-        <dt>Drag onto the holding area</dt>
-        <dd>Removes a value. Pick which one on the drop zone.</dd>
+        <dt>The lanes along the right and bottom edges</dt>
+        <dd>
+          Hold cards missing a value: a row but no column on the right, a column but no row along the bottom, neither in
+          the corner. Drop a card there to clear that value.
+        </dd>
         <dt>Undo, redo, cancel</dt>
         <dd>
           <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.

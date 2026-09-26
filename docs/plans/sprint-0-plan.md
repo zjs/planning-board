@@ -1,6 +1,6 @@
 # Sprint 0 — engineering plan
 
-Status: **approved 2026-09-26.** Slices 1–3 merged (#1, #2, #3). Slice 4 in review. Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
+Status: **approved 2026-09-26.** Slices 1–4 merged (#1–#4). Slice 5 added after the tester session. Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
 
 ## What this milestone has to prove
 
@@ -16,6 +16,7 @@ Each slice is one PR with a single-file HTML build attached, plus a demo note in
 | 2 | **Drag writes values** (the core bet) | Drag a card into any cell or into the holding area, pivot, and see it land where it should. Drag one copy of a multi-lane card to move only that lane, ⌥/Alt-drop to add a lane, drop a copy on a holding-area zone to remove that value. Undo/redo with ⌘/Ctrl+Z. Reload and nothing is lost. Load sample / Reset. | Yjs doc, commands, drag, multi-valued behavior, undo/redo, IndexedDB persistence, load/reset |
 | 3 | **Sequence gaps and value badges** | Drop between sequence columns to open a new one. Cards show small value badges. | Q8 default, Q9 default |
 | 4 | **Tester-ready** | Hand the HTML file to a tester. An on-screen legend explains the gestures. It has been checked in Chrome, Firefox, and Safari. Session script and demo note are in the repo. | Demo note, remaining ADRs, stretch conflict functions if time allows |
+| 5 | **Holding lanes on the edges** (after the session) | Cards missing a value sit in a lane at the end of their row, under their column, or in the corner, all pinned to the board's edges. Drop into any of them to set one axis and clear the other. Switch holding lanes between full cards and chips. | Q10 and Q11 answers |
 
 Multi-valued drag behavior moved from slice 3 into slice 2: the drop rules turned out to be one pure function, and splitting them would have meant building the drag twice.
 

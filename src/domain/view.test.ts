@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
-import { layoutView, type ViewLayout, type ViewSpec } from './view.ts';
+import { layoutView, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
 
 const seqBySystem: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -18,6 +18,11 @@ function cellMap(layout: ViewLayout): Record<string, string[]> {
   return out;
 }
 
+/** Every copy in any holding lane. */
+function allHolding(layout: ViewLayout): CardRef[] {
+  return [...layout.holding.rows.flat(), ...layout.holding.columns.flat(), ...layout.holding.corner];
+}
+
 describe('layoutView', () => {
   it('places items by both axes, rolling deep values up to the view level', () => {
     const layout = layoutView(
@@ -30,7 +35,7 @@ describe('layoutView', () => {
     expect(layout.rows.map((l) => l.key)).toEqual(['id', 'pay']);
     expect(layout.columns.map((l) => l.key)).toEqual(['a0', 'a1']);
     expect(cellMap(layout)).toEqual({ 'id / a0': ['login'], 'pay / a1': ['ledger'] });
-    expect(layout.holding).toEqual([]);
+    expect(allHolding(layout)).toEqual([]);
   });
 
   it('offers gaps around sequence lanes only', () => {
@@ -67,18 +72,29 @@ describe('layoutView', () => {
     expect(layout.cells[1]![0]).toEqual([{ itemId: 'sso-billing', x: 'a0', y: 'pay' }]);
   });
 
-  it('puts an item missing either axis value in the holding area, once', () => {
+  it('puts an item missing an axis value in the holding lane for the value it has', () => {
     const layout = layoutView(
       plan(
         item('no-system', { sequence: 'a0' }),
-        item('no-sequence', { values: { [SYSTEM]: ['id', 'pay'] } }),
+        item('no-sequence', { values: { [SYSTEM]: ['id', 'pay/ledger'] } }),
         item('empty-array', { sequence: 'a0', values: { [SYSTEM]: [] } }),
+        item('neither'),
         item('placed', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }),
       ),
       seqBySystem,
     );
-    expect(layout.holding.map((ref) => ref.itemId).sort()).toEqual(['empty-array', 'no-sequence', 'no-system']);
-    expect(layout.holding.every((ref) => ref.x === null && ref.y === null)).toBe(true);
+    // Rows are id, pay; the one column is a0.
+    expect(layout.holding.rows).toEqual([
+      [{ itemId: 'no-sequence', x: null, y: 'id' }],
+      [{ itemId: 'no-sequence', x: null, y: 'pay' }],
+    ]);
+    expect(layout.holding.columns).toEqual([
+      [
+        { itemId: 'empty-array', x: 'a0', y: null },
+        { itemId: 'no-system', x: 'a0', y: null },
+      ],
+    ]);
+    expect(layout.holding.corner).toEqual([{ itemId: 'neither', x: null, y: null }]);
     expect(cellMap(layout)).toEqual({ 'id / a0': ['placed'] });
   });
 
@@ -92,7 +108,7 @@ describe('layoutView', () => {
       { x: { property: TIME, level: 1 }, y: { property: SYSTEM, level: 0 } },
     );
     expect(cellMap(layout)).toEqual({ 'id / q1/r2': ['release'] });
-    expect(layout.holding.map((ref) => ref.itemId).sort()).toEqual(['dangling', 'quarter-only']);
+    expect(layout.holding.rows[0]!.map((ref) => ref.itemId).sort()).toEqual(['dangling', 'quarter-only']);
   });
 
   it('shows groups as one card and hides their children', () => {
@@ -104,7 +120,7 @@ describe('layoutView', () => {
       timeBySystem,
     );
     expect(cellMap(layout)).toEqual({ 'id / q1': ['epic'] });
-    expect(layout.holding).toEqual([]);
+    expect(allHolding(layout)).toEqual([]);
   });
 
   it('orders cards in a cell by sequence, then title, with unsequenced cards last', () => {
@@ -132,6 +148,6 @@ describe('layoutView', () => {
   it('returns an empty layout for an unknown property instead of throwing', () => {
     const layout = layoutView(plan(item('x')), { x: { property: 'nope', level: 0 }, y: { property: SYSTEM, level: 0 } });
     expect(layout.columns).toEqual([]);
-    expect(layout.holding.map((ref) => ref.itemId)).toEqual(['x']);
+    expect(layout.holding.corner.map((ref) => ref.itemId)).toEqual(['x']);
   });
 });

@@ -13,10 +13,17 @@ import {
 import type { ItemId, Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { parsePlanJson } from '../domain/planJson.ts';
-import { layoutView, type CardRef } from '../domain/view.ts';
+import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
-import { loadViewChoice, optionById, saveViewChoice, toViewSpec } from './axes.ts';
+import {
+  loadCompactHolding,
+  loadViewChoice,
+  optionById,
+  saveCompactHolding,
+  saveViewChoice,
+  toViewSpec,
+} from './axes.ts';
 import { Board } from './Board.tsx';
 import { DragGhost } from './DragGhost.tsx';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
@@ -57,11 +64,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   useEffect(() => saveViewChoice(choice), [choice]);
   const view = useMemo(() => toViewSpec(choice), [choice]);
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
-  // The add modifier only means something when an axis holds several values.
-  const canAdd = [view.x, view.y].some((axis) => {
+  // The add modifier only means something on an axis that holds several values.
+  const isMulti = (axis: ViewSpec['x']) => {
     const property = plan.properties[axis.property];
     return property?.kind === 'select' && property.multi;
-  });
+  };
+  const addAxes = { x: isMulti(view.x), y: isMulti(view.y) };
+  const [compact, setCompact] = useState(loadCompactHolding);
+  useEffect(() => saveCompactHolding(compact), [compact]);
 
   const [justMoved, setJustMoved] = useState<ItemId | null>(null);
   useEffect(() => {
@@ -156,6 +166,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           layout={layout}
           xLabel={optionById(choice.x).label}
           yLabel={optionById(choice.y).label}
+          xNone={optionById(choice.x).none}
+          yNone={optionById(choice.y).none}
+          compact={compact}
+          onCompactChange={setCompact}
           lifted={drag?.card ?? null}
           target={drag?.target ?? null}
           onCardPointerDown={startDrag}
@@ -164,7 +178,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         />
       )}
       {legendOpen && <Legend onClose={closeLegend} />}
-      {drag && <DragGhost drag={drag} canAdd={canAdd} />}
+      {drag && <DragGhost drag={drag} addAxes={addAxes} />}
     </div>
   );
 }

@@ -9,7 +9,7 @@ For the PM running a session with one or two PMs or EMs. The goal is to learn wh
 
 ## 1. You drive (5 minutes)
 
-Share your screen. Load the sample plan and say one sentence: "Every card is a roadmap item; the axes are properties; dragging a card sets them." Then pivot **Sequence × System → Time × System → Size × Time**, and drag one card in each view. Don't explain Alt, the holding-area zones, or the gaps.
+Share your screen. Load the sample plan and say one sentence: "Every card is a roadmap item; the axes are properties; dragging a card sets them." Then pivot **Sequence × System → Time × System → Size × Time**, and drag one card in each view. Don't explain Alt, the holding lanes, or the gaps.
 
 ## 2. They drive (10 minutes)
 
@@ -18,9 +18,9 @@ Hand over control, or send them the file. Give one task at a time and don't hint
 | Task | What it tests | Watch for |
 |---|---|---|
 | "Billing looks overloaded in Q2. Move two of those items to Q3." | The core drag in a time view | Hesitation before the first drag. Do they check the badges or pivot to confirm? |
-| "Three items in the holding area have no area. Put them where they belong." | Tagging by dragging (req. 21; the "nobody tags components" risk) | Do they find the holding area? Does it feel like work or like sorting? |
+| "Three items in the *No area* lane have no area. Put them where they belong." | Tagging by dragging (req. 21; the "nobody tags components" risk) | Do they find the holding lanes? Does it feel like work or like sorting? |
 | "*Customer-managed encryption keys* also touches the Admin Console. Show that." | Discoverability of ⌥/Alt-drop (Q1) | Do they find the modifier without help? What do they try first? |
-| (In Time × System) "Nobody knows when *IdP-initiated login* happens. Make that visible." | Holding-area drop zones (Q11) | Do they read the two zones? Which one do they pick? |
+| (In Time × System) "Nobody knows when *IdP-initiated login* happens. Make that visible." | Holding lanes (Q10, Q11) | Do they pick the row's "No quarter" lane, or the bottom "No area" lane? |
 | "*Webhook secret rotation* must happen before *Scoped API tokens*. Arrange that." (Scoped API tokens is inside the *Public API v2* group, so only the group card shows) | Sequence gaps (Q8); groups hiding children | Do they use a gap or an existing column? Do they get stuck because the child isn't on the board? |
 | "Now look at the same plan by quarter. Is anything surprising?" | The pivot itself; spatial memory (requirements, Risks) | Do they lose their bearings? Do they miss where things were? |
 
@@ -34,4 +34,4 @@ Hand over control, or send them the file. Give one task at a time and don't hint
 
 ## After
 
-For each observation, either update an open question in `docs/questions.md` (Q1, Q8, Q9, Q10, Q11) or add a new one with what you saw. Quote the tester where you can. Those entries drive sprint 1 planning.
+For each observation, either update an open question in `docs/questions.md` (such as Q13) or add a new one with what you saw. Quote the tester where you can. Those entries drive sprint 1 planning.
