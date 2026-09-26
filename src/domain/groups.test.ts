@@ -73,33 +73,72 @@ describe('planGroup', () => {
 describe('planUngroup', () => {
   it('moves children up a level and re-points the group’s dependencies at each child (Q21)', () => {
     const p = {
-      ...plan(item('top'), item('epic', { parent: 'top' }), item('a', { parent: 'epic' }), item('b', { parent: 'epic' }), item('x')),
+      ...plan(
+        item('top'),
+        item('epic', { parent: 'top' }),
+        item('a', { parent: 'epic' }),
+        item('b', { parent: 'epic' }),
+        item('x'),
+      ),
       dependencies: [
         { from: 'x', to: 'epic' },
         { from: 'epic', to: 'x' },
         { from: 'x', to: 'a' },
       ],
     };
-    expect(planUngroup(p, ['epic', 'x'])).toEqual([
-      {
-        group: 'epic',
-        children: ['a', 'b'],
-        parent: 'top',
-        removed: [
-          { from: 'x', to: 'epic' },
-          { from: 'epic', to: 'x' },
-        ],
-        // x -> a already exists, so it isn't added twice.
-        added: [
-          { from: 'x', to: 'b' },
-          { from: 'a', to: 'x' },
-          { from: 'b', to: 'x' },
-        ],
-      },
+    expect(planUngroup(p, ['epic', 'x'])).toEqual({
+      groups: ['epic'],
+      moves: [
+        { item: 'a', parent: 'top' },
+        { item: 'b', parent: 'top' },
+      ],
+      removed: [
+        { from: 'x', to: 'epic' },
+        { from: 'epic', to: 'x' },
+      ],
+      // x -> a already exists, so it isn't added twice.
+      added: [
+        { from: 'x', to: 'b' },
+        { from: 'a', to: 'x' },
+        { from: 'b', to: 'x' },
+      ],
+    });
+  });
+
+  it('collapses nested groups ungrouped together without losing cards or links', () => {
+    const p = {
+      ...plan(
+        item('top'),
+        item('epic', { parent: 'top' }),
+        item('story', { parent: 'epic' }),
+        item('inner', { parent: 'story' }),
+        item('side', { parent: 'epic' }),
+        item('g2'),
+        item('c', { parent: 'g2' }),
+        item('x'),
+      ),
+      dependencies: [
+        { from: 'x', to: 'epic' },
+        { from: 'epic', to: 'g2' },
+      ],
+    };
+    const out = planUngroup(p, ['epic', 'story', 'g2'])!;
+    expect(out.groups).toEqual(['epic', 'story', 'g2']);
+    // inner skips past both dissolved groups to 'top'; c goes to the top level.
+    expect(out.moves).toEqual([
+      { item: 'side', parent: 'top' },
+      { item: 'inner', parent: 'top' },
+      { item: 'c', parent: null },
+    ]);
+    expect(out.added).toEqual([
+      { from: 'x', to: 'inner' },
+      { from: 'x', to: 'side' },
+      { from: 'inner', to: 'c' },
+      { from: 'side', to: 'c' },
     ]);
   });
 
   it('ignores cards that aren’t groups', () => {
-    expect(planUngroup(plan(item('a')), ['a', 'zz'])).toEqual([]);
+    expect(planUngroup(plan(item('a')), ['a', 'zz'])).toBeNull();
   });
 });

@@ -176,18 +176,16 @@ export function groupItems(store: PlanStore, ids: Iterable<ItemId>): { group: It
  * (questions.md Q21). Returns the children that moved up. One undo step.
  */
 export function ungroupItems(store: PlanStore, ids: Iterable<ItemId>): ItemId[] {
-  const ungroups = planUngroup(readPlan(store.doc), ids);
-  if (ungroups.length === 0) return [];
+  const ungroup = planUngroup(readPlan(store.doc), ids);
+  if (!ungroup) return [];
   const r = root(store.doc);
   edit(store, () => {
-    for (const u of ungroups) {
-      for (const child of u.children) r.items.get(child)?.set('parent', u.parent);
-      for (const dep of u.removed) r.dependencies.delete(dependencyKey(dep));
-      for (const dep of u.added) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });
-      r.items.delete(u.group);
-    }
+    for (const { item, parent } of ungroup.moves) r.items.get(item)?.set('parent', parent);
+    for (const dep of ungroup.removed) r.dependencies.delete(dependencyKey(dep));
+    for (const dep of ungroup.added) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });
+    for (const group of ungroup.groups) r.items.delete(group);
   });
-  return ungroups.flatMap((u) => u.children);
+  return ungroup.moves.map((m) => m.item);
 }
 
 export function undo(store: PlanStore): void {

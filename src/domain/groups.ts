@@ -72,49 +72,70 @@ export function planGroup(plan: Plan, selection: Iterable<ItemId>): GroupPlan | 
   return { kind: 'new', parent, members: ids };
 }
 
-/** What ungrouping one group does. */
+/** What ungrouping a selection does, as one change. */
 export interface Ungroup {
-  group: ItemId;
-  /** Its direct children, which move up to `parent`. */
-  children: ItemId[];
-  parent: ItemId | null;
-  /** The group's dependencies, which go away with it... */
+  /** The groups that go away. */
+  groups: ItemId[];
+  /** Cards that move up: each goes to its nearest ancestor that isn't being ungrouped. */
+  moves: { item: ItemId; parent: ItemId | null }[];
+  /** Dependencies touching an ungrouped card, which go away with it... */
   removed: Dependency[];
-  /** ...and come back pointing at each child instead, so no ordering is lost (questions.md Q21). */
+  /** ...and come back pointing at the cards inside it instead, so no ordering is lost (questions.md Q21). */
   added: Dependency[];
 }
 
 /**
  * Ungroup every group in the selection, one level each. Cards that aren't
- * groups are ignored. A group's own values go with it.
+ * groups are ignored, and a group's own values go with it. Nested groups
+ * ungrouped together collapse cleanly: a card inside both moves up past
+ * both, and a link to either ends up on the cards that remain.
  */
-export function planUngroup(plan: Plan, selection: Iterable<ItemId>): Ungroup[] {
+export function planUngroup(plan: Plan, selection: Iterable<ItemId>): Ungroup | null {
   const counts = childCounts(plan);
-  const ids = [...new Set(selection)].filter((id) => plan.items[id] && counts.has(id));
-  const dissolved = new Set(ids);
+  const groups = [...new Set(selection)].filter((id) => plan.items[id] && counts.has(id));
+  if (groups.length === 0) return null;
+  const dissolved = new Set(groups);
+  const childrenOf = new Map<ItemId, ItemId[]>();
+  for (const item of Object.values(plan.items)) {
+    if (item.parent !== null) childrenOf.set(item.parent, [...(childrenOf.get(item.parent) ?? []), item.id]);
+  }
+
+  // The nearest ancestor that survives, walking up past dissolved groups (cycle-safe).
+  const survivingParent = (id: ItemId): ItemId | null => {
+    const seen = new Set<ItemId>();
+    let parent = plan.items[id]?.parent ?? null;
+    while (parent !== null && dissolved.has(parent) && !seen.has(parent)) {
+      seen.add(parent);
+      parent = plan.items[parent]?.parent ?? null;
+    }
+    return parent !== null && dissolved.has(parent) ? null : parent;
+  };
+  const moves = groups.flatMap((group) =>
+    (childrenOf.get(group) ?? [])
+      .filter((child) => !dissolved.has(child))
+      .map((child) => ({ item: child, parent: survivingParent(child) })),
+  );
+
+  // A dissolved group stands for the surviving cards inside it.
+  const expand = (id: ItemId, seen = new Set<ItemId>()): ItemId[] => {
+    if (!dissolved.has(id)) return [id];
+    if (seen.has(id)) return [];
+    seen.add(id);
+    return (childrenOf.get(id) ?? []).flatMap((child) => expand(child, seen));
+  };
   const key = (d: Dependency) => `${d.from}->${d.to}`;
   const existing = new Set(plan.dependencies.map(key));
-  const out: Ungroup[] = [];
-  for (const group of ids) {
-    const children = Object.values(plan.items)
-      .filter((item) => item.parent === group)
-      .map((item) => item.id);
-    const removed = plan.dependencies.filter((d) => d.from === group || d.to === group);
-    const added: Dependency[] = [];
-    for (const dep of removed) {
-      const froms = dep.from === group ? children : [dep.from];
-      const tos = dep.to === group ? children : [dep.to];
-      for (const from of froms) {
-        for (const to of tos) {
-          const next = { from, to };
-          // Skip self-links, links to another group being dissolved, and links that already exist.
-          if (from === to || dissolved.has(from) || dissolved.has(to) || existing.has(key(next))) continue;
-          existing.add(key(next));
-          added.push(next);
-        }
+  const removed = plan.dependencies.filter((d) => dissolved.has(d.from) || dissolved.has(d.to));
+  const added: Dependency[] = [];
+  for (const dep of removed) {
+    for (const from of expand(dep.from)) {
+      for (const to of expand(dep.to)) {
+        const next = { from, to };
+        if (from === to || existing.has(key(next))) continue;
+        existing.add(key(next));
+        added.push(next);
       }
     }
-    out.push({ group, children, parent: plan.items[group]!.parent, removed, added });
   }
-  return out;
+  return { groups, moves, removed, added };
 }
