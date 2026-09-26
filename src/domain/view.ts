@@ -1,6 +1,6 @@
 import { ancestorAtLevel, valuesAtLevel } from './hierarchy.ts';
 import type { Item, ItemId, Plan, PropertyId } from './model.ts';
-import { itemValues } from './model.ts';
+import { compareOrderKeys, itemValues } from './model.ts';
 import { topLevelItems } from './tree.ts';
 
 /** One axis of a view: a property at one level of its hierarchy. */
@@ -61,14 +61,10 @@ function axisLanes(plan: Plan, axis: AxisSpec, items: Item[]): Lane[] {
   if (property.kind === 'sequence') {
     // Columns are the distinct keys in use; an unused position has no column.
     const keys = new Set(items.flatMap((item) => (item.sequence === null ? [] : [item.sequence])));
-    return [...keys].sort(compareKeys).map((key) => ({ key, label: null }));
+    return [...keys].sort(compareOrderKeys).map((key) => ({ key, label: null }));
   }
   // Every value at the level gets a lane, so empty lanes stay droppable.
   return valuesAtLevel(property, axis.level).map((node) => ({ key: node.id, label: node.label }));
-}
-
-function compareKeys(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /** Stable order within a cell: sequence, then title, then ID. Unsequenced items go last. */
@@ -76,9 +72,9 @@ function compareItems(a: Item, b: Item): number {
   if (a.sequence !== b.sequence) {
     if (a.sequence === null) return 1;
     if (b.sequence === null) return -1;
-    return compareKeys(a.sequence, b.sequence);
+    return compareOrderKeys(a.sequence, b.sequence);
   }
-  return a.title.localeCompare(b.title) || compareKeys(a.id, b.id);
+  return a.title.localeCompare(b.title) || compareOrderKeys(a.id, b.id);
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { SelectProperty, ValueId, ValueNode } from './model.ts';
+import { compareOrderKeys, type SelectProperty, type ValueId, type ValueNode } from './model.ts';
 
 /** Ancestors of a value, top-level first, ending with the value itself. */
 export function pathTo(property: SelectProperty, valueId: ValueId): ValueNode[] {
@@ -30,14 +30,10 @@ export function ancestorAtLevel(
   return pathTo(property, valueId)[level]?.id ?? null;
 }
 
-function compareKeys(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 function comparePaths(a: ValueNode[], b: ValueNode[]): number {
   const n = Math.min(a.length, b.length);
   for (let i = 0; i < n; i++) {
-    const c = compareKeys(a[i]!.order, b[i]!.order) || compareKeys(a[i]!.id, b[i]!.id);
+    const c = compareOrderKeys(a[i]!.order, b[i]!.order) || compareOrderKeys(a[i]!.id, b[i]!.id);
     if (c !== 0) return c;
   }
   return a.length - b.length;

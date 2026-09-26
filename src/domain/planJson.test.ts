@@ -80,6 +80,30 @@ describe('parsePlanJson', () => {
     expect(result.ok && result.plan.items['a']!.sequence).toBe('a0V');
   });
 
+  it('rejects order keys outside the base-62 digit set', () => {
+    for (const key of ['a0 ', 'a0~', 'a0-']) {
+      expect(errorsOf(base({ items: [{ id: 'a', title: 'A', sequence: key }] }))).toEqual([
+        `items[0].sequence: "${key}" is not a valid order key`,
+      ]);
+    }
+  });
+
+  it('accepts a repeated identical value on a single-valued property', () => {
+    const result = parsePlanJson(base({ items: [{ id: 'a', title: 'A', values: { size: ['m', 'm'] } }] }));
+    expect(result.ok && result.plan.items['a']!.values).toEqual({ size: ['m'] });
+  });
+
+  it('reports wrongly typed fields instead of dropping them', () => {
+    const json = base({ items: [{ id: 'a', title: 'A' }] }) as unknown as Record<string, unknown[]>;
+    json.items = [{ id: 'a', title: 'A', parent: 42, description: 7 }];
+    json.properties![0] = { ...(json.properties![0] as object), multi: 'true' };
+    expect(errorsOf(json)).toEqual([
+      'properties[0].multi: must be true or false',
+      'items[0].description: must be a string',
+      'items[0].parent: must be an item id or null',
+    ]);
+  });
+
   it('rejects unknown versions outright', () => {
     expect(errorsOf({ ...base(), version: 2 })).toEqual(['unsupported version 2; expected 1']);
   });

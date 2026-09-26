@@ -78,10 +78,11 @@ export interface Plan {
   dependencies: Dependency[];
 }
 
-export function itemValues(item: Item, property: PropertyId): readonly ValueId[] {
-  return item.values[property] ?? [];
+/** Byte-order comparison, which is what fractional order keys are designed for. */
+export function compareOrderKeys(a: OrderKey, b: OrderKey): number {
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
-export function childrenOf(plan: Plan, parent: ItemId | null): Item[] {
-  return Object.values(plan.items).filter((item) => item.parent === parent);
+export function itemValues(item: Item, property: PropertyId): readonly ValueId[] {
+  return item.values[property] ?? [];
 }

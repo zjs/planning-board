@@ -4,6 +4,7 @@
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import type { Dependency, Item, OrderKey, Plan, Property, SelectProperty, ValueNode } from './model.ts';
 import { SEQUENCE } from './model.ts';
+import { wouldCreateCycle } from './tree.ts';
 
 export const PLAN_FORMAT = 'planning-board';
 export const PLAN_VERSION = 1;
@@ -83,6 +84,8 @@ export function parsePlanJson(input: unknown): ParseResult {
       errors.push(`${path}: duplicate item id "${raw.id}"`);
       continue;
     }
+    if (raw.description !== undefined && !isString(raw.description)) errors.push(`${path}.description: must be a string`);
+    if (raw.parent != null && !isString(raw.parent)) errors.push(`${path}.parent: must be an item id or null`);
     const item: Item = {
       id: raw.id,
       title: raw.title,
@@ -99,7 +102,7 @@ export function parsePlanJson(input: unknown): ParseResult {
     if (raw.values !== undefined && !isRecord(raw.values)) errors.push(`${path}.values: must be an object`);
     for (const [propertyId, value] of Object.entries(isRecord(raw.values) ? raw.values : {})) {
       const property = properties[propertyId];
-      const ids = isString(value) ? [value] : Array.isArray(value) && value.every(isString) ? value : null;
+      const ids = isString(value) ? [value] : Array.isArray(value) && value.every(isString) ? [...new Set(value)] : null;
       if (!property || property.kind !== 'select') errors.push(`${path}.values: unknown property "${propertyId}"`);
       else if (!ids) errors.push(`${path}.values.${propertyId}: must be a value id or an array of them`);
       else if (ids.length > 1 && !property.multi) errors.push(`${path}.values.${propertyId}: property holds one value`);
@@ -107,7 +110,7 @@ export function parsePlanJson(input: unknown): ParseResult {
         for (const id of ids) {
           if (!property.values[id]) errors.push(`${path}.values.${propertyId}: unknown value "${id}"`);
         }
-        item.values[propertyId] = [...new Set(ids)];
+        item.values[propertyId] = ids;
       }
     }
     items[item.id] = item;
@@ -122,8 +125,11 @@ export function parsePlanJson(input: unknown): ParseResult {
       errors.push(`item "${item.id}": unknown parent "${item.parent}"`);
     }
   }
+  const asPlan = { properties, items, dependencies: [] };
   for (const item of Object.values(items)) {
-    if (hasParentCycle(items, item.id)) errors.push(`item "${item.id}": parent chain loops back to itself`);
+    if (item.parent !== null && wouldCreateCycle(asPlan, item.id, item.parent)) {
+      errors.push(`item "${item.id}": parent chain loops back to itself`);
+    }
   }
 
   const dependencies: Dependency[] = [];
@@ -157,6 +163,7 @@ function parseProperty(raw: unknown, path: string, errors: string[]): SelectProp
     errors.push(`${path}.levels: must be a non-empty array of names`);
     return null;
   }
+  if (raw.multi !== undefined && typeof raw.multi !== 'boolean') errors.push(`${path}.multi: must be true or false`);
   const values: Record<string, ValueNode> = {};
   const walk = (list: unknown, parent: string | null, depth: number, at: string) => {
     if (!Array.isArray(list)) {
@@ -203,22 +210,17 @@ function assignSequenceKeys(items: Record<string, Item>, raw: Map<string, string
   }
 }
 
+/**
+ * fractional-indexing's own validation only checks the key's head and tail,
+ * so also require its base-62 digit set; anything else would sort wrongly
+ * against keys it generates.
+ */
 function isOrderKey(key: string): boolean {
+  if (!/^[0-9A-Za-z]+$/.test(key)) return false;
   try {
     generateKeyBetween(key, null);
     return true;
   } catch {
     return false;
   }
-}
-
-function hasParentCycle(items: Record<string, Item>, start: string): boolean {
-  const seen = new Set<string>();
-  let current: string | null = start;
-  while (current !== null) {
-    if (seen.has(current)) return current === start;
-    seen.add(current);
-    current = items[current]?.parent ?? null;
-  }
-  return false;
 }

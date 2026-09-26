@@ -37,14 +37,18 @@ export function Board({ plan, layout, xLabel, yLabel }: Props) {
       areaIndex={areas.get(ref.itemId) ?? null}
     />
   );
-  const laneName = (lane: Lane, axis: string, i: number) => lane.label ?? `${axis} position ${i + 1}`;
+  // Sequence lanes stay unnumbered even for screen readers (requirement 6).
+  const laneName = (lane: Lane, axis: string) => lane.label ?? `${axis} column`;
+  const empty = layout.columns.length === 0 || layout.rows.length === 0;
 
   return (
     <div className="board-wrap">
       <div className="board-scroll">
         <div
           className="board"
-          style={{ gridTemplateColumns: `var(--row-header) repeat(${layout.columns.length}, minmax(var(--column-min), 1fr))` }}
+          style={{
+            gridTemplateColumns: `var(--row-header) repeat(${Math.max(1, layout.columns.length)}, minmax(var(--column-min), 1fr))`,
+          }}
           data-testid="board"
         >
           <div className="corner">
@@ -56,7 +60,7 @@ export function Board({ plan, layout, xLabel, yLabel }: Props) {
               {column.label}
             </div>
           ))}
-          {layout.rows.map((row, r) => [
+          {!empty && layout.rows.map((row, r) => [
             <div key={`h-${row.key}`} className="row-header" data-row={row.key}>
               {row.label}
             </div>,
@@ -66,13 +70,18 @@ export function Board({ plan, layout, xLabel, yLabel }: Props) {
                 className="cell"
                 data-row={row.key}
                 data-column={column.key}
-                aria-label={`${laneName(row, yLabel, r)}, ${laneName(column, xLabel, c)}`}
+                aria-label={`${laneName(row, yLabel)}, ${laneName(column, xLabel)}`}
               >
                 {layout.cells[r]![c]!.map(renderCard)}
               </div>
             )),
           ])}
-          {layout.columns.length === 0 && <div className="empty-note">No items have a value on this axis yet.</div>}
+          {empty && (
+            <div className="empty-note">
+              No cards have a {(layout.columns.length === 0 ? xLabel : yLabel).toLowerCase()} value yet. They're all in the
+              holding area.
+            </div>
+          )}
         </div>
       </div>
       <aside className="holding" aria-label="Holding area" data-testid="holding">

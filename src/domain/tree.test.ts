@@ -39,5 +39,7 @@ describe('group tree', () => {
       item('child-of-a', { parent: 'a' }),
     );
     expect(topLevelItems(bad).sort()).toEqual(['a', 'b', 'orphan']);
+    // Cycle members are on the board, so they don't also count as hidden children.
+    expect(childCounts(bad)).toEqual(new Map([['a', 1]]));
   });
 });
