@@ -1,8 +1,8 @@
 import { createRef } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
-import { SEQUENCE, SYSTEM, type Plan } from '../domain/model.ts';
+import { item, plan, size } from '../domain/__fixtures__/tiny-plan.ts';
+import { SEQUENCE, SIZE, SYSTEM, type Plan } from '../domain/model.ts';
 import { layoutView, type ViewSpec } from '../domain/view.ts';
 import { Board } from './Board.tsx';
 
@@ -65,5 +65,14 @@ describe('Board', () => {
     expect(html).toMatch(/holding-corner" data-drop="cell" aria-label="No Y, No X">.*data-item="neither"/);
     expect(count(html, 'card chip')).toBe(0);
     expect(count(render(p, view, true), 'card chip')).toBe(3);
+  });
+
+  it('still shows row holding lanes when the column property has no values', () => {
+    const p = plan(item('tagged', { values: { [SYSTEM]: ['id'] } }), item('untagged'));
+    p.properties[SIZE] = { ...size, values: {} };
+    const html = render(p, { x: { property: SIZE, level: 0 }, y: { property: SYSTEM, level: 0 } });
+    expect(html).toContain('No cards have a x value yet');
+    expect(html).toMatch(/data-row="id" aria-label="ID, No X">.*data-item="tagged"/);
+    expect(html).toMatch(/holding-corner" data-drop="cell" aria-label="No Y, No X">.*data-item="untagged"/);
   });
 });

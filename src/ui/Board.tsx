@@ -237,24 +237,26 @@ export const Board = memo(function Board({
               </button>
             </span>
           </div>
-          {!empty &&
-            rowTracks.map((row) => [
-              row.kind === 'lane' ? (
-                <div key={`h-${row.lane.key}`} className="row-header" data-row={row.lane.key}>
-                  {row.lane.label}
-                </div>
-              ) : (
-                <div key={`h-${row.key}`} className={layout.rows.length === 0 ? 'row-header' : 'row-header gap-row'} />
-              ),
-              ...columnTracks.map((column) => cell(row, column)),
-              holdingCell(row, null),
-            ])}
           {empty && (
             <div className="empty-note">
               No cards have a {(noLanes(layout.columns, layout.gaps.x) ? xLabel : yLabel).toLowerCase()} value yet.
               They're all in the holding lanes.
             </div>
           )}
+          {/* Rows render even with no columns, so their holding lanes (and cards) still show. */}
+          {rowTracks.map((row) => [
+            row.kind === 'lane' ? (
+              <div key={`h-${row.lane.key}`} className="row-header" data-row={row.lane.key}>
+                {row.lane.label}
+              </div>
+            ) : (
+              <div key={`h-${row.key}`} className={layout.rows.length === 0 ? 'row-header' : 'row-header gap-row'} />
+            ),
+            ...(columnTracks.length === 0
+              ? [<div key={`c-${trackKey(row)}`} className="cell" />]
+              : columnTracks.map((column) => cell(row, column))),
+            holdingCell(row, null),
+          ])}
           <div className="holding-row-header">{yNone}</div>
           {columnTracks.length === 0 ? (
             <div className="cell holding-bottom" />
