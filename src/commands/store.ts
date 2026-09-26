@@ -2,13 +2,14 @@
 // never touches Yjs itself (CLAUDE.md, storage rule).
 
 import * as Y from 'yjs';
-import type { Plan } from '../domain/model.ts';
+import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
+import type { ItemId, Plan } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 
 export type { PersistenceStatus };
-import { isEmpty, readPlan, root, valueSet, writePlan } from '../store/schema.ts';
+import { dependencyKey, isEmpty, itemToY, readPlan, root, valueSet, writePlan } from '../store/schema.ts';
 
 /** Marks edits made through commands, so undo tracks them and not loads from storage. */
 const LOCAL_ORIGIN = { source: 'local-command' };
@@ -82,6 +83,61 @@ export function dropCard(
     }
   });
   return true;
+}
+
+/**
+ * A new, never-reused item ID (docs/decisions/0003). Uses getRandomValues,
+ * which works in pages opened from disk, unlike randomUUID in some browsers.
+ */
+export function newItemId(): ItemId {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return 'i' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Create a card in a cell or holding lane, with that spot's values (see
+ * valuesForNewItem). Returns its ID, or null for a blank title. One undo step.
+ */
+export function createItem(
+  store: PlanStore,
+  view: ViewSpec,
+  target: DropTarget,
+  title: string,
+  parent: ItemId | null = null,
+): ItemId | null {
+  const clean = cleanTitle(title);
+  if (clean === null) return null;
+  const { sequence, values } = valuesForNewItem(readPlan(store.doc), view, target);
+  const id = newItemId();
+  edit(store, () =>
+    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, values })),
+  );
+  return id;
+}
+
+/** Rename a card. Returns false (and records no undo step) for a blank or unchanged title. */
+export function renameItem(store: PlanStore, id: ItemId, title: string): boolean {
+  const clean = cleanTitle(title);
+  const item = root(store.doc).items.get(id);
+  if (clean === null || !item || item.get('title') === clean) return false;
+  edit(store, () => item.set('title', clean));
+  return true;
+}
+
+/**
+ * Delete cards, everything inside any groups among them, and every
+ * dependency touching those (questions.md Q17). One undo step restores all
+ * of it. Returns how many cards were deleted.
+ */
+export function deleteItems(store: PlanStore, ids: Iterable<ItemId>): number {
+  const doomed = deletionOf(readPlan(store.doc), ids);
+  if (doomed.items.length === 0) return 0;
+  const r = root(store.doc);
+  edit(store, () => {
+    for (const dep of doomed.dependencies) r.dependencies.delete(dependencyKey(dep));
+    for (const id of doomed.items) r.items.delete(id);
+  });
+  return doomed.items.length;
 }
 
 export function undo(store: PlanStore): void {

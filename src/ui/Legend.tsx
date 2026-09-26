@@ -46,6 +46,15 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Hold cards missing a value: a row but no column on the right, a column but no row along the bottom, neither in
           the corner. Drop a card there to clear that value.
         </dd>
+        <dt>Click a card to select it</dt>
+        <dd>
+          <kbd>⇧ Shift</kbd>-click adds more. <kbd>Delete</kbd> removes the selection, including everything inside a
+          group. Click empty space or press <kbd>Esc</kbd> to deselect.
+        </dd>
+        <dt>Double-click empty space</dt>
+        <dd>Makes a new card there, with that row's and column's values. Type a title and press Enter.</dd>
+        <dt>Double-click a card, or press Enter</dt>
+        <dd>Renames it.</dd>
         <dt>Undo, redo, cancel</dt>
         <dd>
           <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.

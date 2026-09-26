@@ -1,11 +1,11 @@
-import { memo, useMemo, type PointerEvent, type ReactNode, type RefObject } from 'react';
+import { memo, useMemo, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { badgeProperties, cardAttributes, type CardAttribute } from '../domain/attributes.ts';
 import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
 import type { CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
-import { Card } from './Card.tsx';
+import { Card, DraftCard } from './Card.tsx';
 
 interface Props {
   plan: Plan;
@@ -26,6 +26,17 @@ interface Props {
   onCardPointerDown: (e: PointerEvent<HTMLElement>, card: CardRef, title: string) => void;
   /** Item to highlight after a drop. */
   justMoved: ItemId | null;
+  /** The viewer's selected items. */
+  selected: ReadonlySet<ItemId>;
+  /** A title being typed: a new card at a spot, or a rename of one copy. */
+  editing: Editing | null;
+  onCardDoubleClick: (card: CardRef) => void;
+  /** Double-click on empty space in a cell or holding lane. */
+  onSpotDoubleClick: (spot: DropTarget) => void;
+  onCommitEdit: (title: string) => void;
+  onCancelEdit: () => void;
+  /** A press on the board outside any card, which clears the selection. */
+  onBackgroundPointerDown: () => void;
   scrollRef: RefObject<HTMLDivElement | null>;
 }
 
@@ -44,6 +55,28 @@ function areaIndexes(plan: Plan): Map<ItemId, number> {
 }
 
 const sameCopy = (a: CardRef, b: CardRef) => a.itemId === b.itemId && a.x === b.x && a.y === b.y;
+
+export type Editing = { kind: 'new'; spot: DropTarget } | { kind: 'rename'; card: CardRef };
+
+/** Every rendered copy, in board order. */
+function allCopies(layout: ViewLayout): CardRef[] {
+  return [
+    ...layout.cells.flat(2),
+    ...layout.holding.rows.flat(),
+    ...layout.holding.columns.flat(),
+    ...layout.holding.corner,
+  ];
+}
+
+/**
+ * Which copy shows the rename field: the one asked for, or, if a pivot
+ * moved it, the item's first copy on the board.
+ */
+function renameCopy(layout: ViewLayout, editing: Editing | null): CardRef | null {
+  if (editing?.kind !== 'rename') return null;
+  const copies = allCopies(layout).filter((c) => c.itemId === editing.card.itemId);
+  return copies.find((c) => sameCopy(c, editing.card)) ?? copies[0] ?? null;
+}
 
 /**
  * One grid track: a lane, or on a sequence axis, the droppable gap before a
@@ -84,7 +117,18 @@ export const Board = memo(function Board({
   onCardPointerDown,
   justMoved,
   scrollRef,
+  selected,
+  editing,
+  onCardDoubleClick,
+  onSpotDoubleClick,
+  onCommitEdit,
+  onCancelEdit,
+  onBackgroundPointerDown,
 }: Props) {
+  const renaming = renameCopy(layout, editing);
+  const isDraftSpot = (row: string | null, column: string | null) =>
+    editing?.kind === 'new' && editing.spot.x === column && editing.spot.y === row;
+  const draft = <DraftCard key="draft" onCommit={onCommitEdit} onCancel={onCancelEdit} />;
   const counts = useMemo(() => childCounts(plan), [plan]);
   const areas = useMemo(() => areaIndexes(plan), [plan]);
   const attributes = useMemo(() => {
@@ -103,9 +147,14 @@ export const Board = memo(function Board({
         childCount={counts.get(ref.itemId) ?? 0}
         areaIndex={areas.get(ref.itemId) ?? null}
         attributes={attributes.get(ref.itemId) ?? []}
+        selected={selected.has(ref.itemId)}
         lifted={lifted !== null && sameCopy(lifted, ref)}
         justMoved={justMoved === ref.itemId}
+        editing={renaming !== null && sameCopy(renaming, ref)}
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title)}
+        onDoubleClick={() => onCardDoubleClick(ref)}
+        onRename={onCommitEdit}
+        onCancelEdit={onCancelEdit}
       />
     );
   };
@@ -155,6 +204,7 @@ export const Board = memo(function Board({
         {row.kind === 'lane' &&
           column.kind === 'lane' &&
           layout.cells[row.index]![column.index]!.map((ref) => renderCard(ref))}
+        {isDraftSpot(rowKey, columnKey) && draft}
         {lone && <span className="lone-hint">Drop a card here to start the sequence</span>}
       </div>
     );
@@ -203,15 +253,29 @@ export const Board = memo(function Board({
           <div className="holding-cards">
             {cards.length > 0 && <span className="holding-count">{cards.length}</span>}
             {cards.map((ref) => renderCard(ref, compact))}
+            {isDraftSpot(rowKey, columnKey) && draft}
           </div>
         )}
       </div>
     );
   };
 
+  const backgroundPress = (e: PointerEvent<HTMLDivElement>) => {
+    if (!(e.target as Element).closest('.card, button, textarea')) onBackgroundPointerDown();
+  };
+  // Double-clicking empty space makes a card there. Not in the thin gaps
+  // between sequence columns: make it in a column, then drag it into a gap.
+  const spotDoubleClick = (e: MouseEvent<HTMLDivElement>) => {
+    const el = e.target as Element;
+    if (el.closest('.card, button, textarea')) return;
+    const spot = el.closest<HTMLElement>('[data-drop="cell"]');
+    if (!spot || spot.classList.contains('gap')) return;
+    onSpotDoubleClick({ x: spot.dataset.column ?? null, y: spot.dataset.row ?? null });
+  };
+
   return (
     <div className="board-wrap">
-      <div className="board-scroll" ref={scrollRef}>
+      <div className="board-scroll" ref={scrollRef} onPointerDown={backgroundPress} onDoubleClick={spotDoubleClick}>
         <div className="board" style={{ gridTemplateColumns }} data-testid="board">
           <div className="corner">
             <span className="axis-name y">{yLabel} ↓</span>

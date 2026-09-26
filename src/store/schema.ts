@@ -52,7 +52,7 @@ function propertyToY(property: Property): Y.Map<unknown> {
   return map;
 }
 
-function itemToY(item: Item): Y.Map<unknown> {
+export function itemToY(item: Item): Y.Map<unknown> {
   const map = new Y.Map<unknown>();
   map.set('title', item.title);
   map.set('description', item.description);

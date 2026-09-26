@@ -23,6 +23,13 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       onCardPointerDown={() => undefined}
       justMoved={null}
       scrollRef={createRef()}
+      selected={new Set()}
+      editing={null}
+      onCardDoubleClick={() => undefined}
+      onSpotDoubleClick={() => undefined}
+      onCommitEdit={() => undefined}
+      onCancelEdit={() => undefined}
+      onBackgroundPointerDown={() => undefined}
     />,
   );
 }
