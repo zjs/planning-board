@@ -24,6 +24,22 @@ describe('dependencyConflicts', () => {
     ]);
   });
 
+  it('catches an order that is certain even when one side is dated only to the quarter', () => {
+    const p = withDeps(
+      plan(item('pre', { values: { [TIME]: ['q2'] } }), item('dep', { values: { [TIME]: ['q1/r1'] } })),
+      ['pre', 'dep'],
+    );
+    expect(dependencyConflicts(p, { timeLevel: 1 })).toEqual([
+      { kind: 'dependency-order', axis: 'time', prerequisite: 'pre', dependent: 'dep' },
+    ]);
+    // Q1 overall vs Q1/R1: might be fine, so no conflict.
+    const unsure = withDeps(
+      plan(item('pre', { values: { [TIME]: ['q1'] } }), item('dep', { values: { [TIME]: ['q1/r1'] } })),
+      ['pre', 'dep'],
+    );
+    expect(dependencyConflicts(unsure, { timeLevel: 1 })).toEqual([]);
+  });
+
   it('allows the same column or bucket, and skips items without a value', () => {
     const p = withDeps(
       plan(
@@ -62,12 +78,21 @@ describe('contentionConflicts', () => {
     expect(contentionConflicts(busy, { defaultLimit: 2 })).toEqual([]);
   });
 
-  it('counts children, not the group that holds them', () => {
-    const p = plan(
+  it('counts a group only where none of its children refine it', () => {
+    const refined = plan(
       item('g', { values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1'] } }),
       item('k', { parent: 'g', values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1'] } }),
     );
-    expect(contentionConflicts(p, { defaultLimit: 1 })).toEqual([]);
+    expect(contentionConflicts(refined, { defaultLimit: 1 })).toEqual([]);
+    // Children not tagged yet: the group's own estimate counts.
+    const rough = plan(
+      item('g', { values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1'] } }),
+      item('k', { parent: 'g' }),
+      item('other', { values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1'] } }),
+    );
+    expect(contentionConflicts(rough, { defaultLimit: 1 })).toEqual([
+      { kind: 'contention', component: 'id/sso', bucket: 'q1', items: ['g', 'other'], limit: 1 },
+    ]);
   });
 });
 
@@ -86,6 +111,13 @@ describe('groupConflicts', () => {
       { kind: 'group-time', group: 'g', child: 'late' },
       { kind: 'group-system', group: 'g', child: 'elsewhere' },
     ]);
+  });
+
+  it('ignores values that no longer exist, and parent cycles', () => {
+    const dangling = plan(item('g', { values: { [TIME]: ['q1'] } }), item('k', { parent: 'g', values: { [TIME]: ['q9/r9'] } }));
+    expect(groupConflicts(dangling)).toEqual([]);
+    const cycle = plan(item('a', { parent: 'b', values: { [SIZE]: ['l'] } }), item('b', { parent: 'a', values: { [SIZE]: ['s'] } }));
+    expect(groupConflicts(cycle)).toEqual([]);
   });
 
   it('does not flag a child dated more loosely than its group', () => {

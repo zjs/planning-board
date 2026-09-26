@@ -163,7 +163,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           scrollRef={scrollRef}
         />
       )}
-      {legendOpen && !empty && <Legend onClose={closeLegend} />}
+      {legendOpen && <Legend onClose={closeLegend} />}
       {drag && <DragGhost drag={drag} canAdd={canAdd} />}
     </div>
   );

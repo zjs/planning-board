@@ -5,7 +5,7 @@ test('help opens on first visit, stays closed once dismissed, and reopens from t
   await openApp(page, { keepHelp: true });
   const legend = page.getByTestId('legend');
   await expect(legend).toBeVisible();
-  await expect(legend).toContainText('Hold Alt while dropping');
+  await expect(legend).toContainText(/Hold (Alt|⌥ Option) while dropping/);
 
   await page.getByRole('button', { name: 'Close help' }).click();
   await expect(legend).toHaveCount(0);

@@ -33,12 +33,12 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Drag a card into a cell</dt>
         <dd>It takes that row's and that column's values. Pivot the axes to see it from another angle.</dd>
-        <dt>A card in several rows</dt>
+        <dt>A card that shows up more than once</dt>
         <dd>It touches several areas. Drag one copy to move just that one.</dd>
         <dt>
           Hold <kbd>{keys.add}</kbd> while dropping
         </dt>
-        <dd>Adds the row instead of moving there.</dd>
+        <dd>Adds that area instead of moving there.</dd>
         <dt>Drop in the gap between sequence columns</dt>
         <dd>Opens a new position there. Sequence columns have no numbers on purpose.</dd>
         <dt>Drag onto the holding area</dt>
