@@ -1,6 +1,7 @@
 import { ancestorAtLevel, valuesAtLevel } from './hierarchy.ts';
 import type { Item, ItemId, Plan, PropertyId } from './model.ts';
 import { compareOrderKeys, itemValues } from './model.ts';
+import { gapKeys } from './sequence.ts';
 import { topLevelItems } from './tree.ts';
 
 /** One axis of a view: a property at one level of its hierarchy. */
@@ -40,6 +41,12 @@ export interface ViewLayout {
   cells: CardRef[][][];
   /** Cards missing a value on either axis (requirement 5). One copy each. */
   holding: CardRef[];
+  /**
+   * For a sequence axis, the keys of the droppable gaps around its lanes:
+   * gaps[i] sits just before lanes[i], and the last one after the last lane.
+   * Null for other axes, whose lanes are fixed.
+   */
+  gaps: { x: string[] | null; y: string[] | null };
 }
 
 /** The lanes an item falls into on one axis, de-duplicated, in no particular order. */
@@ -105,5 +112,7 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
       }
     }
   }
-  return { columns, rows, cells, holding };
+  const gapsFor = (axis: AxisSpec, lanes: Lane[]) =>
+    plan.properties[axis.property]?.kind === 'sequence' ? gapKeys(lanes.map((lane) => lane.key)) : null;
+  return { columns, rows, cells, holding, gaps: { x: gapsFor(view.x, columns), y: gapsFor(view.y, rows) } };
 }

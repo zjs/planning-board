@@ -42,19 +42,19 @@ Entry format:
 - Context: Requirements 2 and 6, sprint 0 walking skeleton. Sequence is an unlabeled layout position, so there's no fixed list of columns to drop into. This sits at the center of the "drag writes values" bet.
 - Options: (a) columns are the distinct sequence values in use, plus a thin drop gutter between columns and at each end, and dropping in a gutter creates a new column; (b) a fixed grid of N columns with empty ones allowed; (c) free horizontal placement with no columns.
 - Recommendation: (a). Values are fractional ordering keys, so inserting never renumbers other items, and empty columns disappear on their own. (b) keeps showing empty slots that read as "planned gaps". (c) turns cells into pixel positions, which the requirements rule out ("remembering card positions within a cell").
-- Status: open. Building (a) as a reversible default in slice 3.
+- Status: open. Built (a) in slice 3: while you drag, a dashed guide shows each gap, and the gap under the pointer turns into a solid bar. Works when sequence is on the rows too.
 
 ### Q9: Should cards show their non-axis values in sprint 0?
 - Context: Requirement 4 isn't in the sprint 0 deliverables. But the exit criterion is "drag cards and watch values change". Right after a drag in sequence × system, the card doesn't show which quarter it's in, so the only way to check is to pivot.
 - Options: no attributes until sprint 1; a minimal badge row (size, quarter, system count); a click-to-inspect panel.
 - Recommendation: the minimal badge row. It's small, it's read-only, and testers need it to trust what the drag did.
-- Status: open. Building the badge row in slice 3 unless the PM says no.
+- Status: open. Built in slice 3. Badges show size, then time, then system, skipping whichever are on an axis. Several values show as "first +N", and the tooltip lists them all. A release shows as its own label ("27.4"), and the tooltip gives the full path ("Q2 2027 › 27.4").
 
 ### Q10: Dropping a card from the holding area when it already has a value on one axis
 - Context: Requirements 2, 3, and 5. A card sits in the holding area if it's missing a value on either axis, but it may still have values on the other one. In time × system, a card tagged Identity with no quarter sits in holding. If it's dropped in the Billing row, Q2 column, should it lose Identity? Slice 2 needs an answer.
 - Options: (a) replace: the card ends up in exactly the cell where it was dropped; (b) on a multi-valued axis, add the dropped lane to the existing values and keep the old ones, while single-valued axes are replaced; (c) only fill the missing axis and ignore the other.
 - Recommendation: (b). Nothing is lost silently, and for single-valued axes it's the same as (a). The catch is that after the drop the card also shows in its old lane, which may surprise people. The user session will tell.
-- Status: open. Building (b) as a reversible default in slice 2.
+- Status: open. Built (b) in slice 2.
 
 ### Q11: What does dropping a card on the holding area remove?
 - Context: Requirement 3 says "dragging a copy to the holding area removes only that value", but a card in a cell has a value on *both* axes. In time × system, dropping a card on the holding area could mean "we don't know when" (clear the quarter) or "not this component" (clear the lane).

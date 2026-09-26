@@ -1,6 +1,6 @@
 # Sprint 0 — engineering plan
 
-Status: **approved 2026-09-26.** Slice 1 merged (#1). Slice 2 in review. Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
+Status: **approved 2026-09-26.** Slices 1 and 2 merged (#1, #2). Slice 3 in review. Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
 
 ## What this milestone has to prove
 

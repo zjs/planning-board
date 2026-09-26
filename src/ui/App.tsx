@@ -135,6 +135,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       ) : (
         <Board
           plan={plan}
+          view={view}
           layout={layout}
           xLabel={optionById(choice.x).label}
           yLabel={optionById(choice.y).label}
