@@ -33,6 +33,18 @@ describe('layoutView', () => {
     expect(layout.holding).toEqual([]);
   });
 
+  it('offers gaps around sequence lanes only', () => {
+    const layout = layoutView(
+      plan(item('x', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }), item('y', { sequence: 'a1', values: { [SYSTEM]: ['id'] } })),
+      seqBySystem,
+    );
+    expect(layout.gaps.y).toBeNull();
+    const [before, between, after] = layout.gaps.x!;
+    expect(layout.gaps.x).toHaveLength(3);
+    expect(before! < 'a0' && 'a0' < between! && between! < 'a1' && 'a1' < after!).toBe(true);
+    expect(layoutView(plan(), seqBySystem).gaps.x).toHaveLength(1);
+  });
+
   it('never labels sequence lanes', () => {
     const layout = layoutView(plan(item('x', { sequence: 'a0', values: { [SYSTEM]: ['id'] } })), seqBySystem);
     expect(layout.columns.every((lane) => lane.label === null)).toBe(true);

@@ -1,9 +1,10 @@
 // Reads the human-editable plan JSON format (version 1) into a Plan snapshot.
 // The format is described in docs/decisions/0005-plan-file-format.md.
 
-import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
+import { generateNKeysBetween } from 'fractional-indexing';
 import type { Dependency, Item, OrderKey, Plan, Property, SelectProperty, ValueNode } from './model.ts';
 import { SEQUENCE } from './model.ts';
+import { isOrderKey } from './sequence.ts';
 import { wouldCreateCycle } from './tree.ts';
 
 export const PLAN_FORMAT = 'planning-board';
@@ -207,20 +208,5 @@ function assignSequenceKeys(items: Record<string, Item>, raw: Map<string, string
   for (const [id, value] of raw) {
     const item = items[id];
     if (item) item.sequence = typeof value === 'number' ? keyFor.get(value)! : value;
-  }
-}
-
-/**
- * fractional-indexing's own validation only checks the key's head and tail,
- * so also require its base-62 digit set; anything else would sort wrongly
- * against keys it generates.
- */
-function isOrderKey(key: string): boolean {
-  if (!/^[0-9A-Za-z]+$/.test(key)) return false;
-  try {
-    generateKeyBetween(key, null);
-    return true;
-  } catch {
-    return false;
   }
 }

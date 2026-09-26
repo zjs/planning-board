@@ -17,6 +17,7 @@
   --row-header: 150px;
   --column-min: 150px;
   --holding-width: 250px;
+  --gap-size: 14px;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: var(--text);
@@ -240,8 +241,8 @@ button.primary {
 .card {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
   padding: 6px 8px 6px 10px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -295,8 +296,68 @@ button.primary {
   }
 }
 
+.card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 .card-title {
   flex: 1;
+}
+
+.card-attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.attr {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+/* Sequence gaps: nearly invisible until a drag, then a dashed guide; a bar where the card would land. */
+.cell.gap {
+  min-height: 0;
+  padding: 0;
+  background: var(--surface-2);
+}
+
+.column-header.gap,
+.row-header.gap-row {
+  padding: 0;
+  min-height: 0;
+}
+
+.cell.gap-row,
+.row-header.gap-row {
+  height: var(--gap-size);
+}
+
+body.dragging .cell.gap {
+  background-image: linear-gradient(90deg, transparent calc(50% - 1px), var(--border) calc(50% - 1px), var(--border) calc(50% + 1px), transparent calc(50% + 1px));
+}
+
+body.dragging .cell.gap-row {
+  background-image: linear-gradient(180deg, transparent calc(50% - 1px), var(--border) calc(50% - 1px), var(--border) calc(50% + 1px), transparent calc(50% + 1px));
+}
+
+.lone-hint {
+  margin: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cell.gap.drop-target {
+  background-image: none;
+  background-color: var(--accent);
+  outline: none;
 }
 
 body.dragging,

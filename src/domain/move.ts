@@ -80,7 +80,9 @@ function moveOnAxis(
 ): AxisResult {
   const property = plan.properties[axis.property];
   if (!property) return UNCHANGED;
-  if (property.kind === 'sequence') return item.sequence === to ? UNCHANGED : { sequence: to };
+  if (property.kind === 'sequence') {
+    return item.sequence === to || sameSequencePlace(plan, item, to) ? UNCHANGED : { sequence: to };
+  }
 
   const current = itemValues(item, property.id);
   const inLane = (lane: string) => (v: ValueId) => laneOf(plan, property.id, v, axis.level) === lane;
@@ -96,6 +98,20 @@ function moveOnAxis(
   if (from === to) return UNCHANGED;
   const kept = current.filter((v) => !inLane(from)(v));
   return { values: alreadyThere ? kept : [...kept, to] };
+}
+
+/**
+ * Moving an item that has its column to itself into an adjacent gap would
+ * change its key but not its place: no other item sits between the old key
+ * and the new one. Treat that as no change, so it records no undo step.
+ */
+function sameSequencePlace(plan: Plan, item: Item, to: OrderKey): boolean {
+  const from = item.sequence;
+  if (from === null) return false;
+  const [lo, hi] = from < to ? [from, to] : [to, from];
+  return !Object.values(plan.items).some(
+    (other) => other.id !== item.id && other.sequence !== null && other.sequence >= lo && other.sequence <= hi,
+  );
 }
 
 function clearOnAxis(plan: Plan, item: Item, axis: AxisSpec, from: string): AxisResult {
