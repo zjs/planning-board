@@ -11,6 +11,9 @@ import {
   createPlanStore,
   deleteItems,
   dropCard,
+  groupItems,
+  NEW_GROUP_TITLE,
+  ungroupItems,
   loadPlan,
   redo,
   renameItem,
@@ -206,5 +209,64 @@ describe('card commands', () => {
     const store = storeWith(item('a'));
     expect(deleteItems(store, ['zz'])).toBe(0);
     expect(store.undoManager.canUndo()).toBe(false);
+  });
+});
+
+describe('group commands', () => {
+  it('groups cards under a new card with their shared values, as one undo step', () => {
+    const store = storeWith(
+      item('a', { sequence: 'a1', values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1/r1'] } }),
+      item('b', { sequence: 'a0', values: { [SYSTEM]: ['id/mfa'], [TIME]: ['q1'] } }),
+    );
+    const result = groupItems(store, ['a', 'b'])!;
+    expect(result.created).toBe(true);
+    const p = readPlan(store.doc);
+    expect(p.items[result.group]).toMatchObject({
+      title: NEW_GROUP_TITLE,
+      parent: null,
+      sequence: 'a0',
+      values: { [SYSTEM]: ['id'], [TIME]: ['q1'] },
+    });
+    expect(p.items['a']!.parent).toBe(result.group);
+    expect(p.items['b']!.parent).toBe(result.group);
+
+    undo(store);
+    const back = readPlan(store.doc);
+    expect(back.items[result.group]).toBeUndefined();
+    expect(back.items['a']!.parent).toBeNull();
+  });
+
+  it('adds cards to the one group in the selection', () => {
+    const store = storeWith(item('epic'), item('story', { parent: 'epic' }), item('a'));
+    expect(groupItems(store, ['a', 'epic'])).toEqual({ group: 'epic', created: false });
+    expect(readPlan(store.doc).items['a']!.parent).toBe('epic');
+  });
+
+  it('ungroups: children move up, the group goes, its links move to the children, and undo restores it all', () => {
+    const store = createPlanStore();
+    loadPlan(store, {
+      ...plan(
+        item('epic', { values: { [SYSTEM]: ['id'] } }),
+        item('a', { parent: 'epic', values: { [SYSTEM]: ['id/sso'] } }),
+        item('b', { parent: 'epic' }),
+        item('x'),
+      ),
+      dependencies: [{ from: 'x', to: 'epic' }],
+    });
+    store.undoManager.clear();
+    const before = normalized(readPlan(store.doc));
+
+    expect(ungroupItems(store, ['epic', 'x']).sort()).toEqual(['a', 'b']);
+    const after = readPlan(store.doc);
+    expect(after.items['epic']).toBeUndefined();
+    expect(after.items['a']).toMatchObject({ parent: null, values: { [SYSTEM]: ['id/sso'] } });
+    expect(normalized(after).dependencies).toEqual([
+      { from: 'x', to: 'a' },
+      { from: 'x', to: 'b' },
+    ]);
+
+    undo(store);
+    expect(normalized(readPlan(store.doc))).toEqual(before);
+    expect(ungroupItems(store, ['x'])).toEqual([]);
   });
 });

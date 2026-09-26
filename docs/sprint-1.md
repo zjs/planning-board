@@ -19,10 +19,10 @@ Scope: single user, browser only, no server.
 
 ### 2. Groups (requirements 11, 13, 14)
 
-- [ ] ⌘G / Ctrl+G groups the selection under a new card, which is named on the spot. The new group takes the values all its children share, so it lands where they were.
-- [ ] If the selection contains exactly one existing group, ⌘G moves the other cards into it instead.
-- [ ] ⇧⌘G / Ctrl+Shift+G ungroups: the group card is removed, and its children move up one level, keeping their own values.
-- [ ] Grouping never creates a cycle. A single-user check is enough for now (ADR 0004).
+- [x] ⌘G / Ctrl+G groups the selection under a new card, which is named on the spot. The new group takes the values all its children share, so it lands where they were.
+- [x] If the selection contains exactly one existing group, ⌘G moves the other cards into it instead.
+- [x] ⇧⌘G / Ctrl+Shift+G ungroups: the group card is removed, and its children move up one level, keeping their own values.
+- [x] Grouping never creates a cycle. A single-user check is enough for now (ADR 0004).
 
 ### 3. Zoom (requirements 1, 7, 12)
 

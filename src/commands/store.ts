@@ -2,6 +2,7 @@
 // never touches Yjs itself (CLAUDE.md, storage rule).
 
 import * as Y from 'yjs';
+import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
@@ -138,6 +139,55 @@ export function deleteItems(store: PlanStore, ids: Iterable<ItemId>): number {
     for (const id of doomed.items) r.items.delete(id);
   });
   return doomed.items.length;
+}
+
+/** Title a new group starts with; the UI opens it for renaming straight away. */
+export const NEW_GROUP_TITLE = 'New group';
+
+/**
+ * ⌘G (requirement 11, questions.md Q15). With exactly one existing group in
+ * the selection, the other cards join it; otherwise the selection goes into
+ * a new group that takes the values its children share, so it lands where
+ * they were. Returns the group, and whether it's new. One undo step.
+ */
+export function groupItems(store: PlanStore, ids: Iterable<ItemId>): { group: ItemId; created: boolean } | null {
+  const plan = readPlan(store.doc);
+  const grouping = planGroup(plan, ids);
+  if (!grouping) return null;
+  const items = root(store.doc).items;
+  if (grouping.kind === 'join') {
+    edit(store, () => {
+      for (const id of grouping.members) items.get(id)?.set('parent', grouping.group);
+    });
+    return { group: grouping.group, created: false };
+  }
+  const id = newItemId();
+  const { sequence, values } = sharedValues(plan, grouping.members);
+  edit(store, () => {
+    items.set(id, itemToY({ id, title: NEW_GROUP_TITLE, description: '', parent: grouping.parent, sequence, values }));
+    for (const member of grouping.members) items.get(member)?.set('parent', id);
+  });
+  return { group: id, created: true };
+}
+
+/**
+ * ⇧⌘G: remove the selected groups, moving their children up one level with
+ * their own values. A group's dependencies are re-pointed at its children
+ * (questions.md Q21). Returns the children that moved up. One undo step.
+ */
+export function ungroupItems(store: PlanStore, ids: Iterable<ItemId>): ItemId[] {
+  const ungroups = planUngroup(readPlan(store.doc), ids);
+  if (ungroups.length === 0) return [];
+  const r = root(store.doc);
+  edit(store, () => {
+    for (const u of ungroups) {
+      for (const child of u.children) r.items.get(child)?.set('parent', u.parent);
+      for (const dep of u.removed) r.dependencies.delete(dependencyKey(dep));
+      for (const dep of u.added) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });
+      r.items.delete(u.group);
+    }
+  });
+  return ungroups.flatMap((u) => u.children);
 }
 
 export function undo(store: PlanStore): void {
