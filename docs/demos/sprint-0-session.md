@@ -20,7 +20,7 @@ Hand over control, or send them the file. Give one task at a time and don't hint
 | "Billing looks overloaded in Q2. Move two of those items to Q3." | The core drag in a time view | Hesitation before the first drag. Do they check the badges or pivot to confirm? |
 | "Three items in the holding area have no area. Put them where they belong." | Tagging by dragging (req. 21; the "nobody tags components" risk) | Do they find the holding area? Does it feel like work or like sorting? |
 | "*Customer-managed encryption keys* also touches the Admin Console. Show that." | Discoverability of ⌥/Alt-drop (Q1) | Do they find the modifier without help? What do they try first? |
-| "Nobody knows when *Pen-test remediation* happens. Make that visible." | Holding-area drop zones (Q11) | Do they read the two zones? Which one do they pick? |
+| (In Time × System) "Nobody knows when *IdP-initiated login* happens. Make that visible." | Holding-area drop zones (Q11) | Do they read the two zones? Which one do they pick? |
 | "*Webhook secret rotation* must happen before *Scoped API tokens*. Arrange that." (Scoped API tokens is inside the *Public API v2* group, so only the group card shows) | Sequence gaps (Q8); groups hiding children | Do they use a gap or an existing column? Do they get stuck because the child isn't on the board? |
 | "Now look at the same plan by quarter. Is anything surprising?" | The pivot itself; spatial memory (requirements, Risks) | Do they lose their bearings? Do they miss where things were? |
 
