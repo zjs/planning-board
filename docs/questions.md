@@ -119,7 +119,7 @@ Entry format:
 - Recommendation: (a), because it matches diagram editors, and ungroup already covers keeping the children. It's undoable, and a large delete flashes a count ("Deleted 5 cards · Undo").
 - Status: answered 2026-09-26: (a), but it needs full support for undo.
   - Engineering reads "full support" as: one undo brings back the whole deleted subtree exactly as it was, including nested groups, every child's values and parent links, and any dependencies that involved a deleted card. Redo deletes it all again. Slice 1 tests this, including a delete, undo, and reload round trip.
-  - Undo history still doesn't survive a reload, as in sprint 0. If "full support" should include that, it's a separate piece of work to plan.
+  - Undo history still doesn't survive a reload, as in sprint 0. PM, 2026-09-26: that's still acceptable; undo that survives a reload could be a future feature (listed under Later in `requirements.md`).
 
 ### Q18: What happens to other cards when you zoom into a lane?
 - Context: Requirement 7, sprint 1. Zooming Identity into its components raises two questions: where do Billing cards go, and where do cards tagged only "Identity", with no component, go?

@@ -109,7 +109,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **M2: collaboration.** Requirements 30–32: encrypted share links with stored snapshots, live multi-user editing, and presence. The relay is written in Go.
 
-**Later.** Merging between scenarios, typed dependencies, and Jira sync.
+**Later.** Merging between scenarios, typed dependencies, Jira sync, and undo history that survives a reload.
 
 ## Architecture & non-functional requirements
 
