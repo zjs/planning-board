@@ -2,7 +2,7 @@ import { ancestorAtLevel, valuesAtLevel } from './hierarchy.ts';
 import type { Item, ItemId, Plan, PropertyId } from './model.ts';
 import { compareOrderKeys, itemValues } from './model.ts';
 import { gapKeys } from './sequence.ts';
-import { topLevelItems } from './tree.ts';
+import { childrenOf } from './tree.ts';
 
 /** One axis of a view: a property at one level of its hierarchy. */
 export interface AxisSpec {
@@ -14,6 +14,11 @@ export interface AxisSpec {
 export interface ViewSpec {
   x: AxisSpec;
   y: AxisSpec;
+  /**
+   * The card zoomed into (requirement 12, ADR 0008): the view shows only
+   * its children. Null or absent for the top level.
+   */
+  root?: ItemId | null;
 }
 
 /** A column or row. `key` is a ValueId, or an OrderKey on the sequence axis. */
@@ -98,11 +103,11 @@ function compareItems(a: Item, b: Item): number {
 }
 
 /**
- * Lay out the plan's top-level items for a view. Group children stay inside
- * their group card until zoom exists.
+ * Lay out one level of the plan for a view: the top-level items, or the
+ * children of the card zoomed into. Deeper cards stay inside their group.
  */
 export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
-  const items = topLevelItems(plan)
+  const items = childrenOf(plan, view.root ?? null)
     .map((id) => plan.items[id]!)
     .sort(compareItems);
   const columns = axisLanes(plan, view.x, items);

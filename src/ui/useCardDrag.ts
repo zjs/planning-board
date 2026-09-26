@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import type { ItemId } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import type { CardRef } from '../domain/view.ts';
 
@@ -7,6 +8,14 @@ import type { CardRef } from '../domain/view.ts';
 // data-column lane keys. A holding lane leaves out the axis it has no value
 // on, which reads as null. The pinned edges of the board (.corner,
 // .holding-head, .holding-row-header) bound the area that edge-scrolls.
+// Breadcrumb segments carry data-drop="parent" data-parent=… (empty for the
+// top level): dropping there moves the card out to that level.
+
+/** A cell or holding lane, or a level of the tree to move a card to. */
+export type BoardTarget = DropTarget | { parent: ItemId | null };
+
+export const isParentTarget = (t: BoardTarget | null): t is { parent: ItemId | null } =>
+  t !== null && 'parent' in t;
 
 export interface DragState {
   card: CardRef;
@@ -18,7 +27,7 @@ export interface DragState {
   grabX: number;
   grabY: number;
   width: number;
-  target: DropTarget | null;
+  target: BoardTarget | null;
   mode: DropMode;
 }
 
@@ -28,15 +37,17 @@ const MAX_SCROLL_PX_PER_FRAME = 18;
 /** The pointer must rest near an edge this long before scrolling starts, so merely crossing an edge doesn't. */
 const EDGE_DWELL_MS = 200;
 
-function targetAt(x: number, y: number): DropTarget | null {
+function targetAt(x: number, y: number): BoardTarget | null {
   const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop]');
   if (!el) return null;
+  if (el.dataset.drop === 'parent') return { parent: el.dataset.parent || null };
   if (el.dataset.drop !== 'cell') return null;
   return { x: el.dataset.column ?? null, y: el.dataset.row ?? null };
 }
 
-export function sameTarget(a: DropTarget | null, b: DropTarget | null): boolean {
+export function sameTarget(a: BoardTarget | null, b: BoardTarget | null): boolean {
   if (a === null || b === null) return a === b;
+  if (isParentTarget(a) || isParentTarget(b)) return isParentTarget(a) && isParentTarget(b) && a.parent === b.parent;
   return a.x === b.x && a.y === b.y;
 }
 
@@ -76,7 +87,7 @@ export function edgeSpeed(pos: number, start: number, end: number): number {
  * past the drag threshold is a click, reported to `onClick`.
  */
 export function useCardDrag(
-  onDrop: (card: CardRef, target: DropTarget, mode: DropMode) => void,
+  onDrop: (card: CardRef, target: BoardTarget, mode: DropMode) => void,
   scrollRef: React.RefObject<HTMLElement | null>,
   onClick: (card: CardRef, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void = () => undefined,
 ) {

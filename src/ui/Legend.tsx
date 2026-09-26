@@ -54,7 +54,14 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dt>Double-click empty space</dt>
         <dd>Makes a new card there, with that row's and column's values. Type a title and press Enter.</dd>
         <dt>Double-click a card, or press Enter</dt>
-        <dd>Renames it.</dd>
+        <dd>Renames it. Double-clicking a group zooms into it instead; Enter still renames.</dd>
+        <dt>
+          Zoom in: double-click a group, or <kbd>{keys.zoomIn}</kbd>
+        </dt>
+        <dd>
+          Shows only what's inside. Any card can be zoomed into, and new cards you make there go inside it. Drag a card
+          onto the breadcrumb to move it out. <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
+        </dd>
         <dt>
           <kbd>{keys.group}</kbd> groups the selection
         </dt>
