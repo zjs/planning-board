@@ -58,15 +58,15 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 4. Cards show non-axis properties as compact attributes, such as a size badge in the sequence view.
 5. Each view has holding lanes for cards missing a value, pinned to the board's edges. A lane at the end of each row holds cards with that row but no column, a lane under each column holds cards with that column but no row, and the corner holds cards with neither. Dropping a card in a holding lane sets the axis it names and clears the other. Holding lanes can show full cards or compact chips.
 6. Sequence views show no step numbers or column labels, so placement doesn't read as a claim of order between unlinked items.
-7. Users can zoom into a lane or column to see the next hierarchy level, and zoom back out.
+7. Users can zoom into a lane or column to see the next hierarchy level, and zoom back out. Cards outside the zoomed value are hidden; cards with only the coarser value (an area but no component) wait in the holding lane (Q18).
 8. Users can save named views and switch between them in one step.
 9. Users can filter cards by any property, including custom tags.
 
 **Items and groups**
 
-10. Users can create, edit, and delete items directly on the board.
+10. Users can create, edit, and delete items directly on the board. Deleting a group deletes everything inside it, and one undo restores all of it (Q17).
 11. Users can group items into a parent item, recursively, and ungroup them.
-12. Users can zoom into a group to see only its children.
+12. Users can zoom into a group to see only its children. The group's own values show in the zoom header (Q19).
 13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value. A collapsed group also shows as a faded "via children" copy in lanes that only its children touch; faded copies can't be dragged (Q16).
 14. Grouping never creates a cycle, even when two people nest items at the same moment.
 
@@ -109,7 +109,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **M2: collaboration.** Requirements 30–32: encrypted share links with stored snapshots, live multi-user editing, and presence. The relay is written in Go.
 
-**Later.** Merging between scenarios, typed dependencies, and Jira sync.
+**Later.** Merging between scenarios, typed dependencies, Jira sync, and undo history that survives a reload.
 
 ## Architecture & non-functional requirements
 

@@ -42,24 +42,6 @@ Entry format:
 - Recommendation: keep these for sprint 1 and revisit with real data. The time bucket is the one most likely to matter, since it changes which conflicts show at all.
 - Status: open
 
-### Q17: What does deleting a group delete?
-- Context: Requirements 10 and 11, sprint 1. Delete and ungroup are both available on a selected group.
-- Options: (a) the group and everything inside it; (b) only the group, with its children moving up a level (the same as ungroup); (c) ask each time.
-- Recommendation: (a), because it matches diagram editors, and ungroup already covers keeping the children. It's undoable, and a large delete flashes a count ("Deleted 5 cards · Undo").
-- Status: open. Building (a) in sprint 1, slice 1.
-
-### Q18: What happens to other cards when you zoom into a lane?
-- Context: Requirement 7, sprint 1. Zooming Identity into its components raises two questions: where do Billing cards go, and where do cards tagged only "Identity", with no component, go?
-- Options: for cards in other lanes, (a) hide them or (b) keep them in the holding lanes. For area-only cards, (c) show them in "No component" or (d) show them in every component lane.
-- Recommendation: (a) and (c). A zoomed view is about one area, and "No component" doubles as the to-do list for refining, just as system views double as a tagging tool (req. 21).
-- Status: open. Building (a) and (c) in sprint 1, slice 4.
-
-### Q19: When zoomed into a group, how do its own values show?
-- Context: Requirement 13. A group keeps its own values, such as a PM's ballpark quarter, while its children refine them. Inside the group, you see only the children.
-- Options: (a) as badges in the zoom header; (b) also shade the lane or column matching the group's value, so children outside it stand out; (c) both.
-- Recommendation: (a) for sprint 1, since the mismatch markers already flag children that don't fit. Revisit (b) after the session.
-- Status: open. Building (a) in sprint 1, slice 3.
-
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -130,3 +112,23 @@ Entry format:
 - Options: (a) solid copies in its own lanes, plus faded "via children" copies elsewhere, which can't be dragged and zoom in on double-click; (b) own lanes only, with a "+Billing" badge; (c) full copies everywhere, all draggable.
 - Recommendation: (a). The Billing row then shows everything that touches Billing, and no drag writes a value the group never had.
 - Status: answered 2026-09-26: (a). Sprint 1, slice 5.
+
+### Q17: What does deleting a group delete?
+- Context: Requirements 10 and 11, sprint 1. Delete and ungroup are both available on a selected group.
+- Options: (a) the group and everything inside it; (b) only the group, with its children moving up a level (the same as ungroup); (c) ask each time.
+- Recommendation: (a), because it matches diagram editors, and ungroup already covers keeping the children. It's undoable, and a large delete flashes a count ("Deleted 5 cards · Undo").
+- Status: answered 2026-09-26: (a), but it needs full support for undo.
+  - Engineering reads "full support" as: one undo brings back the whole deleted subtree exactly as it was, including nested groups, every child's values and parent links, and any dependencies that involved a deleted card. Redo deletes it all again. Slice 1 tests this, including a delete, undo, and reload round trip.
+  - Undo history still doesn't survive a reload, as in sprint 0. PM, 2026-09-26: that's still acceptable; undo that survives a reload could be a future feature (listed under Later in `requirements.md`).
+
+### Q18: What happens to other cards when you zoom into a lane?
+- Context: Requirement 7, sprint 1. Zooming Identity into its components raises two questions: where do Billing cards go, and where do cards tagged only "Identity", with no component, go?
+- Options: for cards in other lanes, (a) hide them or (b) keep them in the holding lanes. For area-only cards, (c) show them in "No component" or (d) show them in every component lane.
+- Recommendation: (a) and (c). A zoomed view is about one area, and "No component" doubles as the to-do list for refining, just as system views double as a tagging tool (req. 21).
+- Status: answered 2026-09-26: (a) and (c), as recommended. Sprint 1, slice 4.
+
+### Q19: When zoomed into a group, how do its own values show?
+- Context: Requirement 13. A group keeps its own values, such as a PM's ballpark quarter, while its children refine them. Inside the group, you see only the children.
+- Options: (a) as badges in the zoom header; (b) also shade the lane or column matching the group's value, so children outside it stand out; (c) both.
+- Recommendation: (a) for sprint 1, since the mismatch markers already flag children that don't fit. Revisit (b) after the session.
+- Status: answered 2026-09-26: (a), as recommended. Sprint 1, slice 3.

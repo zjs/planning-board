@@ -15,7 +15,7 @@ Scope: single user, browser only, no server.
 - [ ] Click selects a card, and every copy of it highlights. ⇧-click adds to the selection. Clicking empty space or pressing Esc clears it. The selection belongs to the viewer and is never saved in the plan.
 - [ ] Double-clicking empty space in a cell or holding lane creates a card with that cell's values, ready for a title.
 - [ ] Double-clicking a card, or pressing Enter, renames it.
-- [ ] Delete or Backspace deletes the selected cards. Deleting a group deletes its contents (Q17).
+- [ ] Delete or Backspace deletes the selected cards. Deleting a group deletes its contents, and one undo restores the whole subtree, including nested groups, values, and dependencies (Q17). A "Deleted 5 cards · Undo" notice appears after the delete.
 
 ### 2. Groups (requirements 11, 13, 14)
 
