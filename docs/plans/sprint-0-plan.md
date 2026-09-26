@@ -1,6 +1,6 @@
 # Sprint 0 — engineering plan
 
-Status: **approved 2026-09-26.** Slice 1 in progress. Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
+Status: **approved 2026-09-26.** Slice 1 merged (#1). Slice 2 in review. Scope is `docs/sprint-0.md`. This doc covers how engineering delivers that scope: order, slices, and quality gates.
 
 ## What this milestone has to prove
 
@@ -13,9 +13,11 @@ Each slice is one PR with a single-file HTML build attached, plus a demo note in
 | # | Slice | You can do this afterwards | Sprint 0 items covered |
 |---|---|---|---|
 | 1 | **Skeleton, pipeline, read-only pivots** | Open the HTML file, see ~150 seed cards, switch between sequence × system, time × system, size × system. See the holding area fill up for sparse axes. No dragging yet. | Repo basics, CI, build artifact, domain types, view query + tests, seed data, axis picker, sequence views unlabeled, group cards with child count |
-| 2 | **Drag writes values** (the core bet) | Drag a card into any cell or into the holding area, pivot, and see it land where it should. Undo/redo with ⌘/Ctrl+Z. Reload and nothing is lost. Load sample / Reset. | Yjs doc, commands, drag, undo/redo, IndexedDB persistence, load/reset |
-| 3 | **Multi-valued cards and sequence gaps** | A card touching three components shows in three lanes. Drag one copy to replace that lane only, ⌥/Alt-drop to add a lane, drop a copy on the holding area to remove that value. Drop between sequence columns to open a new one. Cards show small value badges. | Multi-valued behavior, Q8 default, Q9 default |
+| 2 | **Drag writes values** (the core bet) | Drag a card into any cell or into the holding area, pivot, and see it land where it should. Drag one copy of a multi-lane card to move only that lane, ⌥/Alt-drop to add a lane, drop a copy on a holding-area zone to remove that value. Undo/redo with ⌘/Ctrl+Z. Reload and nothing is lost. Load sample / Reset. | Yjs doc, commands, drag, multi-valued behavior, undo/redo, IndexedDB persistence, load/reset |
+| 3 | **Sequence gaps and value badges** | Drop between sequence columns to open a new one. Cards show small value badges. | Q8 default, Q9 default |
 | 4 | **Tester-ready** | Hand the HTML file to a tester. An on-screen legend explains the gestures. It has been checked in Chrome, Firefox, and Safari. Session script and demo note are in the repo. | Demo note, remaining ADRs, stretch conflict functions if time allows |
+
+Multi-valued drag behavior moved from slice 3 into slice 2: the drop rules turned out to be one pure function, and splitting them would have meant building the drag twice.
 
 Slice 1 comes before dragging on purpose. Seeing the seed plan pivot, and seeing how empty time × system is with half the items unscheduled, is a cheap early check that the seed data feels realistic. It's your first chance to say "that's not what a plan looks like" before any interaction is built on it.
 

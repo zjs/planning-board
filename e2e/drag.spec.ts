@@ -1,0 +1,112 @@
+import { expect, test } from '@playwright/test';
+import { card, cell, dragTo, openApp, pickAxes } from './app.ts';
+
+// The sprint 0 exit criterion, end to end: drag, pivot, see the card where
+// it should be, reload, and nothing is lost.
+test('a drop writes both values, survives a pivot and a reload, and undoes', async ({ page }) => {
+  await openApp(page);
+  await pickAxes(page, 'time', 'system');
+  const holding = page.getByTestId('holding');
+  const id = 'sso-enforcement-per-workspace'; // Identity/SSO, sequenced, no quarter yet
+  await expect(card(holding, id)).toBeVisible();
+
+  await dragTo(page, card(holding, id), cell(page, 'billing', 'q3'));
+  await expect(card(cell(page, 'billing', 'q3'), id)).toBeVisible();
+  // From the holding area, the new area is added and the old one kept (Q10).
+  await expect(card(cell(page, 'identity', 'q3'), id)).toBeVisible();
+  await expect(card(holding, id)).toHaveCount(0);
+
+  await pickAxes(page, 'sequence', 'system');
+  await expect(page.locator(`.cell[data-row="billing"] .card[data-item="${id}"]`)).toHaveCount(1);
+
+  await page.reload();
+  await page.getByTestId('board').waitFor();
+  await pickAxes(page, 'time', 'system');
+  await expect(card(cell(page, 'billing', 'q3'), id)).toBeVisible();
+
+  // The undo stack doesn't survive a reload, so make a fresh change to undo.
+  await dragTo(page, card(cell(page, 'billing', 'q3'), id), cell(page, 'billing', 'q4'));
+  await expect(card(cell(page, 'billing', 'q4'), id)).toBeVisible();
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(card(cell(page, 'billing', 'q3'), id)).toBeVisible();
+  await expect(card(cell(page, 'billing', 'q4'), id)).toHaveCount(0);
+  await page.keyboard.press('ControlOrMeta+Shift+z');
+  await expect(card(cell(page, 'billing', 'q4'), id)).toBeVisible();
+});
+
+test('dragging one copy of a multi-lane card moves only that lane', async ({ page }) => {
+  await openApp(page);
+  const id = 'tenant-data-deletion-gdpr'; // Identity, Billing, Data Platform
+  await expect(card(page, id)).toHaveCount(3);
+  const billingCopy = page.locator(`.cell[data-row="billing"] .card[data-item="${id}"]`);
+  const column = await billingCopy.evaluate((el) => el.closest<HTMLElement>('.cell')!.dataset.column!);
+
+  await dragTo(page, billingCopy, cell(page, 'cx', column));
+  await expect(card(cell(page, 'cx', column), id)).toBeVisible();
+  await expect(page.locator(`.cell[data-row="billing"] .card[data-item="${id}"]`)).toHaveCount(0);
+  await expect(card(page, id)).toHaveCount(3);
+});
+
+test('an Alt-drop adds a lane, and the holding-area zone removes one', async ({ page }) => {
+  await openApp(page);
+  const id = 'tenant-data-deletion-gdpr';
+  const dataCopy = page.locator(`.cell[data-row="data"] .card[data-item="${id}"]`);
+  const column = await dataCopy.evaluate((el) => el.closest<HTMLElement>('.cell')!.dataset.column!);
+
+  await dragTo(page, dataCopy, cell(page, 'cx', column), { alt: true });
+  await expect(card(page, id)).toHaveCount(4);
+  await expect(page.locator(`.cell[data-row="data"] .card[data-item="${id}"]`)).toHaveCount(1);
+
+  const cxCopy = card(cell(page, 'cx', column), id);
+  const scroller = page.locator('.board-scroll');
+  await cxCopy.scrollIntoViewIfNeeded();
+  const before = await scroller.evaluate((el) => el.scrollLeft);
+  await dragTo(page, cxCopy, page.locator('[data-drop="clear-y"]'));
+  // Crossing into the holding area must not scroll the board sideways.
+  expect(await scroller.evaluate((el) => el.scrollLeft)).toBe(before);
+  await expect(card(page, id)).toHaveCount(3);
+  await expect(card(cell(page, 'cx', column), id)).toHaveCount(0);
+});
+
+test('Escape cancels a drag without changing anything', async ({ page }) => {
+  await openApp(page);
+  const id = 'tenant-data-deletion-gdpr';
+  const from = page.locator(`.cell[data-row="billing"] .card[data-item="${id}"]`);
+  const box = (await from.boundingBox())!;
+  await page.mouse.move(box.x + 10, box.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 200, box.y + 200, { steps: 5 });
+  await expect(page.locator('.drag-ghost')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(page.locator('.drag-ghost')).toHaveCount(0);
+  await expect(from).toHaveCount(1);
+  // The only undo step is loading the sample plan.
+  await page.getByRole('button', { name: /Undo/ }).click();
+  await expect(page.locator('.empty-state')).toBeVisible();
+});
+
+test('holding a dragged card near the board edge scrolls the board', async ({ page }) => {
+  await openApp(page);
+  const scroller = page.locator('.board-scroll');
+  const box = (await scroller.boundingBox())!;
+  const from = card(page, 'tenant-data-deletion-gdpr').first();
+  const a = (await from.boundingBox())!;
+  await page.mouse.move(a.x + 10, a.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(a.x + 40, a.y + 40, { steps: 3 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height - 8, { steps: 5 });
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+});
+
+test('Reset clears the board and can be undone', async ({ page }) => {
+  await openApp(page);
+  page.once('dialog', (d) => void d.accept());
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await expect(page.locator('.empty-state')).toBeVisible();
+  await page.getByRole('button', { name: /Undo/ }).click();
+  await expect(page.getByTestId('board')).toBeVisible();
+  await expect(card(page, 'tenant-data-deletion-gdpr')).toHaveCount(3);
+});

@@ -18,6 +18,7 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
       '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
     },
   },
@@ -29,6 +30,13 @@ export default tseslint.config(
         'error',
         { patterns: ['react', 'react-*', 'yjs', 'y-*', '../ui/*', '../commands/*', '../store/*'] },
       ],
+    },
+  },
+  {
+    // Architecture rule: UI reads snapshots and changes the plan only through commands.
+    files: ['src/ui/**'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: ['yjs', 'y-*', '../store/*'] }],
     },
   },
   {
