@@ -41,9 +41,9 @@ Selection and creation come first because everything else builds on them: groupi
 - **Double-click does three jobs:** create in empty space, rename a card, zoom into a group. Testers may trip over it. The fallback is Enter-only renaming and a zoom icon on group cards; the session will tell.
 - **Faded copies may clutter system views** when groups have children in many areas. If they do, the next step is collapsing them into one "+3 areas" chip per group.
 - **Losing your place across zooms.** Mitigations: a breadcrumb that's always visible, the zoom chip, and restoring the scroll position on zoom-out.
-- **Deleting a group deletes its contents (Q17).** It's undoable, but a large delete should flash a count ("Deleted 5 cards · Undo") so it isn't silent.
+- **Deleting a group deletes its contents (Q17), and undo has to restore all of it.** A quick spike confirmed that Yjs's undo manager restores a deleted group, its children's nested values, and a removed dependency exactly, that redo deletes them again, and that the restored state survives a save and reload. Slice 1 turns that into permanent tests: delete a nested group with dependencies, undo, compare the snapshot to the original, then redo, then reload. A large delete flashes a count ("Deleted 5 cards · Undo") so it isn't silent.
 
 ## What I need from you
 
-1. Answer Q17–Q19 in `docs/questions.md` when you can. Each has a default I'll build if you don't.
+1. ~~Answer Q17–Q19~~ Answered 2026-09-26.
 2. For the session at the end of the sprint, pick one real epic you'd decompose. Recreating it by hand in the sample plan makes the "decompose an epic" task realistic.
