@@ -1,4 +1,4 @@
-import type { DragState } from './useCardDrag.ts';
+import { isParentTarget, type DragState } from './useCardDrag.ts';
 
 /** The card following the pointer. Never a hit-test target itself. */
 export function DragGhost({ drag, addAxes }: { drag: DragState; addAxes: { x: boolean; y: boolean } }) {
@@ -7,6 +7,7 @@ export function DragGhost({ drag, addAxes }: { drag: DragState; addAxes: { x: bo
   const adding =
     drag.mode === 'add' &&
     target !== null &&
+    !isParentTarget(target) &&
     ((addAxes.x && target.x !== null) || (addAxes.y && target.y !== null));
   return (
     <div

@@ -11,3 +11,4 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0005](0005-plan-file-format.md) | Versioned, human-editable JSON plan files | Accepted |
 | [0006](0006-crdt.md) | Yjs, y-indexeddb, and the document layout | Accepted |
 | [0007](0007-drag-and-drop.md) | Custom pointer-event drag, rules in a pure function | Accepted |
+| [0008](0008-view-scope-and-zoom.md) | Zoom is part of the view spec; one layout for every level | Accepted |

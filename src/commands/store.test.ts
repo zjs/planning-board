@@ -12,9 +12,10 @@ import {
   deleteItems,
   dropCard,
   groupItems,
+  loadPlan,
+  moveToParent,
   NEW_GROUP_TITLE,
   ungroupItems,
-  loadPlan,
   redo,
   renameItem,
   resetPlan,
@@ -268,5 +269,28 @@ describe('group commands', () => {
     undo(store);
     expect(normalized(readPlan(store.doc))).toEqual(before);
     expect(ungroupItems(store, ['x'])).toEqual([]);
+  });
+});
+
+describe('moveToParent', () => {
+  it('moves a card out of its group to another level, keeping its values, as one undo step', () => {
+    const store = storeWith(
+      item('epic'),
+      item('story', { parent: 'epic' }),
+      item('task', { parent: 'story', values: { [SYSTEM]: ['id'] } }),
+    );
+    expect(moveToParent(store, ['task'], 'epic')).toEqual(['task']);
+    expect(readPlan(store.doc).items['task']).toMatchObject({ parent: 'epic', values: { [SYSTEM]: ['id'] } });
+    expect(moveToParent(store, ['task'], null)).toEqual(['task']);
+    undo(store);
+    expect(readPlan(store.doc).items['task']!.parent).toBe('epic');
+  });
+
+  it('skips moves that change nothing or would create a cycle', () => {
+    const store = storeWith(item('epic'), item('story', { parent: 'epic' }));
+    expect(moveToParent(store, ['story'], 'epic')).toEqual([]);
+    expect(moveToParent(store, ['epic'], 'story')).toEqual([]);
+    expect(moveToParent(store, ['epic'], 'gone')).toEqual([]);
+    expect(store.undoManager.canUndo()).toBe(false);
   });
 });

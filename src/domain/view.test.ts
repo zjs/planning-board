@@ -111,6 +111,18 @@ describe('layoutView', () => {
     expect(layout.holding.rows[0]!.map((ref) => ref.itemId).sort()).toEqual(['dangling', 'quarter-only']);
   });
 
+  it('shows only the children of the card zoomed into (requirement 12)', () => {
+    const p = plan(
+      item('epic', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+      item('child', { parent: 'epic', values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
+      item('grandchild', { parent: 'child', values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
+      item('other', { values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
+    );
+    expect(cellMap(layoutView(p, { ...timeBySystem, root: 'epic' }))).toEqual({ 'pay / q2': ['child'] });
+    expect(allHolding(layoutView(p, { ...timeBySystem, root: 'other' }))).toEqual([]);
+    expect(cellMap(layoutView(p, { ...timeBySystem, root: null }))).toEqual({ 'id / q1': ['epic'], 'pay / q2': ['other'] });
+  });
+
   it('shows groups as one card and hides their children', () => {
     const layout = layoutView(
       plan(

@@ -6,6 +6,7 @@ import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
+import { wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 
@@ -186,6 +187,26 @@ export function ungroupItems(store: PlanStore, ids: Iterable<ItemId>): ItemId[] 
     for (const group of ungroup.groups) r.items.delete(group);
   });
   return ungroup.moves.map((m) => m.item);
+}
+
+/**
+ * Move cards to another level of the tree, keeping their values: out of a
+ * group through the breadcrumb (requirement 11). Moves that would make a
+ * card its own ancestor are skipped (ADR 0004). Returns the cards moved.
+ * One undo step.
+ */
+export function moveToParent(store: PlanStore, ids: Iterable<ItemId>, parent: ItemId | null): ItemId[] {
+  const plan = readPlan(store.doc);
+  if (parent !== null && !plan.items[parent]) return [];
+  const moving = [...new Set(ids)].filter(
+    (id) => plan.items[id] && plan.items[id].parent !== parent && !wouldCreateCycle(plan, id, parent),
+  );
+  if (moving.length === 0) return [];
+  const items = root(store.doc).items;
+  edit(store, () => {
+    for (const id of moving) items.get(id)?.set('parent', parent);
+  });
+  return moving;
 }
 
 export function undo(store: PlanStore): void {

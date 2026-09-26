@@ -6,6 +6,7 @@ import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
 import type { CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
 import { Card, DraftCard } from './Card.tsx';
+import { isParentTarget, type BoardTarget } from './useCardDrag.ts';
 
 interface Props {
   plan: Plan;
@@ -22,7 +23,7 @@ interface Props {
   /** The copy being dragged, if any. */
   lifted: CardRef | null;
   /** What the dragged card is over. Kept referentially stable by the drag hook. */
-  target: DropTarget | null;
+  target: BoardTarget | null;
   onCardPointerDown: (e: PointerEvent<HTMLElement>, card: CardRef, title: string) => void;
   /** Item to highlight after a drop. */
   justMoved: ItemId | null;
@@ -174,7 +175,7 @@ export const Board = memo(function Board({
   ].join(' ');
 
   const isTarget = (row: string | null, column: string | null) =>
-    target !== null && target.x === column && target.y === row;
+    target !== null && !isParentTarget(target) && target.x === column && target.y === row;
   // Sequence lanes stay unnumbered even for screen readers (requirement 6).
   const trackName = (t: Track, axis: string) =>
     t.kind === 'gap' ? `new ${axis.toLowerCase()} position` : (t.lane.label ?? `${axis} column`);

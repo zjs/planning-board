@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
-import { childCounts, topLevelItems, wouldCreateCycle } from './tree.ts';
+import { ancestry, childCounts, childrenOf, topLevelItems, wouldCreateCycle } from './tree.ts';
 
 const p = plan(
   item('epic'),
@@ -41,5 +41,31 @@ describe('group tree', () => {
     expect(topLevelItems(bad).sort()).toEqual(['a', 'b', 'orphan']);
     // Cycle members are on the board, so they don't also count as hidden children.
     expect(childCounts(bad)).toEqual(new Map([['a', 1]]));
+  });
+});
+
+describe('childrenOf and ancestry', () => {
+  const p = plan(
+    item('epic'),
+    item('story', { parent: 'epic' }),
+    item('task', { parent: 'story' }),
+    item('orphan', { parent: 'gone' }),
+    item('a', { parent: 'b' }),
+    item('b', { parent: 'a' }),
+  );
+
+  it('lists one level at a time, surfacing orphans and cycles at the top', () => {
+    expect(childrenOf(p, null).sort()).toEqual(['a', 'b', 'epic', 'orphan']);
+    expect(childrenOf(p, 'epic')).toEqual(['story']);
+    expect(childrenOf(p, 'a')).toEqual([]);
+    expect(childrenOf(p, 'task')).toEqual([]);
+  });
+
+  it('gives the breadcrumb path to a card', () => {
+    expect(ancestry(p, 'task')).toEqual(['epic', 'story', 'task']);
+    expect(ancestry(p, 'epic')).toEqual(['epic']);
+    expect(ancestry(p, 'orphan')).toEqual(['orphan']);
+    expect(ancestry(p, 'a')).toEqual(['a']);
+    expect(ancestry(p, 'nope')).toEqual([]);
   });
 });

@@ -175,6 +175,71 @@ button.primary {
   cursor: pointer;
 }
 
+/* Where you are when zoomed into a card: breadcrumb, the card's own values (Q19), hints. */
+.zoom-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 6px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crumbs li + li::before {
+  content: '›';
+  margin: 0 6px;
+  color: var(--muted);
+}
+
+.crumb {
+  padding: 1px 7px;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--accent);
+}
+
+.crumb:hover {
+  background: var(--surface-2);
+}
+
+/* While dragging, every level is a place to move the card out to. */
+.zoom-bar.dragging .crumb {
+  border: 2px dashed var(--border);
+}
+
+.zoom-bar.dragging .crumb.drop-target {
+  border-color: var(--accent);
+  background: var(--drop);
+}
+
+.crumb-current {
+  font-weight: 600;
+}
+
+.zoom-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zoom-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .board-wrap {
   flex: 1;
   display: flex;

@@ -46,3 +46,35 @@ export function topLevelItems(plan: Plan): ItemId[] {
     )
     .map((item) => item.id);
 }
+
+/**
+ * The items shown inside `parent`: its children, or the top level for null.
+ * Consistent with topLevelItems and childCounts, so no item shows in two places.
+ */
+export function childrenOf(plan: Plan, parent: ItemId | null): ItemId[] {
+  const topLevel = topLevelItems(plan);
+  if (parent === null) return topLevel;
+  const surfaced = new Set(topLevel);
+  return Object.values(plan.items)
+    .filter((item) => item.parent === parent && !surfaced.has(item.id))
+    .map((item) => item.id);
+}
+
+/**
+ * The chain of groups from the top level down to `id`, inclusive: the
+ * breadcrumb for zooming into it. Empty for an unknown item. Cycle-safe:
+ * the chain stops where topLevelItems would surface the item.
+ */
+export function ancestry(plan: Plan, id: ItemId): ItemId[] {
+  if (!plan.items[id]) return [];
+  const surfaced = new Set(topLevelItems(plan));
+  const chain: ItemId[] = [id];
+  let current = id;
+  while (!surfaced.has(current)) {
+    const parent = plan.items[current]?.parent;
+    if (parent == null || chain.includes(parent)) break;
+    chain.unshift(parent);
+    current = parent;
+  }
+  return chain;
+}

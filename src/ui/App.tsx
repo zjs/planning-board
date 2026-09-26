@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   createItem,
   deleteItems,
   dropCard,
   groupItems,
   loadPlan,
+  moveToParent,
   openPlanStore,
   redo,
   renameItem,
@@ -18,23 +19,26 @@ import {
 import type { ItemId, Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { parsePlanJson } from '../domain/planJson.ts';
-import { childCounts } from '../domain/tree.ts';
+import { ancestry, childCounts, childrenOf } from '../domain/tree.ts';
 import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
 import {
   loadCompactHolding,
   loadViewChoice,
+  loadZoomPath,
   optionById,
   saveCompactHolding,
   saveViewChoice,
+  saveZoomPath,
   toViewSpec,
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
 import { DragGhost } from './DragGhost.tsx';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
 import { keyNames } from './platform.ts';
-import { useCardDrag } from './useCardDrag.ts';
+import { isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
+import { ZoomBar } from './ZoomBar.tsx';
 
 function samplePlan(): Plan {
   const result = parsePlanJson(sample);
@@ -75,7 +79,13 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const { plan, empty, canUndo, canRedo } = useSyncExternalStore(source.subscribe, source.getSnapshot);
   const [choice, setChoice] = useState(loadViewChoice);
   useEffect(() => saveViewChoice(choice), [choice]);
-  const view = useMemo(() => toViewSpec(choice), [choice]);
+  // Zoom (requirement 12, ADR 0008): the path of cards zoomed into. If one is
+  // deleted, the view falls back to the deepest one that still exists.
+  const [zoomPath, setZoomPath] = useState<ItemId[]>(loadZoomPath);
+  useEffect(() => saveZoomPath(zoomPath), [zoomPath]);
+  const root = useMemo(() => [...zoomPath].reverse().find((id) => plan.items[id]) ?? null, [zoomPath, plan]);
+  const view = useMemo(() => ({ ...toViewSpec(choice), root }), [choice, root]);
+  const counts = useMemo(() => childCounts(plan), [plan]);
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
   // The add modifier only means something on an axis that holds several values.
   const isMulti = (axis: ViewSpec['x']) => {
@@ -93,12 +103,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return () => clearTimeout(timer);
   }, [justMoved]);
 
-  const onDrop = useCallback(
-    (card: CardRef, target: DropTarget, mode: DropMode) => {
-      if (dropCard(store, view, card, target, mode)) setJustMoved(card.itemId);
-    },
-    [store, view],
-  );
   // Selection is viewer state, never part of the plan (docs/plans/sprint-1-plan.md).
   const [selection, setSelection] = useState<ReadonlySet<ItemId>>(() => new Set());
   // The last copy clicked, so Enter renames the copy you're looking at.
@@ -107,6 +111,23 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const [notice, setNotice] = useState<Notice | null>(null);
   // Deleted or undone items drop out of the selection.
   const selected = useMemo(() => new Set([...selection].filter((id) => plan.items[id])), [selection, plan]);
+
+  const onDrop = useCallback(
+    (card: CardRef, target: BoardTarget, mode: DropMode) => {
+      if (!isParentTarget(target)) {
+        if (dropCard(store, view, card, target, mode)) setJustMoved(card.itemId);
+        return;
+      }
+      // Dropped on the breadcrumb: move the card out to that level. It leaves this view, so say where it went.
+      if (moveToParent(store, [card.itemId], target.parent).length === 0) return;
+      // It's no longer on screen, so it mustn't stay selected where Delete or ⌘G could reach it.
+      setSelection((current) => new Set([...current].filter((id) => id !== card.itemId)));
+      const title = plan.items[card.itemId]?.title ?? 'card';
+      const to = target.parent === null ? 'the plan' : (plan.items[target.parent]?.title ?? 'the plan');
+      setNotice({ text: `Moved “${title}” out to ${to}`, step: store.undoManager.undoStack.at(-1) });
+    },
+    [store, view, plan],
+  );
 
   const onCardClick = useCallback(
     (card: CardRef, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
@@ -122,11 +143,47 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [],
   );
   const clearSelection = useCallback(() => setSelection(new Set()), []);
-  const onCardDoubleClick = useCallback((card: CardRef) => {
-    setSelection(new Set([card.itemId]));
-    setAnchor(card);
-    setEditing({ kind: 'rename', card });
-  }, []);
+
+  // Scroll positions per zoom level, so zooming back out returns you to where you were.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrolls = useRef(new Map<string, { left: number; top: number }>());
+  const zoomTo = useCallback(
+    (id: ItemId | null) => {
+      const el = scrollRef.current;
+      if (el) scrolls.current.set(root ?? '', { left: el.scrollLeft, top: el.scrollTop });
+      setZoomPath(id === null ? [] : ancestry(plan, id));
+      setEditing(null);
+      // Selection outside the new level would be invisible, and Delete would still reach it.
+      setSelection(new Set());
+    },
+    [plan, root],
+  );
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const saved = scrolls.current.get(root ?? '');
+    el?.scrollTo(saved?.left ?? 0, saved?.top ?? 0);
+  }, [root]);
+  const zoomOut = useCallback(() => {
+    if (root === null) return;
+    zoomTo(ancestry(plan, root).at(-2) ?? null);
+    // Land on the card you came out of.
+    setSelection(new Set([root]));
+    setJustMoved(root);
+  }, [plan, root, zoomTo]);
+
+  // Double-click zooms into a group, and renames any other card (Q20: ⌘↓ zooms into those).
+  const onCardDoubleClick = useCallback(
+    (card: CardRef) => {
+      if (counts.has(card.itemId)) {
+        zoomTo(card.itemId);
+        return;
+      }
+      setSelection(new Set([card.itemId]));
+      setAnchor(card);
+      setEditing({ kind: 'rename', card });
+    },
+    [counts, zoomTo],
+  );
   const onSpotDoubleClick = useCallback((spot: DropTarget) => setEditing({ kind: 'new', spot }), []);
   const onCancelEdit = useCallback(() => setEditing(null), []);
   const onCommitEdit = useCallback(
@@ -134,14 +191,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       setEditing(null);
       if (editing?.kind === 'rename') renameItem(store, editing.card.itemId, title);
       if (editing?.kind === 'new') {
-        const id = createItem(store, view, editing.spot, title);
+        const id = createItem(store, view, editing.spot, title, root);
         if (id) {
           setSelection(new Set([id]));
           setJustMoved(id);
         }
       }
     },
-    [store, view, editing],
+    [store, view, editing, root],
   );
   const deleteSelection = useCallback(() => {
     if (selected.size === 0) return;
@@ -160,7 +217,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     if (result.created) setEditing({ kind: 'rename', card: { itemId: result.group, x: null, y: null } });
     else setJustMoved(result.group);
   }, [store, selected]);
-  const counts = useMemo(() => childCounts(plan), [plan]);
   const selectedGroups = [...selected].filter((id) => counts.has(id));
   const ungroupSelection = useCallback(() => {
     const released = ungroupItems(store, selected);
@@ -175,7 +231,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   // The notice's Undo only makes sense while the delete itself is the latest step.
   const noticeCurrent = notice !== null && canUndo && store.undoManager.undoStack.at(-1) === notice.step;
 
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [legendOpen, setLegendOpen] = useState(legendInitiallyOpen);
   const closeLegend = () => {
     setLegendOpen(false);
@@ -199,8 +254,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         // ⌘G is also the browser's "find next", so it's always claimed here.
         else if (key === 'g' && e.shiftKey) ungroupSelection();
         else if (key === 'g') groupSelection();
+        // Any card can be zoomed into, making it a group once it has children (Q20).
+        else if (key === 'arrowdown' && selected.size === 1) zoomTo([...selected][0]!);
+        else if (key === 'arrowup' && root !== null) zoomOut();
         else return;
         e.preventDefault();
+        return;
+      }
+      if (e.key === 'Escape') {
+        // Esc clears the selection first, then zooms out a level. Buttons don't use Esc, so this works with one focused.
+        if (selected.size > 0) clearSelection();
+        else zoomOut();
         return;
       }
       // Enter and Delete on a focused button belong to the button.
@@ -215,13 +279,24 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         if (id === null) return;
         e.preventDefault();
         setEditing({ kind: 'rename', card: card ?? { itemId: id, x: null, y: null } });
-      } else if (e.key === 'Escape') {
-        clearSelection();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [store, dragging, editing, selected, anchor, deleteSelection, clearSelection, groupSelection, ungroupSelection]);
+  }, [
+    store,
+    dragging,
+    editing,
+    selected,
+    anchor,
+    root,
+    deleteSelection,
+    clearSelection,
+    groupSelection,
+    ungroupSelection,
+    zoomTo,
+    zoomOut,
+  ]);
 
   const loadSample = () => {
     if (empty || window.confirm('Replace the board with the sample plan? You can undo this.')) loadPlan(store, samplePlan());
@@ -259,6 +334,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           >
             Ungroup
           </button>
+          <button
+            type="button"
+            onClick={() => zoomTo([...selected][0]!)}
+            disabled={selected.size !== 1}
+            title={`Zoom into the selected card to see or add what's inside (${keys.zoomIn})`}
+          >
+            Zoom in
+          </button>
           <span className="divider" />
           <button type="button" onClick={loadSample}>
             Load sample plan
@@ -282,6 +365,16 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           This browser isn't letting the board save, so changes will be lost when you reload. Chrome and Edge are
           known to work.
         </div>
+      )}
+      {!empty && root !== null && (
+        <ZoomBar
+          plan={plan}
+          root={root}
+          target={drag && isParentTarget(drag.target) ? drag.target.parent : undefined}
+          dragging={drag !== null}
+          empty={childrenOf(plan, root).length === 0}
+          onZoomTo={zoomTo}
+        />
       )}
       {empty ? (
         <div className="empty-state">

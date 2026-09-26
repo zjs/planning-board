@@ -81,3 +81,23 @@ export function saveCompactHolding(compact: boolean): void {
     // A convenience only.
   }
 }
+
+const ZOOM_KEY = 'planning-board:zoom';
+
+/** The path of cards zoomed into, top first (ADR 0008). Remembered per browser, like the axes. */
+export function loadZoomPath(): string[] {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(ZOOM_KEY) ?? '[]');
+    return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveZoomPath(path: readonly string[]): void {
+  try {
+    localStorage.setItem(ZOOM_KEY, JSON.stringify(path));
+  } catch {
+    // A convenience only.
+  }
+}
