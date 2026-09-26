@@ -61,10 +61,10 @@ export function App() {
 const JUST_MOVED_MS = 1400;
 const NOTICE_MS = 8000;
 
-/** A short message after a delete, with its own Undo. `depth` is the undo stack size right after it. */
+/** A short message after a delete, with its own Undo. `step` is the delete's own undo step. */
 interface Notice {
   text: string;
-  depth: number;
+  step: unknown;
 }
 
 function Workspace({ store, persistence }: { store: PlanStore; persistence: PersistenceStatus }) {
@@ -143,7 +143,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const deleteSelection = useCallback(() => {
     if (selected.size === 0) return;
     const count = deleteItems(store, selected);
-    if (count > 0) setNotice({ text: `Deleted ${count} ${count === 1 ? 'card' : 'cards'}`, depth: store.undoManager.undoStack.length });
+    if (count > 0) {
+      setNotice({ text: `Deleted ${count} ${count === 1 ? 'card' : 'cards'}`, step: store.undoManager.undoStack.at(-1) });
+    }
     setSelection(new Set());
   }, [store, selected]);
   useEffect(() => {
@@ -151,8 +153,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     const timer = setTimeout(() => setNotice(null), NOTICE_MS);
     return () => clearTimeout(timer);
   }, [notice]);
-  // The notice's Undo only makes sense while the delete is still the latest step.
-  const noticeCurrent = notice !== null && canUndo && store.undoManager.undoStack.length === notice.depth;
+  // The notice's Undo only makes sense while the delete itself is the latest step.
+  const noticeCurrent = notice !== null && canUndo && store.undoManager.undoStack.at(-1) === notice.step;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [legendOpen, setLegendOpen] = useState(legendInitiallyOpen);
@@ -167,7 +169,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // Typing in a field (a title, the axis picker) never triggers board shortcuts.
-      if (e.target instanceof Element && e.target.closest('input, textarea, select')) return;
+      const focus = e.target instanceof Element ? e.target : null;
+      if (focus?.closest('input, textarea, select')) return;
       if (dragging || editing) return;
       if (e.metaKey || e.ctrlKey) {
         if (e.altKey) return;
@@ -178,6 +181,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         e.preventDefault();
         return;
       }
+      // Enter and Delete on a focused button belong to the button.
+      if (focus?.closest('button, a')) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selected.size === 0) return;
         e.preventDefault();

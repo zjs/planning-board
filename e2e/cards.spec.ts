@@ -71,6 +71,18 @@ test('a blank or cancelled draft creates nothing', async ({ page }) => {
   await expect(page.locator('.empty-state')).toBeVisible();
 });
 
+test('Enter and Delete on a focused button act on the button, not the selection', async ({ page }) => {
+  await openApp(page);
+  await card(page, 'idp-initiated-login').click();
+  const chips = page.getByRole('button', { name: 'Chips' });
+  await chips.focus();
+  await page.keyboard.press('Enter');
+  await expect(chips).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Delete');
+  await expect(card(page, 'idp-initiated-login')).toHaveCount(1);
+  await expect(card(page, 'idp-initiated-login').getByRole('textbox')).toHaveCount(0);
+});
+
 test('double-click or Enter renames a card; typing never triggers board shortcuts', async ({ page }) => {
   await openApp(page);
   const c = card(page, 'idp-initiated-login');
@@ -119,6 +131,18 @@ test('deleting a group deletes its contents, and one undo brings everything back
   await page.reload();
   await page.getByTestId('board').waitFor();
   await expect(card(page, 'eu-data-residency').locator('.child-count')).toHaveText('4');
+
+  // A notice whose delete was undone doesn't come back when the undo history
+  // happens to reach the same length again.
+  await card(page, 'eu-data-residency').click();
+  await page.keyboard.press('Delete');
+  await expect(notice).toBeVisible();
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(notice).toHaveCount(0);
+  await card(page, 'idp-initiated-login').dblclick();
+  await page.keyboard.type('Renamed');
+  await page.keyboard.press('Enter');
+  await expect(notice).toHaveCount(0);
 });
 
 async function columnOf(page: Page, itemId: string): Promise<string> {
