@@ -1,0 +1,163 @@
+# Release Planning Whiteboard — Requirements (v0.2)
+
+Provenance tags: _(recalled)_ = from memory, unverified; _(priors)_ = reasoned guess. Verify tagged claims before relying on them.
+
+## Problem & goals
+
+Multi-component enterprise releases fail at the seams. Dependencies between roadmap items, and several items landing on the same component at once, are invisible in the tools teams plan with. Jira holds the committed plan for execution, but it's a poor place to brainstorm, reshuffle, and argue about a plan before it's committed.
+
+This tool is a collaborative planning whiteboard that sits upstream of Jira. Goals for v1:
+
+- Let product leadership see how roadmap items relate: dependencies, shared components, and hierarchy.
+- Let the same set of items be viewed from different perspectives (sequence, system area, size, time, team, customer) by pivoting axes, without re-entering data.
+- Surface conflicts (dependency order violations, component contention, group mismatches) as highlights that prompt discussion, never as hard constraints.
+- Let people build competing scenarios and compare them from any perspective, so trade-offs are legible.
+
+**Positioning.** Existing tools cover pieces of this. Jira Plans offers scenarios and dependency views, but only over committed Jira data _(recalled)_. Miro and FigJam give the sticky-note feel, with no model of dependencies or components. This tool's bet is the combination: pivotable perspectives on one set of items, plus conflict highlights, before anything is committed. Check scope decisions against that bet.
+
+## Users & usage context
+
+The primary users are product leadership on a product line: product managers, engineering managers, and technical leads. They plan releases that span several components or several products in the same line.
+
+The tool serves two modes of work. In a live session, several people rearrange one plan together, like sticky notes on a whiteboard. In asynchronous back-and-forth, a PM proposes a scenario and an EM counters it days later. A plan moves through phases: brainstorming ideas and how they build on each other, then rough sizing, then placing work in time.
+
+The project is open source. Users are likely to self-host inside their company network, because roadmaps are confidential.
+
+## Core concepts
+
+The model is a pivot table you manipulate by hand. Items carry properties. A view picks two properties as axes, and dragging a card into a cell writes those values.
+
+**Item (card).** A unit of roadmap work with a title, a description, and property values. Items keep a stable ID across scenarios.
+
+**Property (dimension).** A named attribute of an item. Some are built in and have special logic; the rest are custom. Values can form a hierarchy of any depth, such as area → service → subsystem or quarter → release. A property can hold several values, such as an item touching three components; that card appears once in each matching lane.
+
+| Property | Kind | Special logic |
+| --- | --- | --- |
+| Sequence | Built-in, layout position | None on its own; dependency links carry all order |
+| Dependencies | Built-in, item → item links | Drawn as lines; flagged when a prerequisite is placed after its dependent |
+| System (e.g. Area → Service → Subsystem) | Built-in, user-defined levels, multi-valued | Contention detection at the deepest level |
+| Size | Built-in, ordered (e.g. XS–XL) | Flagged when a child is larger than its group; no roll-up |
+| Time → Release | Built-in, ordered, hierarchical | Checked against dependencies; contention measured here |
+| Team, Customer, Theme, etc. | Custom select or tag, any depth | None; usable as axes and filters |
+
+**View.** A choice of X and Y axes, each a property at some level of its hierarchy. Other properties show as attributes on the card. Every view has a holding area for cards with no value on its axes yet.
+
+**Zoom.** Moving one level down a hierarchy: within a property (area → service), along an axis (quarter → release), or into the item tree (a group → its children).
+
+**Group.** Any item can contain other items, recursively, like grouping in a diagram editor. An item has at most one parent. A group keeps its own values, such as a PM's ballpark date or size, while its children refine them. Decomposing an item means turning it into a group and moving its dependencies to the specific children that have them.
+
+**Scenario.** A fork of the plan that shares item IDs with its siblings. Scenarios can be compared item by item in any view. An item decomposed in one scenario but not the other shows as decomposed, with its new children listed.
+
+## Functional requirements
+
+**Board and views**
+
+1. Users can pick any two properties, at any hierarchy level, as the X and Y axes of a view.
+2. Dragging a card into a cell sets that card's values for both axis properties.
+3. A card with several values on an axis appears in each matching lane. Dragging one copy replaces only that lane's value. Dropping with a modifier key adds a value instead. Dragging a copy to the holding area removes only that value.
+4. Cards show non-axis properties as compact attributes, such as a size badge in the sequence view.
+5. Each view has a holding area for cards missing a value on either axis.
+6. Sequence views show no step numbers or column labels, so placement doesn't read as a claim of order between unlinked items.
+7. Users can zoom into a lane or column to see the next hierarchy level, and zoom back out.
+8. Users can save named views and switch between them in one step.
+9. Users can filter cards by any property, including custom tags.
+
+**Items and groups**
+
+10. Users can create, edit, and delete items directly on the board.
+11. Users can group items into a parent item, recursively, and ungroup them.
+12. Users can zoom into a group to see only its children.
+13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value.
+14. Grouping never creates a cycle, even when two people nest items at the same moment.
+
+**Relationships and conflicts**
+
+15. Users can draw dependency links between items, including between items at different group levels.
+16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view.
+17. The tool highlights a component when more items touch it in one time bucket than its concurrency limit allows. No limit applies until a user sets one, per component or as a plan default.
+18. Conflicts inside a collapsed group are visible on the group card.
+19. The tool never blocks a placement because of a conflict. Users can mark a specific conflict as reviewed, with a note; it stays suppressed until an involved item moves.
+20. A conflicts panel lists every active conflict by type, and users can hide any type.
+21. Every feature works on items with no system values; conflict checks skip them. In a system view, dragging a card into a lane tags it, so the view doubles as the fastest way to fill in components.
+
+**Scenarios**
+
+22. Users can fork the current plan into a named scenario.
+23. Users can compare two scenarios in any view. Moved cards show their old position and an arrow. Added, removed, changed, and decomposed items are marked.
+24. The comparison lists conflicts present in one scenario but not the other.
+
+**Properties**
+
+25. Built-in properties are present in every plan and carry the logic above.
+26. Users can add custom properties of type single-select or multi-select tag, with an optional hierarchy of any depth.
+27. Users can edit the allowed values of hierarchical and ordered properties, such as the system taxonomy's levels and names, its components, or releases.
+
+**Import and export**
+
+28. Users can import items from CSV with a column-mapping step, using Jira's CSV export as the reference format, including its Components field.
+29. Users can save a plan to a file and open it again, including all scenarios.
+
+**Sharing and collaboration**
+
+30. Users can share a plan by link. The relay stores an encrypted snapshot, so recipients can open it later without the sender online.
+31. Several users can edit the same plan at the same time and see each other's changes live.
+32. Users see who else is present and where their cursors are.
+
+## Milestones
+
+**M1: prove the core bet.** One person drives while others watch on a shared screen. Covers requirements 1–29: pivots and zoom, groups, dependencies, contention, scenarios, custom properties, CSV import, and plan files. Built on the CRDT data model from day one, so M2 needs no rewrite _(priors)_.
+
+**M2: collaboration.** Requirements 30–32: encrypted share links with stored snapshots, live multi-user editing, and presence. The relay is written in Go.
+
+**Later.** Merging between scenarios, typed dependencies, and Jira sync.
+
+## Architecture & non-functional requirements
+
+The plan is a document, not a database: a CRDT document held in each participant's browser. From M2 on, a thin relay syncs sessions and stores encrypted snapshots for share links.
+
+```mermaid
+flowchart LR
+  A[Browser A<br/>CRDT doc + local store] <--> R[Relay<br/>forwards encrypted updates]
+  B[Browser B<br/>CRDT doc + local store] <--> R
+  R --> S[(Encrypted snapshots)]
+  A --> F[Plan file<br/>save / open]
+```
+
+- **Sync:** a CRDT library such as Yjs _(recalled: widely used for this, with a ready-made WebSocket relay)_.
+- **Persistence:** in M1, autosave to browser storage plus explicit save and open of a plan file. In M2, shared plans also persist as encrypted snapshots, so a plan survives everyone leaving. The file format is documented and versioned.
+- **Confidentiality:** sessions and snapshots are end-to-end encrypted, with the key in the URL fragment so the server never sees it _(recalled: Excalidraw's approach for shared links)_. The relay therefore can't read Yjs updates; it's a message broker and blob store.
+- **Tree integrity:** grouping uses a move operation that can't create cycles under concurrent edits. Concurrent tree moves are a known CRDT problem with published solutions _(recalled)_, and naive implementations get it wrong.
+- **Scale:** up to a few hundred items per plan, with a few dozen visible at once. Ordinary DOM or SVG rendering should be enough _(priors)_. Grouping and filtering keep views readable.
+- **Self-hosting:** one container image serving the static app, the relay, and snapshot storage on local disk.
+- **Accounts:** none. A display name and cursor color identify each participant.
+- **License:** Apache 2.0.
+
+## Out of scope for v1
+
+- Live Jira integration, in either direction. CSV import covers the starting point.
+- Merging or cherry-picking changes between scenarios. Stable item IDs keep this possible later.
+- Server-readable storage, user accounts, SSO, and permissions.
+- Auto-scheduling, or constraints that prevent conflicting placements.
+- Capacity planning against team availability.
+- Typed dependencies (finish-to-start, finish-to-finish, and so on).
+- Summing relative sizes into totals.
+- Soft "prefer before" links (possible future enhancement).
+- Remembering card positions within a cell per view (hard to manage across screen sizes).
+
+## Risks
+
+- **Nobody tags components.** If items rarely get system values, contention detection stays empty and the headline feature never shows up. Mitigations: system views as a tagging tool (req. 21), and importing Jira's Components field (req. 28).
+- **Conflict noise.** Dense data plus group mismatches could turn the board red. Mitigations: no default limit, a conflicts panel, per-type hiding, and reviewed conflicts.
+- **Pivoting erases spatial memory.** Sticky-note boards work partly because things stay where people put them, and every pivot rearranges the board. Per-view positions are deferred; watch for this in user sessions.
+- **Scope for a side project.** Even M1 is substantial. If it stalls, cut scenarios down to "compare two plan files" before cutting pivots or conflicts, since those are the core bet.
+
+## Assumptions
+
+- Groups hold their own values and children refine them. Mismatches are highlighted, never resolved automatically.
+- Contention compares items in the same time bucket at the deepest system level, against a limit once one is set.
+- Sequence is a layout position; dependency links carry all the ordering the tool checks.
+- An item has at most one parent group.
+- Custom properties are single-select or multi-select tags, with a hierarchy of any depth.
+- Dependencies have one type: A must come before B.
+
+Open questions live in `docs/questions.md`.
