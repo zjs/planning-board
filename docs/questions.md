@@ -18,7 +18,7 @@ Entry format:
 - Context: Requirement 3. Dropping with a modifier adds a value to a multi-valued property instead of replacing one.
 - Options: modifier key only; a visible "add to lane" control on hover; both.
 - Recommendation: build the modifier drop in sprint 0 and watch whether testers find it in the user session.
-- Status: open
+- Status: open. Built in slice 2: ⌥ Option / Alt, with a "+ add" badge on the drag ghost and a line in the on-screen help. One known snag: some Linux window managers take Alt-drag for themselves (ADR 0007), which is another argument for a visible control. The session script has a task for this.
 
 ### Q2: Should sequence views show a softer "shares a component" hint?
 - Context: Contention is only checked in time views, since sequence steps don't mean items run concurrently.

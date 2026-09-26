@@ -3,13 +3,20 @@ import type { Locator, Page } from '@playwright/test';
 
 export const APP_URL = pathToFileURL(new URL('../dist/index.html', import.meta.url).pathname).href;
 
-/** Open the app, loading the sample plan if the board is empty (every test starts with fresh storage). */
-export async function openApp(page: Page) {
+/**
+ * Open the app, loading the sample plan if the board is empty (every test
+ * starts with fresh storage), and close the first-run help so it doesn't
+ * cover cards.
+ */
+export async function openApp(page: Page, { keepHelp = false } = {}) {
   await page.goto(APP_URL);
   const loadButton = page.locator('.empty-state button');
   await page.getByTestId('board').or(loadButton).waitFor();
   if (await loadButton.isVisible()) await loadButton.click();
   await page.getByTestId('board').waitFor();
+  if (!keepHelp && (await page.getByTestId('legend').isVisible())) {
+    await page.getByRole('button', { name: 'Close help' }).click();
+  }
 }
 
 export async function pickAxes(page: Page, x: string, y: string) {

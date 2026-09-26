@@ -6,7 +6,7 @@ Status: sprint 0, validating the core interaction. Single user, runs entirely in
 
 ## Try it
 
-Every CI run attaches the app as one self-contained HTML file. Open a run under **Actions**, download the `planning-board-<commit>` artifact, unzip it, and open `index.html` in a browser.
+Every CI run attaches the app as one self-contained HTML file. Open a run under **Actions**, download the `planning-board-<commit>` artifact, unzip it, and open `index.html` in a browser. [`docs/demos/sprint-0.md`](docs/demos/sprint-0.md) walks through what to try.
 
 ## Develop
 
