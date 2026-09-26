@@ -55,6 +55,13 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dd>Makes a new card there, with that row's and column's values. Type a title and press Enter.</dd>
         <dt>Double-click a card, or press Enter</dt>
         <dd>Renames it.</dd>
+        <dt>
+          <kbd>{keys.group}</kbd> groups the selection
+        </dt>
+        <dd>
+          The new group card gets the values its cards share; type its name. If one selected card is already a group,
+          the others join it instead. <kbd>{keys.ungroup}</kbd> ungroups.
+        </dd>
         <dt>Undo, redo, cancel</dt>
         <dd>
           <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.

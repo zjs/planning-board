@@ -3,6 +3,7 @@ import {
   createItem,
   deleteItems,
   dropCard,
+  groupItems,
   loadPlan,
   openPlanStore,
   redo,
@@ -10,12 +11,14 @@ import {
   resetPlan,
   snapshotSource,
   undo,
+  ungroupItems,
   type PersistenceStatus,
   type PlanStore,
 } from '../commands/store.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { parsePlanJson } from '../domain/planJson.ts';
+import { childCounts } from '../domain/tree.ts';
 import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
@@ -148,6 +151,22 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     }
     setSelection(new Set());
   }, [store, selected]);
+  // ⌘G: group the selection, or add it to the one group in it (Q15). A new group opens for naming.
+  const groupSelection = useCallback(() => {
+    const result = groupItems(store, selected);
+    if (!result) return;
+    setSelection(new Set([result.group]));
+    setAnchor(null);
+    if (result.created) setEditing({ kind: 'rename', card: { itemId: result.group, x: null, y: null } });
+    else setJustMoved(result.group);
+  }, [store, selected]);
+  const counts = useMemo(() => childCounts(plan), [plan]);
+  const selectedGroups = [...selected].filter((id) => counts.has(id));
+  const ungroupSelection = useCallback(() => {
+    const released = ungroupItems(store, selected);
+    if (released.length > 0) setSelection(new Set(released));
+  }, [store, selected]);
+
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(null), NOTICE_MS);
@@ -177,6 +196,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         const key = e.key.toLowerCase();
         if (key === 'z' && !e.shiftKey) undo(store);
         else if ((key === 'z' && e.shiftKey) || key === 'y') redo(store);
+        // ⌘G is also the browser's "find next", so it's always claimed here.
+        else if (key === 'g' && e.shiftKey) ungroupSelection();
+        else if (key === 'g') groupSelection();
         else return;
         e.preventDefault();
         return;
@@ -199,7 +221,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [store, dragging, editing, selected, anchor, deleteSelection, clearSelection]);
+  }, [store, dragging, editing, selected, anchor, deleteSelection, clearSelection, groupSelection, ungroupSelection]);
 
   const loadSample = () => {
     if (empty || window.confirm('Replace the board with the sample plan? You can undo this.')) loadPlan(store, samplePlan());
@@ -219,6 +241,23 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
           <button type="button" onClick={() => redo(store)} disabled={!canRedo} title={`Redo (${keys.redo})`}>
             ↷ Redo
+          </button>
+          <span className="divider" />
+          <button
+            type="button"
+            onClick={groupSelection}
+            disabled={selected.size === 0}
+            title={`Group the selected cards (${keys.group})`}
+          >
+            Group
+          </button>
+          <button
+            type="button"
+            onClick={ungroupSelection}
+            disabled={selectedGroups.length === 0}
+            title={`Ungroup the selected groups (${keys.ungroup})`}
+          >
+            Ungroup
           </button>
           <span className="divider" />
           <button type="button" onClick={loadSample}>
