@@ -51,6 +51,29 @@ export async function reveal(locator: Locator) {
   await locator.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }));
 }
 
+/**
+ * Double-click empty space in a cell: just below its last card (inside the
+ * cell's padding at worst), scrolled to the middle of the board so the
+ * pinned headers and holding lanes can't be in the way.
+ */
+export async function doubleClickEmpty(page: Page, target: Locator) {
+  await reveal(target);
+  const spot = () =>
+    target.evaluate((el) => {
+      const cards = el.querySelectorAll('.card');
+      const box = el.getBoundingClientRect();
+      const last = cards[cards.length - 1]?.getBoundingClientRect();
+      return { x: box.left + box.width / 2, y: last ? last.bottom + 4 : box.top + 20 };
+    });
+  const first = await spot();
+  await page.locator('.board-scroll').evaluate((scroller, y) => {
+    const r = scroller.getBoundingClientRect();
+    scroller.scrollTop += y - (r.top + r.height / 2);
+  }, first.y);
+  const { x, y } = await spot();
+  await page.mouse.dblclick(x, y);
+}
+
 /** Drag with real pointer events, the way a mouse would. */
 export async function dragTo(page: Page, from: Locator, to: Locator, opts: { alt?: boolean } = {}) {
   await reveal(from);

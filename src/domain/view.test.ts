@@ -162,4 +162,24 @@ describe('layoutView', () => {
     expect(layout.columns).toEqual([]);
     expect(layout.holding.corner.map((ref) => ref.itemId)).toEqual(['x']);
   });
+
+  it('zooms into one lane: its children become lanes, coarse cards wait, the rest are hidden (Q18)', () => {
+    const layout = layoutView(
+      plan(
+        item('sso', { values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1'] } }),
+        item('both', { values: { [SYSTEM]: ['id/mfa', 'pay/ledger'], [TIME]: ['q1'] } }),
+        item('area-only', { values: { [SYSTEM]: ['id'], [TIME]: ['q2'] } }),
+        item('billing', { values: { [SYSTEM]: ['pay/ledger'], [TIME]: ['q1'] } }),
+        item('untagged', { values: { [TIME]: ['q1'] } }),
+      ),
+      { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1, within: 'id' } },
+    );
+    // Identity's components, in tree order; Payments' ledger isn't a lane.
+    expect(layout.rows.map((l) => l.key)).toEqual(['id/mfa', 'id/sso']);
+    // A card also in Billing shows only in its Identity lane.
+    expect(cellMap(layout)).toEqual({ 'id/mfa / q1': ['both'], 'id/sso / q1': ['sso'] });
+    // "Identity, no component yet" waits in the holding lane under its quarter.
+    expect(layout.holding.columns[1]).toEqual([{ itemId: 'area-only', x: 'q2', y: null }]);
+    expect(allHolding(layout).map((r) => r.itemId)).toEqual(['area-only']);
+  });
 });

@@ -52,3 +52,17 @@ export function valuesAtLevel(property: SelectProperty, level: number): ValueNod
     .sort(comparePaths)
     .map((path) => path[path.length - 1]!);
 }
+
+/** Whether `valueId` is `ancestor` or sits anywhere below it. */
+export function isWithin(property: SelectProperty, valueId: ValueId, ancestor: ValueId): boolean {
+  return pathTo(property, valueId).some((node) => node.id === ancestor);
+}
+
+/**
+ * Drop values that are ancestors of other values in the list: refining
+ * Identity to Identity/SSO replaces Identity rather than keeping both.
+ */
+export function withoutAncestors(property: SelectProperty, values: readonly ValueId[]): ValueId[] {
+  const ancestors = new Set(values.flatMap((v) => pathTo(property, v).slice(0, -1).map((n) => n.id)));
+  return values.filter((v) => !ancestors.has(v));
+}

@@ -1,4 +1,4 @@
-import { AXIS_OPTIONS, chooseAxis, type ViewChoice } from './axes.ts';
+import { AXIS_OPTIONS, chooseAxis, swapAxes, type ViewChoice } from './axes.ts';
 
 interface Props {
   choice: ViewChoice;
@@ -30,7 +30,7 @@ export function AxisPicker({ choice, onChange }: Props) {
         className="swap"
         title="Swap rows and columns"
         aria-label="Swap rows and columns"
-        onClick={() => onChange({ x: choice.y, y: choice.x })}
+        onClick={() => onChange(swapAxes(choice))}
       >
         ⇄
       </button>

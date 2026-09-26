@@ -30,6 +30,8 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       onCommitEdit={() => undefined}
       onCancelEdit={() => undefined}
       onBackgroundPointerDown={() => undefined}
+      zoomableLanes={{ x: new Set(), y: new Set() }}
+      onLaneZoom={() => undefined}
     />,
   );
 }

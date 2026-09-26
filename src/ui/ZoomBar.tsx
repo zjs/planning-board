@@ -3,10 +3,19 @@ import { cardAttributes } from '../domain/attributes.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import { ancestry } from '../domain/tree.ts';
 
+/** A lane zoom on one axis, shown as a removable chip. */
+export interface LaneZoomChip {
+  which: 'x' | 'y';
+  /** E.g. "System: Identity & Access". */
+  label: string;
+}
+
 interface Props {
   plan: Plan;
-  /** The card zoomed into. */
-  root: ItemId;
+  /** The card zoomed into, or null at the top level. */
+  root: ItemId | null;
+  lanes: LaneZoomChip[];
+  onClearLane: (which: 'x' | 'y') => void;
   /** The drag is over this breadcrumb segment (a parent, or null for the plan). */
   target: ItemId | null | undefined;
   /** A card is being dragged, so segments show as drop targets. */
@@ -24,11 +33,31 @@ const NO_AXES = { x: { property: '', level: 0 }, y: { property: '', level: 0 } }
  * to the top, and the card's own values. Each segment is also a drop target
  * that moves a card out to that level.
  */
-export function ZoomBar({ plan, root, target, dragging, empty, onZoomTo }: Props) {
-  const chain = useMemo(() => ancestry(plan, root), [plan, root]);
-  const item = plan.items[root];
+export function ZoomBar({ plan, root, lanes, onClearLane, target, dragging, empty, onZoomTo }: Props) {
+  const chain = useMemo(() => (root === null ? [] : ancestry(plan, root)), [plan, root]);
+  const item = root === null ? undefined : plan.items[root];
   const values = useMemo(() => (item ? cardAttributes(plan, item, NO_AXES) : []), [plan, item]);
-  if (!item) return null;
+  if (!item && lanes.length === 0) return null;
+  const laneChips = lanes.map((lane) => (
+    <span key={lane.which} className="lane-chip">
+      {lane.label}
+      <button
+        type="button"
+        onClick={() => onClearLane(lane.which)}
+        aria-label={`Zoom out of ${lane.label}`}
+        title="Zoom out of this lane"
+      >
+        ✕
+      </button>
+    </span>
+  ));
+  if (!item) {
+    return (
+      <nav className="zoom-bar" aria-label="Zoom" data-testid="zoom-bar">
+        {laneChips}
+      </nav>
+    );
+  }
   // Every level above the current one, starting with the whole plan.
   const levels: { id: ItemId | null; label: string }[] = [
     { id: null, label: 'Plan' },
@@ -55,6 +84,7 @@ export function ZoomBar({ plan, root, target, dragging, empty, onZoomTo }: Props
           {item.title}
         </li>
       </ol>
+      {laneChips}
       {values.length > 0 && (
         <ul className="zoom-values" aria-label={`${item.title}'s own values`}>
           {values.map((v) => (

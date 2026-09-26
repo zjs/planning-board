@@ -69,8 +69,9 @@ body {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 8px 24px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
@@ -79,6 +80,12 @@ body {
 .toolbar h1 {
   font-size: 16px;
   margin: 0;
+  white-space: nowrap;
+}
+
+/* Labels stay on one line; a narrow window wraps whole groups of controls instead. */
+.toolbar button {
+  white-space: nowrap;
 }
 
 .actions {
@@ -233,6 +240,52 @@ button.primary {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* A lane header you can zoom into: reads as a header, with a hint that it opens. */
+.lane-zoom {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: inherit;
+  text-align: left;
+  color: inherit;
+}
+
+.lane-zoom::after {
+  content: ' ⤢';
+  color: var(--muted);
+  font-weight: normal;
+  opacity: 0;
+}
+
+.lane-zoom:hover {
+  color: var(--accent);
+}
+
+.lane-zoom:hover::after,
+.lane-zoom:focus-visible::after {
+  opacity: 1;
+}
+
+.lane-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 2px 1px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.lane-chip button {
+  padding: 0 5px;
+  border: none;
+  background: none;
+  color: inherit;
+  line-height: 1;
 }
 
 .zoom-hint {

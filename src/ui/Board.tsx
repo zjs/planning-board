@@ -38,6 +38,9 @@ interface Props {
   onCancelEdit: () => void;
   /** A press on the board outside any card, which clears the selection. */
   onBackgroundPointerDown: () => void;
+  /** Lanes whose header zooms one level down into them (requirement 7). */
+  zoomableLanes: { x: ReadonlySet<string>; y: ReadonlySet<string> };
+  onLaneZoom: (which: 'x' | 'y', key: string) => void;
   scrollRef: RefObject<HTMLDivElement | null>;
 }
 
@@ -125,7 +128,23 @@ export const Board = memo(function Board({
   onCommitEdit,
   onCancelEdit,
   onBackgroundPointerDown,
+  zoomableLanes,
+  onLaneZoom,
 }: Props) {
+  /** A lane header: a button that zooms into the lane when there's a level below it. */
+  const laneHeader = (which: 'x' | 'y', lane: Lane) =>
+    zoomableLanes[which].has(lane.key) ? (
+      <button
+        type="button"
+        className="lane-zoom"
+        onClick={() => onLaneZoom(which, lane.key)}
+        title={`Zoom into ${lane.label ?? ''}`}
+      >
+        {lane.label}
+      </button>
+    ) : (
+      lane.label
+    );
   const renaming = renameCopy(layout, editing);
   const isDraftSpot = (row: string | null, column: string | null) =>
     editing?.kind === 'new' && editing.spot.x === column && editing.spot.y === row;
@@ -285,7 +304,7 @@ export const Board = memo(function Board({
           {columnTracks.map((t) =>
             t.kind === 'lane' ? (
               <div key={t.lane.key} className="column-header" data-column={t.lane.key}>
-                {t.lane.label}
+                {laneHeader('x', t.lane)}
               </div>
             ) : (
               <div key={t.key} className="column-header gap" />
@@ -312,7 +331,7 @@ export const Board = memo(function Board({
           {rowTracks.map((row) => [
             row.kind === 'lane' ? (
               <div key={`h-${row.lane.key}`} className="row-header" data-row={row.lane.key}>
-                {row.lane.label}
+                {laneHeader('y', row.lane)}
               </div>
             ) : (
               <div key={`h-${row.key}`} className={layout.rows.length === 0 ? 'row-header' : 'row-header gap-row'} />
