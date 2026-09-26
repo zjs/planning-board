@@ -42,11 +42,23 @@ Entry format:
 - Recommendation: keep these for sprint 1 and revisit with real data. The time bucket is the one most likely to matter, since it changes which conflicts show at all.
 - Status: open
 
-### Q13: A multi-area card dropped on "No area" lands in its other rows
-- Context: Requirement 3 and the Q10/Q11 answer. A drop gives the dragged copy the values of the lane it lands in, and a holding lane removes only that copy's value. So if a card is in Billing and Identity, dropping its Billing copy on Q2's "No area" lane removes Billing. The card still has Identity, so it shows up in the Identity row, not in "No area". The landing flash shows where it went, but the card doesn't end up where it was dropped.
-- Options: (a) keep it: remove only the dragged copy's value; (b) clear every area, so the card lands in "No area"; (c) show a hint during the drag, such as "Removes Billing; stays in Identity".
-- Recommendation: (a) for now, since (b) silently deletes Identity. Add (c) if testers are surprised.
-- Status: open
+### Q17: What does deleting a group delete?
+- Context: Requirements 10 and 11, sprint 1. Delete and ungroup are both available on a selected group.
+- Options: (a) the group and everything inside it; (b) only the group, with its children moving up a level (the same as ungroup); (c) ask each time.
+- Recommendation: (a), because it matches diagram editors, and ungroup already covers keeping the children. It's undoable, and a large delete flashes a count ("Deleted 5 cards · Undo").
+- Status: open. Building (a) in sprint 1, slice 1.
+
+### Q18: What happens to other cards when you zoom into a lane?
+- Context: Requirement 7, sprint 1. Zooming Identity into its components raises two questions: where do Billing cards go, and where do cards tagged only "Identity", with no component, go?
+- Options: for cards in other lanes, (a) hide them or (b) keep them in the holding lanes. For area-only cards, (c) show them in "No component" or (d) show them in every component lane.
+- Recommendation: (a) and (c). A zoomed view is about one area, and "No component" doubles as the to-do list for refining, just as system views double as a tagging tool (req. 21).
+- Status: open. Building (a) and (c) in sprint 1, slice 4.
+
+### Q19: When zoomed into a group, how do its own values show?
+- Context: Requirement 13. A group keeps its own values, such as a PM's ballpark quarter, while its children refine them. Inside the group, you see only the children.
+- Options: (a) as badges in the zoom header; (b) also shade the lane or column matching the group's value, so children outside it stand out; (c) both.
+- Recommendation: (a) for sprint 1, since the mismatch markers already flag children that don't fit. Revisit (b) after the session.
+- Status: open. Building (a) in sprint 1, slice 3.
 
 ## Answered
 
@@ -94,3 +106,27 @@ Entry format:
 - Recommendation: (c). It's explicit, and it covers both intents. The cost is a slightly busier holding area during a drag.
 - Status: answered 2026-09-26: Proposal for Q10 likely provides an intuitive solution for this.
   - Built in slice 5 as the Q10 holding lanes. A drop gives the dragged copy the values of the lane it lands in. Dropping a card from (Billing, Q2) on Billing's "No quarter" lane clears the quarter ("we don't know when"). Dropping it on Q2's "No area" lane removes Billing ("not this component"). The corner clears both.
+
+### Q13: A multi-area card dropped on "No area" lands in its other rows
+- Context: Requirement 3 and the Q10/Q11 answer. A drop gives the dragged copy the values of the lane it lands in, and a holding lane removes only that copy's value. So if a card is in Billing and Identity, dropping its Billing copy on Q2's "No area" lane removes Billing. The card still has Identity, so it shows up in the Identity row, not in "No area". The landing flash shows where it went, but the card doesn't end up where it was dropped.
+- Options: (a) keep it: remove only the dragged copy's value; (b) clear every area, so the card lands in "No area"; (c) show a hint during the drag, such as "Removes Billing; stays in Identity".
+- Recommendation: (a) for now, since (b) silently deletes Identity. Add (c) if testers are surprised.
+- Status: answered 2026-09-26: agreed, keep (a).
+
+### Q14: How do dependencies show on the board?
+- Context: Requirements 15 and 16. The sample plan has dependency chains across areas; drawing every link at once gives about 100 crossing lines.
+- Options: (a) always draw out-of-order links, and draw the rest only for the hovered or selected card, both upstream and downstream; (b) draw everything, with a toggle to hide; (c) nothing until hover, with violations shown only as a badge.
+- Recommendation: (a). It keeps the board calm while the problems stand out.
+- Status: answered 2026-09-26: (a). Built with dependencies, after sprint 1.
+
+### Q15: How do people create groups and move cards in and out?
+- Context: Requirements 10–12, sprint 1 planning.
+- Options: (a) select cards, then Group (⌘G), and zoom in to add or move children out; (b) ⇧-drop a card onto another card to nest it; (c) both.
+- Recommendation: (a). It's how diagram editors work, it avoids a third drop modifier, and dependency focus reuses the selection later.
+- Status: answered 2026-09-26: (a). Sprint 1, slices 1–3.
+
+### Q16: Does a collapsed group show in lanes its children touch?
+- Context: Requirement 13 says a group's component touches include its children's. An epic tagged Identity with a child in Billing: does the group show in the Billing row?
+- Options: (a) solid copies in its own lanes, plus faded "via children" copies elsewhere, which can't be dragged and zoom in on double-click; (b) own lanes only, with a "+Billing" badge; (c) full copies everywhere, all draggable.
+- Recommendation: (a). The Billing row then shows everything that touches Billing, and no drag writes a value the group never had.
+- Status: answered 2026-09-26: (a). Sprint 1, slice 5.

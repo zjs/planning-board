@@ -67,12 +67,12 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 10. Users can create, edit, and delete items directly on the board.
 11. Users can group items into a parent item, recursively, and ungroup them.
 12. Users can zoom into a group to see only its children.
-13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value.
+13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value. A collapsed group also shows as a faded "via children" copy in lanes that only its children touch; faded copies can't be dragged (Q16).
 14. Grouping never creates a cycle, even when two people nest items at the same moment.
 
 **Relationships and conflicts**
 
-15. Users can draw dependency links between items, including between items at different group levels.
+15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14).
 16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view.
 17. The tool highlights a component when more items touch it in one time bucket than its concurrency limit allows. No limit applies until a user sets one, per component or as a plan default.
 18. Conflicts inside a collapsed group are visible on the group card.
