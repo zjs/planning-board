@@ -11,6 +11,9 @@
   --area-2: #3b5bdb;
   --area-3: #ae3ec9;
   --area-none: #adb5bd;
+  --drop: rgb(59 91 219 / 14%);
+  --warn-bg: #fff3bf;
+  --warn-text: #5c4400;
   --row-header: 150px;
   --column-min: 150px;
   --holding-width: 250px;
@@ -34,6 +37,9 @@
     --area-2: #748ffc;
     --area-3: #da77f2;
     --area-none: #6c6c72;
+    --drop: rgb(116 143 252 / 20%);
+    --warn-bg: #3d3314;
+    --warn-text: #ffe8a3;
   }
 }
 
@@ -66,10 +72,71 @@ body {
   margin: 0;
 }
 
-.build-tag {
+.actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actions .divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: var(--border);
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  padding: 8px 16px;
+}
+
+.banner {
+  padding: 8px 16px;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-bottom: 1px solid var(--border);
+}
+
+.loading,
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: var(--muted);
-  font-size: 12px;
+}
+
+.loading {
+  height: 100vh;
+}
+
+.empty-state h2 {
+  margin: 0;
+  color: var(--text);
+}
+
+.empty-state p {
+  margin: 0 0 8px;
 }
 
 .axis-picker {
@@ -205,8 +272,92 @@ body {
   font-weight: 600;
 }
 
+.card {
+  cursor: grab;
+  user-select: none;
+}
+
+.card.lifted {
+  opacity: 0.35;
+}
+
+.card.just-moved {
+  animation: just-moved 1.4s ease-out;
+}
+
+@keyframes just-moved {
+  0%,
+  30% {
+    box-shadow: 0 0 0 3px var(--accent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 .card-title {
   flex: 1;
+}
+
+body.dragging,
+body.dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+.cell.drop-target {
+  background-image: linear-gradient(var(--drop), var(--drop));
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.drag-ghost {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  font-size: 13px;
+  line-height: 1.3;
+  transform: rotate(1.5deg);
+  opacity: 0.95;
+}
+
+.add-badge {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.clear-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+
+.clear-zone {
+  padding: 14px 10px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.clear-zone.drop-target {
+  border-color: var(--accent);
+  background: var(--drop);
+  color: var(--text);
 }
 
 .child-count {

@@ -56,6 +56,12 @@ Entry format:
 - Recommendation: (b). Nothing is lost silently, and for single-valued axes it's the same as (a). The catch is that after the drop the card also shows in its old lane, which may surprise people. The user session will tell.
 - Status: open. Building (b) as a reversible default in slice 2.
 
+### Q11: What does dropping a card on the holding area remove?
+- Context: Requirement 3 says "dragging a copy to the holding area removes only that value", but a card in a cell has a value on *both* axes. In time × system, dropping a card on the holding area could mean "we don't know when" (clear the quarter) or "not this component" (clear the lane).
+- Options: (a) always clear the multi-valued axis; (b) clear both axes; (c) when a drag starts, the holding area shows two drop zones, one per axis, such as "Clear sequence position" and "Remove Billing".
+- Recommendation: (c). It's explicit, and it covers both intents. The cost is a slightly busier holding area during a drag.
+- Status: open. Built (c) in slice 2.
+
 ## Answered
 
 ### Q5: Where do builds go so the PM can click through them?

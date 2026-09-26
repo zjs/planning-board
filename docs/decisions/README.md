@@ -9,3 +9,5 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0003](0003-scenario-representation.md) | One Yjs document per scenario, diffed by item ID | Accepted |
 | [0004](0004-group-tree.md) | Parent pointers, with deterministic cycle repair for M2 | Accepted |
 | [0005](0005-plan-file-format.md) | Versioned, human-editable JSON plan files | Accepted |
+| [0006](0006-crdt.md) | Yjs, y-indexeddb, and the document layout | Accepted |
+| [0007](0007-drag-and-drop.md) | Custom pointer-event drag, rules in a pure function | Accepted |

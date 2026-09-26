@@ -13,8 +13,8 @@ Scope: single user, browser only, no server.
 Short ADRs (context, decision, alternatives, consequences), each readable without opening the code:
 
 - [x] Frontend framework and build tooling
-- [ ] CRDT library (default: Yjs)
-- [ ] Drag-and-drop approach
+- [x] CRDT library (default: Yjs)
+- [x] Drag-and-drop approach
 - [x] Rendering approach (default: DOM/SVG)
 - [x] Scenario representation. Proposed: one Yjs document per scenario, diffed by item ID. Decide now, even though the scenario UI is deferred, because it shapes the data model.
 - [x] Plan file format, with a version field
@@ -31,19 +31,19 @@ Short ADRs (context, decision, alternatives, consequences), each readable withou
 
 - [x] The board renders a view: lanes on Y, columns on X, and a holding area.
 - [x] An axis picker chooses X and Y from sequence, system (top level), size, and time (top level).
-- [ ] Dragging a card into a cell sets both values; after re-pivoting, the card shows up where it should.
-- [ ] A multi-valued card appears in each matching lane. Dragging one copy replaces only that lane's value. Dropping with a modifier key adds a value. Dragging a copy to the holding area removes only that value.
+- [x] Dragging a card into a cell sets both values; after re-pivoting, the card shows up where it should.
+- [x] A multi-valued card appears in each matching lane. Dragging one copy replaces only that lane's value. Dropping with a modifier key adds a value. Dragging a copy to the holding area removes only that value.
 - [x] Sequence views show no column numbers or labels (requirement 6).
 - [x] Group items render as a single card with a child count.
-- [ ] Undo and redo work for every change.
-- [ ] Reloading the page preserves the board.
-- [ ] Every PR and merge to `main` produces a single-file HTML build as a CI artifact (Q5; replaces "deploys to a static URL" for now).
+- [x] Undo and redo work for every change.
+- [x] Reloading the page preserves the board.
+- [x] Every PR and merge to `main` produces a single-file HTML build as a CI artifact (Q5; replaces "deploys to a static URL" for now).
 
 ### 4. Seed data
 
 - [x] A synthetic but realistic plan of about 150 items: 3–4 areas, about 15 components, some items touching several components, dependency chains across areas, a few groups nested 2–3 deep, and sizes and quarters on only about half the items. The sparseness is deliberate (requirement 21).
 - [x] Stored as a plain JSON file, so the PM can swap in sanitized real data later.
-- [ ] "Load sample plan" and "Reset" actions in the UI.
+- [x] "Load sample plan" and "Reset" actions in the UI.
 
 ### 5. Repository basics
 
