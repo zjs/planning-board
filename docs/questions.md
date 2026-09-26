@@ -48,7 +48,7 @@ Entry format:
 - Context: Requirement 4 isn't in the sprint 0 deliverables. But the exit criterion is "drag cards and watch values change". Right after a drag in sequence × system, the card doesn't show which quarter it's in, so the only way to check is to pivot.
 - Options: no attributes until sprint 1; a minimal badge row (size, quarter, system count); a click-to-inspect panel.
 - Recommendation: the minimal badge row. It's small, it's read-only, and testers need it to trust what the drag did.
-- Status: open. Built in slice 3. Badges show size, then time, then system, skipping whichever are on an axis. Several values show as "first +N", and the tooltip lists them all. A release shows as its own label ("27.4"), and the tooltip gives the full path ("Q2 2027 › 27.4").
+- Status: open. Built in slice 3. Badges show size, then time, then system. A property on an axis is skipped unless the card's value is more precise than the axis shows (a release in a quarter view, a component in an area view), so a drag can't quietly lose precision. Several values show as "first +N", and the tooltip lists them all. A release shows as its own label ("27.4"), and the tooltip gives the full path ("Q2 2027 › 27.4").
 
 ### Q10: Dropping a card from the holding area when it already has a value on one axis
 - Context: Requirements 2, 3, and 5. A card sits in the holding area if it's missing a value on either axis, but it may still have values on the other one. In time × system, a card tagged Identity with no quarter sits in holding. If it's dropped in the Billing row, Q2 column, should it lose Identity? Slice 2 needs an answer.
