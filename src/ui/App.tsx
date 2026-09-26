@@ -19,6 +19,8 @@ import { AxisPicker } from './AxisPicker.tsx';
 import { loadViewChoice, optionById, saveViewChoice, toViewSpec } from './axes.ts';
 import { Board } from './Board.tsx';
 import { DragGhost } from './DragGhost.tsx';
+import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
+import { keyNames } from './platform.ts';
 import { useCardDrag } from './useCardDrag.ts';
 
 function samplePlan(): Plan {
@@ -75,6 +77,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [store, view],
   );
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [legendOpen, setLegendOpen] = useState(legendInitiallyOpen);
+  const closeLegend = () => {
+    setLegendOpen(false);
+    rememberLegendClosed();
+  };
+  const keys = keyNames();
   const { drag, startDrag } = useCardDrag(onDrop, scrollRef);
 
   useEffect(() => {
@@ -103,10 +111,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         <h1>Planning Board</h1>
         <AxisPicker choice={choice} onChange={setChoice} />
         <div className="actions">
-          <button type="button" onClick={() => undo(store)} disabled={!canUndo} title="Undo (⌘Z / Ctrl+Z)">
+          <button type="button" onClick={() => undo(store)} disabled={!canUndo} title={`Undo (${keys.undo})`}>
             ↶ Undo
           </button>
-          <button type="button" onClick={() => redo(store)} disabled={!canRedo} title="Redo (⇧⌘Z / Ctrl+Y)">
+          <button type="button" onClick={() => redo(store)} disabled={!canRedo} title={`Redo (${keys.redo})`}>
             ↷ Redo
           </button>
           <span className="divider" />
@@ -115,6 +123,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
           <button type="button" onClick={reset} disabled={empty}>
             Reset
+          </button>
+          <span className="divider" />
+          <button
+            type="button"
+            onClick={() => (legendOpen ? closeLegend() : setLegendOpen(true))}
+            aria-pressed={legendOpen}
+            title="How it works"
+          >
+            ? Help
           </button>
         </div>
       </header>
@@ -146,6 +163,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           scrollRef={scrollRef}
         />
       )}
+      {legendOpen && <Legend onClose={closeLegend} />}
       {drag && <DragGhost drag={drag} canAdd={canAdd} />}
     </div>
   );

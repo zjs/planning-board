@@ -307,12 +307,16 @@ button.primary {
 }
 
 .card-attrs {
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
 .attr {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 0 5px;
   border-radius: 4px;
   background: var(--surface-2);
@@ -467,4 +471,68 @@ body.dragging * {
   flex-direction: column;
   gap: 6px;
   padding: 0 12px 12px;
+}
+
+.legend {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 50;
+  width: 340px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+  font-size: 13px;
+}
+
+.legend header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.legend h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.legend header button {
+  padding: 0 6px;
+  border: none;
+  background: none;
+  color: var(--muted);
+}
+
+.legend dl {
+  margin: 8px 0 0;
+}
+
+.legend dt {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.legend dd {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+
+.legend-foot {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+kbd {
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: inherit;
+  font-size: 12px;
 }

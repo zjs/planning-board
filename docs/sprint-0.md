@@ -25,7 +25,7 @@ Short ADRs (context, decision, alternatives, consequences), each readable withou
 - [x] Types for items, built-in properties (sequence, dependencies, system, size, time), multi-valued properties, value hierarchies of any depth, and parent pointers.
 - [x] A view query: given X and Y properties at a hierarchy level, return cells plus a holding area. Multi-valued items appear once in each matching lane.
 - [x] Tests covering the view query, including multi-valued items, missing values, and items with no system values.
-- [ ] _Stretch:_ conflict functions with tests (dependency order violations in sequence and time, component contention against a per-component limit with no limit by default, group/child mismatches). No UI yet.
+- [x] _Stretch:_ conflict functions with tests (dependency order violations in sequence and time, component contention against a per-component limit with no limit by default, group/child mismatches). No UI yet.
 
 ### 3. Walking skeleton
 

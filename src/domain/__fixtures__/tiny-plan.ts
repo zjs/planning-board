@@ -29,7 +29,7 @@ export const time: SelectProperty = {
   name: 'Time',
   levels: ['Quarter', 'Release'],
   multi: false,
-  values: values(['q1', null, 'a'], ['q2', null, 'b'], ['q1/r1', 'q1', 'a'], ['q1/r2', 'q1', 'b']),
+  values: values(['q1', null, 'a'], ['q2', null, 'b'], ['q1/r1', 'q1', 'a'], ['q1/r2', 'q1', 'b'], ['q2/r1', 'q2', 'a']),
 };
 
 export const size: SelectProperty = {
