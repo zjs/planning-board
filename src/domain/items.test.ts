@@ -1,0 +1,73 @@
+import { describe, expect, it } from 'vitest';
+import { item, plan } from './__fixtures__/tiny-plan.ts';
+import { cleanTitle, deletionOf, valuesForNewItem } from './items.ts';
+import { SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
+import type { ViewSpec } from './view.ts';
+
+const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
+const seqBySize: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SIZE, level: 0 } };
+
+describe('valuesForNewItem', () => {
+  it("takes the cell's values on both axes", () => {
+    expect(valuesForNewItem(plan(), timeBySystem, { x: 'q2', y: 'pay' })).toEqual({
+      sequence: null,
+      values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] },
+    });
+  });
+
+  it('takes only the named axis in a holding lane, and nothing in the corner', () => {
+    expect(valuesForNewItem(plan(), timeBySystem, { x: null, y: 'id' })).toEqual({
+      sequence: null,
+      values: { [SYSTEM]: ['id'] },
+    });
+    expect(valuesForNewItem(plan(), timeBySystem, { x: null, y: null })).toEqual({ sequence: null, values: {} });
+  });
+
+  it('takes a sequence position, including a new one from a gap', () => {
+    const p = plan(item('a', { sequence: 'a0' }));
+    expect(valuesForNewItem(p, seqBySize, { x: 'a0', y: 's' })).toEqual({
+      sequence: 'a0',
+      values: { [SIZE]: ['s'] },
+    });
+    expect(valuesForNewItem(p, seqBySize, { x: 'a1', y: null }).sequence).toBe('a1');
+  });
+});
+
+describe('deletionOf', () => {
+  const p = {
+    ...plan(
+      item('epic'),
+      item('story', { parent: 'epic' }),
+      item('task', { parent: 'story' }),
+      item('other'),
+      item('loner'),
+    ),
+    dependencies: [
+      { from: 'task', to: 'other' },
+      { from: 'other', to: 'loner' },
+      { from: 'loner', to: 'epic' },
+    ],
+  };
+
+  it('deletes a group with everything inside it, and the dependencies they touch (Q17)', () => {
+    const out = deletionOf(p, ['epic']);
+    expect(out.items.sort()).toEqual(['epic', 'story', 'task']);
+    expect(out.dependencies).toEqual([
+      { from: 'task', to: 'other' },
+      { from: 'loner', to: 'epic' },
+    ]);
+  });
+
+  it('handles overlapping selections, unknown IDs, and parent cycles', () => {
+    expect(deletionOf(p, ['story', 'task', 'nope']).items.sort()).toEqual(['story', 'task']);
+    const cyclic = plan(item('a', { parent: 'b' }), item('b', { parent: 'a' }));
+    expect(deletionOf(cyclic, ['a']).items.sort()).toEqual(['a', 'b']);
+  });
+});
+
+describe('cleanTitle', () => {
+  it('trims and collapses whitespace, and treats blank as nothing', () => {
+    expect(cleanTitle('  Passwordless\n login ')).toBe('Passwordless login');
+    expect(cleanTitle('   ')).toBeNull();
+  });
+});

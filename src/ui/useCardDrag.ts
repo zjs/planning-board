@@ -72,11 +72,13 @@ export function edgeSpeed(pos: number, start: number, end: number): number {
 
 /**
  * Drag cards between cells. `scrollRef` is the board's scroll container,
- * which scrolls when the pointer nears its edges.
+ * which scrolls when the pointer nears its edges. A press that never moves
+ * past the drag threshold is a click, reported to `onClick`.
  */
 export function useCardDrag(
   onDrop: (card: CardRef, target: DropTarget, mode: DropMode) => void,
   scrollRef: React.RefObject<HTMLElement | null>,
+  onClick: (card: CardRef, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void = () => undefined,
 ) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -86,9 +88,11 @@ export function useCardDrag(
   /** Set by an Alt-drop, so the Alt release that follows it is swallowed too. */
   const swallowAltUp = useRef(false);
   const onDropRef = useRef(onDrop);
+  const onClickRef = useRef(onClick);
   useEffect(() => {
     onDropRef.current = onDrop;
-  }, [onDrop]);
+    onClickRef.current = onClick;
+  }, [onDrop, onClick]);
 
   const update = useCallback((next: DragState | null) => {
     dragRef.current = next;
@@ -169,7 +173,12 @@ export function useCardDrag(
     };
     const up = (e: PointerEvent) => {
       const current = dragRef.current;
+      const pressed = pending.current;
       stop();
+      if (!current && pressed) {
+        onClickRef.current(pressed.card, e);
+        return;
+      }
       if (current && e.altKey) swallowAltUp.current = true;
       if (current?.target) onDropRef.current(current.card, current.target, e.altKey ? 'add' : 'replace');
     };

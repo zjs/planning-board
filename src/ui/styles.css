@@ -290,6 +290,55 @@ button.primary {
   opacity: 0.35;
 }
 
+/* Every copy of a selected item. An outline, so the card doesn't change size. */
+.card.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.card.draft {
+  border-style: dashed;
+  border-left-style: solid;
+  cursor: text;
+}
+
+.title-input {
+  flex: 1;
+  min-width: 0;
+  margin: -2px -4px;
+  padding: 2px 4px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  resize: none;
+  field-sizing: content;
+}
+
+.notice {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 60;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 14px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+}
+
+.notice button {
+  background: transparent;
+  color: inherit;
+  border-color: currentcolor;
+  font-weight: 600;
+}
+
 .card.just-moved {
   animation: just-moved 1.4s ease-out;
 }

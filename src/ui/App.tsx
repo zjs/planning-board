@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
+  createItem,
+  deleteItems,
   dropCard,
   loadPlan,
   openPlanStore,
   redo,
+  renameItem,
   resetPlan,
   snapshotSource,
   undo,
@@ -24,7 +27,7 @@ import {
   saveViewChoice,
   toViewSpec,
 } from './axes.ts';
-import { Board } from './Board.tsx';
+import { Board, type Editing } from './Board.tsx';
 import { DragGhost } from './DragGhost.tsx';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
 import { keyNames } from './platform.ts';
@@ -56,6 +59,13 @@ export function App() {
 }
 
 const JUST_MOVED_MS = 1400;
+const NOTICE_MS = 8000;
+
+/** A short message after a delete, with its own Undo. `depth` is the undo stack size right after it. */
+interface Notice {
+  text: string;
+  depth: number;
+}
 
 function Workspace({ store, persistence }: { store: PlanStore; persistence: PersistenceStatus }) {
   const source = useMemo(() => snapshotSource(store), [store]);
@@ -86,6 +96,64 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     },
     [store, view],
   );
+  // Selection is viewer state, never part of the plan (docs/plans/sprint-1-plan.md).
+  const [selection, setSelection] = useState<ReadonlySet<ItemId>>(() => new Set());
+  // The last copy clicked, so Enter renames the copy you're looking at.
+  const [anchor, setAnchor] = useState<CardRef | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  // Deleted or undone items drop out of the selection.
+  const selected = useMemo(() => new Set([...selection].filter((id) => plan.items[id])), [selection, plan]);
+
+  const onCardClick = useCallback(
+    (card: CardRef, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
+      setAnchor(card);
+      setSelection((current) => {
+        if (!(e.shiftKey || e.metaKey || e.ctrlKey)) return new Set([card.itemId]);
+        const next = new Set(current);
+        if (next.has(card.itemId)) next.delete(card.itemId);
+        else next.add(card.itemId);
+        return next;
+      });
+    },
+    [],
+  );
+  const clearSelection = useCallback(() => setSelection(new Set()), []);
+  const onCardDoubleClick = useCallback((card: CardRef) => {
+    setSelection(new Set([card.itemId]));
+    setAnchor(card);
+    setEditing({ kind: 'rename', card });
+  }, []);
+  const onSpotDoubleClick = useCallback((spot: DropTarget) => setEditing({ kind: 'new', spot }), []);
+  const onCancelEdit = useCallback(() => setEditing(null), []);
+  const onCommitEdit = useCallback(
+    (title: string) => {
+      setEditing(null);
+      if (editing?.kind === 'rename') renameItem(store, editing.card.itemId, title);
+      if (editing?.kind === 'new') {
+        const id = createItem(store, view, editing.spot, title);
+        if (id) {
+          setSelection(new Set([id]));
+          setJustMoved(id);
+        }
+      }
+    },
+    [store, view, editing],
+  );
+  const deleteSelection = useCallback(() => {
+    if (selected.size === 0) return;
+    const count = deleteItems(store, selected);
+    if (count > 0) setNotice({ text: `Deleted ${count} ${count === 1 ? 'card' : 'cards'}`, depth: store.undoManager.undoStack.length });
+    setSelection(new Set());
+  }, [store, selected]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [notice]);
+  // The notice's Undo only makes sense while the delete is still the latest step.
+  const noticeCurrent = notice !== null && canUndo && store.undoManager.undoStack.length === notice.depth;
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [legendOpen, setLegendOpen] = useState(legendInitiallyOpen);
   const closeLegend = () => {
@@ -93,20 +161,40 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     rememberLegendClosed();
   };
   const keys = keyNames();
-  const { drag, startDrag } = useCardDrag(onDrop, scrollRef);
+  const { drag, startDrag } = useCardDrag(onDrop, scrollRef, onCardClick);
+  const dragging = drag !== null;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
-      const key = e.key.toLowerCase();
-      if (key === 'z' && !e.shiftKey) undo(store);
-      else if ((key === 'z' && e.shiftKey) || key === 'y') redo(store);
-      else return;
-      e.preventDefault();
+      // Typing in a field (a title, the axis picker) never triggers board shortcuts.
+      if (e.target instanceof Element && e.target.closest('input, textarea, select')) return;
+      if (dragging || editing) return;
+      if (e.metaKey || e.ctrlKey) {
+        if (e.altKey) return;
+        const key = e.key.toLowerCase();
+        if (key === 'z' && !e.shiftKey) undo(store);
+        else if ((key === 'z' && e.shiftKey) || key === 'y') redo(store);
+        else return;
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selected.size === 0) return;
+        e.preventDefault();
+        deleteSelection();
+      } else if (e.key === 'Enter') {
+        const card = anchor && selected.has(anchor.itemId) ? anchor : null;
+        const id = card?.itemId ?? (selected.size === 1 ? [...selected][0]! : null);
+        if (id === null) return;
+        e.preventDefault();
+        setEditing({ kind: 'rename', card: card ?? { itemId: id, x: null, y: null } });
+      } else if (e.key === 'Escape') {
+        clearSelection();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [store]);
+  }, [store, dragging, editing, selected, anchor, deleteSelection, clearSelection]);
 
   const loadSample = () => {
     if (empty || window.confirm('Replace the board with the sample plan? You can undo this.')) loadPlan(store, samplePlan());
@@ -175,7 +263,28 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCardPointerDown={startDrag}
           justMoved={justMoved}
           scrollRef={scrollRef}
+          selected={selected}
+          editing={editing}
+          onCardDoubleClick={onCardDoubleClick}
+          onSpotDoubleClick={onSpotDoubleClick}
+          onCommitEdit={onCommitEdit}
+          onCancelEdit={onCancelEdit}
+          onBackgroundPointerDown={clearSelection}
         />
+      )}
+      {notice && noticeCurrent && (
+        <div className="notice" role="status" data-testid="notice">
+          {notice.text}
+          <button
+            type="button"
+            onClick={() => {
+              undo(store);
+              setNotice(null);
+            }}
+          >
+            Undo
+          </button>
+        </div>
       )}
       {legendOpen && <Legend onClose={closeLegend} />}
       {drag && <DragGhost drag={drag} addAxes={addAxes} />}
