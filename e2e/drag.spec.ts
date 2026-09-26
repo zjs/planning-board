@@ -1,20 +1,19 @@
 import { expect, test } from '@playwright/test';
-import { card, cell, dragTo, openApp, pickAxes } from './app.ts';
+import { card, cell, dragTo, holding, openApp, pickAxes, reveal } from './app.ts';
 
 // The sprint 0 exit criterion, end to end: drag, pivot, see the card where
 // it should be, reload, and nothing is lost.
 test('a drop writes both values, survives a pivot and a reload, and undoes', async ({ page }) => {
   await openApp(page);
   await pickAxes(page, 'time', 'system');
-  const holding = page.getByTestId('holding');
+  const noQuarter = holding(page, { row: 'identity' });
   const id = 'sso-enforcement-per-workspace'; // Identity/SSO, sequenced, no quarter yet
-  await expect(card(holding, id)).toBeVisible();
+  await expect(card(noQuarter, id)).toBeVisible();
 
-  await dragTo(page, card(holding, id), cell(page, 'billing', 'q3'));
+  await dragTo(page, card(noQuarter, id), cell(page, 'billing', 'q3'));
   await expect(card(cell(page, 'billing', 'q3'), id)).toBeVisible();
-  // From the holding area, the new area is added and the old one kept (Q10).
-  await expect(card(cell(page, 'identity', 'q3'), id)).toBeVisible();
-  await expect(card(holding, id)).toHaveCount(0);
+  // It came from Identity's lane, so like any drop it moves out of Identity (Q10).
+  await expect(card(page, id)).toHaveCount(1);
 
   await pickAxes(page, 'sequence', 'system');
   await expect(page.locator(`.cell[data-row="billing"] .card[data-item="${id}"]`)).toHaveCount(1);
@@ -47,7 +46,7 @@ test('dragging one copy of a multi-lane card moves only that lane', async ({ pag
   await expect(card(page, id)).toHaveCount(3);
 });
 
-test('an Alt-drop adds a lane, and the holding-area zone removes one', async ({ page }) => {
+test("an Alt-drop adds a lane, and a column's holding lane removes one", async ({ page }) => {
   await openApp(page);
   const id = 'tenant-data-deletion-gdpr';
   const dataCopy = page.locator(`.cell[data-row="data"] .card[data-item="${id}"]`);
@@ -59,19 +58,40 @@ test('an Alt-drop adds a lane, and the holding-area zone removes one', async ({ 
 
   const cxCopy = card(cell(page, 'cx', column), id);
   const scroller = page.locator('.board-scroll');
-  await cxCopy.scrollIntoViewIfNeeded();
-  const before = await scroller.evaluate((el) => el.scrollLeft);
-  await dragTo(page, cxCopy, page.locator('[data-drop="clear-y"]'));
-  // Crossing into the holding area must not scroll the board sideways.
-  expect(await scroller.evaluate((el) => el.scrollLeft)).toBe(before);
+  await reveal(cxCopy);
+  const before = await scroller.evaluate((el) => [el.scrollLeft, el.scrollTop]);
+  await dragTo(page, cxCopy, holding(page, { column }));
+  // Hovering a pinned holding lane must not scroll the board under the pointer.
+  expect(await scroller.evaluate((el) => [el.scrollLeft, el.scrollTop])).toEqual(before);
+  // It still has its other areas, so it stays in their rows rather than landing in "No area".
   await expect(card(page, id)).toHaveCount(3);
   await expect(card(cell(page, 'cx', column), id)).toHaveCount(0);
+  await expect(card(holding(page, { column }), id)).toHaveCount(0);
+});
+
+test("dropping a card in a row's holding lane clears only its column", async ({ page }) => {
+  await openApp(page);
+  await pickAxes(page, 'time', 'system');
+  const id = 'passwordless-login'; // Identity, Q1
+  await dragTo(page, card(cell(page, 'identity', 'q1'), id), holding(page, { row: 'identity' }));
+  await expect(card(holding(page, { row: 'identity' }), id)).toBeVisible();
+  await expect(card(page, id)).toHaveCount(1);
+
+  // From there, another row's lane changes the area and still sets no quarter.
+  await dragTo(page, card(holding(page, { row: 'identity' }), id), holding(page, { row: 'billing' }));
+  await expect(card(holding(page, { row: 'billing' }), id)).toBeVisible();
+  await expect(card(page, id)).toHaveCount(1);
+
+  // The corner clears the area too.
+  await dragTo(page, card(holding(page, { row: 'billing' }), id), holding(page));
+  await expect(card(holding(page), id)).toBeVisible();
 });
 
 test('Escape cancels a drag without changing anything', async ({ page }) => {
   await openApp(page);
   const id = 'tenant-data-deletion-gdpr';
   const from = page.locator(`.cell[data-row="billing"] .card[data-item="${id}"]`);
+  await reveal(from);
   const box = (await from.boundingBox())!;
   await page.mouse.move(box.x + 10, box.y + 10);
   await page.mouse.down();
@@ -90,12 +110,14 @@ test('holding a dragged card near the board edge scrolls the board', async ({ pa
   await openApp(page);
   const scroller = page.locator('.board-scroll');
   const box = (await scroller.boundingBox())!;
+  // The scrolling area ends where the pinned "No area" lanes begin.
+  const bottom = (await page.locator('.holding-row-header').boundingBox())!.y;
   const from = card(page, 'tenant-data-deletion-gdpr').first();
   const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + 10, a.y + 10);
   await page.mouse.down();
   await page.mouse.move(a.x + 40, a.y + 40, { steps: 3 });
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height - 8, { steps: 5 });
+  await page.mouse.move(box.x + box.width / 2, bottom - 8, { steps: 5 });
   await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
   await page.keyboard.press('Escape');
   await page.mouse.up();

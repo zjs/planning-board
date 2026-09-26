@@ -11,9 +11,9 @@ Dragging is the interaction sprint 0 exists to test. A drop writes two values at
 **Custom pointer-event handling** in one hook (`src/ui/useCardDrag.ts`), with the semantics of a drop in a pure domain function (`planDrop` in `src/domain/move.ts`).
 
 - A drag starts after the pointer moves 4px, so clicks stay clicks. The ghost card keeps the exact grab offset, and the source copy fades.
-- Drop targets are ordinary elements marked `data-drop` (cells, and the holding area's "remove value" zones). The hook finds them with `elementFromPoint`, so there's no registration and no measuring.
+- Drop targets are ordinary elements marked `data-drop="cell"`, with a lane key per axis in `data-row` and `data-column`. The holding lanes on the board's edges are cells that leave out the axis they have no value on (questions.md Q10, Q11). The hook finds targets with `elementFromPoint`, so there's no registration and no measuring.
 - ⌥ Option / Alt switches to "add a lane". The ghost shows a "+ add" badge, and the key is read at drop time, so pressing or releasing it mid-drag works.
-- Holding the pointer near the board's edge for 200ms scrolls it. The dwell stops the board from jittering when you merely cross the edge on the way to the holding area.
+- Holding the pointer near the board's edge for 200ms scrolls it. The dwell stops the board from jittering when you merely cross the edge. "The edge" is the inner edge of the pinned headers and holding lanes, so hovering a holding lane never scrolls the board under the pointer. _Amended in sprint 0, slice 5, when the side holding area became pinned lanes._
 - Escape cancels. A drop that changes nothing records no undo step.
 
 ## Alternatives

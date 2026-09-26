@@ -26,7 +26,8 @@ export interface Lane {
 /**
  * One rendered copy of a card. A card with several values on an axis gets
  * one copy per matching lane; `x` and `y` say which lanes this copy is in,
- * so a drag knows which value it is moving. Both are null in the holding area.
+ * so a drag knows which value it is moving. Null means the card has no value
+ * on that axis, and the copy sits in that axis's holding lane.
  */
 export interface CardRef {
   itemId: ItemId;
@@ -34,13 +35,25 @@ export interface CardRef {
   y: string | null;
 }
 
+export interface Holding {
+  rows: CardRef[][];
+  columns: CardRef[][];
+  corner: CardRef[];
+}
+
 export interface ViewLayout {
   columns: Lane[];
   rows: Lane[];
   /** cells[row][column] */
   cells: CardRef[][][];
-  /** Cards missing a value on either axis (requirement 5). One copy each. */
-  holding: CardRef[];
+  /**
+   * Cards missing a value on an axis (requirement 5; questions.md Q10), in
+   * holding lanes around the board's edge. `rows[i]` holds cards in row i
+   * with no column (x null); `columns[j]` holds cards in column j with no row
+   * (y null); `corner` holds cards with neither. A multi-valued card appears
+   * once in each matching lane, as it does in cells.
+   */
+  holding: Holding;
   /**
    * For a sequence axis, the keys of the droppable gaps around its lanes:
    * gaps[i] sits just before lanes[i], and the last one after the last lane.
@@ -97,18 +110,22 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   const columnIndex = new Map(columns.map((lane, i) => [lane.key, i]));
   const rowIndex = new Map(rows.map((lane, i) => [lane.key, i]));
   const cells: CardRef[][][] = rows.map(() => columns.map(() => []));
-  const holding: CardRef[] = [];
+  const holding: Holding = { rows: rows.map(() => []), columns: columns.map(() => []), corner: [] };
 
   for (const item of items) {
     const xs = axisKeys(plan, item, view.x).filter((key) => columnIndex.has(key));
     const ys = axisKeys(plan, item, view.y).filter((key) => rowIndex.has(key));
-    if (xs.length === 0 || ys.length === 0) {
-      holding.push({ itemId: item.id, x: null, y: null });
-      continue;
-    }
-    for (const y of ys) {
-      for (const x of xs) {
-        cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push({ itemId: item.id, x, y });
+    if (xs.length === 0 && ys.length === 0) {
+      holding.corner.push({ itemId: item.id, x: null, y: null });
+    } else if (xs.length === 0) {
+      for (const y of ys) holding.rows[rowIndex.get(y)!]!.push({ itemId: item.id, x: null, y });
+    } else if (ys.length === 0) {
+      for (const x of xs) holding.columns[columnIndex.get(x)!]!.push({ itemId: item.id, x, y: null });
+    } else {
+      for (const y of ys) {
+        for (const x of xs) {
+          cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push({ itemId: item.id, x, y });
+        }
       }
     }
   }

@@ -13,6 +13,12 @@ interface Props {
   layout: ViewLayout;
   xLabel: string;
   yLabel: string;
+  /** Header of each axis's holding lane, such as "No quarter". */
+  xNone: string;
+  yNone: string;
+  /** Show holding-lane cards as one-line chips. */
+  compact: boolean;
+  onCompactChange: (compact: boolean) => void;
   /** The copy being dragged, if any. */
   lifted: CardRef | null;
   /** What the dragged card is over. Kept referentially stable by the drag hook. */
@@ -69,6 +75,10 @@ export const Board = memo(function Board({
   layout,
   xLabel,
   yLabel,
+  xNone,
+  yNone,
+  compact,
+  onCompactChange,
   lifted,
   target,
   onCardPointerDown,
@@ -83,12 +93,13 @@ export const Board = memo(function Board({
     for (const item of Object.values(plan.items)) out.set(item.id, cardAttributes(plan, item, view, properties));
     return out;
   }, [plan, view]);
-  const renderCard = (ref: CardRef) => {
+  const renderCard = (ref: CardRef, chip = false) => {
     const item = plan.items[ref.itemId]!;
     return (
       <Card
         key={`${ref.itemId}|${ref.x}|${ref.y}`}
         item={item}
+        compact={chip}
         childCount={counts.get(ref.itemId) ?? 0}
         areaIndex={areas.get(ref.itemId) ?? null}
         attributes={attributes.get(ref.itemId) ?? []}
@@ -110,9 +121,11 @@ export const Board = memo(function Board({
     ...(columnTracks.length === 0
       ? ['minmax(var(--column-min), 1fr)']
       : columnTracks.map((t) => (t.kind === 'lane' ? 'minmax(var(--column-min), 1fr)' : gapSize(layout.columns)))),
+    'var(--holding-width)',
   ].join(' ');
 
-  const isTarget = (row: string, column: string) => target?.kind === 'cell' && target.x === column && target.y === row;
+  const isTarget = (row: string | null, column: string | null) =>
+    target !== null && target.x === column && target.y === row;
   // Sequence lanes stay unnumbered even for screen readers (requirement 6).
   const trackName = (t: Track, axis: string) =>
     t.kind === 'gap' ? `new ${axis.toLowerCase()} position` : (t.lane.label ?? `${axis} column`);
@@ -139,26 +152,58 @@ export const Board = memo(function Board({
         data-column={columnKey}
         aria-label={`${trackName(row, yLabel)}, ${trackName(column, xLabel)}`}
       >
-        {row.kind === 'lane' && column.kind === 'lane' && layout.cells[row.index]![column.index]!.map(renderCard)}
+        {row.kind === 'lane' &&
+          column.kind === 'lane' &&
+          layout.cells[row.index]![column.index]!.map((ref) => renderCard(ref))}
         {lone && <span className="lone-hint">Drop a card here to start the sequence</span>}
       </div>
     );
   };
 
-  const from = lifted;
-  const fromLane = (lanes: Lane[], key: string | null | undefined) => lanes.find((l) => l.key === key)?.label;
-  const clearZone = (axis: 'x' | 'y') => {
-    const label = axis === 'x' ? xLabel : yLabel;
-    const lane = fromLane(axis === 'x' ? layout.columns : layout.rows, from?.[axis]);
-    const active = target?.kind === 'clear' && target.axis === axis;
+  /**
+   * A holding lane: at the end of a row (cards with that row but no column),
+   * under a column (that column but no row), or the corner (neither).
+   * The missing axis has no data attribute, which reads as null.
+   */
+  const holdingCell = (row: Track | null, column: Track | null): ReactNode => {
+    const rowKey = row && trackKey(row);
+    const columnKey = column && trackKey(column);
+    const cards =
+      row?.kind === 'lane'
+        ? layout.holding.rows[row.index]!
+        : column?.kind === 'lane'
+          ? layout.holding.columns[column.index]!
+          : row === null && column === null
+            ? layout.holding.corner
+            : [];
+    const gapRow = row?.kind === 'gap' && layout.rows.length > 0;
+    const gapColumn = column?.kind === 'gap' && layout.columns.length > 0;
+    const classes = [
+      'cell',
+      'holding-cell',
+      row === null ? 'holding-bottom' : 'holding-right',
+      row === null && column === null && 'holding-corner',
+      gapRow && 'gap gap-row',
+      gapColumn && 'gap',
+      isTarget(rowKey, columnKey) && 'drop-target',
+    ];
+    const rowName = row ? trackName(row, yLabel) : yNone;
+    const columnName = column ? trackName(column, xLabel) : xNone;
     return (
-      <div className={active ? 'clear-zone drop-target' : 'clear-zone'} data-drop={`clear-${axis}`}>
-        {lane ? (
-          <>
-            Remove <strong>{lane}</strong>
-          </>
-        ) : (
-          <>Clear {label.toLowerCase()} position</>
+      <div
+        key={`holding|${rowKey}|${columnKey}`}
+        className={classes.filter(Boolean).join(' ')}
+        data-drop="cell"
+        data-row={rowKey ?? undefined}
+        data-column={columnKey ?? undefined}
+        aria-label={`${rowName}, ${columnName}`}
+      >
+        {!gapRow && !gapColumn && (
+          // The lane fills its grid row; this inner box caps the height and scrolls.
+          <div className="holding-cards">
+            {cards.length > 0 && <span className="holding-count">{cards.length}</span>}
+            {cards.map((ref) => renderCard(ref, compact))}
+          </div>
         )}
       </div>
     );
@@ -181,6 +226,17 @@ export const Board = memo(function Board({
               <div key={t.key} className="column-header gap" />
             ),
           )}
+          <div className="holding-head">
+            <span>{xNone}</span>
+            <span className="holding-toggle" role="group" aria-label="Show holding cards as">
+              <button type="button" aria-pressed={!compact} onClick={() => onCompactChange(false)}>
+                Cards
+              </button>
+              <button type="button" aria-pressed={compact} onClick={() => onCompactChange(true)}>
+                Chips
+              </button>
+            </span>
+          </div>
           {!empty &&
             rowTracks.map((row) => [
               row.kind === 'lane' ? (
@@ -191,29 +247,23 @@ export const Board = memo(function Board({
                 <div key={`h-${row.key}`} className={layout.rows.length === 0 ? 'row-header' : 'row-header gap-row'} />
               ),
               ...columnTracks.map((column) => cell(row, column)),
+              holdingCell(row, null),
             ])}
           {empty && (
             <div className="empty-note">
               No cards have a {(noLanes(layout.columns, layout.gaps.x) ? xLabel : yLabel).toLowerCase()} value yet.
-              They're all in the holding area.
+              They're all in the holding lanes.
             </div>
           )}
+          <div className="holding-row-header">{yNone}</div>
+          {columnTracks.length === 0 ? (
+            <div className="cell holding-bottom" />
+          ) : (
+            columnTracks.map((column) => holdingCell(null, column))
+          )}
+          {holdingCell(null, null)}
         </div>
       </div>
-      <aside className="holding" aria-label="Holding area" data-testid="holding">
-        <h2>
-          Holding area <span className="count">{layout.holding.length}</span>
-        </h2>
-        {from && from.x !== null ? (
-          <div className="clear-zones">
-            {clearZone('x')}
-            {clearZone('y')}
-          </div>
-        ) : (
-          <p className="hint">Cards missing a {xLabel.toLowerCase()} or {yLabel.toLowerCase()} value.</p>
-        )}
-        <div className="holding-cards">{layout.holding.map(renderCard)}</div>
-      </aside>
     </div>
   );
 });

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { cell, openApp, pickAxes } from './app.ts';
+import { cell, holding, openApp, pickAxes } from './app.ts';
 
 test('shows the sample plan as sequence × system with unlabeled sequence columns', async ({ page }) => {
   await openApp(page);
@@ -14,7 +14,12 @@ test('shows the sample plan as sequence × system with unlabeled sequence column
   const headers = page.locator('.column-header');
   expect(await headers.count()).toBeGreaterThan(5);
   for (const text of await headers.allTextContents()) expect(text).toBe('');
-  await expect(page.getByTestId('holding').locator('.card').first()).toBeVisible();
+  // Holding lanes along the right and bottom edges, and the corner.
+  await expect(page.locator('.holding-head')).toContainText('No position');
+  await expect(page.locator('.holding-row-header')).toHaveText('No area');
+  await expect(holding(page, { row: 'identity' }).locator('.card').first()).toBeVisible();
+  await expect(page.locator('.holding-bottom[data-column] .card').first()).toBeVisible();
+  await expect(holding(page).locator('.card').first()).toBeVisible();
 });
 
 test('renders a group as one card with its child count, and hides the children', async ({ page }) => {
@@ -37,8 +42,8 @@ test('pivots to time × system and places cards by quarter', async ({ page }) =>
   await pickAxes(page, 'time', 'system');
   await expect(page.locator('.column-header')).toHaveText(['Q1 2027', 'Q2 2027', 'Q3 2027', 'Q4 2027']);
   await expect(cell(page, 'identity', 'q1').locator('.card[data-item="passwordless-login"]')).toBeVisible();
-  // Only about half the items have a quarter, so the holding area is busy here.
-  expect(Number(await page.getByTestId('holding').locator('.count').textContent())).toBeGreaterThan(40);
+  // Only about half the items have a quarter, so the "No quarter" lanes are busy here.
+  expect(await page.locator('.holding-right .card').count()).toBeGreaterThan(40);
 });
 
 test('picking the other axis swaps them, and the swap button flips the view', async ({ page }) => {
@@ -57,4 +62,22 @@ test('remembers the chosen view across a reload', async ({ page }) => {
   await page.getByTestId('board').waitFor();
   await expect(page.getByTestId('axis-x')).toHaveValue('size');
   await expect(page.getByTestId('axis-y')).toHaveValue('time');
+});
+
+test('holding lanes switch between cards and chips, and remember the choice', async ({ page }) => {
+  await openApp(page);
+  const lane = holding(page, { row: 'identity' });
+  await expect(lane.locator('.card.chip')).toHaveCount(0);
+  await expect(lane.locator('.attr').first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Chips' }).click();
+  await expect(lane.locator('.card').first()).toHaveClass(/chip/);
+  await expect(lane.locator('.attr')).toHaveCount(0);
+  // Only holding lanes turn into chips.
+  await expect(page.locator('.cell:not(.holding-cell) .card.chip')).toHaveCount(0);
+
+  await page.reload();
+  await page.getByTestId('board').waitFor();
+  await expect(page.getByRole('button', { name: 'Chips' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(lane.locator('.card').first()).toHaveClass(/chip/);
 });

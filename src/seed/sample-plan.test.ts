@@ -47,12 +47,14 @@ describe('sample plan', () => {
     expect(crossArea.length).toBeGreaterThanOrEqual(5);
   });
 
-  it('fills both exit-criteria views with cards and a holding area', () => {
+  it('fills both exit-criteria views with cards and every kind of holding lane', () => {
     for (const x of [SEQUENCE, TIME]) {
       const layout = layoutView(plan, { x: { property: x, level: 0 }, y: { property: SYSTEM, level: 0 } });
       const placed = layout.cells.flat(2).length;
       expect(placed).toBeGreaterThan(30);
-      expect(layout.holding.length).toBeGreaterThan(5);
+      expect(layout.holding.rows.flat().length).toBeGreaterThan(5);
+      expect(layout.holding.columns.flat().length).toBeGreaterThan(5);
+      expect(layout.holding.corner.length).toBeGreaterThan(0);
     }
   });
 });

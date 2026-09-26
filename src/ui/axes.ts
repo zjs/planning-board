@@ -4,15 +4,17 @@ import type { AxisSpec, ViewSpec } from '../domain/view.ts';
 export interface AxisOption {
   id: string;
   label: string;
+  /** Header of the holding lane for cards with no value on this axis. */
+  none: string;
   axis: AxisSpec;
 }
 
 /** The sprint 0 axis choices: top levels only, since zoom is deferred. */
 export const AXIS_OPTIONS: AxisOption[] = [
-  { id: 'sequence', label: 'Sequence', axis: { property: SEQUENCE, level: 0 } },
-  { id: 'system', label: 'System (area)', axis: { property: SYSTEM, level: 0 } },
-  { id: 'size', label: 'Size', axis: { property: SIZE, level: 0 } },
-  { id: 'time', label: 'Time (quarter)', axis: { property: TIME, level: 0 } },
+  { id: 'sequence', label: 'Sequence', none: 'No position', axis: { property: SEQUENCE, level: 0 } },
+  { id: 'system', label: 'System (area)', none: 'No area', axis: { property: SYSTEM, level: 0 } },
+  { id: 'size', label: 'Size', none: 'No size', axis: { property: SIZE, level: 0 } },
+  { id: 'time', label: 'Time (quarter)', none: 'No quarter', axis: { property: TIME, level: 0 } },
 ];
 
 export const DEFAULT_VIEW = { x: 'sequence', y: 'system' };
@@ -58,5 +60,24 @@ export function saveViewChoice(choice: ViewChoice): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(choice));
   } catch {
     // Remembering the view is a convenience only.
+  }
+}
+
+const COMPACT_KEY = 'planning-board:holding-chips';
+
+/** Whether holding lanes show chips instead of full cards. Remembered per browser. */
+export function loadCompactHolding(): boolean {
+  try {
+    return localStorage.getItem(COMPACT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function saveCompactHolding(compact: boolean): void {
+  try {
+    localStorage.setItem(COMPACT_KEY, compact ? '1' : '0');
+  } catch {
+    // A convenience only.
   }
 }

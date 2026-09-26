@@ -29,19 +29,37 @@ export function cell(page: Page, row: string, column: string) {
   return page.locator(`.cell[data-row="${row}"][data-column="${column}"]`);
 }
 
+/**
+ * A holding lane: at the end of a row (no column), under a column (no row),
+ * or the corner (neither).
+ */
+export function holding(page: Page, lane: { row?: string; column?: string } = {}) {
+  const row = lane.row === undefined ? ':not([data-row])' : `[data-row="${lane.row}"]`;
+  const column = lane.column === undefined ? ':not([data-column])' : `[data-column="${lane.column}"]`;
+  return page.locator(`.holding-cell${row}${column}`);
+}
+
 export function card(scope: Page | Locator, itemId: string) {
   return scope.locator(`.card[data-item="${itemId}"]`);
 }
 
+/**
+ * Scroll an element to the middle of the board. Just scrolling it into view
+ * can leave it under the pinned headers or holding lanes.
+ */
+export async function reveal(locator: Locator) {
+  await locator.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }));
+}
+
 /** Drag with real pointer events, the way a mouse would. */
 export async function dragTo(page: Page, from: Locator, to: Locator, opts: { alt?: boolean } = {}) {
-  await from.scrollIntoViewIfNeeded();
+  await reveal(from);
   const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
   await page.mouse.down();
   await page.mouse.move(a.x + a.width / 2 + 10, a.y + a.height / 2 + 10, { steps: 3 });
   // Mid-drag, bring the target on screen (a person would use edge auto-scroll; tested separately).
-  await to.scrollIntoViewIfNeeded();
+  await reveal(to);
   const b = (await to.boundingBox())!;
   if (opts.alt) await page.keyboard.down('Alt');
   await page.mouse.move(b.x + b.width / 2, b.y + Math.min(b.height / 2, 30), { steps: 8 });

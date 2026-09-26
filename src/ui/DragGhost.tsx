@@ -1,8 +1,13 @@
 import type { DragState } from './useCardDrag.ts';
 
 /** The card following the pointer. Never a hit-test target itself. */
-export function DragGhost({ drag, canAdd }: { drag: DragState; canAdd: boolean }) {
-  const adding = canAdd && drag.mode === 'add' && drag.target?.kind === 'cell';
+export function DragGhost({ drag, addAxes }: { drag: DragState; addAxes: { x: boolean; y: boolean } }) {
+  // Adding needs a multi-valued axis whose target is a lane; a holding lane always removes.
+  const { target } = drag;
+  const adding =
+    drag.mode === 'add' &&
+    target !== null &&
+    ((addAxes.x && target.x !== null) || (addAxes.y && target.y !== null));
   return (
     <div
       className={drag.target ? 'drag-ghost over-target' : 'drag-ghost'}

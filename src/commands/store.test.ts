@@ -44,7 +44,7 @@ describe('plan store', () => {
 
   it('applies a drop, and undo/redo treat it as one step', () => {
     const store = storeWith(item('a', { values: { [SYSTEM]: ['id/sso'] } }));
-    expect(dropCard(store, timeBySystem, { itemId: 'a', x: null, y: null }, { kind: 'cell', x: 'q2', y: 'pay' })).toBe(
+    expect(dropCard(store, timeBySystem, { itemId: 'a', x: null, y: 'id' }, { x: 'q2', y: 'pay' }, 'add')).toBe(
       true,
     );
     expect(readPlan(store.doc).items['a']!.values).toEqual({ [SYSTEM]: ['id/sso', 'pay'], [TIME]: ['q2'] });
@@ -57,15 +57,15 @@ describe('plan store', () => {
 
   it('records one undo step per drop even when drops come in quick succession', () => {
     const store = storeWith(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
-    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'cell', x: 'a0', y: 'pay' });
-    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'pay' }, { kind: 'cell', x: 'a0', y: 'id' });
+    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { x: 'a0', y: 'pay' });
+    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'pay' }, { x: 'a0', y: 'id' });
     undo(store);
     expect(readPlan(store.doc).items['a']!.values[SYSTEM]).toEqual(['pay']);
   });
 
   it('records nothing for a no-op drop', () => {
     const store = storeWith(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
-    expect(dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'cell', x: 'a0', y: 'id' })).toBe(
+    expect(dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { x: 'a0', y: 'id' })).toBe(
       false,
     );
     expect(store.undoManager.canUndo()).toBe(false);
@@ -73,7 +73,7 @@ describe('plan store', () => {
 
   it('clears a sequence position', () => {
     const store = storeWith(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
-    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'clear', axis: 'x' });
+    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { x: null, y: 'id' });
     expect(readPlan(store.doc).items['a']!.sequence).toBeNull();
   });
 
@@ -90,8 +90,8 @@ describe('plan store', () => {
     const b = createPlanStore();
     Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
     const card = { itemId: 'x', x: 'a0', y: 'id' };
-    dropCard(a, seqBySystem, card, { kind: 'cell', x: 'a0', y: 'pay' }, 'add');
-    dropCard(b, timeBySystem, { itemId: 'x', x: null, y: null }, { kind: 'cell', x: 'q1', y: 'id' });
+    dropCard(a, seqBySystem, card, { x: 'a0', y: 'pay' }, 'add');
+    dropCard(b, timeBySystem, { itemId: 'x', x: null, y: 'id' }, { x: 'q1', y: 'id' });
     Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc));
     expect(readPlan(a.doc).items['x']!.values).toEqual({ [SYSTEM]: ['id', 'pay'], [TIME]: ['q1'] });
   });
@@ -103,7 +103,7 @@ describe('plan store', () => {
     const unsubscribe = source.subscribe(() => calls++);
     const first = source.getSnapshot();
     expect(source.getSnapshot()).toBe(first);
-    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'cell', x: 'a0', y: 'pay' });
+    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { x: 'a0', y: 'pay' });
     await Promise.resolve();
     expect(calls).toBe(1);
     expect(source.getSnapshot()).not.toBe(first);
@@ -116,7 +116,7 @@ describe('plan store', () => {
     const store = storeWith(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
     const source = snapshotSource(store);
     source.subscribe(() => undefined)();
-    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'cell', x: 'a0', y: 'pay' });
+    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { x: 'a0', y: 'pay' });
     source.subscribe(() => undefined);
     expect(source.getSnapshot().plan.items['a']!.values[SYSTEM]).toEqual(['pay']);
   });

@@ -16,7 +16,13 @@
   --warn-text: #5c4400;
   --row-header: 150px;
   --column-min: 150px;
-  --holding-width: 250px;
+  --holding-width: 240px;
+  --holding-right-max: 45vh;
+  --holding-bottom-max: 28vh;
+  --holding-bg: #e9e6df;
+  --holding-edge-left: -2px 0 0 0 var(--border-strong);
+  --holding-edge-top: 0 -2px 0 0 var(--border-strong);
+  --border-strong: #c4bfb4;
   --gap-size: 14px;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
@@ -39,6 +45,8 @@
     --area-3: #da77f2;
     --area-none: #6c6c72;
     --drop: rgb(116 143 252 / 20%);
+    --holding-bg: #17171a;
+    --border-strong: #4a4a50;
     --warn-bg: #3d3314;
     --warn-text: #ffe8a3;
   }
@@ -404,27 +412,6 @@ body.dragging * {
   font-weight: 600;
 }
 
-.clear-zones {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 12px 10px;
-}
-
-.clear-zone {
-  padding: 14px 10px;
-  border: 2px dashed var(--border);
-  border-radius: 8px;
-  color: var(--muted);
-  text-align: center;
-}
-
-.clear-zone.drop-target {
-  border-color: var(--accent);
-  background: var(--drop);
-  color: var(--text);
-}
-
 .child-count {
   flex: none;
   min-width: 20px;
@@ -437,40 +424,139 @@ body.dragging * {
   color: var(--muted);
 }
 
-.holding {
-  width: var(--holding-width);
-  flex: none;
+/*
+ * Holding lanes: the last column and last row of the grid, pinned to the
+ * right and bottom edges like the headers are pinned to the top and left
+ * (questions.md Q10). Cards missing a value wait here.
+ */
+.holding-head,
+.holding-right,
+.holding-row-header,
+.holding-bottom {
+  position: sticky;
+  background: var(--holding-bg);
+}
+
+.holding-head {
+  top: 0;
+  right: 0;
+  z-index: 5;
   display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  min-height: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 8px 6px 10px;
+  font-weight: 600;
+  box-shadow: var(--holding-edge-left);
 }
 
-.holding h2 {
-  margin: 0;
-  padding: 10px 12px 2px;
-  font-size: 14px;
+.holding-right {
+  right: 0;
+  z-index: 2;
+  box-shadow: var(--holding-edge-left);
 }
 
-.holding .count {
-  color: var(--muted);
-  font-weight: normal;
+.holding-row-header {
+  left: 0;
+  bottom: 0;
+  z-index: 4;
+  padding: 10px;
+  font-weight: 600;
+  box-shadow: var(--holding-edge-top);
 }
 
-.holding .hint {
-  margin: 0;
-  padding: 0 12px 8px;
-  color: var(--muted);
-  font-size: 12px;
+.holding-bottom {
+  bottom: 0;
+  z-index: 2;
+  box-shadow: var(--holding-edge-top);
+}
+
+.holding-cell:not(.gap) {
+  padding: 0;
 }
 
 .holding-cards {
-  flex: 1;
-  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 0 12px 12px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.holding-right .holding-cards {
+  max-height: var(--holding-right-max);
+}
+
+.holding-bottom .holding-cards {
+  max-height: var(--holding-bottom-max);
+}
+
+.holding-corner {
+  right: 0;
+  z-index: 4;
+  box-shadow: var(--holding-edge-left), var(--holding-edge-top);
+}
+
+.holding-count {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  align-self: flex-end;
+  margin: -4px -2px -2px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--holding-bg);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.holding-toggle {
+  display: inline-flex;
+  font-weight: normal;
+}
+
+.holding-toggle button {
+  padding: 1px 7px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.holding-toggle button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.holding-toggle button:last-child {
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+}
+
+.holding-toggle button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Chips: one line, no badges, so a crowded holding lane stays scannable. */
+.card.chip {
+  padding: 2px 6px 2px 8px;
+  border-left-width: 3px;
+  font-size: 12px;
+}
+
+.card.chip .card-main {
+  align-items: center;
+}
+
+.card.chip .card-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.holding-cards:has(.chip) {
+  gap: 3px;
 }
 
 .legend {
