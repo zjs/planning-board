@@ -1,8 +1,8 @@
 import type { DragState } from './useCardDrag.ts';
 
 /** The card following the pointer. Never a hit-test target itself. */
-export function DragGhost({ drag }: { drag: DragState }) {
-  const adding = drag.mode === 'add' && drag.target?.kind === 'cell';
+export function DragGhost({ drag, canAdd }: { drag: DragState; canAdd: boolean }) {
+  const adding = canAdd && drag.mode === 'add' && drag.target?.kind === 'cell';
   return (
     <div
       className={drag.target ? 'drag-ghost over-target' : 'drag-ghost'}

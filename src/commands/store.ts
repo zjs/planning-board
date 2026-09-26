@@ -101,8 +101,9 @@ export interface StoreSnapshot {
 
 /**
  * A cached snapshot plus a change subscription, shaped for React's
- * useSyncExternalStore: the snapshot object only changes when the plan or
- * the undo stacks do.
+ * useSyncExternalStore. A command fires several Yjs events (the update,
+ * then the undo stack change); they're coalesced into one refresh per
+ * microtask. Yjs listeners are attached only while someone is subscribed.
  */
 export function snapshotSource(store: PlanStore) {
   const take = (): StoreSnapshot => ({
@@ -111,21 +112,37 @@ export function snapshotSource(store: PlanStore) {
     canUndo: store.undoManager.canUndo(),
     canRedo: store.undoManager.canRedo(),
   });
-  let current = take();
+  let current: StoreSnapshot | null = null;
+  let scheduled = false;
   const listeners = new Set<() => void>();
   const refresh = () => {
+    scheduled = false;
+    if (listeners.size === 0) return;
     current = take();
     listeners.forEach((l) => l());
   };
-  store.doc.on('update', refresh);
-  store.undoManager.on('stack-item-added', refresh);
-  store.undoManager.on('stack-item-popped', refresh);
-  store.undoManager.on('stack-cleared', refresh);
+  const schedule = () => {
+    if (scheduled) return;
+    scheduled = true;
+    queueMicrotask(refresh);
+  };
+  const undoEvents = ['stack-item-added', 'stack-item-popped', 'stack-cleared'] as const;
   return {
-    getSnapshot: () => current,
+    getSnapshot: (): StoreSnapshot => (current ??= take()),
     subscribe: (listener: () => void) => {
+      if (listeners.size === 0) {
+        store.doc.on('update', schedule);
+        undoEvents.forEach((event) => store.undoManager.on(event, schedule));
+        current = take(); // may have changed while nobody was listening
+      }
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+        if (listeners.size > 0) return;
+        store.doc.off('update', schedule);
+        undoEvents.forEach((event) => store.undoManager.off(event, schedule));
+        current = null;
+      };
     },
   };
 }

@@ -110,3 +110,20 @@ test('Reset clears the board and can be undone', async ({ page }) => {
   await expect(page.getByTestId('board')).toBeVisible();
   await expect(card(page, 'tenant-data-deletion-gdpr')).toHaveCount(3);
 });
+
+test('a drag released outside the window is cancelled, not left stuck', async ({ page }) => {
+  await openApp(page);
+  const from = card(page, 'tenant-data-deletion-gdpr').first();
+  const a = (await from.boundingBox())!;
+  await page.mouse.move(a.x + 10, a.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(a.x + 60, a.y + 60, { steps: 4 });
+  await expect(page.locator('.drag-ghost')).toBeVisible();
+  // The pointerup happened outside the window; the next move arrives with no buttons held.
+  await page.evaluate(() =>
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: 400, clientY: 400, buttons: 0 })),
+  );
+  await expect(page.locator('.drag-ghost')).toHaveCount(0);
+  await page.mouse.up();
+  await expect(card(page, 'tenant-data-deletion-gdpr')).toHaveCount(3);
+});

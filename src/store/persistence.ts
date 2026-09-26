@@ -21,7 +21,10 @@ export async function persist(doc: Y.Doc): Promise<PersistenceStatus> {
     const provider = new IndexeddbPersistence(DB_NAME, doc);
     const timeout = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), LOAD_TIMEOUT_MS));
     const result = await Promise.race([provider.whenSynced.then(() => 'synced' as const), timeout]);
-    return result === 'synced' ? 'saved' : 'unavailable';
+    if (result === 'synced') return 'saved';
+    // Detach, so a load that finishes late can't merge an old board into whatever happens next.
+    void provider.destroy();
+    return 'unavailable';
   } catch {
     return 'unavailable';
   }

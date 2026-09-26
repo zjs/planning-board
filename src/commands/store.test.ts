@@ -96,16 +96,28 @@ describe('plan store', () => {
     expect(readPlan(a.doc).items['x']!.values).toEqual({ [SYSTEM]: ['id', 'pay'], [TIME]: ['q1'] });
   });
 
-  it('only notifies with a new snapshot when something changed', () => {
+  it('notifies once per command with a fresh snapshot, and stays stable otherwise', async () => {
     const store = storeWith(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
     const source = snapshotSource(store);
+    let calls = 0;
+    const unsubscribe = source.subscribe(() => calls++);
     const first = source.getSnapshot();
     expect(source.getSnapshot()).toBe(first);
-    let calls = 0;
-    source.subscribe(() => calls++);
     dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'cell', x: 'a0', y: 'pay' });
-    expect(calls).toBeGreaterThan(0);
+    await Promise.resolve();
+    expect(calls).toBe(1);
     expect(source.getSnapshot()).not.toBe(first);
     expect(source.getSnapshot().canUndo).toBe(true);
+    expect(source.getSnapshot().plan.items['a']!.values[SYSTEM]).toEqual(['pay']);
+    unsubscribe();
+  });
+
+  it('catches up on changes made while nobody was subscribed', () => {
+    const store = storeWith(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
+    const source = snapshotSource(store);
+    source.subscribe(() => undefined)();
+    dropCard(store, seqBySystem, { itemId: 'a', x: 'a0', y: 'id' }, { kind: 'cell', x: 'a0', y: 'pay' });
+    source.subscribe(() => undefined);
+    expect(source.getSnapshot().plan.items['a']!.values[SYSTEM]).toEqual(['pay']);
   });
 });

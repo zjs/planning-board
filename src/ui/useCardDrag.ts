@@ -39,6 +39,12 @@ function targetAt(x: number, y: number): DropTarget | null {
   return null;
 }
 
+export function sameTarget(a: DropTarget | null, b: DropTarget | null): boolean {
+  if (a === null || b === null) return a === b;
+  if (a.kind === 'cell') return b.kind === 'cell' && a.x === b.x && a.y === b.y;
+  return b.kind === 'clear' && a.axis === b.axis;
+}
+
 /**
  * Scroll speed for a pointer near an inside edge of [start, end]: negative,
  * zero, or positive. Zero outside the range, so hovering the holding area
@@ -64,6 +70,8 @@ export function useCardDrag(
   const pending = useRef<{ card: CardRef; title: string; startX: number; startY: number; rect: DOMRect } | null>(null);
   const frame = useRef<number | null>(null);
   const edgeSince = useRef<number | null>(null);
+  /** Set by an Alt-drop, so the Alt release that follows it is swallowed too. */
+  const swallowAltUp = useRef(false);
   const onDropRef = useRef(onDrop);
   useEffect(() => {
     onDropRef.current = onDrop;
@@ -104,14 +112,24 @@ export function useCardDrag(
         frame.current = requestAnimationFrame(autoScroll);
         return;
       }
+      const { scrollLeft, scrollTop } = scroller;
       scroller.scrollBy(dx, dy);
-      update({ ...current, target: targetAt(current.x, current.y) });
+      // At the scroll limit nothing moved; don't re-render 60 times a second for nothing.
+      if (scroller.scrollLeft !== scrollLeft || scroller.scrollTop !== scrollTop) {
+        const target = targetAt(current.x, current.y);
+        if (!sameTarget(target, current.target)) update({ ...current, target });
+      }
       frame.current = requestAnimationFrame(autoScroll);
     };
 
     const move = (e: PointerEvent) => {
       const start = pending.current;
       const current = dragRef.current;
+      // Released outside the window, where we never saw the pointerup: cancel rather than stay stuck.
+      if ((start || current) && e.buttons === 0) {
+        stop();
+        return;
+      }
       if (!current && start) {
         if (Math.hypot(e.clientX - start.startX, e.clientY - start.startY) < DRAG_THRESHOLD_PX) return;
         document.body.classList.add('dragging');
@@ -125,11 +143,13 @@ export function useCardDrag(
         grabY: start!.startY - start!.rect.top,
         width: start!.rect.width,
       };
+      const target = targetAt(e.clientX, e.clientY);
       update({
         ...base,
         x: e.clientX,
         y: e.clientY,
-        target: targetAt(e.clientX, e.clientY),
+        // Keep the same object while over the same target, so the board (memoized) doesn't re-render.
+        target: current && sameTarget(target, current.target) ? current.target : target,
         mode: e.altKey ? 'add' : 'replace',
       });
       if (frame.current === null) frame.current = requestAnimationFrame(autoScroll);
@@ -137,14 +157,27 @@ export function useCardDrag(
     const up = (e: PointerEvent) => {
       const current = dragRef.current;
       stop();
+      if (current && e.altKey) swallowAltUp.current = true;
       if (current?.target) onDropRef.current(current.card, current.target, e.altKey ? 'add' : 'replace');
     };
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') stop();
-      else if (e.key === 'Alt' && dragRef.current) {
-        // Stops Windows browsers from opening the menu bar when Alt is released mid-drag.
+      if (e.key === 'Escape') {
+        stop();
+        return;
+      }
+      if (e.key !== 'Alt') {
+        swallowAltUp.current = false;
+        return;
+      }
+      // Windows browsers open the menu bar when Alt is released. Swallow that
+      // release during a drag, and right after an Alt-drop (you let go of
+      // the mouse before the key).
+      if (dragRef.current) {
         e.preventDefault();
         update({ ...dragRef.current, mode: e.type === 'keydown' ? 'add' : 'replace' });
+      } else if (e.type === 'keyup' && swallowAltUp.current) {
+        e.preventDefault();
+        swallowAltUp.current = false;
       }
     };
     window.addEventListener('pointermove', move);
@@ -164,6 +197,8 @@ export function useCardDrag(
   const startDrag = useCallback((e: ReactPointerEvent<HTMLElement>, card: CardRef, title: string) => {
     if (e.button !== 0) return;
     e.preventDefault(); // no text selection while dragging
+    // Keep receiving pointer events even if the pointer leaves the window.
+    e.currentTarget.setPointerCapture(e.pointerId);
     pending.current = {
       card,
       title,

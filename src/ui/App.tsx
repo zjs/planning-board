@@ -55,6 +55,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   useEffect(() => saveViewChoice(choice), [choice]);
   const view = useMemo(() => toViewSpec(choice), [choice]);
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
+  // The add modifier only means something when an axis holds several values.
+  const canAdd = [view.x, view.y].some((axis) => {
+    const property = plan.properties[axis.property];
+    return property?.kind === 'select' && property.multi;
+  });
 
   const [justMoved, setJustMoved] = useState<ItemId | null>(null);
   useEffect(() => {
@@ -133,13 +138,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           layout={layout}
           xLabel={optionById(choice.x).label}
           yLabel={optionById(choice.y).label}
-          drag={drag}
+          lifted={drag?.card ?? null}
+          target={drag?.target ?? null}
           onCardPointerDown={startDrag}
           justMoved={justMoved}
           scrollRef={scrollRef}
         />
       )}
-      {drag && <DragGhost drag={drag} />}
+      {drag && <DragGhost drag={drag} canAdd={canAdd} />}
     </div>
   );
 }

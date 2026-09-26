@@ -1,17 +1,20 @@
-import { useMemo, type PointerEvent, type RefObject } from 'react';
+import { memo, useMemo, type PointerEvent, type RefObject } from 'react';
 import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import { childCounts } from '../domain/tree.ts';
 import type { CardRef, Lane, ViewLayout } from '../domain/view.ts';
+import type { DropTarget } from '../domain/move.ts';
 import { Card } from './Card.tsx';
-import type { DragState } from './useCardDrag.ts';
 
 interface Props {
   plan: Plan;
   layout: ViewLayout;
   xLabel: string;
   yLabel: string;
-  drag: DragState | null;
+  /** The copy being dragged, if any. */
+  lifted: CardRef | null;
+  /** What the dragged card is over. Kept referentially stable by the drag hook. */
+  target: DropTarget | null;
   onCardPointerDown: (e: PointerEvent<HTMLElement>, card: CardRef, title: string) => void;
   /** Item to highlight after a drop. */
   justMoved: ItemId | null;
@@ -34,7 +37,21 @@ function areaIndexes(plan: Plan): Map<ItemId, number> {
 
 const sameCopy = (a: CardRef, b: CardRef) => a.itemId === b.itemId && a.x === b.x && a.y === b.y;
 
-export function Board({ plan, layout, xLabel, yLabel, drag, onCardPointerDown, justMoved, scrollRef }: Props) {
+/**
+ * Memoized: during a drag only the ghost moves, and the board re-renders
+ * only when the drop target changes.
+ */
+export const Board = memo(function Board({
+  plan,
+  layout,
+  xLabel,
+  yLabel,
+  lifted,
+  target,
+  onCardPointerDown,
+  justMoved,
+  scrollRef,
+}: Props) {
   const counts = useMemo(() => childCounts(plan), [plan]);
   const areas = useMemo(() => areaIndexes(plan), [plan]);
   const renderCard = (ref: CardRef) => {
@@ -45,7 +62,7 @@ export function Board({ plan, layout, xLabel, yLabel, drag, onCardPointerDown, j
         item={item}
         childCount={counts.get(ref.itemId) ?? 0}
         areaIndex={areas.get(ref.itemId) ?? null}
-        lifted={drag !== null && sameCopy(drag.card, ref)}
+        lifted={lifted !== null && sameCopy(lifted, ref)}
         justMoved={justMoved === ref.itemId}
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title)}
       />
@@ -54,10 +71,9 @@ export function Board({ plan, layout, xLabel, yLabel, drag, onCardPointerDown, j
   // Sequence lanes stay unnumbered even for screen readers (requirement 6).
   const laneName = (lane: Lane, axis: string) => lane.label ?? `${axis} column`;
   const empty = layout.columns.length === 0 || layout.rows.length === 0;
-  const target = drag?.target;
   const isTarget = (row: string, column: string) => target?.kind === 'cell' && target.x === column && target.y === row;
 
-  const from = drag?.card;
+  const from = lifted;
   const fromLane = (lanes: Lane[], key: string | null | undefined) => lanes.find((l) => l.key === key)?.label;
   const clearZone = (axis: 'x' | 'y') => {
     const label = axis === 'x' ? xLabel : yLabel;
@@ -137,4 +153,4 @@ export function Board({ plan, layout, xLabel, yLabel, drag, onCardPointerDown, j
       </aside>
     </div>
   );
-}
+});
