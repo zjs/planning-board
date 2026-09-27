@@ -45,6 +45,24 @@ test('clicking a lane header zooms into it; a coarse card waits in "No component
   await expect(refined.locator('.attr[data-property="system"]')).toHaveText('SSO');
 });
 
+test('a card made in a zoomed "No component" lane stays in view, and zooming clears the selection', async ({
+  page,
+}) => {
+  await openApp(page);
+  await pickAxes(page, 'time', 'system');
+  await card(page, 'credit-notes').click(); // in Billing
+  await page.locator('.row-header[data-row="identity"]').getByRole('button').click();
+  await expect(page.locator('.card.selected')).toHaveCount(0);
+  // Delete now has nothing to act on: the hidden Billing card survives.
+  await page.keyboard.press('Delete');
+  await expect(page.getByTestId('notice')).toHaveCount(0);
+
+  await doubleClickEmpty(page, holding(page, { column: 'q3' }));
+  await page.keyboard.type('Admin audit export');
+  await page.keyboard.press('Enter');
+  await expect(holding(page, { column: 'q3' }).locator('.card', { hasText: 'Admin audit export' })).toBeVisible();
+});
+
 test('the lane zoom survives a reload, and Esc clears it', async ({ page }) => {
   await openApp(page);
   await pickAxes(page, 'time', 'system');

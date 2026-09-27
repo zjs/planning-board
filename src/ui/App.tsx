@@ -100,7 +100,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       y: lanes('y', layout.rows.map((l) => l.key)),
     };
   }, [plan, shown, layout]);
-  const onLaneZoom = useCallback((which: 'x' | 'y', key: string) => setChoice((c) => zoomLane(c, which, key)), []);
   const laneChips = (['x', 'y'] as const).flatMap((which) => {
     const within = which === 'x' ? shown.xWithin : shown.yWithin;
     const property = plan.properties[view[which].property];
@@ -164,6 +163,13 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [],
   );
   const clearSelection = useCallback(() => setSelection(new Set()), []);
+  // Changing a lane zoom hides or shows cards, so the selection is cleared,
+  // as it is for group zoom: Delete must never reach a card you can't see.
+  const setLaneZoom = useCallback((which: 'x' | 'y' | 'both', key: string | null) => {
+    setChoice((c) => (which === 'both' ? zoomLane(zoomLane(c, 'x', null), 'y', null) : zoomLane(c, which, key)));
+    setSelection(new Set());
+  }, []);
+  const onLaneZoom = useCallback((which: 'x' | 'y', key: string) => setLaneZoom(which, key), [setLaneZoom]);
 
   // Scroll positions per zoom level, so zooming back out returns you to where you were.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -286,7 +292,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         // Esc clears the selection first, then zooms out a level. Buttons don't use Esc, so this works with one focused.
         if (selected.size > 0) clearSelection();
         else if (root !== null) zoomOut();
-        else setChoice((c) => zoomLane(zoomLane(c, 'x', null), 'y', null));
+        else if (shown.xWithin || shown.yWithin) setLaneZoom('both', null);
         return;
       }
       // Enter and Delete on a focused button belong to the button.
@@ -312,6 +318,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     selected,
     anchor,
     root,
+    shown.xWithin,
+    shown.yWithin,
+    setLaneZoom,
     deleteSelection,
     clearSelection,
     groupSelection,
@@ -393,7 +402,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           plan={plan}
           root={root}
           lanes={laneChips}
-          onClearLane={(which) => setChoice((c) => zoomLane(c, which, null))}
+          onClearLane={(which) => setLaneZoom(which, null)}
           target={drag && isParentTarget(drag.target) ? drag.target.parent : undefined}
           dragging={drag !== null}
           empty={root !== null && childrenOf(plan, root).length === 0}
