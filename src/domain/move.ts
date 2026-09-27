@@ -1,4 +1,4 @@
-import { ancestorAtLevel } from './hierarchy.ts';
+import { ancestorAtLevel, isWithin, withoutAncestors } from './hierarchy.ts';
 import type { Item, OrderKey, Plan, PropertyId, ValueId } from './model.ts';
 import { itemValues } from './model.ts';
 import type { AxisSpec, CardRef, ViewSpec } from './view.ts';
@@ -34,7 +34,11 @@ export interface ItemChange {
  * - Single-valued properties and sequence are replaced.
  * - Multi-valued: replacing moves this copy's lane only; `add` keeps it.
  * - A holding lane (null) removes this copy's value on that axis, and only
- *   that one, whatever the mode.
+ *   that one, whatever the mode. On a lane-zoomed axis the holding lane
+ *   means "inside the zoomed value, nothing more precise", so the copy
+ *   goes back to that value instead (questions.md Q22).
+ * - Refining replaces: a new value drops any of its ancestors, so Identity
+ *   becomes Identity/SSO rather than keeping both.
  */
 export function planDrop(
   plan: Plan,
@@ -47,7 +51,8 @@ export function planDrop(
   if (!item) return null;
   const onAxis = (axis: AxisSpec, from: string | null, to: string | null): AxisResult => {
     if (to !== null) return moveOnAxis(plan, item, axis, from, to, mode);
-    return from === null ? UNCHANGED : clearOnAxis(plan, item, axis, from);
+    if (from === null) return UNCHANGED;
+    return axis.within ? backToZoomedValue(plan, item, axis, axis.within, from) : clearOnAxis(plan, item, axis, from);
   };
   const results: [AxisSpec, AxisResult][] = [
     [view.x, onAxis(view.x, card.x, target.x)],
@@ -97,11 +102,27 @@ function moveOnAxis(
   }
   // A copy with no lane on this axis has nothing to move out of.
   if (mode === 'add' || from === null) {
-    return alreadyThere ? UNCHANGED : { values: [...current, to] };
+    return alreadyThere ? UNCHANGED : { values: withoutAncestors(property, [...current, to]) };
   }
   if (from === to) return UNCHANGED;
   const kept = current.filter((v) => !inLane(from)(v));
-  return { values: alreadyThere ? kept : [...kept, to] };
+  return { values: withoutAncestors(property, alreadyThere ? kept : [...kept, to]) };
+}
+
+/**
+ * The holding lane of a lane-zoomed axis: take the copy out of its lane but
+ * keep it inside the zoomed value, so it stays in view ("Identity, no
+ * component yet") instead of vanishing.
+ */
+function backToZoomedValue(plan: Plan, item: Item, axis: AxisSpec, within: ValueId, from: string): AxisResult {
+  const property = plan.properties[axis.property];
+  if (property?.kind !== 'select') return UNCHANGED;
+  const current = itemValues(item, property.id);
+  const kept = current.filter((v) => laneOf(plan, property.id, v, axis.level) !== from);
+  if (kept.length === current.length) return UNCHANGED;
+  const stillInside = kept.some((v) => isWithin(property, v, within));
+  if (!property.multi) return { values: [within] };
+  return { values: stillInside ? kept : [...kept, within] };
 }
 
 /**

@@ -1,15 +1,10 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
-import { card, dragTo, openApp, reveal } from './app.ts';
+import { expect, test, type Page } from '@playwright/test';
+import { card, doubleClickEmpty, dragTo, openApp } from './app.ts';
 
 const EU = 'eu-data-residency';
 const zoomBar = (page: Page) => page.getByTestId('zoom-bar');
 const crumb = (page: Page, label: string) => zoomBar(page).getByRole('button', { name: label, exact: true });
 
-async function doubleClickEmpty(page: Page, target: Locator) {
-  await reveal(target);
-  const box = (await target.boundingBox())!;
-  await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height - 12);
-}
 
 test('double-clicking a group zooms in to its children, with its own values; Esc zooms back out', async ({ page }) => {
   await openApp(page);

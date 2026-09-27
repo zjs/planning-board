@@ -28,9 +28,9 @@ Scope: single user, browser only, no server.
 
 - [x] Double-clicking a group zooms in to show only its children, with the same axes. A breadcrumb shows the path, and the header shows the group's own values (Q19). Esc or the breadcrumb zooms out. Any card can be zoomed into with ⌘↓, so a plain epic can be broken down (Q20).
 - [x] Cards created inside a zoomed group become its children. Dragging a card onto a breadcrumb segment moves it out to that level.
-- [ ] The axis picker offers every hierarchy level: Area or Component, and Quarter or Release.
-- [ ] Clicking a lane or column header zooms that axis one level down within that value (Identity → its components; Q2 → its releases). A removable chip shows the zoom. Cards outside the zoomed value are hidden (Q18).
-- [ ] Refining replaces the coarser value. Dropping an area-only card from "No component" onto SSO turns Identity into Identity/SSO, rather than keeping both.
+- [x] The axis picker offers every hierarchy level: Area or Component, and Quarter or Release.
+- [x] Clicking a lane or column header zooms that axis one level down within that value (Identity → its components; Q2 → its releases). A removable chip shows the zoom. Cards outside the zoomed value are hidden (Q18).
+- [x] Refining replaces the coarser value. Dropping an area-only card from "No component" onto SSO turns Identity into Identity/SSO, rather than keeping both.
 
 ### 4. Roll-up and mismatches (requirements 13, 18)
 
@@ -41,7 +41,7 @@ Scope: single user, browser only, no server.
 ### 5. Tester-ready
 
 - [ ] The legend covers selection, grouping, and zoom.
-- [ ] The seed plan has a few deliberate group mismatches, and groups nested 2–3 deep.
+- [ ] The seed plan has a few deliberate group mismatches, groups nested 2–3 deep, and a few cards tagged with an area but no component (only two groups are area-only today, so exit criterion 4 needs them).
 - [ ] A session script and demo note (`docs/demos/sprint-1.md`), checked in Chrome, Firefox, and Safari.
 
 ## Deferred (don't build)

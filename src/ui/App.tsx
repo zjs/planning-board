@@ -27,7 +27,10 @@ import {
   loadCompactHolding,
   loadViewChoice,
   loadZoomPath,
-  optionById,
+  axisNames,
+  canZoomLane,
+  validChoice,
+  zoomLane,
   saveCompactHolding,
   saveViewChoice,
   saveZoomPath,
@@ -84,9 +87,26 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const [zoomPath, setZoomPath] = useState<ItemId[]>(loadZoomPath);
   useEffect(() => saveZoomPath(zoomPath), [zoomPath]);
   const root = useMemo(() => [...zoomPath].reverse().find((id) => plan.items[id]) ?? null, [zoomPath, plan]);
-  const view = useMemo(() => ({ ...toViewSpec(choice), root }), [choice, root]);
-  const counts = useMemo(() => childCounts(plan), [plan]);
+  // A lane zoom whose value was deleted is dropped, rather than showing an empty board.
+  const shown = useMemo(() => validChoice(plan, choice), [plan, choice]);
+  const view = useMemo(() => ({ ...toViewSpec(shown), root }), [shown, root]);
+  const names = { x: axisNames(shown, 'x'), y: axisNames(shown, 'y') };
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
+  const zoomableLanes = useMemo(() => {
+    const lanes = (which: 'x' | 'y', keys: string[]) =>
+      new Set(keys.filter((key) => canZoomLane(plan, shown, which, key)));
+    return {
+      x: lanes('x', layout.columns.map((l) => l.key)),
+      y: lanes('y', layout.rows.map((l) => l.key)),
+    };
+  }, [plan, shown, layout]);
+  const laneChips = (['x', 'y'] as const).flatMap((which) => {
+    const within = which === 'x' ? shown.xWithin : shown.yWithin;
+    const property = plan.properties[view[which].property];
+    if (!within || property?.kind !== 'select') return [];
+    return [{ which, label: `${property.name}: ${property.values[within]?.label ?? within}` }];
+  });
+  const counts = useMemo(() => childCounts(plan), [plan]);
   // The add modifier only means something on an axis that holds several values.
   const isMulti = (axis: ViewSpec['x']) => {
     const property = plan.properties[axis.property];
@@ -143,6 +163,13 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [],
   );
   const clearSelection = useCallback(() => setSelection(new Set()), []);
+  // Changing a lane zoom hides or shows cards, so the selection is cleared,
+  // as it is for group zoom: Delete must never reach a card you can't see.
+  const setLaneZoom = useCallback((which: 'x' | 'y' | 'both', key: string | null) => {
+    setChoice((c) => (which === 'both' ? zoomLane(zoomLane(c, 'x', null), 'y', null) : zoomLane(c, which, key)));
+    setSelection(new Set());
+  }, []);
+  const onLaneZoom = useCallback((which: 'x' | 'y', key: string) => setLaneZoom(which, key), [setLaneZoom]);
 
   // Scroll positions per zoom level, so zooming back out returns you to where you were.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -264,7 +291,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       if (e.key === 'Escape') {
         // Esc clears the selection first, then zooms out a level. Buttons don't use Esc, so this works with one focused.
         if (selected.size > 0) clearSelection();
-        else zoomOut();
+        else if (root !== null) zoomOut();
+        else if (shown.xWithin || shown.yWithin) setLaneZoom('both', null);
         return;
       }
       // Enter and Delete on a focused button belong to the button.
@@ -290,6 +318,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     selected,
     anchor,
     root,
+    shown.xWithin,
+    shown.yWithin,
+    setLaneZoom,
     deleteSelection,
     clearSelection,
     groupSelection,
@@ -366,13 +397,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           known to work.
         </div>
       )}
-      {!empty && root !== null && (
+      {!empty && (
         <ZoomBar
           plan={plan}
           root={root}
+          lanes={laneChips}
+          onClearLane={(which) => setLaneZoom(which, null)}
           target={drag && isParentTarget(drag.target) ? drag.target.parent : undefined}
           dragging={drag !== null}
-          empty={childrenOf(plan, root).length === 0}
+          empty={root !== null && childrenOf(plan, root).length === 0}
           onZoomTo={zoomTo}
         />
       )}
@@ -389,10 +422,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           plan={plan}
           view={view}
           layout={layout}
-          xLabel={optionById(choice.x).label}
-          yLabel={optionById(choice.y).label}
-          xNone={optionById(choice.x).none}
-          yNone={optionById(choice.y).none}
+          xLabel={names.x.label}
+          yLabel={names.y.label}
+          xNone={names.x.none}
+          yNone={names.y.none}
           compact={compact}
           onCompactChange={setCompact}
           lifted={drag?.card ?? null}
@@ -407,6 +440,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCommitEdit={onCommitEdit}
           onCancelEdit={onCancelEdit}
           onBackgroundPointerDown={clearSelection}
+          zoomableLanes={zoomableLanes}
+          onLaneZoom={onLaneZoom}
         />
       )}
       {notice && noticeCurrent && (

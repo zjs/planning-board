@@ -1,5 +1,5 @@
-import { ancestorAtLevel, valuesAtLevel } from './hierarchy.ts';
-import type { Item, ItemId, Plan, PropertyId } from './model.ts';
+import { ancestorAtLevel, isWithin, valuesAtLevel } from './hierarchy.ts';
+import type { Item, ItemId, Plan, PropertyId, ValueId } from './model.ts';
 import { compareOrderKeys, itemValues } from './model.ts';
 import { gapKeys } from './sequence.ts';
 import { childrenOf } from './tree.ts';
@@ -9,6 +9,13 @@ export interface AxisSpec {
   property: PropertyId;
   /** Hierarchy level, 0 = top. Ignored for sequence. */
   level: number;
+  /**
+   * Lane zoom (requirement 7, ADR 0008): only this value's descendants at
+   * `level` become lanes, and cards with no value inside it are hidden
+   * (questions.md Q18). Cards with exactly this value, but nothing more
+   * precise, wait in the holding lane.
+   */
+  within?: ValueId | null;
 }
 
 export interface ViewSpec {
@@ -75,7 +82,7 @@ export function axisKeys(plan: Plan, item: Item, axis: AxisSpec): string[] {
   const keys = new Set<string>();
   for (const value of itemValues(item, property.id)) {
     const key = ancestorAtLevel(property, value, axis.level);
-    if (key !== null) keys.add(key);
+    if (key !== null && (!axis.within || isWithin(property, key, axis.within))) keys.add(key);
   }
   return [...keys];
 }
@@ -89,7 +96,10 @@ function axisLanes(plan: Plan, axis: AxisSpec, items: Item[]): Lane[] {
     return [...keys].sort(compareOrderKeys).map((key) => ({ key, label: null }));
   }
   // Every value at the level gets a lane, so empty lanes stay droppable.
-  return valuesAtLevel(property, axis.level).map((node) => ({ key: node.id, label: node.label }));
+  const within = axis.within;
+  return valuesAtLevel(property, axis.level)
+    .filter((node) => !within || isWithin(property, node.id, within))
+    .map((node) => ({ key: node.id, label: node.label }));
 }
 
 /** Stable order within a cell: sequence, then title, then ID. Unsequenced items go last. */
@@ -102,13 +112,22 @@ function compareItems(a: Item, b: Item): number {
   return a.title.localeCompare(b.title) || compareOrderKeys(a.id, b.id);
 }
 
+/** Whether an item has any value inside a lane-zoomed axis's value (Q18: the rest are hidden). */
+export function inZoomedScope(plan: Plan, item: Item, axis: AxisSpec): boolean {
+  const property = plan.properties[axis.property];
+  const within: ValueId | null | undefined = axis.within;
+  if (!within || property?.kind !== 'select') return true;
+  return itemValues(item, property.id).some((v) => isWithin(property, v, within));
+}
+
 /**
  * Lay out one level of the plan for a view: the top-level items, or the
- * children of the card zoomed into. Deeper cards stay inside their group.
+ * children of the card zoomed into, within any lane zoom. Deeper cards stay inside their group.
  */
 export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   const items = childrenOf(plan, view.root ?? null)
     .map((id) => plan.items[id]!)
+    .filter((item) => inZoomedScope(plan, item, view.x) && inZoomedScope(plan, item, view.y))
     .sort(compareItems);
   const columns = axisLanes(plan, view.x, items);
   const rows = axisLanes(plan, view.y, items);

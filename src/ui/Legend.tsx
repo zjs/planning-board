@@ -62,6 +62,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Shows only what's inside. Any card can be zoomed into, and new cards you make there go inside it. Drag a card
           onto the breadcrumb to move it out. <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
         </dd>
+        <dt>Click a row or column header</dt>
+        <dd>
+          Zooms into it: Identity shows its components, Q2 its releases. Cards tagged only Identity wait in "No
+          component"; drop one on a component to refine it. The chip above the board zooms back out.
+        </dd>
         <dt>
           <kbd>{keys.group}</kbd> groups the selection
         </dt>
