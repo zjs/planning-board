@@ -43,3 +43,19 @@ test('mismatch markers: a count on the collapsed group, and the reason on the ca
   await expect(child).toHaveAttribute('title', /Dated Q3 2027 › 27\.6, outside its group's Q2 2027 › 27\.3/);
   await expect(child).toHaveAttribute('title', /In Identity & Access › Directory Sync, outside its group's Data Platform/);
 });
+
+test('Enter on a group seen only as a faded copy does nothing, and shortcuts keep working', async ({ page }) => {
+  await openApp(page);
+  await pickAxes(page, 'time', 'system');
+  // Zoomed into Identity, EU data residency (Data Platform) shows only through a card inside it.
+  await page.locator('.row-header[data-row="identity"]').getByRole('button').click();
+  const faded = page.locator(`.card.via-children[data-item="${EU}"]`).first();
+  await expect(faded).toBeVisible();
+  await expect(card(page, EU)).toHaveCount(0);
+
+  await faded.click();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.card.selected')).toHaveCount(0);
+});

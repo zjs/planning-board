@@ -111,7 +111,7 @@ function MismatchMarker({ own, inside }: { own: readonly string[]; inside: reado
   const text = inside.length > 0 ? `⚠ ${inside.length}` : '⚠';
   const label = [
     own.length > 0 && "Doesn't fit its group",
-    inside.length > 0 && `${inside.length} ${inside.length === 1 ? "card doesn't" : "cards don't"} fit inside`,
+    inside.length > 0 && `${inside.length} ${inside.length === 1 ? 'mismatch' : 'mismatches'} inside`,
   ]
     .filter(Boolean)
     .join('; ');
