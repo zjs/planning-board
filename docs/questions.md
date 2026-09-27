@@ -55,7 +55,7 @@ Entry format:
 - Status: open. Built (a) in slice 4.
 
 ### Q23: Are group mismatch markers too noisy on real plans?
-- Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 11 dated outside their group, 9 in another area, 3 larger than their group (some have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
+- Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
 - Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
 - Recommendation: (a) for the sprint 1 session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds sprint 2's conflicts panel.
 - Status: open.
