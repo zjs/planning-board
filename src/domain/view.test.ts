@@ -11,7 +11,8 @@ function cellMap(layout: ViewLayout): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   layout.rows.forEach((row, r) =>
     layout.columns.forEach((column, c) => {
-      const ids = layout.cells[r]![c]!.map((ref) => ref.itemId);
+      // Faded "via children" copies are marked, so tests show which copies are solid.
+      const ids = layout.cells[r]![c]!.map((ref) => (ref.via ? `${ref.itemId} (via)` : ref.itemId));
       if (ids.length) out[`${row.key} / ${column.key}`] = ids;
     }),
   );
@@ -120,7 +121,10 @@ describe('layoutView', () => {
     );
     expect(cellMap(layoutView(p, { ...timeBySystem, root: 'epic' }))).toEqual({ 'pay / q2': ['child'] });
     expect(allHolding(layoutView(p, { ...timeBySystem, root: 'other' }))).toEqual([]);
-    expect(cellMap(layoutView(p, { ...timeBySystem, root: null }))).toEqual({ 'id / q1': ['epic'], 'pay / q2': ['other'] });
+    expect(cellMap(layoutView(p, { ...timeBySystem, root: null }))).toEqual({
+      'id / q1': ['epic'],
+      'pay / q2': ['other', 'epic (via)'],
+    });
   });
 
   it('shows groups as one card and hides their children', () => {
@@ -131,7 +135,7 @@ describe('layoutView', () => {
       ),
       timeBySystem,
     );
-    expect(cellMap(layout)).toEqual({ 'id / q1': ['epic'] });
+    expect(cellMap(layout)).toEqual({ 'id / q1': ['epic'], 'pay / q2': ['epic (via)'] });
     expect(allHolding(layout)).toEqual([]);
   });
 
@@ -181,5 +185,40 @@ describe('layoutView', () => {
     // "Identity, no component yet" waits in the holding lane under its quarter.
     expect(layout.holding.columns[1]).toEqual([{ itemId: 'area-only', x: 'q2', y: null }]);
     expect(allHolding(layout).map((r) => r.itemId)).toEqual(['area-only']);
+  });
+
+  it('adds faded "via children" copies of a group where only its descendants reach (Q16)', () => {
+    const layout = layoutView(
+      plan(
+        item('epic', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+        // Same cell as the group: no faded copy there.
+        item('same', { parent: 'epic', values: { [TIME]: ['q1'], [SYSTEM]: ['id/sso'] } }),
+        // No quarter of its own: taken to be in its group's Q1.
+        item('undated', { parent: 'epic', values: { [SYSTEM]: ['pay'] } }),
+        item('story', { parent: 'epic', values: { [TIME]: ['q2'] } }),
+        // Two levels down, inheriting Q2 from 'story' and adding Payments.
+        item('deep', { parent: 'story', values: { [SYSTEM]: ['pay/ledger'] } }),
+      ),
+      timeBySystem,
+    );
+    expect(cellMap(layout)).toEqual({
+      'id / q1': ['epic'],
+      // 'story' has Q2 and no area of its own, so it's taken to be in its group's Identity.
+      'id / q2': ['epic (via)'],
+      'pay / q1': ['epic (via)'],
+      'pay / q2': ['epic (via)'],
+    });
+  });
+
+  it('shows only faded copies of a group outside a lane zoom, where its children are inside', () => {
+    const layout = layoutView(
+      plan(
+        item('epic', { values: { [TIME]: ['q1'], [SYSTEM]: ['pay'] } }),
+        item('child', { parent: 'epic', values: { [TIME]: ['q2'], [SYSTEM]: ['id/sso'] } }),
+      ),
+      { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1, within: 'id' } },
+    );
+    expect(cellMap(layout)).toEqual({ 'id/sso / q2': ['epic (via)'] });
+    expect(allHolding(layout)).toEqual([]);
   });
 });

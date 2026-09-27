@@ -60,9 +60,16 @@ test("an Alt-drop adds a lane, and a column's holding lane removes one", async (
   const scroller = page.locator('.board-scroll');
   await reveal(cxCopy);
   const before = await scroller.evaluate((el) => [el.scrollLeft, el.scrollTop]);
-  await dragTo(page, cxCopy, holding(page, { column }));
-  // Hovering a pinned holding lane must not scroll the board under the pointer.
+  const from = (await cxCopy.boundingBox())!;
+  const to = (await holding(page, { column }).boundingBox())!;
+  await page.mouse.move(from.x + 20, from.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 40, from.y + 30, { steps: 3 });
+  await page.mouse.move(to.x + to.width / 2, to.y + 20, { steps: 8 });
+  // Hovering a pinned holding lane, well past the edge-scroll dwell, must not scroll the board under the pointer.
+  await page.waitForTimeout(500);
   expect(await scroller.evaluate((el) => [el.scrollLeft, el.scrollTop])).toEqual(before);
+  await page.mouse.up();
   // It still has its other areas, so it stays in their rows rather than landing in "No area".
   await expect(card(page, id)).toHaveCount(3);
   await expect(card(cell(page, 'cx', column), id)).toHaveCount(0);

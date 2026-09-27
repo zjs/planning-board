@@ -93,7 +93,15 @@ export function useCardDrag(
 ) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
-  const pending = useRef<{ card: CardRef; title: string; startX: number; startY: number; rect: DOMRect } | null>(null);
+  const pending = useRef<{
+    card: CardRef;
+    title: string;
+    startX: number;
+    startY: number;
+    rect: DOMRect;
+    /** False for a press that can only be a click, such as on a faded copy. */
+    draggable: boolean;
+  } | null>(null);
   const frame = useRef<number | null>(null);
   const edgeSince = useRef<number | null>(null);
   /** Set by an Alt-drop, so the Alt release that follows it is swallowed too. */
@@ -159,6 +167,7 @@ export function useCardDrag(
         return;
       }
       if (!current && start) {
+        if (!start.draggable) return;
         if (Math.hypot(e.clientX - start.startX, e.clientY - start.startY) < DRAG_THRESHOLD_PX) return;
         document.body.classList.add('dragging');
       } else if (!current) {
@@ -227,7 +236,7 @@ export function useCardDrag(
     };
   }, [scrollRef, stop, update]);
 
-  const startDrag = useCallback((e: ReactPointerEvent<HTMLElement>, card: CardRef, title: string) => {
+  const startDrag = useCallback((e: ReactPointerEvent<HTMLElement>, card: CardRef, title: string, draggable = true) => {
     if (e.button !== 0) return;
     e.preventDefault(); // no text selection while dragging
     // Keep receiving pointer events even if the pointer leaves the window.
@@ -238,6 +247,7 @@ export function useCardDrag(
       startX: e.clientX,
       startY: e.clientY,
       rect: e.currentTarget.getBoundingClientRect(),
+      draggable,
     };
   }, []);
 

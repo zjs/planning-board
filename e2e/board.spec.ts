@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { cell, holding, openApp, pickAxes } from './app.ts';
+import { card, cell, holding, openApp, pickAxes } from './app.ts';
 
 test('shows the sample plan as sequence × system with unlabeled sequence columns', async ({ page }) => {
   await openApp(page);
@@ -24,7 +24,7 @@ test('shows the sample plan as sequence × system with unlabeled sequence column
 
 test('renders a group as one card with its child count, and hides the children', async ({ page }) => {
   await openApp(page);
-  const group = page.locator('.card[data-item="eu-data-residency"]');
+  const group = card(page, 'eu-data-residency');
   await expect(group).toHaveCount(1);
   await expect(group.locator('.child-count')).toHaveText('4');
   await expect(page.locator('.card[data-item="eu-kafka-cluster"]')).toHaveCount(0);

@@ -18,6 +18,7 @@ import {
 } from '../commands/store.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
+import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson } from '../domain/planJson.ts';
 import { ancestry, childCounts, childrenOf } from '../domain/tree.ts';
 import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
@@ -107,6 +108,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return [{ which, label: `${property.name}: ${property.values[within]?.label ?? within}` }];
   });
   const counts = useMemo(() => childCounts(plan), [plan]);
+  const mismatches = useMemo(() => findMismatches(plan), [plan]);
   // The add modifier only means something on an axis that holds several values.
   const isMulti = (axis: ViewSpec['x']) => {
     const property = plan.properties[axis.property];
@@ -127,7 +129,20 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const [selection, setSelection] = useState<ReadonlySet<ItemId>>(() => new Set());
   // The last copy clicked, so Enter renames the copy you're looking at.
   const [anchor, setAnchor] = useState<CardRef | null>(null);
-  const [editing, setEditing] = useState<Editing | null>(null);
+  const [editingState, setEditing] = useState<Editing | null>(null);
+  // Cards with a solid copy on screen: only those can show a title field. A
+  // rename whose card has none (it's off-screen, or only a faded copy) is
+  // dropped, rather than leaving the board waiting for a field that isn't there.
+  const renamable = useMemo(
+    () =>
+      new Set(
+        [...layout.cells.flat(2), ...layout.holding.rows.flat(), ...layout.holding.columns.flat(), ...layout.holding.corner]
+          .filter((ref) => !ref.via)
+          .map((ref) => ref.itemId),
+      ),
+    [layout],
+  );
+  const editing = editingState?.kind === 'rename' && !renamable.has(editingState.card.itemId) ? null : editingState;
   const [notice, setNotice] = useState<Notice | null>(null);
   // Deleted or undone items drop out of the selection.
   const selected = useMemo(() => new Set([...selection].filter((id) => plan.items[id])), [selection, plan]);
@@ -304,7 +319,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       } else if (e.key === 'Enter') {
         const card = anchor && selected.has(anchor.itemId) ? anchor : null;
         const id = card?.itemId ?? (selected.size === 1 ? [...selected][0]! : null);
-        if (id === null) return;
+        if (id === null || !renamable.has(id)) return;
         e.preventDefault();
         setEditing({ kind: 'rename', card: card ?? { itemId: id, x: null, y: null } });
       }
@@ -318,6 +333,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     selected,
     anchor,
     root,
+    renamable,
     shown.xWithin,
     shown.yWithin,
     setLaneZoom,
@@ -441,6 +457,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCancelEdit={onCancelEdit}
           onBackgroundPointerDown={clearSelection}
           zoomableLanes={zoomableLanes}
+          mismatches={mismatches}
           onLaneZoom={onLaneZoom}
         />
       )}

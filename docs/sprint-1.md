@@ -34,14 +34,14 @@ Scope: single user, browser only, no server.
 
 ### 4. Roll-up and mismatches (requirements 13, 18)
 
-- [ ] A collapsed group shows solid copies in its own lanes and faded "via children" copies in lanes only its children touch (Q16). Faded copies can't be dragged. Double-clicking one zooms into the group.
-- [ ] A child dated outside its group, sized larger, or in a different area gets a mismatch marker. Values are never changed automatically.
-- [ ] A collapsed group card shows how many mismatches it contains, and hovering lists them.
+- [x] A collapsed group shows solid copies in its own lanes and faded "via children" copies in lanes only its children touch (Q16). Faded copies can't be dragged. Double-clicking one zooms into the group.
+- [x] A child dated outside its group, sized larger, or in a different area gets a mismatch marker. Values are never changed automatically.
+- [x] A collapsed group card shows how many mismatches it contains, and hovering lists them.
 
 ### 5. Tester-ready
 
 - [ ] The legend covers selection, grouping, and zoom.
-- [ ] The seed plan has a few deliberate group mismatches, groups nested 2–3 deep, and a few cards tagged with an area but no component (only two groups are area-only today, so exit criterion 4 needs them).
+- [ ] The seed plan has groups nested 2–3 deep and a few cards tagged with an area but no component (only two groups are area-only today, so exit criterion 4 needs them). It already has plenty of group mismatches (17 flagged cards, see Q23), so none need adding.
 - [ ] A session script and demo note (`docs/demos/sprint-1.md`), checked in Chrome, Firefox, and Safari.
 
 ## Deferred (don't build)

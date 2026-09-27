@@ -19,6 +19,12 @@ interface Props {
   justMoved?: boolean;
   /** Show a title field instead of the title. */
   editing?: boolean;
+  /** A faded copy of a group, in a lane only its children reach (Q16). */
+  viaChildren?: boolean;
+  /** Why this card doesn't fit its group (requirement 13). */
+  mismatches?: readonly string[];
+  /** Everything that doesn't fit inside this group, at any depth (requirement 18). */
+  mismatchesInside?: readonly string[];
   onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void;
   onDoubleClick?: (e: MouseEvent<HTMLDivElement>) => void;
   onRename?: (title: string) => void;
@@ -35,6 +41,9 @@ export function Card({
   lifted,
   justMoved,
   editing,
+  viaChildren,
+  mismatches = [],
+  mismatchesInside = [],
   onPointerDown,
   onDoubleClick,
   onRename,
@@ -46,6 +55,7 @@ export function Card({
     compact && 'chip',
     isGroup && 'group',
     selected && 'selected',
+    viaChildren && 'via-children',
     lifted && 'lifted',
     justMoved && 'just-moved',
   ].filter(Boolean);
@@ -54,7 +64,7 @@ export function Card({
       className={classes.join(' ')}
       data-item={item.id}
       data-area={areaIndex ?? 'none'}
-      title={editing ? undefined : item.title}
+      title={editing ? undefined : viaChildren ? `${item.title} (via cards inside it)` : item.title}
       aria-selected={selected ?? false}
       onPointerDown={editing ? undefined : onPointerDown}
       onDoubleClick={editing ? undefined : onDoubleClick}
@@ -69,6 +79,9 @@ export function Card({
           />
         ) : (
           <span className="card-title">{item.title}</span>
+        )}
+        {(mismatches.length > 0 || mismatchesInside.length > 0) && (
+          <MismatchMarker own={mismatches} inside={mismatchesInside} />
         )}
         {isGroup && (
           <span className="child-count" aria-label={`Group of ${childCount} items`} title={`Group of ${childCount} items`}>
@@ -86,6 +99,26 @@ export function Card({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Flags a card that doesn't fit its group, or a group with cards inside that
+ * don't; hovering lists why. A flag for discussion: nothing is changed.
+ */
+function MismatchMarker({ own, inside }: { own: readonly string[]; inside: readonly string[] }) {
+  const lines = [...own, ...(inside.length > 0 ? ['Inside:', ...inside.map((l) => `• ${l}`)] : [])];
+  const text = inside.length > 0 ? `⚠ ${inside.length}` : '⚠';
+  const label = [
+    own.length > 0 && "Doesn't fit its group",
+    inside.length > 0 && `${inside.length} ${inside.length === 1 ? 'mismatch' : 'mismatches'} inside`,
+  ]
+    .filter(Boolean)
+    .join('; ');
+  return (
+    <span className="mismatch" title={lines.join('\n')} aria-label={`${label}: ${[...own, ...inside].join('; ')}`}>
+      {text}
+    </span>
   );
 }
 

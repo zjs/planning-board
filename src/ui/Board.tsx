@@ -5,6 +5,7 @@ import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
 import type { CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
+import type { Mismatches } from '../domain/mismatches.ts';
 import { Card, DraftCard } from './Card.tsx';
 import { isParentTarget, type BoardTarget } from './useCardDrag.ts';
 
@@ -24,7 +25,7 @@ interface Props {
   lifted: CardRef | null;
   /** What the dragged card is over. Kept referentially stable by the drag hook. */
   target: BoardTarget | null;
-  onCardPointerDown: (e: PointerEvent<HTMLElement>, card: CardRef, title: string) => void;
+  onCardPointerDown: (e: PointerEvent<HTMLElement>, card: CardRef, title: string, draggable?: boolean) => void;
   /** Item to highlight after a drop. */
   justMoved: ItemId | null;
   /** The viewer's selected items. */
@@ -38,6 +39,8 @@ interface Props {
   onCancelEdit: () => void;
   /** A press on the board outside any card, which clears the selection. */
   onBackgroundPointerDown: () => void;
+  /** Group mismatch markers (requirements 13, 18). */
+  mismatches: Mismatches;
   /** Lanes whose header zooms one level down into them (requirement 7). */
   zoomableLanes: { x: ReadonlySet<string>; y: ReadonlySet<string> };
   onLaneZoom: (which: 'x' | 'y', key: string) => void;
@@ -57,6 +60,8 @@ function areaIndexes(plan: Plan): Map<ItemId, number> {
   }
   return out;
 }
+
+const NONE: readonly string[] = [];
 
 const sameCopy = (a: CardRef, b: CardRef) => a.itemId === b.itemId && a.x === b.x && a.y === b.y;
 
@@ -78,7 +83,7 @@ function allCopies(layout: ViewLayout): CardRef[] {
  */
 function renameCopy(layout: ViewLayout, editing: Editing | null): CardRef | null {
   if (editing?.kind !== 'rename') return null;
-  const copies = allCopies(layout).filter((c) => c.itemId === editing.card.itemId);
+  const copies = allCopies(layout).filter((c) => c.itemId === editing.card.itemId && !c.via);
   return copies.find((c) => sameCopy(c, editing.card)) ?? copies[0] ?? null;
 }
 
@@ -130,6 +135,7 @@ export const Board = memo(function Board({
   onBackgroundPointerDown,
   zoomableLanes,
   onLaneZoom,
+  mismatches,
 }: Props) {
   /** A lane header: a button that zooms into the lane when there's a level below it. */
   const laneHeader = (which: 'x' | 'y', lane: Lane) =>
@@ -161,7 +167,7 @@ export const Board = memo(function Board({
     const item = plan.items[ref.itemId]!;
     return (
       <Card
-        key={`${ref.itemId}|${ref.x}|${ref.y}`}
+        key={`${ref.itemId}|${ref.x}|${ref.y}|${ref.via ?? ''}`}
         item={item}
         compact={chip}
         childCount={counts.get(ref.itemId) ?? 0}
@@ -171,7 +177,11 @@ export const Board = memo(function Board({
         lifted={lifted !== null && sameCopy(lifted, ref)}
         justMoved={justMoved === ref.itemId}
         editing={renaming !== null && sameCopy(renaming, ref)}
-        onPointerDown={(e) => onCardPointerDown(e, ref, item.title)}
+        viaChildren={ref.via === 'children'}
+        mismatches={mismatches.onCard.get(ref.itemId) ?? NONE}
+        mismatchesInside={mismatches.inside.get(ref.itemId) ?? NONE}
+        // A faded copy isn't the group's own value, so it can be clicked but not dragged (Q16).
+        onPointerDown={(e) => onCardPointerDown(e, ref, item.title, ref.via !== 'children')}
         onDoubleClick={() => onCardDoubleClick(ref)}
         onRename={onCommitEdit}
         onCancelEdit={onCancelEdit}

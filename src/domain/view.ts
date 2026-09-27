@@ -2,7 +2,7 @@ import { ancestorAtLevel, isWithin, valuesAtLevel } from './hierarchy.ts';
 import type { Item, ItemId, Plan, PropertyId, ValueId } from './model.ts';
 import { compareOrderKeys, itemValues } from './model.ts';
 import { gapKeys } from './sequence.ts';
-import { childrenOf } from './tree.ts';
+import { childrenOf, topLevelItems } from './tree.ts';
 
 /** One axis of a view: a property at one level of its hierarchy. */
 export interface AxisSpec {
@@ -45,6 +45,11 @@ export interface CardRef {
   itemId: ItemId;
   x: string | null;
   y: string | null;
+  /**
+   * A faded copy of a collapsed group in a cell only its children reach
+   * (requirement 13, Q16). It can't be dragged: it isn't the group's own value.
+   */
+  via?: 'children';
 }
 
 export interface Holding {
@@ -112,6 +117,55 @@ function compareItems(a: Item, b: Item): number {
   return a.title.localeCompare(b.title) || compareOrderKeys(a.id, b.id);
 }
 
+/** Parent to children, consistent with the tree helpers: orphans and cycle members belong to no one. */
+function childrenIndex(plan: Plan): Map<ItemId, Item[]> {
+  const surfaced = new Set(topLevelItems(plan));
+  const out = new Map<ItemId, Item[]>();
+  for (const item of Object.values(plan.items)) {
+    if (item.parent === null || surfaced.has(item.id)) continue;
+    out.set(item.parent, [...(out.get(item.parent) ?? []), item]);
+  }
+  return out;
+}
+
+/**
+ * Cells a collapsed group reaches only through its descendants, at any
+ * depth. A card with no value on an axis is taken to sit where its group
+ * does, since children refine their group's estimate. The group's own
+ * cells are left out: it already has a solid copy there.
+ */
+function rolledUpCells(
+  group: Item,
+  kids: Map<ItemId, Item[]>,
+  xsOf: (item: Item) => string[],
+  ysOf: (item: Item) => string[],
+  /** Whether the group has solid copies here at all (it doesn't outside a lane zoom's scope). */
+  solid: boolean,
+): { x: string; y: string }[] {
+  if (!kids.has(group.id)) return [];
+  const ownXs = xsOf(group);
+  const ownYs = ysOf(group);
+  const own = new Set(solid ? ownYs.flatMap((y) => ownXs.map((x) => `${x}|${y}`)) : []);
+  const found = new Map<string, { x: string; y: string }>();
+  const walk = (parent: Item, xs: string[], ys: string[], seen: Set<ItemId>) => {
+    for (const child of kids.get(parent.id) ?? []) {
+      if (seen.has(child.id)) continue;
+      seen.add(child.id);
+      const cxs = xsOf(child).length > 0 ? xsOf(child) : xs;
+      const cys = ysOf(child).length > 0 ? ysOf(child) : ys;
+      for (const y of cys) {
+        for (const x of cxs) {
+          const key = `${x}|${y}`;
+          if (!own.has(key)) found.set(key, { x, y });
+        }
+      }
+      walk(child, cxs, cys, seen);
+    }
+  };
+  walk(group, ownXs, ownYs, new Set([group.id]));
+  return [...found.values()];
+}
+
 /** Whether an item has any value inside a lane-zoomed axis's value (Q18: the rest are hidden). */
 export function inZoomedScope(plan: Plan, item: Item, axis: AxisSpec): boolean {
   const property = plan.properties[axis.property];
@@ -127,16 +181,19 @@ export function inZoomedScope(plan: Plan, item: Item, axis: AxisSpec): boolean {
 export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   const items = childrenOf(plan, view.root ?? null)
     .map((id) => plan.items[id]!)
-    .filter((item) => inZoomedScope(plan, item, view.x) && inZoomedScope(plan, item, view.y))
     .sort(compareItems);
-  const columns = axisLanes(plan, view.x, items);
-  const rows = axisLanes(plan, view.y, items);
+  const inScope = (item: Item) => inZoomedScope(plan, item, view.x) && inZoomedScope(plan, item, view.y);
+  const scoped = items.filter(inScope);
+  const columns = axisLanes(plan, view.x, scoped);
+  const rows = axisLanes(plan, view.y, scoped);
   const columnIndex = new Map(columns.map((lane, i) => [lane.key, i]));
   const rowIndex = new Map(rows.map((lane, i) => [lane.key, i]));
   const cells: CardRef[][][] = rows.map(() => columns.map(() => []));
   const holding: Holding = { rows: rows.map(() => []), columns: columns.map(() => []), corner: [] };
 
   for (const item of items) {
+    // Out of a lane zoom's scope, a card shows only through its children's faded copies.
+    if (!inScope(item)) continue;
     const xs = axisKeys(plan, item, view.x).filter((key) => columnIndex.has(key));
     const ys = axisKeys(plan, item, view.y).filter((key) => rowIndex.has(key));
     if (xs.length === 0 && ys.length === 0) {
@@ -153,6 +210,18 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
       }
     }
   }
+
+  // Faded "via children" copies (Q16), after each cell's own cards.
+  const inCells = (axis: AxisSpec, index: Map<string, number>) => (item: Item) =>
+    axisKeys(plan, item, axis).filter((key) => index.has(key));
+  const kids = childrenIndex(plan);
+  for (const item of items) {
+    const reached = rolledUpCells(item, kids, inCells(view.x, columnIndex), inCells(view.y, rowIndex), inScope(item));
+    for (const { x, y } of reached) {
+      cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push({ itemId: item.id, x, y, via: 'children' });
+    }
+  }
+
   const allKeys = Object.values(plan.items).flatMap((item) => (item.sequence === null ? [] : [item.sequence]));
   const gapsFor = (axis: AxisSpec, lanes: Lane[]) =>
     plan.properties[axis.property]?.kind === 'sequence'
