@@ -18,6 +18,7 @@ import {
 } from '../commands/store.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
+import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson } from '../domain/planJson.ts';
 import { ancestry, childCounts, childrenOf } from '../domain/tree.ts';
 import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
@@ -107,6 +108,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return [{ which, label: `${property.name}: ${property.values[within]?.label ?? within}` }];
   });
   const counts = useMemo(() => childCounts(plan), [plan]);
+  const mismatches = useMemo(() => findMismatches(plan), [plan]);
   // The add modifier only means something on an axis that holds several values.
   const isMulti = (axis: ViewSpec['x']) => {
     const property = plan.properties[axis.property];
@@ -441,6 +443,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCancelEdit={onCancelEdit}
           onBackgroundPointerDown={clearSelection}
           zoomableLanes={zoomableLanes}
+          mismatches={mismatches}
           onLaneZoom={onLaneZoom}
         />
       )}

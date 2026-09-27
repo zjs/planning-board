@@ -62,6 +62,18 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Shows only what's inside. Any card can be zoomed into, and new cards you make there go inside it. Drag a card
           onto the breadcrumb to move it out. <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
         </dd>
+        <dt>Faded cards</dt>
+        <dd>
+          A group also shows, faded, wherever the cards inside it are. It can't be dragged from there; double-click to
+          zoom in.
+        </dd>
+        <dt>
+          <span className="mismatch">⚠</span> markers
+        </dt>
+        <dd>
+          A card that doesn't fit its group: dated outside it, larger than it, or in another area. On a group, the number
+          counts the mismatches anywhere inside it. Hover to see why. Nothing is changed for you.
+        </dd>
         <dt>Click a row or column header</dt>
         <dd>
           Zooms into it: Identity shows its components, Q2 its releases. Cards tagged only Identity wait in "No

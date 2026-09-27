@@ -15,7 +15,7 @@ test('⌘G groups the selection under a new card you name, and it lands where th
   await page.keyboard.type('Role management');
   await page.keyboard.press('Enter');
 
-  const group = page.locator('.card.group', { hasText: 'Role management' });
+  const group = page.locator('.card.group:not(.via-children)', { hasText: 'Role management' });
   await expect(group.locator('.child-count')).toHaveText('3');
   await expect(group).toHaveClass(/selected/);
   for (const id of RBAC) await expect(card(page, id)).toHaveCount(0);
@@ -25,9 +25,9 @@ test('⌘G groups the selection under a new card you name, and it lands where th
 
   // Two undo steps: the name, then the group.
   await page.keyboard.press('ControlOrMeta+z');
-  await expect(page.locator('.card.group', { hasText: 'New group' })).toBeVisible();
+  await expect(page.locator('.card.group:not(.via-children)', { hasText: 'New group' })).toBeVisible();
   await page.keyboard.press('ControlOrMeta+z');
-  await expect(page.locator('.card.group', { hasText: 'New group' })).toHaveCount(0);
+  await expect(page.locator('.card.group:not(.via-children)', { hasText: 'New group' })).toHaveCount(0);
   for (const id of RBAC) await expect(card(page, id)).toHaveCount(1);
 });
 

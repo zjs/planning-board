@@ -32,6 +32,7 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       onBackgroundPointerDown={() => undefined}
       zoomableLanes={{ x: new Set(), y: new Set() }}
       onLaneZoom={() => undefined}
+      mismatches={{ onCard: new Map(), inside: new Map() }}
     />,
   );
 }
