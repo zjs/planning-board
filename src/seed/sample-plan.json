@@ -1785,6 +1785,37 @@
         "time": "q1"
       },
       "sequence": 2
+    },
+    {
+      "id": "contractor-and-guest-identities",
+      "title": "Contractor and guest identities",
+      "values": {
+        "system": [
+          "identity"
+        ],
+        "time": "q3",
+        "size": "l"
+      },
+      "sequence": 8
+    },
+    {
+      "id": "session-management-overhaul",
+      "title": "Session management overhaul",
+      "values": {
+        "system": [
+          "identity"
+        ],
+        "time": "q2"
+      }
+    },
+    {
+      "id": "identity-for-acquired-products",
+      "title": "Identity for acquired products",
+      "values": {
+        "system": [
+          "identity"
+        ]
+      }
     }
   ],
   "dependencies": [

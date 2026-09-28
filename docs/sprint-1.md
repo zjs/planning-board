@@ -40,9 +40,9 @@ Scope: single user, browser only, no server.
 
 ### 5. Tester-ready
 
-- [ ] The legend covers selection, grouping, and zoom.
-- [ ] The seed plan has groups nested 2–3 deep and a few cards tagged with an area but no component (only two groups are area-only today, so exit criterion 4 needs them). It already has plenty of group mismatches (17 flagged cards, see Q23), so none need adding.
-- [ ] A session script and demo note (`docs/demos/sprint-1.md`), checked in Chrome, Firefox, and Safari.
+- [x] The legend covers selection, grouping, and zoom.
+- [x] The seed plan has groups nested 2–3 deep and a few cards tagged with an area but no component (only two groups are area-only today, so exit criterion 4 needs them). It already has plenty of group mismatches (17 flagged cards, see Q23), so none need adding.
+- [ ] A session script and demo note (`docs/demos/sprint-1.md`), checked in Chrome, Firefox, and Safari. *Script and note written, and Chromium checked. Firefox and Safari need a manual check by the PM, because only Chromium runs where engineering works.*
 
 ## Deferred (don't build)
 
