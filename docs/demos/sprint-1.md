@@ -37,7 +37,7 @@ An automated test walks through exactly these steps on every build (`e2e/exit-cr
 - **Double-click does three jobs.** In empty space it creates a card, on a card it renames it, and on a group it zooms in. Double-clicking just beside a card renames that card, where you may have meant to create one.
 - **Zooming into a plain card** uses ⌘↓ or the **Zoom in** button. Double-clicking a plain card renames it.
 - **In sequence views**, a group's faded copy only appears in columns that exist at the current level.
-- **The toolbar wraps onto two rows** in windows narrower than about 1500px.
+- **The toolbar wraps onto two rows** at 1440px wide (the width the screenshots were checked at) and narrower.
 - **Not built (by design):** dependency lines, contention, the conflicts panel, scenarios, custom properties, editing property values, CSV import, plan files, filters, saved views, and card descriptions.
 - **Input:** mouse or trackpad only.
 
