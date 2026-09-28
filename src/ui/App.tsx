@@ -270,8 +270,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     const timer = setTimeout(() => setNotice(null), NOTICE_MS);
     return () => clearTimeout(timer);
   }, [notice]);
-  // The notice's Undo only makes sense while the delete itself is the latest step.
+  // The notice's Undo only makes sense while its own step is the latest one. Once
+  // anything else happens it's gone for good, rather than coming back when later
+  // steps are undone.
   const noticeCurrent = notice !== null && canUndo && store.undoManager.undoStack.at(-1) === notice.step;
+  useEffect(() => {
+    if (!notice) return;
+    const dismissIfStale = () => {
+      if (store.undoManager.undoStack.at(-1) !== notice.step) setNotice(null);
+    };
+    const events = ['stack-item-added', 'stack-item-popped', 'stack-cleared'] as const;
+    events.forEach((event) => store.undoManager.on(event, dismissIfStale));
+    return () => events.forEach((event) => store.undoManager.off(event, dismissIfStale));
+  }, [notice, store]);
 
   const [legendOpen, setLegendOpen] = useState(legendInitiallyOpen);
   const closeLegend = () => {

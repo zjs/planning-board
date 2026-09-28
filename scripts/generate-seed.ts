@@ -60,6 +60,16 @@ const UNTAGGED = [
   'Support macro cleanup', 'Sales demo environment',
 ];
 
+// Tagged with an area but no component yet: what a PM writes before engineering has
+// placed the work. Zooming Identity shows them in "No component" (Q18), ready to
+// refine (sprint 1, exit criterion 4). Their values are fixed and they're added after
+// the random passes, so every other item stays exactly as it was.
+const AREA_ONLY: { title: string; time?: string; size?: string; sequence?: number }[] = [
+  { title: 'Contractor and guest identities', time: 'q3', size: 'l', sequence: 8 },
+  { title: 'Session management overhaul', time: 'q2' },
+  { title: 'Identity for acquired products' },
+];
+
 const GROUPS: Spec[] = [
   {
     title: 'EU data residency',
@@ -280,6 +290,14 @@ for (const item of items) {
     values.time = rand() < 0.3 ? `${quarter}/${pick(['r1', 'r2'])}` : quarter;
   }
   if (Object.keys(values).length === 0) delete item.values;
+}
+
+for (const { title, time, size, sequence } of AREA_ONLY) {
+  add({ title, sys: ['identity'] });
+  const item = items[items.length - 1]!;
+  if (time) item.values!.time = time;
+  if (size) item.values!.size = size;
+  if (sequence !== undefined) item.sequence = sequence;
 }
 
 const plan = {

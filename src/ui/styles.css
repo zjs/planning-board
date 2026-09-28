@@ -761,7 +761,7 @@ body.dragging * {
   left: 16px;
   bottom: 16px;
   z-index: 50;
-  width: 340px;
+  width: min(640px, calc(100vw - 32px));
   max-height: calc(100vh - 120px);
   overflow: auto;
   padding: 12px 14px;
@@ -790,13 +790,31 @@ body.dragging * {
   color: var(--muted);
 }
 
+.legend-body {
+  columns: 2 260px;
+  column-gap: 24px;
+}
+
+.legend section {
+  break-inside: avoid;
+}
+
+.legend h3 {
+  margin: 12px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .legend dl {
-  margin: 8px 0 0;
+  margin: 2px 0 0;
 }
 
 .legend dt {
   font-weight: 600;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .legend dd {

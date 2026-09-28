@@ -30,67 +30,76 @@ export function Legend({ onClose }: { onClose: () => void }) {
           ✕
         </button>
       </header>
+      <div className="legend-body">
+      <section>
+        <h3>Moving cards</h3>
       <dl>
         <dt>Drag a card into a cell</dt>
-        <dd>It takes that row's and that column's values. Pivot the axes to see it from another angle.</dd>
-        <dt>A card that shows up more than once</dt>
-        <dd>It touches several areas. Drag one copy to move just that one.</dd>
+        <dd>It takes that row's and column's values. A card in several areas has a copy in each; drag one to move it.</dd>
         <dt>
           Hold <kbd>{keys.add}</kbd> while dropping
         </dt>
         <dd>Adds that area instead of moving there.</dd>
-        <dt>Drop in the gap between sequence columns</dt>
-        <dd>Opens a new position there. Sequence columns have no numbers on purpose.</dd>
-        <dt>The lanes along the right and bottom edges</dt>
+        <dt>Gaps between sequence columns</dt>
+        <dd>Drop there to open a new position. Columns have no numbers on purpose.</dd>
+        <dt>Lanes along the right and bottom edges</dt>
+        <dd>Cards missing a column (right), a row (bottom), or both (corner). Drop there to clear a value.</dd>
+      </dl>
+      </section>
+      <section>
+        <h3>Cards and groups</h3>
+      <dl>
+        <dt>Click to select</dt>
         <dd>
-          Hold cards missing a value: a row but no column on the right, a column but no row along the bottom, neither in
-          the corner. Drop a card there to clear that value.
-        </dd>
-        <dt>Click a card to select it</dt>
-        <dd>
-          <kbd>⇧ Shift</kbd>-click adds more. <kbd>Delete</kbd> removes the selection, including everything inside a
-          group. Click empty space or press <kbd>Esc</kbd> to deselect.
+          <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>Delete</kbd> removes the
+          selection, and everything inside a group.
         </dd>
         <dt>Double-click empty space</dt>
-        <dd>Makes a new card there, with that row's and column's values. Type a title and press Enter.</dd>
-        <dt>Double-click a card, or press Enter</dt>
-        <dd>Renames it. Double-clicking a group zooms into it instead; Enter still renames.</dd>
-        <dt>
-          Zoom in: double-click a group, or <kbd>{keys.zoomIn}</kbd>
-        </dt>
-        <dd>
-          Shows only what's inside. Any card can be zoomed into, and new cards you make there go inside it. Drag a card
-          onto the breadcrumb to move it out. <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
-        </dd>
-        <dt>Faded cards</dt>
-        <dd>
-          A group also shows, faded, wherever the cards inside it are. It can't be dragged from there; double-click to
-          zoom in.
-        </dd>
-        <dt>
-          <span className="mismatch">⚠</span> markers
-        </dt>
-        <dd>
-          A card that doesn't fit its group: dated outside it, larger than it, or in another area. On a group, the number
-          counts the mismatches anywhere inside it. Hover to see why. Nothing is changed for you.
-        </dd>
-        <dt>Click a row or column header</dt>
-        <dd>
-          Zooms into it: Identity shows its components, Q2 its releases. Cards tagged only Identity wait in "No
-          component"; drop one on a component to refine it. The chip above the board zooms back out.
-        </dd>
+        <dd>Makes a card there with that cell's values. Double-click a card, or press Enter, to rename it.</dd>
         <dt>
           <kbd>{keys.group}</kbd> groups the selection
         </dt>
         <dd>
-          The new group card gets the values its cards share; type its name. If one selected card is already a group,
-          the others join it instead. <kbd>{keys.ungroup}</kbd> ungroups.
+          Into a new card you name, or into the one group already selected. <kbd>{keys.ungroup}</kbd> ungroups.
+        </dd>
+      </dl>
+      </section>
+      <section>
+        <h3>Zooming</h3>
+      <dl>
+        <dt>
+          Double-click a group, or <kbd>{keys.zoomIn}</kbd>
+        </dt>
+        <dd>
+          Shows only what's inside; new cards go inside. Drag a card onto the breadcrumb to move it out.{' '}
+          <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
+        </dd>
+        <dt>Click a row or column header</dt>
+        <dd>
+          Identity shows its components, Q2 its releases. Cards tagged only Identity wait in "No component" until you
+          drop them on one.
+        </dd>
+      </dl>
+      </section>
+      <section>
+        <h3>What the board tells you</h3>
+      <dl>
+        <dt>Faded cards</dt>
+        <dd>A group, shown wherever the cards inside it are. Double-click to zoom in; it can't be dragged.</dd>
+        <dt>
+          <span className="mismatch">⚠</span> markers
+        </dt>
+        <dd>
+          A card dated outside its group, larger than it, or in another area. On a group, the count covers everything
+          inside. Hover for why; nothing is changed for you.
         </dd>
         <dt>Undo, redo, cancel</dt>
         <dd>
           <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.
         </dd>
       </dl>
+      </section>
+      </div>
       <p className="legend-foot">Everything saves in this browser as you go.</p>
     </aside>
   );
