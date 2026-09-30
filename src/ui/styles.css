@@ -1082,9 +1082,83 @@ button.danger {
   padding: 2px 0;
 }
 
-.value-label {
-  display: inline-block;
-  padding: 1px 0;
+/* A value's name is its rename button; its tools show on hover or focus. */
+.value-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+}
+
+button.value-label,
+button.link {
+  padding: 1px 2px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: text;
+}
+
+button.value-label:hover,
+button.link:hover {
+  background: var(--surface-2);
+}
+
+.value-row .inline-edit {
+  flex: 1;
+}
+
+/* Overlaid on the row's right end, so they don't squeeze the name while hidden. */
+.value-tools {
+  position: absolute;
+  right: 0;
+  display: flex;
+  gap: 2px;
+  padding-left: 8px;
+  background: var(--surface);
+  opacity: 0;
+}
+
+.value-row:hover .value-tools,
+.value-row:focus-within .value-tools {
+  opacity: 1;
+}
+
+.value-tools button,
+.value-tools select {
+  padding: 0 5px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.value-tools select {
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-width: 110px;
+}
+
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+.levels-label {
+  margin-right: 4px;
+}
+
+.level {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .add-field,

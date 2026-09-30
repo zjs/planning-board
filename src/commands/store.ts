@@ -6,7 +6,18 @@ import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
 import type { ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
-import { cardsWithProperty, isBuiltIn, orderAtEnd, propertyNameProblem, valueLabelProblem } from '../domain/properties.ts';
+import {
+  cardsWithProperty,
+  isBuiltIn,
+  levelNameProblem,
+  orderAtEnd,
+  planValueDelete,
+  planValueMove,
+  propertyNameProblem,
+  reorderKey,
+  valueLabelProblem,
+  type CardValueChange,
+} from '../domain/properties.ts';
 import { wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
@@ -69,23 +80,34 @@ export function dropCard(
   if (!change || !item) return false;
   edit(store, () => {
     if (change.sequence !== undefined) item.set('sequence', change.sequence);
-    let values = item.get('values') as Y.Map<Y.Map<true>> | undefined;
-    if (!values) {
-      values = new Y.Map();
-      item.set('values', values);
-    }
-    for (const [property, next] of Object.entries(change.values)) {
-      const set = values.get(property);
-      if (!set) {
-        values.set(property, valueSet(next));
-        continue;
-      }
-      // Apply as a set difference, so a concurrent edit to another value survives.
-      for (const id of [...set.keys()]) if (!next.includes(id)) set.delete(id);
-      for (const id of next) if (!set.has(id)) set.set(id, true);
-    }
+    for (const [property, next] of Object.entries(change.values)) writeValues(item, property, next);
   });
   return true;
+}
+
+/** Set one property's values on an item. Call inside a transaction. */
+function writeValues(item: Y.Map<unknown>, property: PropertyId, next: readonly ValueId[]): void {
+  let values = item.get('values') as Y.Map<Y.Map<true>> | undefined;
+  if (!values) {
+    values = new Y.Map();
+    item.set('values', values);
+  }
+  const set = values.get(property);
+  if (!set) {
+    values.set(property, valueSet(next));
+    return;
+  }
+  // Apply as a set difference, so a concurrent edit to another value survives.
+  for (const id of [...set.keys()]) if (!next.includes(id)) set.delete(id);
+  for (const id of next) if (!set.has(id)) set.set(id, true);
+}
+
+function writeCardChanges(store: PlanStore, property: PropertyId, cards: readonly CardValueChange[]): void {
+  const items = root(store.doc).items;
+  for (const { item, values } of cards) {
+    const map = items.get(item);
+    if (map) writeValues(map, property, values);
+  }
 }
 
 /**
@@ -295,6 +317,80 @@ export function addValue(
   const node = { label: cleanTitle(label)!, parent, order: orderAtEnd(property, parent) };
   edit(store, () => values.set(id, node));
   return id;
+}
+
+/** Rename a value. Its ID stays, so its cards keep it. Returns false for a blank, clashing, or unchanged label. */
+export function renameValue(store: PlanStore, propertyId: PropertyId, valueId: ValueId, label: string): boolean {
+  const property = readPlan(store.doc).properties[propertyId];
+  const values = valuesMap(store, propertyId);
+  const node = property?.kind === 'select' ? property.values[valueId] : undefined;
+  const clean = cleanTitle(label);
+  if (property?.kind !== 'select' || !values || !node || clean === null || clean === node.label) return false;
+  if (valueLabelProblem(property, clean, node.parent, valueId) !== null) return false;
+  edit(store, () => values.set(valueId, { label: clean, parent: node.parent, order: node.order }));
+  return true;
+}
+
+/** Move a value one place up or down among its siblings. Returns false at either end. */
+export function reorderValue(store: PlanStore, propertyId: PropertyId, valueId: ValueId, direction: 'up' | 'down'): boolean {
+  const property = readPlan(store.doc).properties[propertyId];
+  const values = valuesMap(store, propertyId);
+  if (property?.kind !== 'select' || !values) return false;
+  const node = property.values[valueId];
+  const order = reorderKey(property, valueId, direction);
+  if (!node || order === null) return false;
+  edit(store, () => values.set(valueId, { label: node.label, parent: node.parent, order }));
+  return true;
+}
+
+/**
+ * Move a value under another parent at the same level: a component to
+ * another area, or a release to another quarter. It keeps its ID and its
+ * cards (ADR 0009). Returns false if the move isn't allowed. One undo step.
+ */
+export function moveValue(store: PlanStore, propertyId: PropertyId, valueId: ValueId, parent: ValueId): boolean {
+  const plan = readPlan(store.doc);
+  const property = plan.properties[propertyId];
+  const values = valuesMap(store, propertyId);
+  const move = planValueMove(plan, propertyId, valueId, parent);
+  const node = property?.kind === 'select' ? property.values[valueId] : undefined;
+  if (!move || !values || !node) return false;
+  edit(store, () => {
+    values.set(valueId, { label: node.label, parent, order: move.order });
+    writeCardChanges(store, propertyId, move.cards);
+  });
+  return true;
+}
+
+/**
+ * Delete a value and everything below it. Its cards move to its parent
+ * value, or lose it when it has none (questions.md Q4). Returns how many
+ * cards moved and where, or null if nothing was deleted. One undo step.
+ */
+export function deleteValue(
+  store: PlanStore,
+  propertyId: PropertyId,
+  valueId: ValueId,
+): { cards: number; parent: ValueId | null } | null {
+  const deletion = planValueDelete(readPlan(store.doc), propertyId, valueId);
+  const values = valuesMap(store, propertyId);
+  if (!deletion || !values) return null;
+  edit(store, () => {
+    writeCardChanges(store, propertyId, deletion.cards);
+    for (const id of deletion.removed) values.delete(id);
+  });
+  return { cards: deletion.cards.length, parent: deletion.parent };
+}
+
+/** Rename one level of a hierarchy, such as Area or Release. Returns false for a blank, clashing, or unchanged name. */
+export function renameLevel(store: PlanStore, propertyId: PropertyId, index: number, name: string): boolean {
+  const property = readPlan(store.doc).properties[propertyId];
+  const map = root(store.doc).properties.get(propertyId);
+  const clean = cleanTitle(name);
+  if (property?.kind !== 'select' || !map || clean === null || property.levels[index] === undefined) return false;
+  if (property.levels[index] === clean || levelNameProblem(property, index, clean) !== null) return false;
+  edit(store, () => map.set('levels', property.levels.map((level, i) => (i === index ? clean : level))));
+  return true;
 }
 
 export function undo(store: PlanStore): void {

@@ -1,6 +1,6 @@
 # Sprint 2 — engineering plan
 
-Status: **approved 2026-09-30.** Slice 1 merged (#15). Slice 2 in review. Adding values moved into slice 2, because a new property is no use as an axis until it has values. Scope is `docs/sprint-2.md`. This doc covers how engineering delivers that scope: order, slices, and what each depends on. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-09-30.** Slices 1–2 merged (#15, #16). Slice 3 in review. Adding values moved into slice 2, because a new property is no use as an axis until it has values. Scope is `docs/sprint-2.md`. This doc covers how engineering delivers that scope: order, slices, and what each depends on. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## What this sprint has to prove
 

@@ -24,9 +24,9 @@ Scope: single user, browser only, no server.
 
 ### 3. Editing values (requirement 27)
 
-- [ ] In the Properties panel, you can add, rename, reorder, and delete values, and rename levels.
-- [ ] You can move a value to another parent: a component to another area, or a release to another quarter.
-- [ ] Deleting a value that cards use moves those cards to its parent value, or to the holding lane if it has none (Q4). A notice with Undo says how many cards moved.
+- [x] In the Properties panel, you can add, rename, reorder, and delete values, and rename levels.
+- [x] You can move a value to another parent: a component to another area, or a release to another quarter.
+- [x] Deleting a value that cards use moves those cards to its parent value, or to the holding lane if it has none (Q4). A notice with Undo says how many cards moved.
 
 ### 4. CSV import (requirement 28)
 

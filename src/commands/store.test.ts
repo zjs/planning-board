@@ -11,7 +11,12 @@ import {
   createItem,
   createProperty,
   deleteProperty,
+  deleteValue,
+  moveValue,
+  renameLevel,
   renameProperty,
+  renameValue,
+  reorderValue,
   createPlanStore,
   deleteItems,
   dropCard,
@@ -407,5 +412,74 @@ describe('custom properties', () => {
     const store = storeWith(item('a'));
     for (const id of [SYSTEM, TIME, SEQUENCE, 'size']) expect(deleteProperty(store, id)).toBeNull();
     expect(Object.keys(readPlan(store.doc).properties).sort()).toEqual(['sequence', 'size', 'system', 'time']);
+  });
+});
+
+describe('editing values (requirement 27)', () => {
+  const values = (store: ReturnType<typeof storeWith>, property: string) => {
+    const p = readPlan(store.doc).properties[property];
+    return p?.kind === 'select' ? p.values : {};
+  };
+
+  it('renames a value; its cards keep it, and undo restores the label', () => {
+    const store = storeWith(item('a', { values: { [SYSTEM]: ['id/sso'] } }));
+    expect(renameValue(store, SYSTEM, 'id/sso', 'Single sign-on')).toBe(true);
+    expect(values(store, SYSTEM)['id/sso']!.label).toBe('Single sign-on');
+    expect(readPlan(store.doc).items['a']!.values[SYSTEM]).toEqual(['id/sso']);
+    expect(renameValue(store, SYSTEM, 'id/sso', 'id/mfa')).toBe(false);
+    undo(store);
+    expect(values(store, SYSTEM)['id/sso']!.label).toBe('ID/SSO');
+  });
+
+  it('reorders values among their siblings', () => {
+    const store = storeWith();
+    expect(reorderValue(store, 'size', 'l', 'up')).toBe(true);
+    const order = Object.values(values(store, 'size'))
+      .sort((a, b) => (a.order < b.order ? -1 : 1))
+      .map((n) => n.id);
+    expect(order).toEqual(['s', 'l', 'm']);
+    expect(reorderValue(store, 'size', 's', 'up')).toBe(false);
+  });
+
+  it('moves a component to another area with its cards, in one undo step', () => {
+    const store = storeWith(item('a', { values: { [SYSTEM]: ['id/sso', 'pay'] } }));
+    expect(moveValue(store, SYSTEM, 'id/sso', 'pay')).toBe(true);
+    expect(values(store, SYSTEM)['id/sso']!.parent).toBe('pay');
+    // It held Payments and SSO; SSO is now inside Payments, so only SSO is kept.
+    expect(readPlan(store.doc).items['a']!.values[SYSTEM]).toEqual(['id/sso']);
+    undo(store);
+    expect(values(store, SYSTEM)['id/sso']!.parent).toBe('id');
+    expect([...readPlan(store.doc).items['a']!.values[SYSTEM]!].sort()).toEqual(['id/sso', 'pay']);
+  });
+
+  it('deletes a release and moves its cards to the quarter (Q4), in one undo step', () => {
+    const store = storeWith(
+      item('a', { values: { [TIME]: ['q1/r1'] } }),
+      item('b', { values: { [TIME]: ['q1/r1'] } }),
+      item('c', { values: { [TIME]: ['q2'] } }),
+    );
+    expect(deleteValue(store, TIME, 'q1/r1')).toEqual({ cards: 2, parent: 'q1' });
+    const after = readPlan(store.doc);
+    expect(values(store, TIME)['q1/r1']).toBeUndefined();
+    expect(after.items['a']!.values[TIME]).toEqual(['q1']);
+    expect(after.items['c']!.values[TIME]).toEqual(['q2']);
+    undo(store);
+    expect(values(store, TIME)['q1/r1']).toBeDefined();
+    expect(readPlan(store.doc).items['a']!.values[TIME]).toEqual(['q1/r1']);
+  });
+
+  it('deleting an area deletes its components, and its cards go to the holding lane', () => {
+    const store = storeWith(item('a', { values: { [SYSTEM]: ['id/sso'] } }));
+    expect(deleteValue(store, SYSTEM, 'id')).toEqual({ cards: 1, parent: null });
+    expect(Object.keys(values(store, SYSTEM)).sort()).toEqual(['pay', 'pay/ledger']);
+    expect(readPlan(store.doc).items['a']!.values[SYSTEM]).toEqual([]);
+  });
+
+  it('renames a level', () => {
+    const store = storeWith();
+    expect(renameLevel(store, SYSTEM, 1, 'Service')).toBe(true);
+    expect(readPlan(store.doc).properties[SYSTEM]).toMatchObject({ levels: ['Area', 'Service'] });
+    expect(renameLevel(store, SYSTEM, 1, 'area')).toBe(false);
+    expect(renameLevel(store, SYSTEM, 5, 'Deep')).toBe(false);
   });
 });
