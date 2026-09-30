@@ -4,14 +4,15 @@
 import * as Y from 'yjs';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
-import type { ItemId, Plan } from '../domain/model.ts';
+import type { ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
+import { cardsWithProperty, isBuiltIn, orderAtEnd, propertyNameProblem, valueLabelProblem } from '../domain/properties.ts';
 import { wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 
 export type { PersistenceStatus };
-import { dependencyKey, isEmpty, itemToY, readPlan, root, valueSet, writePlan } from '../store/schema.ts';
+import { dependencyKey, isEmpty, itemToY, propertyToY, readPlan, root, valueSet, writePlan } from '../store/schema.ts';
 
 /** Marks edits made through commands, so undo tracks them and not loads from storage. */
 const LOCAL_ORIGIN = { source: 'local-command' };
@@ -92,8 +93,13 @@ export function dropCard(
  * which works in pages opened from disk, unlike randomUUID in some browsers.
  */
 export function newItemId(): ItemId {
+  return randomId('i');
+}
+
+/** Random IDs, for items, custom properties, and values alike (ADR 0009). */
+function randomId(prefix: string): string {
   const bytes = crypto.getRandomValues(new Uint8Array(12));
-  return 'i' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return prefix + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -207,6 +213,88 @@ export function moveToParent(store: PlanStore, ids: Iterable<ItemId>, parent: It
     for (const id of moving) items.get(id)?.set('parent', parent);
   });
   return moving;
+}
+
+/**
+ * Add a custom property (requirement 26): flat for now (questions.md Q25),
+ * holding one value per card or several. Returns its ID, or null when the
+ * name is blank or taken. One undo step.
+ */
+export function createProperty(store: PlanStore, name: string, multi: boolean): PropertyId | null {
+  if (propertyNameProblem(readPlan(store.doc), name) !== null) return null;
+  const clean = cleanTitle(name)!;
+  const id = randomId('p');
+  const property: SelectProperty = { kind: 'select', id, name: clean, levels: [clean], multi, values: {} };
+  edit(store, () => root(store.doc).properties.set(id, propertyToY(property)));
+  return id;
+}
+
+/**
+ * Rename a property. A flat property's one level shares its name, so it's
+ * renamed too. Returns false (no undo step) for a blank, taken, or
+ * unchanged name.
+ */
+export function renameProperty(store: PlanStore, id: PropertyId, name: string): boolean {
+  const plan = readPlan(store.doc);
+  const property = plan.properties[id];
+  const clean = cleanTitle(name);
+  const map = root(store.doc).properties.get(id);
+  if (!property || !map || clean === null || clean === property.name) return false;
+  if (propertyNameProblem(plan, clean, id) !== null) return false;
+  edit(store, () => {
+    map.set('name', clean);
+    if (property.kind === 'select' && property.levels.length === 1 && property.levels[0] === property.name) {
+      map.set('levels', [clean]);
+    }
+  });
+  return true;
+}
+
+/**
+ * Delete a custom property and every card's values for it. Built-in
+ * properties can't be deleted (requirement 25). Returns how many cards
+ * lost a value, or null if nothing was deleted. One undo step.
+ */
+export function deleteProperty(store: PlanStore, id: PropertyId): number | null {
+  const plan = readPlan(store.doc);
+  const r = root(store.doc);
+  if (isBuiltIn(id) || !plan.properties[id]) return null;
+  const affected = cardsWithProperty(plan, id);
+  edit(store, () => {
+    r.items.forEach((item) => (item.get('values') as Y.Map<unknown> | undefined)?.delete(id));
+    r.properties.delete(id);
+  });
+  return affected.length;
+}
+
+/** The Yjs map of a select property's values. */
+function valuesMap(store: PlanStore, property: PropertyId): Y.Map<Omit<ValueNode, 'id'>> | null {
+  const map = root(store.doc).properties.get(property);
+  const values = map?.get('values');
+  return values instanceof Y.Map ? (values as Y.Map<Omit<ValueNode, 'id'>>) : null;
+}
+
+/**
+ * Add a value at the end of its siblings: a top-level value, or one under
+ * `parent` (a component in an area). IDs are random and never reused, so a
+ * renamed value keeps its cards (ADR 0009). Returns the new value's ID, or
+ * null for a blank or duplicate name. One undo step.
+ */
+export function addValue(
+  store: PlanStore,
+  propertyId: PropertyId,
+  label: string,
+  parent: ValueId | null = null,
+): ValueId | null {
+  const property = readPlan(store.doc).properties[propertyId];
+  const values = valuesMap(store, propertyId);
+  if (property?.kind !== 'select' || !values) return null;
+  if (parent !== null && !property.values[parent]) return null;
+  if (valueLabelProblem(property, label, parent) !== null) return null;
+  const id = randomId('v');
+  const node = { label: cleanTitle(label)!, parent, order: orderAtEnd(property, parent) };
+  edit(store, () => values.set(id, node));
+  return id;
 }
 
 export function undo(store: PlanStore): void {

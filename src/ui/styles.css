@@ -965,3 +965,192 @@ kbd {
   max-height: 40vh;
   overflow: auto;
 }
+
+/* The board and, when open, the Properties panel beside it. */
+.workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.workspace > .board-wrap {
+  min-width: 0;
+}
+
+.properties-panel {
+  flex: 0 0 340px;
+  overflow: auto;
+  padding: 12px 14px 24px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.properties-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.properties-panel h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.properties-panel header button {
+  padding: 0 6px;
+  border: none;
+  background: none;
+  color: var(--muted);
+}
+
+.panel-hint {
+  margin: 6px 0 10px;
+  color: var(--muted);
+}
+
+.property {
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
+
+.property summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.property summary::-webkit-details-marker {
+  display: none;
+}
+
+.property summary::before {
+  content: '▸';
+  color: var(--muted);
+  width: 10px;
+}
+
+.property[open] summary::before {
+  content: '▾';
+}
+
+.property-name {
+  font-weight: 600;
+}
+
+.property-kind {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.property-body {
+  padding: 8px 0 0 18px;
+}
+
+.property-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+button.danger {
+  color: #c92a2a;
+}
+
+@media (prefers-color-scheme: dark) {
+  button.danger {
+    color: #ff8787;
+  }
+}
+
+.value-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.value-list .value-list {
+  padding-left: 16px;
+  margin: 2px 0 6px;
+  border-left: 1px solid var(--border);
+}
+
+.value-list > li {
+  padding: 2px 0;
+}
+
+.value-label {
+  display: inline-block;
+  padding: 1px 0;
+}
+
+.add-field,
+.new-property input[type='text'],
+.new-property > input,
+.inline-edit input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.add-field {
+  border-style: dashed;
+  background: transparent;
+}
+
+.add-field:focus {
+  border-style: solid;
+}
+
+.inline-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 100%;
+}
+
+.field-error {
+  margin: 2px 0 0;
+  color: #c92a2a;
+  font-size: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .field-error {
+    color: #ff8787;
+  }
+}
+
+.new-property {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.new-property h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.new-property fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.new-property button {
+  align-self: flex-start;
+}

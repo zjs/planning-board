@@ -15,11 +15,11 @@ export const system: SelectProperty = {
   multi: true,
   // Deliberately inserted out of order to exercise sorting.
   values: values(
-    ['pay', null, 'b'],
-    ['id', null, 'a'],
-    ['pay/ledger', 'pay', 'a'],
-    ['id/sso', 'id', 'b'],
-    ['id/mfa', 'id', 'a'],
+    ['pay', null, 'a1'],
+    ['id', null, 'a0'],
+    ['pay/ledger', 'pay', 'a0'],
+    ['id/sso', 'id', 'a1'],
+    ['id/mfa', 'id', 'a0'],
   ),
 };
 
@@ -29,7 +29,7 @@ export const time: SelectProperty = {
   name: 'Time',
   levels: ['Quarter', 'Release'],
   multi: false,
-  values: values(['q1', null, 'a'], ['q2', null, 'b'], ['q1/r1', 'q1', 'a'], ['q1/r2', 'q1', 'b'], ['q2/r1', 'q2', 'a']),
+  values: values(['q1', null, 'a0'], ['q2', null, 'a1'], ['q1/r1', 'q1', 'a0'], ['q1/r2', 'q1', 'a1'], ['q2/r1', 'q2', 'a0']),
 };
 
 export const size: SelectProperty = {
@@ -38,7 +38,7 @@ export const size: SelectProperty = {
   name: 'Size',
   levels: ['Size'],
   multi: false,
-  values: values(['s', null, 'a'], ['m', null, 'b'], ['l', null, 'c']),
+  values: values(['s', null, 'a0'], ['m', null, 'a1'], ['l', null, 'a2']),
 };
 
 export function item(id: string, patch: Partial<Item> = {}): Item {

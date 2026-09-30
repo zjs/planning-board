@@ -5,7 +5,7 @@ const zoomBar = (page: Page) => page.getByTestId('zoom-bar');
 
 test('the axis picker offers components and releases', async ({ page }) => {
   await openApp(page);
-  await pickAxes(page, 'release', 'component');
+  await pickAxes(page, 'time:1', 'system:1');
   await expect(page.locator('.column-header').first()).toHaveText('27.1');
   await expect(page.locator('.row-header').first()).toHaveText('SSO');
   await expect(page.locator('.holding-head')).toContainText('No release');

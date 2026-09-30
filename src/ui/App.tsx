@@ -25,7 +25,9 @@ import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
 import {
+  chooseAxis,
   loadCompactHolding,
+  optionId,
   loadViewChoice,
   loadZoomPath,
   axisNames,
@@ -43,6 +45,7 @@ import { DragGhost } from './DragGhost.tsx';
 import { datedFileName, downloadText } from './files.ts';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
 import { Menu } from './Menu.tsx';
+import { PropertiesPanel } from './PropertiesPanel.tsx';
 import { keyNames } from './platform.ts';
 import { isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
 import { ZoomBar } from './ZoomBar.tsx';
@@ -100,8 +103,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const root = useMemo(() => [...zoomPath].reverse().find((id) => plan.items[id]) ?? null, [zoomPath, plan]);
   // A lane zoom whose value was deleted is dropped, rather than showing an empty board.
   const shown = useMemo(() => validChoice(plan, choice), [plan, choice]);
-  const view = useMemo(() => ({ ...toViewSpec(shown), root }), [shown, root]);
-  const names = { x: axisNames(shown, 'x'), y: axisNames(shown, 'y') };
+  const view = useMemo(() => ({ ...toViewSpec(plan, shown), root }), [plan, shown, root]);
+  const names = { x: axisNames(plan, shown, 'x'), y: axisNames(plan, shown, 'y') };
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
   const zoomableLanes = useMemo(() => {
     const lanes = (which: 'x' | 'y', keys: string[]) =>
@@ -190,10 +193,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const clearSelection = useCallback(() => setSelection(new Set()), []);
   // Changing a lane zoom hides or shows cards, so the selection is cleared,
   // as it is for group zoom: Delete must never reach a card you can't see.
-  const setLaneZoom = useCallback((which: 'x' | 'y' | 'both', key: string | null) => {
-    setChoice((c) => (which === 'both' ? zoomLane(zoomLane(c, 'x', null), 'y', null) : zoomLane(c, which, key)));
-    setSelection(new Set());
-  }, []);
+  // Starts from the axes as shown, which may be a fallback for a deleted property.
+  const setLaneZoom = useCallback(
+    (which: 'x' | 'y' | 'both', key: string | null) => {
+      setChoice(which === 'both' ? zoomLane(zoomLane(shown, 'x', null), 'y', null) : zoomLane(shown, which, key));
+      setSelection(new Set());
+    },
+    [shown],
+  );
   const onLaneZoom = useCallback((which: 'x' | 'y', key: string) => setLaneZoom(which, key), [setLaneZoom]);
 
   // Scroll positions per zoom level, so zooming back out returns you to where you were.
@@ -389,6 +396,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setEditing(null);
     setNotice({ text: `Opened “${file.name}”`, step: store.undoManager.undoStack.at(-1) });
   };
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
+  const noticeLatest = useCallback(
+    (text: string) => setNotice({ text, step: store.undoManager.undoStack.at(-1) }),
+    [store],
+  );
   const fileMenu = (
     <Menu
       label="File"
@@ -412,7 +424,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     <div className="app">
       <header className="toolbar">
         <h1>Planning Board</h1>
-        <AxisPicker choice={choice} onChange={setChoice} />
+        <AxisPicker plan={plan} choice={shown} onChange={setChoice} />
         <div className="actions">
           <button type="button" onClick={() => undo(store)} disabled={!canUndo} title={`Undo (${keys.undo})`}>
             ↶ Undo
@@ -447,6 +459,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
           <span className="divider" />
           {fileMenu}
+          <button
+            type="button"
+            onClick={() => setPropertiesOpen((open) => !open)}
+            aria-pressed={propertiesOpen}
+            disabled={empty}
+            title="Add properties such as Team, and edit their values"
+          >
+            Properties
+          </button>
           <span className="divider" />
           <button
             type="button"
@@ -490,6 +511,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </div>
         </div>
       ) : (
+        <div className="workspace">
         <Board
           plan={plan}
           view={view}
@@ -516,6 +538,16 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           mismatches={mismatches}
           onLaneZoom={onLaneZoom}
         />
+        {propertiesOpen && (
+          <PropertiesPanel
+            store={store}
+            plan={plan}
+            onClose={() => setPropertiesOpen(false)}
+            onShowAsRows={(property) => setChoice(chooseAxis(plan, shown, 'y', optionId(property, 0)))}
+            onNotice={noticeLatest}
+          />
+        )}
+        </div>
       )}
       {notice && noticeCurrent && (
         <div className="notice" role="status" data-testid="notice">

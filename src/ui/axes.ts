@@ -1,4 +1,5 @@
-import { SEQUENCE, SIZE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
+import { SEQUENCE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
+import { propertiesInOrder } from '../domain/properties.ts';
 import type { AxisSpec, ViewSpec } from '../domain/view.ts';
 
 export interface AxisOption {
@@ -9,17 +10,32 @@ export interface AxisOption {
   axis: AxisSpec;
 }
 
-/** Axis choices: every level of the built-in hierarchies (requirement 1). */
-export const AXIS_OPTIONS: AxisOption[] = [
-  { id: 'sequence', label: 'Sequence', none: 'No position', axis: { property: SEQUENCE, level: 0 } },
-  { id: 'system', label: 'System (area)', none: 'No area', axis: { property: SYSTEM, level: 0 } },
-  { id: 'component', label: 'System (component)', none: 'No component', axis: { property: SYSTEM, level: 1 } },
-  { id: 'size', label: 'Size', none: 'No size', axis: { property: SIZE, level: 0 } },
-  { id: 'time', label: 'Time (quarter)', none: 'No quarter', axis: { property: TIME, level: 0 } },
-  { id: 'release', label: 'Time (release)', none: 'No release', axis: { property: TIME, level: 1 } },
-];
+/** An option's ID: the property's ID at its top level, "property:level" below that. */
+export const optionId = (property: string, level: number) => (level === 0 ? property : `${property}:${level}`);
 
-export const DEFAULT_VIEW: ViewChoice = { x: 'sequence', y: 'system' };
+/** "Area" → "area", but "OKR" stays "OKR". */
+export const inSentence = (name: string) => (/^[A-Z][a-z]/.test(name) ? name[0]!.toLowerCase() + name.slice(1) : name);
+
+/**
+ * Axis choices: every level of every property in the plan (requirement 1),
+ * so a new custom property is an axis as soon as it exists.
+ */
+export function axisOptions(plan: Plan): AxisOption[] {
+  return propertiesInOrder(plan).flatMap((property): AxisOption[] => {
+    if (property.kind === 'sequence') {
+      return [{ id: SEQUENCE, label: property.name, none: 'No position', axis: { property: SEQUENCE, level: 0 } }];
+    }
+    const levels = property.levels.length > 0 ? property.levels : [property.name];
+    return levels.map((level, i) => ({
+      id: optionId(property.id, i),
+      label: levels.length > 1 ? `${property.name} (${inSentence(level)})` : property.name,
+      none: `No ${inSentence(level)}`,
+      axis: { property: property.id, level: i },
+    }));
+  });
+}
+
+export const DEFAULT_VIEW: ViewChoice = { x: SEQUENCE, y: SYSTEM };
 
 /**
  * The viewer's axes, plus any lane zoom on each (requirement 7): `xWithin`
@@ -35,30 +51,28 @@ export interface ViewChoice {
 type Which = 'x' | 'y';
 const withinKey = (which: Which) => (which === 'x' ? 'xWithin' : 'yWithin');
 
-export function optionById(id: string): AxisOption {
-  return AXIS_OPTIONS.find((o) => o.id === id) ?? AXIS_OPTIONS[0]!;
+export function optionById(plan: Plan, id: string): AxisOption | undefined {
+  return axisOptions(plan).find((o) => o.id === id);
 }
 
-/** The option an axis shows as: one level down when lane-zoomed. */
-function shownOption(choice: ViewChoice, which: Which): AxisOption {
-  const option = optionById(choice[which]);
-  if (!choice[withinKey(which)]) return option;
-  return (
-    AXIS_OPTIONS.find((o) => o.axis.property === option.axis.property && o.axis.level === option.axis.level + 1) ??
-    option
-  );
+/** The option an axis shows as: one level down when lane-zoomed. Expects a validChoice. */
+function shownOption(plan: Plan, choice: ViewChoice, which: Which): AxisOption | undefined {
+  const option = optionById(plan, choice[which]);
+  if (!option || !choice[withinKey(which)]) return option;
+  return optionById(plan, optionId(option.axis.property, option.axis.level + 1)) ?? option;
 }
 
 /** Label and holding-lane header for an axis, as currently shown. */
-export function axisNames(choice: ViewChoice, which: Which): { label: string; none: string } {
-  const { label, none } = shownOption(choice, which);
-  return { label, none };
+export function axisNames(plan: Plan, choice: ViewChoice, which: Which): { label: string; none: string } {
+  const option = shownOption(plan, choice, which);
+  return option ? { label: option.label, none: option.none } : { label: choice[which], none: 'No value' };
 }
 
-export function toViewSpec(choice: ViewChoice): ViewSpec {
+/** The view an (already valid) choice shows. */
+export function toViewSpec(plan: Plan, choice: ViewChoice): ViewSpec {
   const spec = (which: Which): AxisSpec => {
     const within = choice[withinKey(which)];
-    const axis = optionById(choice[which]).axis;
+    const axis = optionById(plan, choice[which])?.axis ?? { property: choice[which], level: 0 };
     return within ? { ...axis, level: axis.level + 1, within } : axis;
   };
   return { x: spec('x'), y: spec('y') };
@@ -70,9 +84,10 @@ export function toViewSpec(choice: ViewChoice): ViewSpec {
  */
 export function canZoomLane(plan: Plan, choice: ViewChoice, which: Which, value: string): boolean {
   if (choice[withinKey(which)]) return false;
-  const { property: id, level } = optionById(choice[which]).axis;
-  const property = plan.properties[id];
-  if (property?.kind !== 'select' || level + 1 >= property.levels.length) return false;
+  const option = optionById(plan, choice[which]);
+  if (!option) return false;
+  const property = plan.properties[option.axis.property];
+  if (property?.kind !== 'select' || option.axis.level + 1 >= property.levels.length) return false;
   return Object.values(property.values).some((node) => node.parent === value);
 }
 
@@ -80,28 +95,44 @@ export function zoomLane(choice: ViewChoice, which: Which, value: string | null)
   return { ...choice, [withinKey(which)]: value };
 }
 
-/** Drop a lane zoom whose value no longer exists, so a view never shows nothing for no reason. */
+/**
+ * The choice as this plan can show it. An axis whose property or level no
+ * longer exists falls back (to the default view if it can, otherwise to the
+ * first property the other axis isn't using), and a lane zoom whose value
+ * was deleted is dropped, so a view never shows nothing for no reason. The
+ * saved choice itself is left alone, so an undo brings the view back.
+ */
 export function validChoice(plan: Plan, choice: ViewChoice): ViewChoice {
-  const check = (which: Which) => {
+  const options = axisOptions(plan);
+  const find = (id: string) => options.find((o) => o.id === id);
+  const propertyOf = (id: string) => find(id)?.axis.property;
+  let { x, y } = choice;
+  const pick = (avoid: string | undefined, preferred: string) =>
+    find(preferred) && propertyOf(preferred) !== avoid
+      ? preferred
+      : (options.find((o) => o.axis.property !== avoid)?.id ?? preferred);
+  if (!find(x)) x = pick(propertyOf(y), DEFAULT_VIEW.x === y ? DEFAULT_VIEW.y : DEFAULT_VIEW.x);
+  if (!find(y) || propertyOf(y) === propertyOf(x)) y = pick(propertyOf(x), DEFAULT_VIEW.y === x ? DEFAULT_VIEW.x : DEFAULT_VIEW.y);
+  const check = (which: Which, id: string) => {
     const within = choice[withinKey(which)];
-    if (!within) return null;
-    const property = plan.properties[optionById(choice[which]).axis.property];
+    if (!within || id !== choice[which]) return null;
+    const property = plan.properties[propertyOf(id) ?? ''];
     return property?.kind === 'select' && property.values[within] ? within : null;
   };
-  const xWithin = check('x');
-  const yWithin = check('y');
-  return xWithin === (choice.xWithin ?? null) && yWithin === (choice.yWithin ?? null)
+  const xWithin = check('x', x);
+  const yWithin = check('y', y);
+  return x === choice.x && y === choice.y && xWithin === (choice.xWithin ?? null) && yWithin === (choice.yWithin ?? null)
     ? choice
-    : { ...choice, xWithin, yWithin };
+    : { x, y, xWithin, yWithin };
 }
 
 /**
  * Pick a new axis, which clears that axis's lane zoom. Choosing a property
  * the other axis already shows, at any level, swaps the two.
  */
-export function chooseAxis(choice: ViewChoice, which: Which, id: string): ViewChoice {
+export function chooseAxis(plan: Plan, choice: ViewChoice, which: Which, id: string): ViewChoice {
   const other: Which = which === 'x' ? 'y' : 'x';
-  if (optionById(choice[other]).axis.property === optionById(id).axis.property) {
+  if (optionById(plan, choice[other])?.axis.property === optionById(plan, id)?.axis.property) {
     // The other axis takes over this one's property and lane zoom.
     return {
       ...choice,
@@ -120,22 +151,29 @@ export function swapAxes(choice: ViewChoice): ViewChoice {
 
 const STORAGE_KEY = 'planning-board:view';
 
+/** Option IDs saved by sprint 1 builds, before axis options came from the plan. */
+const LEGACY_IDS: Record<string, string> = { component: optionId(SYSTEM, 1), release: optionId(TIME, 1) };
+
+/** The remembered choice. It's checked against the plan (validChoice) when shown. */
 export function loadViewChoice(): ViewChoice {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
-    if (
-      typeof raw === 'object' && raw !== null &&
-      'x' in raw && 'y' in raw &&
-      AXIS_OPTIONS.some((o) => o.id === raw.x) && AXIS_OPTIONS.some((o) => o.id === raw.y) &&
-      optionById(raw.x as string).axis.property !== optionById(raw.y as string).axis.property
-    ) {
+    if (typeof raw === 'object' && raw !== null && 'x' in raw && 'y' in raw) {
       const str = (v: unknown) => (typeof v === 'string' ? v : null);
-      return {
-        x: raw.x as string,
-        y: raw.y as string,
-        xWithin: 'xWithin' in raw ? str(raw.xWithin) : null,
-        yWithin: 'yWithin' in raw ? str(raw.yWithin) : null,
+      const id = (v: unknown) => {
+        const s = str(v);
+        return s === null ? null : (LEGACY_IDS[s] ?? s);
       };
+      const x = id(raw.x);
+      const y = id(raw.y);
+      if (x !== null && y !== null && x !== y) {
+        return {
+          x,
+          y,
+          xWithin: 'xWithin' in raw ? str(raw.xWithin) : null,
+          yWithin: 'yWithin' in raw ? str(raw.yWithin) : null,
+        };
+      }
     }
   } catch {
     // Storage can be unavailable (private windows, file:// quirks); fall through.

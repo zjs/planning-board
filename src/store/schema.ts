@@ -36,7 +36,7 @@ export function writePlan(doc: Y.Doc, plan: Plan): void {
 
 export const dependencyKey = (dep: Dependency) => `${dep.from}->${dep.to}`;
 
-function propertyToY(property: Property): Y.Map<unknown> {
+export function propertyToY(property: Property): Y.Map<unknown> {
   const map = new Y.Map<unknown>();
   map.set('kind', property.kind);
   map.set('name', property.name);
