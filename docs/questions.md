@@ -101,6 +101,7 @@ Entry format:
 - Options: public repo + GitHub Pages; private + paid Pages; Cloudflare/Netlify previews; local only.
 - Recommendation: public + Pages.
 - Status: answered 2026-09-26: keep the repo private for now and move to public + Pages later. The PM will sort out private hosting. Until then, CI builds one self-contained HTML file for every PR and `main` push and attaches it as a workflow artifact.
+  - 2026-09-30: moving to public + Pages now (Q31). A Pages workflow publishes every `main` build; CI still attaches the file to every run.
 
 ### Q6: Who merges to `main`?
 - Status: answered 2026-09-26: engineering merges once CI is green and self-review is done. The PM accepts on the build.
@@ -201,3 +202,9 @@ Entry format:
 - Options: (a) replace the board, undoably, and keep each card's Jira key; (b) add the imported cards to the board; (c) merge by Jira key.
 - Recommendation: (a). It's simple to reason about and one undo reverses it. Keeping the key leaves room for (c) later, as "update from a fresh export".
 - Status: answered 2026-09-30: (a). The build targets Jira's CSV format, tested with a synthetic export in the repo. The PM checks their own export locally.
+
+### Q31: Is the repository ready to open, and how?
+- Context: After sprint 2, the CSV import lets potential users try the tool on their own data without a guided session. Before opening: no secrets or real data in the history, the build makes no network requests, and the dependencies are MIT or CC0. What was missing was a way to open the app without a GitHub login, CI for pull requests, a README for strangers, and a feedback route.
+- Options: how far to open (public only; public and hosted, shared quietly; public and announced); whether to take code contributions; whether the process docs stay public.
+- Recommendation: public and hosted on GitHub Pages, shared quietly, with wider promotion after sprint 3 draws dependencies (the other half of the core bet). Issues welcome, code PRs not yet. Keep the process docs public as a decision log.
+- Status: answered 2026-09-30: public and hosted, shared quietly; issues only for now; process docs published as they are. Housekeeping done in one PR: CI on pull requests with read-only permissions, a Pages workflow, a README for new visitors, CONTRIBUTING, SECURITY, issue templates (bug, import problem asking for the header row only, feedback), and the build commit plus a feedback link in the help panel. The PM makes the repo public, sets Pages to deploy from GitHub Actions, turns on private vulnerability reporting, and does the Firefox and Safari check before sharing widely.

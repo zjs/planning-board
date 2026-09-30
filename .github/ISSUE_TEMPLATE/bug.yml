@@ -1,0 +1,49 @@
+name: Something doesn't work
+description: A bug, a crash, or the board doing something you didn't expect.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying Planning Board. Please don't paste anything from a real, confidential roadmap here: describe the shape of the problem with made-up titles instead.
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you do?
+      description: The steps, starting from an empty board or the sample plan if you can.
+      placeholder: |
+        1. Loaded the sample plan
+        2. Switched Rows to Time (release)
+        3. Dragged "Credit notes" onto …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Shown at the bottom of the help panel (**? Help**), e.g. "Build 3d350aa".
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Firefox 131 on macOS 15
+    validations:
+      required: true
+  - type: dropdown
+    id: opened
+    attributes:
+      label: How did you open it?
+      options:
+        - The hosted page
+        - A downloaded index.html, opened from disk
+        - npm run dev
+    validations:
+      required: true

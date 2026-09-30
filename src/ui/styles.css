@@ -835,6 +835,14 @@ body.dragging * {
   font-size: 12px;
 }
 
+.legend-foot + .legend-foot {
+  margin-top: 2px;
+}
+
+.legend-foot a {
+  color: var(--accent);
+}
+
 kbd {
   padding: 0 4px;
   border: 1px solid var(--border);

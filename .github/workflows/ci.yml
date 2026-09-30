@@ -2,7 +2,13 @@ name: CI
 
 on:
   push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
+
+# Read-only by default. Pull requests from forks get a read-only token and no secrets either way.
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -34,6 +40,9 @@ jobs:
 
       - name: Build single-file app
         run: npm run build
+        env:
+          # The commit the build names in its help panel. On a pull request, the branch's head, not GitHub's merge commit.
+          VITE_BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install Chromium for end-to-end tests
         run: npx playwright install --with-deps chromium
@@ -44,23 +53,25 @@ jobs:
       - name: Attach build
         uses: actions/upload-artifact@v4
         with:
-          name: planning-board-${{ github.sha }}
+          name: planning-board-${{ github.event.pull_request.head.sha || github.sha }}
           path: dist/index.html
           if-no-files-found: error
 
       - name: Build summary
+        env:
+          BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           {
             echo "### Build ready"
             echo
-            echo "Download **planning-board-${GITHUB_SHA}** from the Artifacts section below, unzip it, and open \`index.html\` in a browser."
+            echo "Download **planning-board-${BUILD_COMMIT}** from the Artifacts section below, unzip it, and open \`index.html\` in a browser."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ github.sha }}
+          name: playwright-report-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             playwright-report/
             test-results/

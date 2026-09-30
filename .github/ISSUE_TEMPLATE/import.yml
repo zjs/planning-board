@@ -1,0 +1,42 @@
+name: CSV import problem
+description: A column that wasn't recognized, or an export that imported wrong.
+labels: [import]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The import is built against Jira's CSV export, and real exports vary. The quickest fix usually needs only your file's **header row**.
+
+        **Please don't attach your export or paste any rows from it.** Roadmaps are confidential. If a problem needs data to reproduce, change the titles and keys to made-up ones first.
+  - type: textarea
+    id: header
+    attributes:
+      label: Header row
+      description: The first line of the CSV file, exactly as it is. It holds only column names.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where is the export from?
+      options:
+        - Jira Cloud, company-managed project
+        - Jira Cloud, team-managed project
+        - Jira Data Center or Server
+        - Another tool
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What went wrong?
+      description: A column mapped to the wrong field, something missing on the board, an error message, and so on.
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Shown at the bottom of the help panel (**? Help**).
