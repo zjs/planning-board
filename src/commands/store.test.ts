@@ -7,7 +7,11 @@ import type { ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { readPlan } from '../store/schema.ts';
 import {
+  addValue,
   createItem,
+  createProperty,
+  deleteProperty,
+  renameProperty,
   createPlanStore,
   deleteItems,
   dropCard,
@@ -326,5 +330,82 @@ describe('plan files', () => {
     const items = readPlan(store.doc).items;
     expect(items['a']!.externalKey).toBe('PAY-7');
     expect('externalKey' in items['b']!).toBe(false);
+  });
+});
+
+describe('custom properties', () => {
+  it('creates a flat property that is empty, and one undo removes it', () => {
+    const store = storeWith(item('a'));
+    const id = createProperty(store, '  Team ', false)!;
+    expect(readPlan(store.doc).properties[id]).toEqual({
+      kind: 'select',
+      id,
+      name: 'Team',
+      levels: ['Team'],
+      multi: false,
+      values: {},
+    });
+    undo(store);
+    expect(readPlan(store.doc).properties[id]).toBeUndefined();
+  });
+
+  it('refuses a blank or taken name, in any case', () => {
+    const store = storeWith();
+    expect(createProperty(store, ' ', true)).toBeNull();
+    expect(createProperty(store, 'system', true)).toBeNull();
+    const id = createProperty(store, 'Team', true)!;
+    expect(renameProperty(store, id, 'SIZE')).toBe(false);
+    expect(renameProperty(store, id, 'Team')).toBe(false);
+  });
+
+  it('renames a property, and a flat one’s level with it', () => {
+    const store = storeWith();
+    const id = createProperty(store, 'Team', false)!;
+    expect(renameProperty(store, id, 'Squad')).toBe(true);
+    expect(readPlan(store.doc).properties[id]).toMatchObject({ name: 'Squad', levels: ['Squad'] });
+    renameProperty(store, SYSTEM, 'Architecture');
+    expect(readPlan(store.doc).properties[SYSTEM]).toMatchObject({ name: 'Architecture', levels: ['Area', 'Component'] });
+  });
+
+  it('adds values at the end of their siblings, under a parent if given', () => {
+    const store = storeWith();
+    const team = createProperty(store, 'Team', false)!;
+    const a = addValue(store, team, 'Platform')!;
+    const b = addValue(store, team, 'Growth')!;
+    expect(addValue(store, team, 'growth')).toBeNull();
+    const values = (readPlan(store.doc).properties[team] as { values: Record<string, { order: string }> }).values;
+    expect(values[a]!.order < values[b]!.order).toBe(true);
+    const sso2 = addValue(store, SYSTEM, 'SSO v2', 'id')!;
+    expect(readPlan(store.doc).properties[SYSTEM]).toMatchObject({ values: { [sso2]: { label: 'SSO v2', parent: 'id' } } });
+    expect(addValue(store, SYSTEM, 'Orphan', 'no-such-area')).toBeNull();
+  });
+
+  it('fills in by dragging: a drop on a custom axis writes its value', () => {
+    const store = storeWith(item('a'));
+    const team = createProperty(store, 'Team', false)!;
+    const platform = addValue(store, team, 'Platform')!;
+    const view: ViewSpec = { x: { property: team, level: 0 }, y: { property: SYSTEM, level: 0 } };
+    dropCard(store, view, { itemId: 'a', x: null, y: null }, { x: platform, y: 'id' });
+    expect(readPlan(store.doc).items['a']!.values[team]).toEqual([platform]);
+  });
+
+  it('deletes a custom property and its values on every card, in one undo step', () => {
+    const store = storeWith(item('a'), item('b'));
+    const team = createProperty(store, 'Team', true)!;
+    const platform = addValue(store, team, 'Platform')!;
+    const view: ViewSpec = { x: { property: team, level: 0 }, y: { property: SYSTEM, level: 0 } };
+    dropCard(store, view, { itemId: 'a', x: null, y: null }, { x: platform, y: 'id' });
+    expect(deleteProperty(store, team)).toBe(1);
+    const after = readPlan(store.doc);
+    expect(after.properties[team]).toBeUndefined();
+    expect(after.items['a']!.values[team]).toBeUndefined();
+    undo(store);
+    expect(readPlan(store.doc).items['a']!.values[team]).toEqual([platform]);
+  });
+
+  it('never deletes a built-in property', () => {
+    const store = storeWith(item('a'));
+    for (const id of [SYSTEM, TIME, SEQUENCE, 'size']) expect(deleteProperty(store, id)).toBeNull();
+    expect(Object.keys(readPlan(store.doc).properties).sort()).toEqual(['sequence', 'size', 'system', 'time']);
   });
 });

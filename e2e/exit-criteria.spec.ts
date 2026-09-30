@@ -55,7 +55,7 @@ test('sprint 1 exit criteria', async ({ page }) => {
   await expect(cell(page, 'billing', 'q2').locator('.card.via-children[data-item="eu-data-residency"]')).toBeVisible();
 
   // 5. Switch Time to releases.
-  await page.getByTestId('axis-x').selectOption('release');
+  await page.getByTestId('axis-x').selectOption('time:1');
   await expect(page.locator('.column-header').first()).toHaveText('27.1');
 
   // 7. Spot a mismatch marker on a collapsed group, and zoom in to find the child that causes it.

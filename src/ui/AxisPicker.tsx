@@ -1,20 +1,24 @@
-import { AXIS_OPTIONS, chooseAxis, swapAxes, type ViewChoice } from './axes.ts';
+import type { Plan } from '../domain/model.ts';
+import { axisOptions, chooseAxis, swapAxes, type ViewChoice } from './axes.ts';
 
 interface Props {
+  plan: Plan;
+  /** The choice as shown (validChoice). */
   choice: ViewChoice;
   onChange: (choice: ViewChoice) => void;
 }
 
-export function AxisPicker({ choice, onChange }: Props) {
+export function AxisPicker({ plan, choice, onChange }: Props) {
+  const options = axisOptions(plan);
   const select = (which: 'x' | 'y', label: string) => (
     <label className="axis-select">
       <span>{label}</span>
       <select
         value={choice[which]}
-        onChange={(e) => onChange(chooseAxis(choice, which, e.target.value))}
+        onChange={(e) => onChange(chooseAxis(plan, choice, which, e.target.value))}
         data-testid={`axis-${which}`}
       >
-        {AXIS_OPTIONS.map((o) => (
+        {options.map((o) => (
           <option key={o.id} value={o.id}>
             {o.label}
           </option>

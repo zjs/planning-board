@@ -19,8 +19,8 @@ Scope: single user, browser only, no server.
 
 ### 2. Custom properties (requirements 1, 26)
 
-- [ ] A **Properties** panel lists the plan's properties. You can add a single- or multi-select property, rename it, and delete it. Custom properties are flat for now (Q25).
-- [ ] The axis picker offers every property at every level, so a new property is an axis choice straight away.
+- [x] A **Properties** panel lists the plan's properties. You can add a single- or multi-select property, rename it, and delete it. Custom properties are flat for now (Q25).
+- [x] The axis picker offers every property at every level, so a new property is an axis choice straight away.
 
 ### 3. Editing values (requirement 27)
 
