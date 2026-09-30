@@ -1,6 +1,6 @@
 # 0005: Plan file format
 
-Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now.
+Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now. Amended in sprint 2, slice 1: the writer, `externalKey`, and when a version bump is needed.
 
 ## Context
 
@@ -32,8 +32,23 @@ A **JSON file**, readable and hand-editable, read by `parsePlanJson` in `src/dom
 - Item values may sit at any level (`"billing"` or `"billing/tax"`). A single value can be a string instead of a one-element array.
 - `sequence` is either a number (hand-written files; equal numbers share a column) or an order key string (what the app writes). A file uses one or the other throughout.
 - `dependencies` are `[prerequisite, dependent]` pairs.
+- `description` and `externalKey` are optional strings on an item. `externalKey` is the item's key in the tool it was imported from, such as a Jira issue key (`"PAY-123"`), so a later import can match cards instead of duplicating them (questions.md Q26).
 - Invalid files are rejected with every problem listed at once, so a hand edit can be fixed in one pass.
 - **Version 2** (with the scenario UI) wraps this in `{ "scenarios": [{ "id", "name", "forkedFrom", "plan": … }] }`. Version 1 files open as a single scenario.
+
+## Writing (sprint 2)
+
+`planToJson` in the same module is the exact inverse of `parsePlanJson`: reading what it writes gives back the same plan, and a test checks this on the sample plan and through a Yjs round trip. Its output is deterministic, so saving an unchanged plan twice gives an identical file:
+
+- Values are written as nested `children` in display order. Their order keys aren't written; the reader regenerates them from array order.
+- Items are written depth-first through the group tree, so a group's children follow it. Siblings go in sequence order, then by title.
+- Sequence positions are written as order keys, never numbers.
+- Single-valued properties are written as a string, multi-valued ones as an array. Empty values, `parent: null`, and empty descriptions are left out.
+- Dependencies are sorted.
+
+The writer never produces a file the reader would reject. Anything a valid file can't hold is dropped: a value ID that no longer exists, or a parent that's gone (that item is written at the top level). Neither can happen in single-user editing; they're guards for M2's concurrent edits.
+
+Opening a file goes through `readPlanFile`, which explains a rejected file in one plain sentence (not JSON, not a plan file, from a newer version, or "N problems"), and keeps the full list of problems for anyone fixing the file by hand.
 
 ## Alternatives
 
@@ -42,6 +57,6 @@ A **JSON file**, readable and hand-editable, read by `parsePlanJson` in `src/dom
 
 ## Consequences
 
-- Opening a file creates fresh Yjs documents from it. The file is for exchange and backup, not sync; M2's relay syncs Yjs updates.
+- Opening a file replaces the board's content in one Yjs transaction, so one undo brings the previous board back. The file is for exchange and backup, not sync; M2's relay syncs Yjs updates.
 - Item IDs round-trip, so a file saved from one scenario and reopened still compares against its siblings.
-- Adding a property field later means a version bump plus an upgrade step in the reader, with a test.
+- A new field that older readers can safely ignore, like `externalKey`, doesn't need a version bump: the reader already ignores fields it doesn't know. A change older readers would misread, such as a new value shape or wrapping the plan in scenarios, means a version bump plus an upgrade step in the reader, with a test.

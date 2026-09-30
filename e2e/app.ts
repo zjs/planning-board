@@ -10,7 +10,7 @@ export const APP_URL = pathToFileURL(new URL('../dist/index.html', import.meta.u
  */
 export async function openApp(page: Page, { keepHelp = false } = {}) {
   await page.goto(APP_URL);
-  const loadButton = page.locator('.empty-state button');
+  const loadButton = page.locator('.empty-state button.primary');
   await page.getByTestId('board').or(loadButton).waitFor();
   if (await loadButton.isVisible()) await loadButton.click();
   await page.getByTestId('board').waitFor();

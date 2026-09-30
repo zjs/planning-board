@@ -64,6 +64,8 @@ export interface Item {
    * and an empty array both mean "no value".
    */
   values: Record<PropertyId, ValueId[]>;
+  /** The item's key in another tool, such as a Jira issue key ("PAY-123"). Kept so a later import can match it. */
+  externalKey?: string;
 }
 
 /** `from` must come before `to`. */

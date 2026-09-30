@@ -1,9 +1,9 @@
-// Reads the human-editable plan JSON format (version 1) into a Plan snapshot.
-// The format is described in docs/decisions/0005-plan-file-format.md.
+// Reads and writes the human-editable plan JSON format (version 1). The
+// format is described in docs/decisions/0005-plan-file-format.md.
 
 import { generateNKeysBetween } from 'fractional-indexing';
-import type { Dependency, Item, OrderKey, Plan, Property, SelectProperty, ValueNode } from './model.ts';
-import { SEQUENCE } from './model.ts';
+import type { Dependency, Item, ItemId, OrderKey, Plan, Property, SelectProperty, ValueNode } from './model.ts';
+import { compareOrderKeys, SEQUENCE } from './model.ts';
 import { isOrderKey } from './sequence.ts';
 import { wouldCreateCycle } from './tree.ts';
 
@@ -32,6 +32,8 @@ export interface ItemJson {
   /** An OrderKey string, or a plain number for hand-written files. Items with equal numbers share a column. */
   sequence?: string | number | null;
   values?: Record<string, string | string[]>;
+  /** The item's key in another tool, such as a Jira issue key. */
+  externalKey?: string;
 }
 
 export interface PlanJson {
@@ -87,6 +89,7 @@ export function parsePlanJson(input: unknown): ParseResult {
     }
     if (raw.description !== undefined && !isString(raw.description)) errors.push(`${path}.description: must be a string`);
     if (raw.parent != null && !isString(raw.parent)) errors.push(`${path}.parent: must be an item id or null`);
+    if (raw.externalKey !== undefined && !isString(raw.externalKey)) errors.push(`${path}.externalKey: must be a string`);
     const item: Item = {
       id: raw.id,
       title: raw.title,
@@ -95,6 +98,7 @@ export function parsePlanJson(input: unknown): ParseResult {
       sequence: null,
       values: {},
     };
+    if (isString(raw.externalKey)) item.externalKey = raw.externalKey;
     if (typeof raw.sequence === 'number' && Number.isFinite(raw.sequence)) rawSequence.set(item.id, raw.sequence);
     else if (typeof raw.sequence === 'string') {
       if (isOrderKey(raw.sequence)) rawSequence.set(item.id, raw.sequence);
@@ -209,4 +213,148 @@ function assignSequenceKeys(items: Record<string, Item>, raw: Map<string, string
     const item = items[id];
     if (item) item.sequence = typeof value === 'number' ? keyFor.get(value)! : value;
   }
+}
+
+/**
+ * Write a plan as version 1 JSON: the exact inverse of parsePlanJson, so
+ * reading the output gives back the same plan. Output is deterministic
+ * (sibling values in display order, items depth-first through the group
+ * tree), so saving an unchanged plan twice gives the same file.
+ *
+ * Anything a hand-written file couldn't hold is left out rather than
+ * written as an invalid file: values that no longer exist, and parent links
+ * to missing items (those items are written at the top level).
+ */
+export function planToJson(plan: Plan): PlanJson {
+  const selects = Object.values(plan.properties).filter((p): p is SelectProperty => p.kind === 'select');
+  const properties: PropertyJson[] = selects.map((property) => {
+    const children = new Map<string | null, ValueNode[]>();
+    for (const node of Object.values(property.values)) {
+      const parent = node.parent !== null && property.values[node.parent] ? node.parent : null;
+      children.set(parent, [...(children.get(parent) ?? []), node]);
+    }
+    const walk = (parent: string | null): ValueJson[] =>
+      (children.get(parent) ?? [])
+        .sort((a, b) => compareOrderKeys(a.order, b.order) || compareOrderKeys(a.id, b.id))
+        .map((node) => {
+          const below = walk(node.id);
+          return below.length > 0 ? { id: node.id, label: node.label, children: below } : { id: node.id, label: node.label };
+        });
+    return {
+      id: property.id,
+      name: property.name,
+      levels: [...property.levels],
+      ...(property.multi ? { multi: true } : {}),
+      values: walk(null),
+    };
+  });
+
+  const byParent = new Map<ItemId | null, Item[]>();
+  for (const item of Object.values(plan.items)) {
+    const parent = item.parent !== null && plan.items[item.parent] ? item.parent : null;
+    byParent.set(parent, [...(byParent.get(parent) ?? []), item]);
+  }
+  const siblingOrder = (a: Item, b: Item) =>
+    (a.sequence === null ? 1 : 0) - (b.sequence === null ? 1 : 0) ||
+    compareOrderKeys(a.sequence ?? '', b.sequence ?? '') ||
+    a.title.localeCompare(b.title) ||
+    compareOrderKeys(a.id, b.id);
+  const items: ItemJson[] = [];
+  const seen = new Set<ItemId>();
+  const emit = (parent: ItemId | null) => {
+    for (const item of (byParent.get(parent) ?? []).sort(siblingOrder)) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      items.push(itemToJson(plan, item, parent));
+      emit(item.id);
+    }
+  };
+  emit(null);
+  // A parent loop (only possible from concurrent edits, ADR 0004) is broken at its first item, so nothing is lost.
+  for (const item of Object.values(plan.items).sort(siblingOrder)) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    items.push(itemToJson(plan, item, null));
+    emit(item.id);
+  }
+
+  const dependencies = plan.dependencies
+    .filter((d) => plan.items[d.from] && plan.items[d.to] && d.from !== d.to)
+    .map((d): [string, string] => [d.from, d.to])
+    .sort((a, b) => compareOrderKeys(a[0], b[0]) || compareOrderKeys(a[1], b[1]));
+
+  return {
+    format: PLAN_FORMAT,
+    version: PLAN_VERSION,
+    properties,
+    items,
+    ...(dependencies.length > 0 ? { dependencies } : {}),
+  };
+}
+
+function itemToJson(plan: Plan, item: Item, parent: ItemId | null): ItemJson {
+  const values: Record<string, string | string[]> = {};
+  for (const [propertyId, ids] of Object.entries(item.values)) {
+    const property = plan.properties[propertyId];
+    if (property?.kind !== 'select') continue;
+    const known = [...new Set(ids)].filter((id) => property.values[id]);
+    if (known.length === 0) continue;
+    values[propertyId] = property.multi ? known : known[0]!;
+  }
+  return {
+    id: item.id,
+    title: item.title,
+    ...(item.description ? { description: item.description } : {}),
+    ...(item.externalKey !== undefined ? { externalKey: item.externalKey } : {}),
+    ...(parent !== null ? { parent } : {}),
+    ...(item.sequence !== null ? { sequence: item.sequence } : {}),
+    ...(Object.keys(values).length > 0 ? { values } : {}),
+  };
+}
+
+/** The text of a saved plan file. */
+export function planFileText(plan: Plan): string {
+  return JSON.stringify(planToJson(plan), null, 2) + '\n';
+}
+
+export type PlanFileResult =
+  | { ok: true; plan: Plan }
+  | {
+      ok: false;
+      /** One sentence saying what's wrong, for someone who didn't write the file. */
+      summary: string;
+      /** Every problem found, for someone fixing the file by hand. */
+      details: string[];
+    };
+
+/** Read a plan file's text, explaining in plain words why it can't be opened when it can't. */
+export function readPlanFile(text: string): PlanFileResult {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch (e) {
+    return {
+      ok: false,
+      summary: "This isn't a plan file: its text isn't valid JSON.",
+      details: [e instanceof Error ? e.message : String(e)],
+    };
+  }
+  if (!isRecord(json) || json.format !== PLAN_FORMAT) {
+    return { ok: false, summary: "This isn't a Planning Board plan file.", details: [] };
+  }
+  if (typeof json.version === 'number' && json.version > PLAN_VERSION) {
+    return {
+      ok: false,
+      summary: `This file was saved by a newer version of Planning Board (file version ${json.version}). This build reads version ${PLAN_VERSION}.`,
+      details: [],
+    };
+  }
+  const result = parsePlanJson(json);
+  if (result.ok) return result;
+  const n = result.errors.length;
+  return {
+    ok: false,
+    summary: `This plan file has ${n === 1 ? 'a problem' : `${n} problems`}, so it wasn't opened. The board is unchanged.`,
+    details: result.errors,
+  };
 }

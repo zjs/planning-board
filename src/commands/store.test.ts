@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
 import { SEQUENCE, SYSTEM, TIME } from '../domain/model.ts';
-import { parsePlanJson } from '../domain/planJson.ts';
+import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import type { ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { readPlan } from '../store/schema.ts';
@@ -292,5 +292,39 @@ describe('moveToParent', () => {
     expect(moveToParent(store, ['epic'], 'story')).toEqual([]);
     expect(moveToParent(store, ['epic'], 'gone')).toEqual([]);
     expect(store.undoManager.canUndo()).toBe(false);
+  });
+});
+
+describe('plan files', () => {
+  it('a saved file opens to the same plan, in one undo step, after a round trip through storage', () => {
+    const parsed = parsePlanJson(sample);
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    const store = createPlanStore();
+    loadPlan(store, parsed.plan);
+    const epic = Object.keys(parsed.plan.items)[0]!;
+    renameItem(store, epic, 'Renamed before saving');
+    const saved = planFileText(readPlan(store.doc));
+
+    resetPlan(store);
+    const opened = readPlanFile(saved);
+    if (!opened.ok) throw new Error(opened.summary);
+    loadPlan(store, opened.plan);
+    expect(planFileText(readPlan(store.doc))).toBe(saved);
+
+    // Reload: the stored document gives the same file.
+    const reloaded = new Y.Doc();
+    Y.applyUpdate(reloaded, Y.encodeStateAsUpdate(store.doc));
+    expect(planFileText(readPlan(reloaded))).toBe(saved);
+
+    undo(store);
+    expect(readPlan(store.doc).items).toEqual({});
+  });
+
+  it('keeps Jira keys in the document', () => {
+    const store = createPlanStore();
+    loadPlan(store, plan(item('a', { externalKey: 'PAY-7' }), item('b')));
+    const items = readPlan(store.doc).items;
+    expect(items['a']!.externalKey).toBe('PAY-7');
+    expect('externalKey' in items['b']!).toBe(false);
   });
 });
