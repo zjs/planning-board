@@ -82,6 +82,23 @@ export function Legend({ onClose }: { onClose: () => void }) {
       </dl>
       </section>
       <section>
+        <h3>Plans and properties</h3>
+      <dl>
+        <dt>File › Save plan, Open plan</dt>
+        <dd>A plan as one file, to move between browsers or send to someone. Opening replaces the board; undo brings it back.</dd>
+        <dt>File › Import CSV</dt>
+        <dd>
+          From a Jira export: choose what each column becomes, then where components, versions, and story points go.
+          It replaces the board, and cards keep their Jira keys.
+        </dd>
+        <dt>Properties</dt>
+        <dd>
+          Add your own, such as Team; each one is a choice of rows or columns. Click a value to rename it; hover for
+          move and delete. A deleted release's cards stay in its quarter.
+        </dd>
+      </dl>
+      </section>
+      <section>
         <h3>What the board tells you</h3>
       <dl>
         <dt>Faded cards</dt>
@@ -100,7 +117,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
       </dl>
       </section>
       </div>
-      <p className="legend-foot">Everything saves in this browser as you go.</p>
+      <p className="legend-foot">Everything saves in this browser as you go. Save to a file to take it somewhere else.</p>
     </aside>
   );
 }

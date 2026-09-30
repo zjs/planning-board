@@ -48,4 +48,5 @@ Sprint 2: real data (plan files, custom properties, value editing, CSV import). 
 - Build the single-file app: `npm run build` → `dist/index.html`
 - End-to-end tests: `npm run build && npm run e2e`. Playwright runs Chromium against `dist/index.html` over `file://`. Locally, the config uses `/opt/pw-browsers/chromium` if it exists; don't run `playwright install` in the cloud container.
 - Regenerate the sample plan: `npm run seed`
+- Regenerate the sample Jira export (`docs/samples/jira-export.csv`): `npm run sample:jira`
 - Deploy: none yet. CI attaches `dist/index.html` to every run as the `planning-board-<sha>` artifact.
