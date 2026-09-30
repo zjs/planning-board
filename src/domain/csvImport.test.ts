@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { JIRA_EXPORT } from './__fixtures__/jira-export.ts';
 import { parseCsv } from './csv.ts';
@@ -210,5 +211,35 @@ describe('planFromDraft, awkward files', () => {
     const r = planFromDraft(d, defaultChoices(d), counter());
     expect(r.counts).toEqual({ cards: 2, groups: 0, dependencies: 0 });
     expect(r.notes).toEqual([]);
+  });
+});
+
+describe('the sample export in docs/samples', () => {
+  it('imports with every Jira column recognized and nothing unexpected left out', () => {
+    const text = readFileSync(new URL('../../docs/samples/jira-export.csv', import.meta.url), 'utf8');
+    const t = parseCsv(text);
+    const mapping = detectMapping(columnGroups(t.header));
+    expect(Object.entries(mapping).filter(([, m]) => m.kind !== 'ignore').map(([name]) => name)).toEqual([
+      'Summary',
+      'Issue key',
+      'Issue id',
+      'Project name',
+      'Component/s',
+      'Fix Version/s',
+      'Labels',
+      'Custom field (Story Points)',
+      'Custom field (Team)',
+      'Parent',
+      'Description',
+      'Outward issue link (Blocks)',
+      'Inward issue link (Blocks)',
+    ]);
+    const d = draftFromCsv(t, mapping);
+    const r = planFromDraft(d, defaultChoices(d), counter());
+    expect(r.counts).toEqual({ cards: 53, groups: 9, dependencies: 12 });
+    expect(r.notes).toEqual([
+      '4 versions weren’t given a quarter, so their cards have no date: 2027.2, 2027.1, 2027.3, 2027.4.',
+      '2 “Blocks” links point to issues that aren’t in the file, so they were left out.',
+    ]);
   });
 });

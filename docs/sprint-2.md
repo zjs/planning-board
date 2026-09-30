@@ -39,9 +39,9 @@ Scope: single user, browser only, no server.
 
 ### 5. Tester-ready
 
-- [ ] A synthetic Jira export in `docs/samples/`, in Jira's CSV format.
-- [ ] The legend and help cover saving, opening, importing, and the Properties panel.
-- [ ] A demo note (`docs/demos/sprint-2.md`) and a session script built around importing the tester's own export.
+- [x] A synthetic Jira export in `docs/samples/`, in Jira's CSV format.
+- [x] The legend and help cover saving, opening, importing, and the Properties panel.
+- [x] A demo note (`docs/demos/sprint-2.md`) and a session script built around importing the tester's own export.
 
 ## Deferred (don't build)
 

@@ -1,0 +1,55 @@
+Summary,Issue key,Issue id,Issue Type,Status,Project key,Project name,Priority,Assignee,Created,Component/s,Component/s,Component/s,Fix Version/s,Labels,Labels,Sprint,Sprint,Custom field (Story Points),Custom field (Team),Parent,Parent summary,Description,Outward issue link (Blocks),Outward issue link (Blocks),Inward issue link (Blocks)
+Enterprise SSO self-service,IDN-1,20100,Epic,In Progress,IDN,Identity Platform,Highest,Priya Nair,2026-03-15 10:26,SSO,,,2027.2,enterprise,,Sprint 43,,13,Platform,,,"Let customer admins set up, test, and rotate SSO without opening a support ticket.",,,
+SAML metadata upload and validation,IDN-2,20101,Story,Done,IDN,Identity Platform,Low,Lee Moreau,2026-08-19 10:23,SSO,,,2027.1,enterprise,,Sprint 41,Sprint 42,5,Platform,20100,Enterprise SSO self-service,,IDN-3,,
+Test SSO connection from settings,IDN-3,20102,Story,To Do,IDN,Identity Platform,Low,Jo Tanaka,2026-08-19 10:27,SSO,Admin Console,,2027.2,,,Sprint 43,,3,Platform,20100,Enterprise SSO self-service,,IDN-4,,IDN-2
+Enforce SSO per workspace,IDN-4,20103,Story,In Progress,IDN,Identity Platform,Highest,Lee Moreau,2026-05-07 10:38,SSO,,,2027.2,enterprise,security,Sprint 43,,5,Platform,20100,Enterprise SSO self-service,,SEC-118,,IDN-3
+Certificate expiry warnings,IDN-5,20104,Story,To Do,IDN,Identity Platform,High,Dana Ortiz,2026-03-06 10:02,SSO,Notifications,,2027.3,,,,,2,Growth,20100,Enterprise SSO self-service,,,,
+Passwordless sign-in,IDN-6,20105,Epic,In Progress,IDN,Identity Platform,High,Sam Okafor,2026-04-12 10:29,MFA,,,2027.3,security,,,,13,Platform,,,"Passkeys first, then retire SMS codes.
+See the security review notes in the wiki.",,,
+WebAuthn enrollment,IDN-7,20106,Story,In Progress,IDN,Identity Platform,Low,,2026-02-21 10:38,MFA,,,2027.2,,,Sprint 43,,8,Platform,20105,Passwordless sign-in,,IDN-8,,
+Passkey login flow,IDN-8,20107,Story,To Do,IDN,Identity Platform,Low,Jo Tanaka,2026-02-19 10:06,MFA,SSO,,2027.3,,,,,5,Platform,20105,Passwordless sign-in,,,,IDN-7
+Retire SMS one-time codes,IDN-9,20108,Story,In Progress,IDN,Identity Platform,Highest,Sam Okafor,2026-02-12 10:20,MFA,,,2027.4,security,,,,3,Growth,20105,Passwordless sign-in,,,,
+Recovery codes for passkey users,IDN-10,20109,Story,In Progress,IDN,Identity Platform,Highest,Lee Moreau,2026-02-14 10:03,MFA,,,2027.3,,,,,2,Growth,20105,Passwordless sign-in,,,,
+Directory sync reliability,IDN-11,20110,Epic,In Review,IDN,Identity Platform,Medium,Dana Ortiz,2026-05-01 10:30,Directory Sync,,,2027.1,,,Sprint 41,Sprint 42,8,Platform,,,,,,
+SCIM group push,IDN-12,20111,Story,Done,IDN,Identity Platform,Highest,Priya Nair,2026-03-25 10:17,Directory Sync,,,2027.1,,,Sprint 41,Sprint 42,5,Platform,20110,Directory sync reliability,,,,
+Sync health dashboard,IDN-13,20112,Story,To Do,IDN,Identity Platform,High,Jo Tanaka,2026-05-12 10:07,Directory Sync,Admin Console,,2027.2,,,Sprint 43,,3,Growth,20110,Directory sync reliability,,,,
+Deprovisioning grace period,IDN-14,20113,Story,To Do,IDN,Identity Platform,Medium,Sam Okafor,2026-05-14 10:22,Directory Sync,,,,,,,,2,Platform,20110,Directory sync reliability,,,,
+Custom roles,IDN-15,20114,Story,To Do,IDN,Identity Platform,Highest,Jo Tanaka,2026-04-20 10:28,Roles,,,2027.4,enterprise,,,,8,Growth,,,"Top request from the ""Enterprise, EU"" segment.",,,
+Login page flickers on Safari,IDN-16,20115,Bug,Done,IDN,Identity Platform,Low,Sam Okafor,2026-02-14 10:38,SSO,,,2027.1,,,Sprint 41,Sprint 42,1,Growth,,,,,,
+Session timeout policy per workspace,IDN-17,20116,Story,To Do,IDN,Identity Platform,High,Dana Ortiz,2026-01-24 10:56,SSO,Roles,,,,,,,,Platform,,,,,,
+EU tax compliance,PAY-1,30200,Epic,In Progress,PAY,Payments,Highest,Priya Nair,2026-05-23 10:04,Tax,,,2027.2,compliance,,Sprint 43,,13,Core Payments,,,"VAT OSS reporting and reverse charge, before the Q3 audit.",,,
+Tax engine vendor migration,PAY-2,30201,Story,In Review,PAY,Payments,Medium,Sam Okafor,2026-01-14 10:51,Tax,,,2027.1,,,Sprint 41,Sprint 42,8,Core Payments,30200,EU tax compliance,,PAY-3,PAY-4,
+VAT OSS reporting,PAY-3,30202,Story,In Progress,PAY,Payments,High,,2026-03-26 10:06,Tax,Invoicing,,2027.2,compliance,,Sprint 43,,5,Core Payments,30200,EU tax compliance,,,,PAY-2
+Reverse charge handling,PAY-4,30203,Story,In Progress,PAY,Payments,High,Dana Ortiz,2026-03-16 10:58,Tax,Invoicing,,2027.3,compliance,,,,5,Core Payments,30200,EU tax compliance,,,,PAY-2
+Tax IDs collected at checkout,PAY-5,30204,Story,To Do,PAY,Payments,High,Priya Nair,2026-06-28 10:23,Tax,Checkout,,2027.2,,,Sprint 43,,3,Growth,30200,EU tax compliance,,,,
+Payment gateway resilience,PAY-6,30205,Epic,To Do,PAY,Payments,High,Jo Tanaka,2026-07-14 10:58,Gateway,,,2027.3,,,,,13,Core Payments,,,,,,
+Second payment processor,PAY-7,30206,Story,To Do,PAY,Payments,Highest,Dana Ortiz,2026-05-17 10:11,Gateway,,,2027.2,,,Sprint 43,,13,Core Payments,30205,Payment gateway resilience,,PAY-8,LEGAL-42,
+Gateway failover,PAY-8,30207,Story,To Do,PAY,Payments,Medium,Jo Tanaka,2026-04-12 10:55,Gateway,,,2027.3,,,,,8,Core Payments,30205,Payment gateway resilience,,,,PAY-7
+Smarter retries for failed payments,PAY-9,30208,Story,To Do,PAY,Payments,High,Jo Tanaka,2026-03-20 10:10,Gateway,Subscriptions,,2027.3,,,,,5,Growth,30205,Payment gateway resilience,,,,
+3-D Secure 2 flows,PAY-10,30209,Story,In Review,PAY,Payments,Low,Dana Ortiz,2026-03-19 10:38,Gateway,Checkout,,2027.1,compliance,,Sprint 41,Sprint 42,5,Core Payments,30205,Payment gateway resilience,,,,
+Flexible subscriptions,PAY-11,30210,Epic,In Progress,PAY,Payments,High,Sam Okafor,2026-05-11 10:27,Subscriptions,,,2027.4,,,,,8,Growth,,,,,,
+Mid-cycle plan changes,PAY-12,30211,Story,In Progress,PAY,Payments,Highest,Jo Tanaka,2026-05-16 10:13,Subscriptions,,,2027.3,,,,,5,Growth,30210,Flexible subscriptions,,PAY-13,,
+Proration preview,PAY-13,30212,Story,To Do,PAY,Payments,Low,Jo Tanaka,2026-01-07 10:52,Subscriptions,Checkout,,2027.4,,,,,3,Growth,30210,Flexible subscriptions,,,,PAY-12
+Seat-based add-ons,PAY-14,30213,Story,To Do,PAY,Payments,High,Jo Tanaka,2026-08-24 10:58,Subscriptions,Invoicing,,,,,,,8,Growth,30210,Flexible subscriptions,,,,
+Subscription pause,PAY-15,30214,Story,To Do,PAY,Payments,High,Priya Nair,2026-04-05 10:17,Subscriptions,,,,,,,,2,Growth,30210,Flexible subscriptions,,,,
+Invoice PDF redesign,PAY-16,30215,Story,In Progress,PAY,Payments,Medium,Sam Okafor,2026-02-19 10:18,Invoicing,,,2027.1,,,Sprint 41,Sprint 42,3,Growth,,,"New layout, with the ""Bill to"" block first.",,,
+Credit notes,PAY-17,30216,Story,In Progress,PAY,Payments,Highest,Sam Okafor,2026-03-22 10:07,Invoicing,,,2027.2,,,Sprint 43,,5,Core Payments,,,,,,
+Rounding error on multi-currency invoices,PAY-18,30217,Bug,Done,PAY,Payments,High,Lee Moreau,2026-01-09 10:29,Invoicing,,,2027.1,,,Sprint 41,Sprint 42,2,Core Payments,,,,,,
+Evaluate usage-based pricing,PAY-19,30218,Task,To Do,PAY,Payments,Highest,Priya Nair,2026-03-20 10:13,,,,,research,,,,,Growth,,,,,,
+Customer-managed encryption keys,DATA-1,40300,Epic,In Progress,DATA,Data Platform,Medium,Dana Ortiz,2026-02-03 10:26,Pipeline,Search,Export,2027.3,enterprise,security,,,13,Data Infra,,,,,,
+Key management service integration,DATA-2,40301,Story,To Do,DATA,Data Platform,Medium,,2026-04-16 10:35,Pipeline,,,2027.2,,,Sprint 43,,8,Data Infra,40300,Customer-managed encryption keys,,DATA-3,DATA-4,
+Encrypt search indexes with customer keys,DATA-3,40302,Story,To Do,DATA,Data Platform,High,Dana Ortiz,2026-01-21 10:14,Search,,,2027.3,,,,,5,Data Infra,40300,Customer-managed encryption keys,,,,DATA-2
+Encrypt exports with customer keys,DATA-4,40303,Story,In Progress,DATA,Data Platform,High,Jo Tanaka,2026-04-09 10:12,Export,,,2027.3,,,,,3,Data Infra,40300,Customer-managed encryption keys,,,,DATA-2
+Key rotation runbook,DATA-5,40304,Task,To Do,DATA,Data Platform,Highest,Sam Okafor,2026-03-12 10:28,Pipeline,,,2027.4,,,,,1,Data Infra,40300,Customer-managed encryption keys,,,,
+Warehouse export v2,DATA-6,40305,Epic,To Do,DATA,Data Platform,Low,Jo Tanaka,2026-01-04 10:17,Export,,,2027.2,,,Sprint 43,,8,Data Infra,,,,,,
+Snowflake export connector,DATA-7,40306,Story,In Progress,DATA,Data Platform,High,Priya Nair,2026-04-23 10:30,Export,,,2027.1,,,Sprint 41,Sprint 42,5,Data Infra,40305,Warehouse export v2,,,,
+BigQuery export connector,DATA-8,40307,Story,In Progress,DATA,Data Platform,Low,Sam Okafor,2026-06-07 10:25,Export,,,2027.2,,,Sprint 43,,5,Data Infra,40305,Warehouse export v2,,,,
+Incremental export,DATA-9,40308,Story,In Progress,DATA,Data Platform,High,Dana Ortiz,2026-04-18 10:06,Export,Pipeline,,2027.2,,,Sprint 43,,8,Data Infra,40305,Warehouse export v2,,DATA-10,,
+Export column selection,DATA-10,40309,Story,To Do,DATA,Data Platform,Highest,Dana Ortiz,2026-08-22 10:36,Export,Admin Console,,2027.3,,,,,3,Growth,40305,Warehouse export v2,,,,DATA-9
+Audit log for regulated customers,DATA-11,40310,Epic,In Progress,DATA,Data Platform,Medium,Sam Okafor,2026-05-28 10:34,Audit Log,,,2027.4,compliance,,,,8,Data Infra,,,,,,
+Tamper-evident audit log,DATA-12,40311,Story,In Progress,DATA,Data Platform,Highest,Lee Moreau,2026-08-25 10:04,Audit Log,,,2027.3,,,,,8,Data Infra,40310,Audit log for regulated customers,,DATA-13,,
+SIEM streaming,DATA-13,40312,Story,In Progress,DATA,Data Platform,Highest,,2026-02-18 10:46,Audit Log,Pipeline,,2027.4,,,,,5,Data Infra,40310,Audit log for regulated customers,,,,DATA-12
+Audit events for billing changes,DATA-14,40313,Story,To Do,DATA,Data Platform,Low,Lee Moreau,2026-07-23 10:02,Audit Log,Invoicing,,2027.2,,,Sprint 43,,3,Core Payments,40310,Audit log for regulated customers,,,,
+Zero-downtime index rebuild,DATA-15,40314,Story,In Progress,DATA,Data Platform,Highest,Dana Ortiz,2026-08-18 10:51,Search,,,2027.1,,,Sprint 41,Sprint 42,8,Data Infra,,,,DATA-16,,
+Typo-tolerant search,DATA-16,40315,Story,To Do,DATA,Data Platform,Low,Sam Okafor,2026-03-22 10:50,Search,,,2027.2,,,Sprint 43,,5,Growth,,,,,,DATA-15
+Pipeline lag alerting,DATA-17,40316,Task,To Do,DATA,Data Platform,Low,Dana Ortiz,2026-06-02 10:29,Pipeline,,,,,,,,2,Data Infra,,,,,,

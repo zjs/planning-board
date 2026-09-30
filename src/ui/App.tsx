@@ -304,7 +304,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return () => events.forEach((event) => store.undoManager.off(event, dismissIfStale));
   }, [notice, store]);
 
-  const [legendOpen, setLegendOpen] = useState(legendInitiallyOpen);
+  // First-visit help opens once there's a board to explain, so it never covers the empty board's buttons.
+  // Null until the viewer opens or closes it themselves.
+  const [legendChoice, setLegendOpen] = useState<boolean | null>(null);
+  const [firstVisit] = useState(legendInitiallyOpen);
+  const legendOpen = legendChoice ?? (firstVisit && !empty);
   const closeLegend = () => {
     setLegendOpen(false);
     rememberLegendClosed();
