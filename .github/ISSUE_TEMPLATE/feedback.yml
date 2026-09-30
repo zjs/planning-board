@@ -1,0 +1,22 @@
+name: Idea or feedback
+description: What you tried, what you liked, what you'd need before using this for real.
+labels: [feedback]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: What were you trying to do?
+      description: For example, "decompose an epic before a planning meeting", or "see which components two releases share".
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: What worked, and what got in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: role
+    attributes:
+      label: Your role (optional)
+      description: PM, EM, tech lead, … It helps weigh feedback against who the tool is for.

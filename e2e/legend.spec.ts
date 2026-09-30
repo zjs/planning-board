@@ -8,6 +8,11 @@ test('help opens on first visit, stays closed once dismissed, and reopens from t
   await expect(legend).toContainText(/Hold (Alt|⌥ Option) while dropping/);
   await expect(legend).toContainText('File › Import CSV');
   await expect(legend).toContainText('Properties');
+  await expect(legend.getByRole('link', { name: 'Feedback and bug reports' })).toHaveAttribute(
+    'href',
+    'https://github.com/zjs/planning-board/issues/new/choose',
+  );
+  await expect(legend).toContainText(/Build (local|[0-9a-f]{7})/);
 
   await page.getByRole('button', { name: 'Close help' }).click();
   await expect(legend).toHaveCount(0);

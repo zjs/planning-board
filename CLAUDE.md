@@ -30,7 +30,8 @@ Sprint 2: real data (plan files, custom properties, value editing, CSV import). 
 
 - Unit tests for everything in `src/domain/` and `src/commands/`.
 - CI runs typecheck, lint, and tests on every push.
-- `main` is always deployable. Every PR and every merge to `main` produces a self-contained single-file HTML build as a CI artifact that the PM can open and click through (see Q5 in `questions.md`). Hosted deploys come later.
+- `main` is always deployable. Every PR and every merge to `main` produces a self-contained single-file HTML build as a CI artifact that the PM can open and click through (see Q5 in `questions.md`), and every merge to `main` is published to GitHub Pages (Q31).
+- The repo is public (Q31). Never commit real roadmap data; samples are synthetic. Issues are welcome, but code PRs aren't being accepted yet (`CONTRIBUTING.md`).
 - Engineering merges its own PRs once CI is green and self-review is done. The PM accepts or rejects on the build, not the diff (Q6).
 
 ## Working agreement
@@ -49,4 +50,4 @@ Sprint 2: real data (plan files, custom properties, value editing, CSV import). 
 - End-to-end tests: `npm run build && npm run e2e`. Playwright runs Chromium against `dist/index.html` over `file://`. Locally, the config uses `/opt/pw-browsers/chromium` if it exists; don't run `playwright install` in the cloud container.
 - Regenerate the sample plan: `npm run seed`
 - Regenerate the sample Jira export (`docs/samples/jira-export.csv`): `npm run sample:jira`
-- Deploy: none yet. CI attaches `dist/index.html` to every run as the `planning-board-<sha>` artifact.
+- Deploy: automatic. `.github/workflows/pages.yml` publishes every `main` build to https://zjs.github.io/planning-board/. CI also attaches `dist/index.html` to every run as the `planning-board-<sha>` artifact.

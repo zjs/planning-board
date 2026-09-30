@@ -2,6 +2,12 @@ import { keyNames } from './platform.ts';
 
 const STORAGE_KEY = 'planning-board:legend-dismissed';
 
+/** Where feedback goes. A plain link: nothing is sent unless someone follows it. */
+export const FEEDBACK_URL = 'https://github.com/zjs/planning-board/issues/new/choose';
+
+/** The commit this build came from, so a report names its build. */
+export const BUILD = import.meta.env.VITE_BUILD_COMMIT?.slice(0, 7) || 'local';
+
 /** Open on first visit; remembered per browser once closed. */
 export function legendInitiallyOpen(): boolean {
   try {
@@ -118,6 +124,12 @@ export function Legend({ onClose }: { onClose: () => void }) {
       </section>
       </div>
       <p className="legend-foot">Everything saves in this browser as you go. Save to a file to take it somewhere else.</p>
+      <p className="legend-foot">
+        Build {BUILD} ·{' '}
+        <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
+          Feedback and bug reports
+        </a>
+      </p>
     </aside>
   );
 }
