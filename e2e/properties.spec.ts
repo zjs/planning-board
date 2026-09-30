@@ -72,7 +72,7 @@ test('rename and delete a property; undo brings it back', async ({ page }) => {
   await squad.getByRole('button', { name: 'Show as rows' }).click();
   await expect(page.locator('.row-header')).toHaveText(['Platform']);
   page.once('dialog', (d) => void d.accept());
-  await squad.getByRole('button', { name: 'Delete' }).click();
+  await squad.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByTestId('notice')).toContainText('Deleted property “Squad”');
   // The rows fall back to a property that still exists.
   await expect(page.getByTestId('axis-y')).toHaveValue('system');
@@ -86,7 +86,7 @@ test('built-in properties can be renamed but not deleted', async ({ page }) => {
   await openPanel(page);
   const system = section(page, 'System');
   await system.locator('summary').click();
-  await expect(system.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+  await expect(system.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0);
   await expect(system.locator('.property-kind')).toHaveText('Built-in · 19 values');
   // Components are added under their area.
   const identity = system.locator('li[data-value="identity"]');

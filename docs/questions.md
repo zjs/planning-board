@@ -85,6 +85,7 @@ Entry format:
 - Options: the cards lose that value and move to the holding area; deletion is blocked while cards use the value; the cards move to the parent value in the hierarchy.
 - Recommendation: move to the parent value when there is one, otherwise to the holding area. It keeps information and never blocks the user.
 - Status: answered 2026-09-30: move to the parent value, as recommended. Sprint 2, slice 3. A notice with Undo says how many cards moved.
+  - Built in slice 3. Deleting a value also deletes everything below it (an area's components). That asks first, because it removes more than you clicked; deleting a single value doesn't.
 
 ### Q5: Where do builds go so the PM can click through them?
 - Context: The repo is private with no Pages site. The sprint doc asked for a static URL on every merge.

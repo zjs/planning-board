@@ -3,13 +3,20 @@ import {
   addValue,
   createProperty,
   deleteProperty,
+  deleteValue,
+  moveValue,
+  renameLevel,
   renameProperty,
+  renameValue,
+  reorderValue,
   type PlanStore,
 } from '../commands/store.ts';
 import type { Plan, Property, PropertyId, SelectProperty, ValueId } from '../domain/model.ts';
 import {
   cardsWithProperty,
   isBuiltIn,
+  levelNameProblem,
+  moveTargets,
   propertiesInOrder,
   propertyNameProblem,
   siblingsOf,
@@ -74,6 +81,7 @@ export function PropertiesPanel({ store, plan, onClose, onShowAsRows, onNotice }
           onToggle={(open) => toggle(property.id, open)}
           onShowAsRows={() => onShowAsRows(property.id)}
           onDelete={property.kind === 'select' && !isBuiltIn(property.id) ? () => remove(property) : undefined}
+          onNotice={onNotice}
         />
       ))}
       <NewProperty
@@ -96,6 +104,7 @@ function PropertySection({
   onToggle,
   onShowAsRows,
   onDelete,
+  onNotice,
 }: {
   store: PlanStore;
   plan: Plan;
@@ -104,6 +113,7 @@ function PropertySection({
   onToggle: (open: boolean) => void;
   onShowAsRows: () => void;
   onDelete: (() => void) | undefined;
+  onNotice: (text: string) => void;
 }) {
   const kind = isBuiltIn(property.id)
     ? 'Built-in'
@@ -148,36 +158,159 @@ function PropertySection({
         {property.kind === 'sequence' ? (
           <p className="panel-hint">Positions come from the board: drop a card between two columns to open a new one.</p>
         ) : (
-          <ValueTree store={store} property={property} parent={null} depth={0} />
+          <>
+            {property.levels.length > 1 && <Levels store={store} property={property} />}
+            <ValueTree store={store} plan={plan} property={property} parent={null} depth={0} onNotice={onNotice} />
+          </>
         )}
       </div>
     </details>
   );
 }
 
-/** A property's values under `parent`, with a way to add one at each level. */
+/** A hierarchy's level names, such as Area › Component, each renamable. */
+function Levels({ store, property }: { store: PlanStore; property: SelectProperty }) {
+  return (
+    <div className="levels">
+      <span className="levels-label">Levels</span>
+      {property.levels.map((level, i) => (
+        <span key={i} className="level">
+          {i > 0 && <span className="level-sep">›</span>}
+          <InlineEdit
+            label={`Rename level ${level}`}
+            buttonText={level}
+            buttonClass="link"
+            initial={level}
+            problem={(name) => levelNameProblem(property, i, name)}
+            onCommit={(name) => renameLevel(store, property.id, i, name)}
+          />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * A property's values under `parent`: rename (click the name), reorder,
+ * move to another parent, delete (Q4), and add one at the end.
+ */
 function ValueTree({
   store,
+  plan,
   property,
   parent,
   depth,
+  onNotice,
 }: {
   store: PlanStore;
+  plan: Plan;
   property: SelectProperty;
   parent: ValueId | null;
   depth: number;
+  onNotice: (text: string) => void;
 }) {
   const level = property.levels[depth] ?? property.name;
   const values = siblingsOf(property, parent);
   const deeper = depth + 1 < property.levels.length;
+
+  const remove = (id: ValueId) => {
+    const node = property.values[id]!;
+    const below = Object.values(property.values).filter((n) => n.parent === id).length;
+    if (below > 0) {
+      const childLevel = inSentence(property.levels[depth + 1] ?? 'value');
+      const question = `Delete “${node.label}” and the ${below} ${below === 1 ? childLevel : `${childLevel}s`} inside it? You can undo this.`;
+      if (!window.confirm(question)) return;
+    }
+    const result = deleteValue(store, property.id, id);
+    if (!result) return;
+    const n = result.cards;
+    const cards = `${n} ${n === 1 ? 'card' : 'cards'}`;
+    const where =
+      n === 0
+        ? ''
+        : result.parent !== null
+          ? ` · ${cards} moved to ${property.values[result.parent]?.label ?? 'its parent'}`
+          : ` · ${cards} now ${n === 1 ? 'has' : 'have'} no ${inSentence(level)}`;
+    onNotice(`Deleted “${node.label}”${where}`);
+  };
+
   return (
     <ul className="value-list" data-level={depth}>
-      {values.map((node) => (
-        <li key={node.id} data-value={node.id}>
-          <span className="value-label">{node.label}</span>
-          {deeper && <ValueTree store={store} property={property} parent={node.id} depth={depth + 1} />}
-        </li>
-      ))}
+      {values.map((node, i) => {
+        const targets = moveTargets(property, node.id);
+        return (
+          <li key={node.id} data-value={node.id}>
+            <div className="value-row">
+              <InlineEdit
+                label={`Rename ${node.label}`}
+                buttonText={node.label}
+                buttonClass="value-label"
+                initial={node.label}
+                problem={(label) => valueLabelProblem(property, label, node.parent, node.id)}
+                onCommit={(label) => renameValue(store, property.id, node.id, label)}
+              />
+              <span className="value-tools">
+                <button
+                  type="button"
+                  aria-label={`Move ${node.label} up`}
+                  title="Move up"
+                  disabled={i === 0}
+                  onClick={() => reorderValue(store, property.id, node.id, 'up')}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Move ${node.label} down`}
+                  title="Move down"
+                  disabled={i === values.length - 1}
+                  onClick={() => reorderValue(store, property.id, node.id, 'down')}
+                >
+                  ↓
+                </button>
+                {targets.length > 0 && (
+                  <select
+                    aria-label={`Move ${node.label} to`}
+                    title={`Move to another ${inSentence(property.levels[depth - 1] ?? 'parent')}`}
+                    value=""
+                    onChange={(e) => {
+                      if (moveValue(store, property.id, node.id, e.target.value)) {
+                        onNotice(`Moved “${node.label}” to ${property.values[e.target.value]?.label ?? ''}`);
+                      }
+                    }}
+                  >
+                    <option value="">Move to…</option>
+                    {targets.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  type="button"
+                  className="danger"
+                  aria-label={`Delete ${node.label}`}
+                  title="Delete"
+                  onClick={() => remove(node.id)}
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+            {deeper && (
+              <ValueTree
+                store={store}
+                plan={plan}
+                property={property}
+                parent={node.id}
+                depth={depth + 1}
+                onNotice={onNotice}
+              />
+            )}
+          </li>
+        );
+      })}
       <li className="add-value">
         <AddField
           placeholder={parent === null ? `Add ${inSentence(level)}` : `Add ${inSentence(level)} here`}
@@ -289,12 +422,14 @@ function AddField({
 export function InlineEdit({
   label,
   buttonText,
+  buttonClass,
   initial,
   problem,
   onCommit,
 }: {
   label: string;
   buttonText: string;
+  buttonClass?: string;
   initial: string;
   problem: (text: string) => string | null;
   onCommit: (text: string) => void;
@@ -303,7 +438,7 @@ export function InlineEdit({
   const [error, setError] = useState<string | null>(null);
   if (text === null) {
     return (
-      <button type="button" onClick={() => setText(initial)} aria-label={label}>
+      <button type="button" className={buttonClass} onClick={() => setText(initial)} aria-label={label} title={label}>
         {buttonText}
       </button>
     );
