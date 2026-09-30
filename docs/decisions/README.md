@@ -13,3 +13,4 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0007](0007-drag-and-drop.md) | Custom pointer-event drag, rules in a pure function | Accepted |
 | [0008](0008-view-scope-and-zoom.md) | Zoom is part of the view spec; one layout for every level | Accepted |
 | [0009](0009-editing-properties.md) | Stable value IDs; built-ins can't be deleted; axis options come from the plan | Accepted |
+| [0010](0010-csv-import.md) | Own CSV reader; import as two pure steps (draft, then plan); one undo step | Accepted |

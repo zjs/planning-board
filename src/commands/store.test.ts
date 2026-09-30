@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
+import { JIRA_EXPORT } from '../domain/__fixtures__/jira-export.ts';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
+import { parseCsv } from '../domain/csv.ts';
+import { columnGroups, defaultChoices, detectMapping, draftFromCsv } from '../domain/csvImport.ts';
 import { SEQUENCE, SYSTEM, TIME } from '../domain/model.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import type { ViewSpec } from '../domain/view.ts';
@@ -21,6 +24,7 @@ import {
   deleteItems,
   dropCard,
   groupItems,
+  importPlan,
   loadPlan,
   moveToParent,
   NEW_GROUP_TITLE,
@@ -481,5 +485,20 @@ describe('editing values (requirement 27)', () => {
     expect(readPlan(store.doc).properties[SYSTEM]).toMatchObject({ levels: ['Area', 'Service'] });
     expect(renameLevel(store, SYSTEM, 1, 'area')).toBe(false);
     expect(renameLevel(store, SYSTEM, 5, 'Deep')).toBe(false);
+  });
+});
+
+describe('importPlan', () => {
+  it('replaces the board with the imported cards, keeping Jira keys, in one undo step', () => {
+    const store = storeWith(item('a'));
+    const table = parseCsv(JIRA_EXPORT);
+    const draft = draftFromCsv(table, detectMapping(columnGroups(table.header)));
+    const result = importPlan(store, draft, defaultChoices(draft), []);
+    const after = readPlan(store.doc);
+    expect(Object.keys(after.items)).toHaveLength(result.counts.cards);
+    expect(Object.values(after.items).map((i) => i.externalKey).sort()).toEqual(['PAY-1', 'PAY-2', 'PAY-3', 'PAY-4', 'PAY-6']);
+    expect(after.dependencies).toHaveLength(1);
+    undo(store);
+    expect(Object.keys(readPlan(store.doc).items)).toEqual(['a']);
   });
 });
