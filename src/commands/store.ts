@@ -2,6 +2,7 @@
 // never touches Yjs itself (CLAUDE.md, storage rule).
 
 import * as Y from 'yjs';
+import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from '../domain/csvImport.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
 import type { ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
@@ -57,6 +58,22 @@ function edit(store: PlanStore, change: () => void): void {
 /** Replace the board with `plan`. Undoable. */
 export function loadPlan(store: PlanStore, plan: Plan): void {
   edit(store, () => writePlan(store.doc, plan));
+}
+
+/**
+ * Replace the board with an imported CSV (requirement 28, questions.md
+ * Q26): the draft's cards, built with the value table's choices. Every
+ * card keeps its Jira key. One undo step brings the old board back.
+ */
+export function importPlan(
+  store: PlanStore,
+  draft: Draft,
+  choices: ValueChoices,
+  quarterOrder: readonly string[],
+): ImportResult {
+  const result = planFromDraft(draft, choices, randomId, quarterOrder);
+  loadPlan(store, result.plan);
+  return result;
 }
 
 /** Empty the board completely. Undoable. */

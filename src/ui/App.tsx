@@ -4,6 +4,7 @@ import {
   deleteItems,
   dropCard,
   groupItems,
+  importPlan,
   loadPlan,
   moveToParent,
   openPlanStore,
@@ -16,6 +17,7 @@ import {
   type PersistenceStatus,
   type PlanStore,
 } from '../commands/store.ts';
+import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
@@ -42,6 +44,7 @@ import {
 import { Board, type Editing } from './Board.tsx';
 import { Dialog } from './Dialog.tsx';
 import { DragGhost } from './DragGhost.tsx';
+import { ImportDialog } from './ImportDialog.tsx';
 import { datedFileName, downloadText } from './files.ts';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
 import { Menu } from './Menu.tsx';
@@ -396,6 +399,22 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setEditing(null);
     setNotice({ text: `Opened “${file.name}”`, step: store.undoManager.undoStack.at(-1) });
   };
+  // CSV import (requirement 28, ADR 0010).
+  const csvInput = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState<{ fileName: string; table: CsvTable } | null>(null);
+  const readCsvFile = async (file: File) => {
+    const table = parseCsv(await file.text());
+    if (table.header.length === 0 || table.rows.length === 0) {
+      setFileProblem({
+        name: file.name,
+        summary: table.header.length === 0 ? 'This file is empty.' : 'This file has column headers but no rows to import.',
+        details: [],
+      });
+      return;
+    }
+    setImporting({ fileName: file.name, table });
+  };
+
   const [propertiesOpen, setPropertiesOpen] = useState(false);
   const noticeLatest = useCallback(
     (text: string) => setNotice({ text, step: store.undoManager.undoStack.at(-1) }),
@@ -407,6 +426,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       testId="file-menu"
       entries={[
         { label: 'Open plan file…', onSelect: () => openInput.current?.click() },
+        {
+          label: 'Import CSV (Jira export)…',
+          onSelect: () => csvInput.current?.click(),
+          title: 'Replace the board with cards from a CSV file, such as a Jira export',
+        },
         {
           label: 'Save plan to file',
           onSelect: savePlanFile,
@@ -500,13 +524,16 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       {empty ? (
         <div className="empty-state">
           <h2>No plan yet</h2>
-          <p>Load the sample plan: about 150 roadmap items for a fictional product line. Or open a plan file you saved earlier.</p>
+          <p>Load the sample plan: about 150 roadmap items for a fictional product line. Or open a plan file you saved earlier, or import a Jira export.</p>
           <div className="empty-actions">
             <button type="button" className="primary" onClick={loadSample}>
               Load sample plan
             </button>
             <button type="button" onClick={() => openInput.current?.click()}>
               Open plan file…
+            </button>
+            <button type="button" onClick={() => csvInput.current?.click()}>
+              Import CSV…
             </button>
           </div>
         </div>
@@ -577,6 +604,33 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           if (file) void openPlanFile(file);
         }}
       />
+      <input
+        ref={csvInput}
+        type="file"
+        accept=".csv,text/csv"
+        hidden
+        data-testid="import-csv-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (file) void readCsvFile(file);
+        }}
+      />
+      {importing && (
+        <ImportDialog
+          fileName={importing.fileName}
+          table={importing.table}
+          onCancel={() => setImporting(null)}
+          onImport={(draft, choices, quarterOrder) => {
+            const result = importPlan(store, draft, choices, quarterOrder);
+            setImporting(null);
+            setSelection(new Set());
+            setEditing(null);
+            const n = result.counts.cards;
+            noticeLatest(`Imported ${n} ${n === 1 ? 'card' : 'cards'} from “${importing.fileName}”`);
+          }}
+        />
+      )}
       {fileProblem && (
         <Dialog title={`Couldn't open “${fileProblem.name}”`} onClose={() => setFileProblem(null)} testId="file-problem">
           <p>{fileProblem.summary}</p>
