@@ -18,7 +18,7 @@ import {
   type PlanStore,
 } from '../commands/store.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
-import type { ItemId, Plan } from '../domain/model.ts';
+import { SYSTEM, TIME, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
@@ -624,6 +624,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onImport={(draft, choices, quarterOrder) => {
             const result = importPlan(store, draft, choices, quarterOrder);
             setImporting(null);
+            // Imported cards have no sequence position, so a sequence view would hold them all in
+            // one lane. Time × System shows them where the export put them (questions.md Q30).
+            setChoice({ x: TIME, y: SYSTEM });
+            setZoomPath([]);
             setSelection(new Set());
             setEditing(null);
             const n = result.counts.cards;
