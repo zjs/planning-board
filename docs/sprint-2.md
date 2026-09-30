@@ -32,10 +32,10 @@ Scope: single user, browser only, no server.
 
 - [x] **File › Import CSV (Jira export)…** opens a dialog: pick a file, see its columns, and map each one to a field. Jira's usual headers are recognized automatically, including repeated columns such as Component/s.
 - [x] A preview shows the first rows as they'll be imported.
-- [ ] A value table gives each Jira component an area, each version a quarter, and each story point value a size (Q27, Q28).
-- [ ] Chosen columns, such as Team and Labels, become custom properties. Status, Priority, Sprint, and Assignee are off by default (Q29).
-- [ ] Parents and epic links become groups. "Blocks" links become dependencies, kept but not drawn until sprint 3.
-- [ ] An import replaces the board. It's one undo step, and every card keeps its Jira key (Q26).
+- [x] A value table gives each Jira component an area, each version a quarter, and each story point value a size (Q27, Q28).
+- [x] Chosen columns, such as Team and Labels, become custom properties. Status, Priority, Sprint, and Assignee are off by default (Q29).
+- [x] Parents and epic links become groups. "Blocks" links become dependencies, kept but not drawn until sprint 3.
+- [x] An import replaces the board. It's one undo step, and every card keeps its Jira key (Q26).
 
 ### 5. Tester-ready
 

@@ -58,19 +58,28 @@ Entry format:
 - Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
 - Options: (a) a value table in the import dialog that asks for a parent for each value, with defaults; (b) import components as areas and versions as quarters, and let people restructure afterwards with value editing; (c) infer parents from names or release dates.
 - Recommendation: (a). Each component defaults to a new area named after its Jira project, and each version defaults to "not imported", so those cards get no time until you pick a quarter. Nothing is guessed silently, and value editing (slice 3) fixes anything chosen wrong. (c) could come later as a suggestion in the same table, using the versions' release dates.
-- Status: open. Building (a) in slice 5.
+- Status: open. Built (a).
+  - Slices 4–5: the import dialog's Values step lists each component with an area field (defaulting to the project's name) and each version with a quarter menu (defaulting to "Not dated").
 
 ### Q28: How do story points become sizes?
 - Context: Requirement 28 and the Size property (ordered XS–XL, no roll-up). Jira exports story points as numbers, and teams use different scales.
 - Options: (a) fixed buckets, editable in the import's value table; (b) buckets by quantile of the imported points; (c) don't import points.
 - Recommendation: (a), with defaults 1 → XS, 2–3 → S, 5 → M, 8 → L, 13 and up → XL. They follow the usual Fibonacci scale _(recalled)_ and are easy to read and change. (b) shifts every card's size whenever the export changes.
-- Status: open. Building (a) in slice 5.
+- Status: open. Built (a).
+  - Slices 4–5: the Values step lists each story point value with its size, editable.
 
 ### Q29: What happens to Jira fields with no built-in home?
 - Context: Requirements 26 and 28. Status, Priority, Sprint and Assignee are in most exports. None of them match a built-in property, and several describe execution rather than planning.
 - Options: (a) off by default, and any of them can become a custom property in the mapping step; (b) import all of them as custom properties; (c) not importable.
 - Recommendation: (a). The board stays about the plan, and anyone who wants to pivot by Status can turn it on. Team and Labels are on by default, because they're the pivots the sprint tests.
-- Status: open. Building (a) in slice 4.
+- Status: open. Built (a).
+  - Slice 4: the mapping step shows them as "Don't import", and any column can be turned into a custom property.
+
+### Q30: Should imported cards get sequence positions?
+- Context: Requirements 6 and 28. Jira exports carry an order (rank, or just row order), but the board's sequence is a hand-placed layout, and dependency links carry all the ordering the tool checks. Imported cards have no position, so in a sequence view every one of them waits in "No position".
+- Options: (a) no positions, and the board switches to Time × System after an import, so cards land where the export put them; (b) give each card its own column in file order, which could mean 150 columns and would read as a claim of order; (c) put them all in one column, which is a tidier version of "No position".
+- Recommendation: (a). Sequencing is the brainstorming work the board is for, and a PM can drag cards into order after looking at them by time and area. Revisit if testers expect the Jira rank to survive.
+- Status: open. Built (a) in slice 5.
 
 ## Answered
 

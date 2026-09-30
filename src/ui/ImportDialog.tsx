@@ -5,6 +5,7 @@ import {
   defaultChoices,
   detectMapping,
   draftFromCsv,
+  draftValues,
   FIELDS,
   planFromDraft,
   quarterChoices,
@@ -13,6 +14,7 @@ import {
   type Draft,
   type FieldKind,
   type Mapping,
+  type SizeId,
   type ValueChoices,
 } from '../domain/csvImport.ts';
 import { Dialog } from './Dialog.tsx';
@@ -28,16 +30,38 @@ interface Props {
   onImport: (draft: Draft, choices: ValueChoices, quarterOrder: string[]) => void;
 }
 
+/** Choices made in the value table, over the defaults. Kept by value, so going back to the columns doesn't lose them. */
+interface Overrides {
+  areas: Record<string, string>;
+  quarters: Record<string, string | null>;
+  sizes: Record<string, SizeId | null>;
+}
+
 /**
- * Import a CSV export (requirement 28): map each column to a field, check a
- * preview, and import. Jira's usual headers are mapped automatically.
+ * Import a CSV export (requirement 28), in two steps. Columns: map each
+ * column to a field, with Jira's usual headers mapped automatically, and
+ * check a preview. Values: choose an area for each component, a quarter
+ * for each version, and a size for each story point value (Q27, Q28).
  */
 export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
   const groups = useMemo(() => columnGroups(table.header), [table]);
   const [mapping, setMapping] = useState<Mapping>(() => detectMapping(groups));
   const draft = useMemo(() => draftFromCsv(table, mapping), [table, mapping]);
   const quarters = useMemo(() => quarterChoices(new Date()), []);
-  const choices = useMemo(() => defaultChoices(draft), [draft]);
+  const [step, setStep] = useState<'columns' | 'values'>('columns');
+  const [overrides, setOverrides] = useState<Overrides>({ areas: {}, quarters: {}, sizes: {} });
+  const choices = useMemo((): ValueChoices => {
+    const base = defaultChoices(draft);
+    const over = <T,>(defaults: Record<string, T>, chosen: Record<string, T>) =>
+      Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, k in chosen ? chosen[k]! : v]));
+    return {
+      areas: over(base.areas, overrides.areas),
+      quarters: over(base.quarters, overrides.quarters),
+      sizes: over(base.sizes, overrides.sizes),
+    };
+  }, [draft, overrides]);
+  const values = useMemo(() => draftValues(draft), [draft]);
+  const hasValues = values.components.length + values.versions.length + values.points.length > 0;
   const preview = useMemo(() => {
     let n = 0;
     return planFromDraft(draft, choices, (prefix) => `${prefix}${++n}`, quarters);
@@ -63,6 +87,25 @@ export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
   const n = preview.counts.cards;
   return (
     <Dialog title={`Import “${fileName}”`} onClose={onCancel} wide testId="import-dialog">
+      <ol className="steps" aria-label="Steps">
+        <li aria-current={step === 'columns' ? 'step' : undefined}>1. Columns</li>
+        <li aria-current={step === 'values' ? 'step' : undefined}>2. Values</li>
+      </ol>
+      {step === 'values' ? (
+        <ValueTable
+          draft={draft}
+          choices={choices}
+          quarters={quarters}
+          onChange={(change) =>
+            setOverrides((o) => ({
+              areas: { ...o.areas, ...change.areas },
+              quarters: { ...o.quarters, ...change.quarters },
+              sizes: { ...o.sizes, ...change.sizes },
+            }))
+          }
+        />
+      ) : (
+      <>
       <p className="dialog-lead">
         {table.rows.length} {table.rows.length === 1 ? 'row' : 'rows'}, {groups.length} columns. Choose what each column
         becomes. Jira’s usual columns are already chosen; Status, Priority, Sprint, and Assignee are left out unless you
@@ -157,6 +200,8 @@ export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
           </tbody>
         </table>
       </div>
+      </>
+      )}
 
       <div className="import-summary" data-testid="import-summary">
         {hasTitle ? (
@@ -177,17 +222,29 @@ export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
       </div>
 
       <div className="dialog-actions">
-        <button type="button" onClick={onCancel}>
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="primary"
-          disabled={!hasTitle || n === 0}
-          onClick={() => onImport(draft, choices, quarters)}
-        >
-          Import {n} {n === 1 ? 'card' : 'cards'}
-        </button>
+        {step === 'values' ? (
+          <button type="button" onClick={() => setStep('columns')}>
+            ← Columns
+          </button>
+        ) : (
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+        {step === 'columns' && hasValues ? (
+          <button type="button" className="primary" disabled={!hasTitle || n === 0} onClick={() => setStep('values')}>
+            Next: values →
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="primary"
+            disabled={!hasTitle || n === 0}
+            onClick={() => onImport(draft, choices, quarters)}
+          >
+            Import {n} {n === 1 ? 'card' : 'cards'}
+          </button>
+        )}
       </div>
     </Dialog>
   );
@@ -206,4 +263,142 @@ function structure(groups: number, dependencies: number): string {
     dependencies > 0 && `${dependencies} ${dependencies === 1 ? 'dependency' : 'dependencies'} (kept, not drawn yet)`,
   ].filter(Boolean);
   return parts.length > 0 ? `, including ${parts.join(', and ')}` : '';
+}
+
+/**
+ * Where Jira's flat values go in the board's hierarchies (Q27): an area for
+ * each component, a quarter for each version, and a size for each story
+ * point value (Q28).
+ */
+function ValueTable({
+  draft,
+  choices,
+  quarters,
+  onChange,
+}: {
+  draft: Draft;
+  choices: ValueChoices;
+  quarters: string[];
+  onChange: (change: Partial<Overrides>) => void;
+}) {
+  const { components, versions, points } = draftValues(draft);
+  const count = (has: (item: Draft['items'][number]) => boolean) => draft.items.filter(has).length;
+  const areaNames = [...new Set(Object.values(choices.areas))];
+  const listId = 'import-area-names';
+  return (
+    <div className="value-table" data-testid="value-table">
+      <p className="dialog-lead">
+        Jira’s components, versions, and story points are flat lists. The board groups components into areas, releases
+        into quarters, and sizes cards XS–XL. Check where each one goes; you can change any of it on the board later.
+      </p>
+      {components.length > 0 && (
+        <section>
+          <h3>Components → areas</h3>
+          <datalist id={listId}>
+            {areaNames.map((a) => (
+              <option key={a} value={a} />
+            ))}
+          </datalist>
+          <table className="import-table" data-testid="component-areas">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Cards</th>
+                <th>Area (pick one, or type a new name)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {components.map((c) => (
+                <tr key={c}>
+                  <td>{c}</td>
+                  <td className="muted">{count((i) => i.components.includes(c))}</td>
+                  <td>
+                    <input
+                      className="area-input"
+                      list={listId}
+                      aria-label={`Area for ${c}`}
+                      value={choices.areas[c] ?? ''}
+                      onChange={(e) => onChange({ areas: { [c]: e.target.value } })}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+      {versions.length > 0 && (
+        <section>
+          <h3>Versions → quarters</h3>
+          <table className="import-table" data-testid="version-quarters">
+            <thead>
+              <tr>
+                <th>Version</th>
+                <th>Cards</th>
+                <th>Quarter</th>
+              </tr>
+            </thead>
+            <tbody>
+              {versions.map((v) => (
+                <tr key={v}>
+                  <td>{v}</td>
+                  <td className="muted">{count((i) => i.versions.includes(v))}</td>
+                  <td>
+                    <select
+                      aria-label={`Quarter for ${v}`}
+                      value={choices.quarters[v] ?? ''}
+                      onChange={(e) => onChange({ quarters: { [v]: e.target.value === '' ? null : e.target.value } })}
+                    >
+                      <option value="">Not dated</option>
+                      {quarters.map((q) => (
+                        <option key={q} value={q}>
+                          {q}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+      {points.length > 0 && (
+        <section>
+          <h3>Story points → sizes</h3>
+          <table className="import-table" data-testid="point-sizes">
+            <thead>
+              <tr>
+                <th>Points</th>
+                <th>Cards</th>
+                <th>Size</th>
+              </tr>
+            </thead>
+            <tbody>
+              {points.map((p) => (
+                <tr key={p}>
+                  <td>{p}</td>
+                  <td className="muted">{count((i) => i.points === p)}</td>
+                  <td>
+                    <select
+                      aria-label={`Size for ${p} points`}
+                      value={choices.sizes[p] ?? ''}
+                      onChange={(e) => onChange({ sizes: { [p]: e.target.value === '' ? null : (e.target.value as SizeId) } })}
+                    >
+                      <option value="">No size</option>
+                      {SIZES.map((size) => (
+                        <option key={size.id} value={size.id}>
+                          {size.label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+    </div>
+  );
 }

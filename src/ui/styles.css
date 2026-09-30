@@ -1327,3 +1327,46 @@ button.link:hover {
   padding-left: 20px;
   color: var(--muted);
 }
+
+.steps {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.steps [aria-current='step'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.value-table section {
+  margin-bottom: 12px;
+}
+
+.value-table .import-table {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.value-table .import-table td:first-child {
+  width: 40%;
+}
+
+.value-table .import-table td:nth-child(2) {
+  width: 60px;
+}
+
+.area-input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 6px;
+  width: 100%;
+  box-sizing: border-box;
+}

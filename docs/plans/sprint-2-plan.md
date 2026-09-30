@@ -1,6 +1,6 @@
 # Sprint 2 — engineering plan
 
-Status: **approved 2026-09-30.** Slices 1–3 merged (#15–#17). Slice 4 in review; it already imports with the default value choices, so slice 5 adds the value table on top. Adding values moved into slice 2, because a new property is no use as an axis until it has values. Scope is `docs/sprint-2.md`. This doc covers how engineering delivers that scope: order, slices, and what each depends on. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-09-30.** Slices 1–4 merged (#15–#18). Slice 4 already imported with the default value choices, groups, and dependencies, so slice 5 (in review) adds the value table on top. Adding values moved into slice 2, because a new property is no use as an axis until it has values. Scope is `docs/sprint-2.md`. This doc covers how engineering delivers that scope: order, slices, and what each depends on. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## What this sprint has to prove
 
