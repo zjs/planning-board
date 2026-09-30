@@ -64,7 +64,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **Items and groups**
 
-10. Users can create, edit, and delete items directly on the board. Deleting a group deletes everything inside it, and one undo restores all of it (Q17).
+10. Users can create, edit, and delete items directly on the board. Deleting a group deletes everything inside it, and one undo restores all of it (Q17). Items imported from Jira keep their Jira key (Q26).
 11. Users can group items into a parent item, recursively, and ungroup them.
 12. Users can zoom into a group to see only its children. The group's own values show in the zoom header (Q19).
 13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value. A collapsed group also shows as a faded "via children" copy in lanes that only its children touch; faded copies can't be dragged (Q16).
@@ -72,7 +72,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **Relationships and conflicts**
 
-15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14).
+15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14). A link is drawn by selecting the prerequisite, then the dependent, and pressing L (Q24).
 16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view.
 17. The tool highlights a component when more items touch it in one time bucket than its concurrency limit allows. No limit applies until a user sets one, per component or as a plan default.
 18. Conflicts inside a collapsed group are visible on the group card.
@@ -89,12 +89,12 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 **Properties**
 
 25. Built-in properties are present in every plan and carry the logic above.
-26. Users can add custom properties of type single-select or multi-select tag, with an optional hierarchy of any depth.
-27. Users can edit the allowed values of hierarchical and ordered properties, such as the system taxonomy's levels and names, its components, or releases.
+26. Users can add custom properties of type single-select or multi-select tag, with an optional hierarchy of any depth. They can be created by hand or from an imported column (Q25); sprint 2 builds flat ones first.
+27. Users can edit the allowed values of hierarchical and ordered properties, such as the system taxonomy's levels and names, its components, or releases. Deleting a value moves its cards to the parent value, or to the holding lane when there's no parent (Q4).
 
 **Import and export**
 
-28. Users can import items from CSV with a column-mapping step, using Jira's CSV export as the reference format, including its Components field.
+28. Users can import items from CSV with a column-mapping step, using Jira's CSV export as the reference format, including its Components field. An import replaces the board, undoably, and keeps each card's Jira key, so a later import can update the cards instead of duplicating them (Q26).
 29. Users can save a plan to a file and open it again, including all scenarios.
 
 **Sharing and collaboration**

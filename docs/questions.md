@@ -26,12 +26,6 @@ Entry format:
 - Recommendation: pairwise for M1.
 - Status: open
 
-### Q4: What happens to cards placed in a view when an axis value is deleted?
-- Context: Requirement 27 lets users edit property values, such as removing a release.
-- Options: the cards lose that value and move to the holding area; deletion is blocked while cards use the value; the cards move to the parent value in the hierarchy.
-- Recommendation: move to the parent value when there is one, otherwise to the holding area. It keeps information and never blocks the user.
-- Status: open
-
 ### Q12: Conflict rules: what counts, and at what time granularity?
 - Context: Requirements 13, 16, 17. Sprint 0's stretch goal built the conflict rules as tested functions with no UI yet (`src/domain/conflicts.ts`). Several choices aren't settled by the requirements, and sprint 1's conflicts panel will build on them.
 - Choices made, each reversible:
@@ -60,6 +54,24 @@ Entry format:
 - Recommendation: (a) for the sprint 1 session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds sprint 2's conflicts panel.
 - Status: open.
 
+### Q27: Where do flat Jira values go in our two-level hierarchies?
+- Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
+- Options: (a) a value table in the import dialog that asks for a parent for each value, with defaults; (b) import components as areas and versions as quarters, and let people restructure afterwards with value editing; (c) infer parents from names or release dates.
+- Recommendation: (a). Each component defaults to a new area named after its Jira project, and each version defaults to "not imported", so those cards get no time until you pick a quarter. Nothing is guessed silently, and value editing (slice 3) fixes anything chosen wrong. (c) could come later as a suggestion in the same table, using the versions' release dates.
+- Status: open. Building (a) in slice 5.
+
+### Q28: How do story points become sizes?
+- Context: Requirement 28 and the Size property (ordered XS–XL, no roll-up). Jira exports story points as numbers, and teams use different scales.
+- Options: (a) fixed buckets, editable in the import's value table; (b) buckets by quantile of the imported points; (c) don't import points.
+- Recommendation: (a), with defaults 1 → XS, 2–3 → S, 5 → M, 8 → L, 13 and up → XL. They follow the usual Fibonacci scale _(recalled)_ and are easy to read and change. (b) shifts every card's size whenever the export changes.
+- Status: open. Building (a) in slice 5.
+
+### Q29: What happens to Jira fields with no built-in home?
+- Context: Requirements 26 and 28. Status, Priority, Sprint and Assignee are in most exports. None of them match a built-in property, and several describe execution rather than planning.
+- Options: (a) off by default, and any of them can become a custom property in the mapping step; (b) import all of them as custom properties; (c) not importable.
+- Recommendation: (a). The board stays about the plan, and anyone who wants to pivot by Status can turn it on. Team and Labels are on by default, because they're the pivots the sprint tests.
+- Status: open. Building (a) in slice 4.
+
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -68,6 +80,11 @@ Entry format:
 - Recommendation: build the modifier drop in sprint 0 and watch whether testers find it in the user session.
 - Status: answered. Sufficiently discoverable, especially with the help menu that opens automatically and can be re-opened as needed.
 
+### Q4: What happens to cards placed in a view when an axis value is deleted?
+- Context: Requirement 27 lets users edit property values, such as removing a release.
+- Options: the cards lose that value and move to the holding area; deletion is blocked while cards use the value; the cards move to the parent value in the hierarchy.
+- Recommendation: move to the parent value when there is one, otherwise to the holding area. It keeps information and never blocks the user.
+- Status: answered 2026-09-30: move to the parent value, as recommended. Sprint 2, slice 3. A notice with Undo says how many cards moved.
 
 ### Q5: Where do builds go so the PM can click through them?
 - Context: The repo is private with no Pages site. The sprint doc asked for a static URL on every merge.
@@ -156,3 +173,21 @@ Entry format:
 - Options: (a) in slice 3, let any card be zoomed into, not just groups, and treat a card with no children as an empty group you can add child cards to (once it has one child, ⌘G can move more cards into it); (b) a second shortcut, such as ⌥⌘G, that puts the selection inside the card you clicked last; (c) a "Move into…" command that picks the target from a list.
 - Recommendation: (a). Decomposing usually means writing new child cards, which (a) covers directly, and it adds no new gesture. The cost is that moving existing cards into a plain card takes two steps: create one child first, then ⌘G.
 - Status: answered 2026-09-26: (a), as recommended. Built in slice 3: select any card and press ⌘↓ (or Zoom in); an empty card shows "Nothing inside yet", and its first child makes it a group.
+
+### Q24: How are dependency links drawn?
+- Context: Requirements 15 and 16, and Q14 (how they're displayed). Sprint 2 planning, for building in sprint 3.
+- Options: (a) select the prerequisite, then the dependent, and press L; (b) drag from a handle on the card to another card; (c) both.
+- Recommendation: (a). It reuses the selection from sprint 1, and it adds no drag gesture to compete with moving cards.
+- Status: answered 2026-09-30: (a). Sprint 3.
+
+### Q25: Are custom properties in scope for sprint 2, and where do they come from?
+- Context: Requirements 26 and 28. An import is only recognizable if people can pivot by their own fields, such as Team.
+- Options: (a) created from imported columns and by hand, flat for now; (b) by hand only; (c) wait for sprint 3.
+- Recommendation: (a). Hierarchical custom properties wait until someone needs one.
+- Status: answered 2026-09-30: (a). Sprint 2, slices 2 and 5.
+
+### Q26: What does an import do to the current board?
+- Context: Requirement 28. The board may already hold a plan when someone imports.
+- Options: (a) replace the board, undoably, and keep each card's Jira key; (b) add the imported cards to the board; (c) merge by Jira key.
+- Recommendation: (a). It's simple to reason about and one undo reverses it. Keeping the key leaves room for (c) later, as "update from a fresh export".
+- Status: answered 2026-09-30: (a). The build targets Jira's CSV format, tested with a synthetic export in the repo. The PM checks their own export locally.
