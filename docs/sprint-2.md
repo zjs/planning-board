@@ -12,10 +12,10 @@ Scope: single user, browser only, no server.
 
 ### 1. Plan files (requirement 29, one scenario)
 
-- [ ] **Save plan** downloads the plan as a `.json` file in the ADR 0005 format.
-- [ ] **Open plan** replaces the board with a file's plan. It's undoable, and a bad file's problems are listed in plain words.
-- [ ] Cards can carry an optional Jira key, which is saved and opened with the plan.
-- [ ] Saving and then opening gives back the identical plan.
+- [x] **File › Save plan to file** downloads the plan as a `.json` file in the ADR 0005 format.
+- [x] **File › Open plan file…** replaces the board with a file's plan. It's undoable, and a bad file's problems are listed in plain words.
+- [x] Cards can carry an optional Jira key, which is saved and opened with the plan.
+- [x] Saving and then opening gives back the identical plan.
 
 ### 2. Custom properties (requirements 1, 26)
 

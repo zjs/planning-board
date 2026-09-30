@@ -89,8 +89,13 @@ export function Card({
           </span>
         )}
       </div>
-      {!compact && attributes.length > 0 && (
+      {!compact && (attributes.length > 0 || item.externalKey) && (
         <div className="card-attrs">
+          {item.externalKey && (
+            <span className="attr key" title={`Key in the imported tool: ${item.externalKey}`}>
+              {item.externalKey}
+            </span>
+          )}
           {attributes.map((a) => (
             <span key={a.property} className="attr" data-property={a.property} title={a.title}>
               {a.text}

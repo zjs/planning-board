@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { SEQUENCE, SYSTEM } from './model.ts';
-import { parsePlanJson, type PlanJson } from './planJson.ts';
+import samplePlan from '../seed/sample-plan.json';
+import { item, plan } from './__fixtures__/tiny-plan.ts';
+import { SEQUENCE, SYSTEM, type Plan } from './model.ts';
+import { parsePlanJson, planFileText, planToJson, readPlanFile, type PlanJson } from './planJson.ts';
 
 function base(patch: Partial<PlanJson> = {}): PlanJson {
   return {
@@ -163,5 +165,96 @@ describe('parsePlanJson', () => {
       'properties[0].values[0].children[0]: deeper than the 1 declared levels',
       'properties[1]: "sequence" is built in and can\'t be redefined',
     ]);
+  });
+});
+
+describe('planToJson', () => {
+  const sample = () => {
+    const result = parsePlanJson(samplePlan);
+    if (!result.ok) throw new Error(result.errors.join('\n'));
+    return result.plan;
+  };
+
+  it('is the exact inverse of parsePlanJson on the sample plan', () => {
+    const plan = sample();
+    const again = parsePlanJson(JSON.parse(planFileText(plan)));
+    if (!again.ok) throw new Error(again.errors.join('\n'));
+    // Dependencies are a set; the file lists them sorted.
+    const sorted = (deps: Plan['dependencies']) => [...deps].sort((a, b) => (a.from + a.to < b.from + b.to ? -1 : 1));
+    expect({ ...again.plan, dependencies: sorted(again.plan.dependencies) }).toEqual({
+      ...plan,
+      dependencies: sorted(plan.dependencies),
+    });
+    expect(planFileText(again.plan)).toBe(planFileText(plan));
+  });
+
+  it('keeps descriptions, Jira keys, parents, sequence keys and dependencies', () => {
+    const p = plan(
+      item('epic', { title: 'Epic', description: 'Why', externalKey: 'PAY-1', sequence: 'a0', values: { system: ['id', 'pay'] } }),
+      item('story', { parent: 'epic', externalKey: 'PAY-2', values: { size: ['m'], time: ['q1/r1'] } }),
+    );
+    p.dependencies = [{ from: 'story', to: 'epic' }];
+    const json = planToJson(p);
+    expect(json.items).toEqual([
+      { id: 'epic', title: 'Epic', description: 'Why', externalKey: 'PAY-1', sequence: 'a0', values: { system: ['id', 'pay'] } },
+      { id: 'story', title: 'story', externalKey: 'PAY-2', parent: 'epic', values: { size: 'm', time: 'q1/r1' } },
+    ]);
+    expect(json.dependencies).toEqual([['story', 'epic']]);
+    const back = parsePlanJson(json);
+    if (!back.ok) throw new Error(back.errors.join('\n'));
+    expect(back.plan.items).toEqual(p.items);
+    expect(back.plan.dependencies).toEqual(p.dependencies);
+  });
+
+  it('writes values in display order, whatever order they were stored in', () => {
+    const system = planToJson(plan()).properties.find((x) => x.id === SYSTEM)!;
+    expect(system.values).toEqual([
+      { id: 'id', label: 'ID', children: [{ id: 'id/mfa', label: 'ID/MFA' }, { id: 'id/sso', label: 'ID/SSO' }] },
+      { id: 'pay', label: 'PAY', children: [{ id: 'pay/ledger', label: 'PAY/LEDGER' }] },
+    ]);
+    expect(system.multi).toBe(true);
+  });
+
+  it('leaves out what a file could not hold, instead of writing an invalid file', () => {
+    const p = plan(
+      item('a', { parent: 'gone', values: { system: ['id', 'deleted'], size: [], nope: ['x'] } }),
+      item('b', { parent: 'a' }),
+    );
+    const json = planToJson(p);
+    expect(json.items).toEqual([
+      { id: 'a', title: 'a', values: { system: ['id'] } },
+      { id: 'b', title: 'b', parent: 'a' },
+    ]);
+    expect(parsePlanJson(json).ok).toBe(true);
+  });
+
+  it('lists children right after their group', () => {
+    const p = plan(item('z-top'), item('child', { parent: 'a-group' }), item('a-group'));
+    expect(planToJson(p).items.map((i) => i.id)).toEqual(['a-group', 'child', 'z-top']);
+  });
+});
+
+describe('readPlanFile', () => {
+  it('opens a valid file', () => {
+    expect(readPlanFile(JSON.stringify(base())).ok).toBe(true);
+  });
+
+  it('explains text that is not JSON, or not a plan', () => {
+    const notJson = readPlanFile('{ nope');
+    expect(!notJson.ok && notJson.summary).toBe("This isn't a plan file: its text isn't valid JSON.");
+    const other = readPlanFile('{"name": "package"}');
+    expect(!other.ok && other.summary).toBe("This isn't a Planning Board plan file.");
+    expect(!other.ok && other.details).toEqual([]);
+  });
+
+  it('says when a file is from a newer version', () => {
+    const newer = readPlanFile(JSON.stringify({ ...base(), version: 2 }));
+    expect(!newer.ok && newer.summary).toMatch(/newer version of Planning Board \(file version 2\)/);
+  });
+
+  it('counts the problems in a broken plan and lists every one', () => {
+    const broken = readPlanFile(JSON.stringify(base({ items: [{ id: 'a', title: 'A', parent: 'ghost', externalKey: 7 } as never] })));
+    expect(!broken.ok && broken.summary).toBe('This plan file has 2 problems, so it wasn\'t opened. The board is unchanged.');
+    expect(!broken.ok && broken.details).toEqual(['items[0].externalKey: must be a string', 'item "a": unknown parent "ghost"']);
   });
 });

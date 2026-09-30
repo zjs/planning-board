@@ -133,7 +133,8 @@ test('holding a dragged card near the board edge scrolls the board', async ({ pa
 test('Reset clears the board and can be undone', async ({ page }) => {
   await openApp(page);
   page.once('dialog', (d) => void d.accept());
-  await page.getByRole('button', { name: 'Reset' }).click();
+  await page.getByTestId('file-menu').click();
+  await page.getByRole('menuitem', { name: 'Reset board' }).click();
   await expect(page.locator('.empty-state')).toBeVisible();
   await page.getByRole('button', { name: /Undo/ }).click();
   await expect(page.getByTestId('board')).toBeVisible();

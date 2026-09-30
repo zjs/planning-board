@@ -19,7 +19,7 @@ import {
 import type { ItemId, Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
-import { parsePlanJson } from '../domain/planJson.ts';
+import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import { ancestry, childCounts, childrenOf } from '../domain/tree.ts';
 import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
@@ -38,8 +38,11 @@ import {
   toViewSpec,
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
+import { Dialog } from './Dialog.tsx';
 import { DragGhost } from './DragGhost.tsx';
+import { datedFileName, downloadText } from './files.ts';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
+import { Menu } from './Menu.tsx';
 import { keyNames } from './platform.ts';
 import { isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
 import { ZoomBar } from './ZoomBar.tsx';
@@ -76,6 +79,13 @@ const NOTICE_MS = 8000;
 interface Notice {
   text: string;
   step: unknown;
+}
+
+/** Why a file couldn't be opened. */
+interface FileProblem {
+  name: string;
+  summary: string;
+  details: string[];
 }
 
 function Workspace({ store, persistence }: { store: PlanStore; persistence: PersistenceStatus }) {
@@ -295,9 +305,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Typing in a field (a title, the axis picker) never triggers board shortcuts.
+      // Typing in a field (a title, the axis picker), a menu, or a dialog never triggers board shortcuts.
       const focus = e.target instanceof Element ? e.target : null;
-      if (focus?.closest('input, textarea, select')) return;
+      if (focus?.closest('input, textarea, select, [role="menu"], [role="dialog"]')) return;
       if (dragging || editing) return;
       if (e.metaKey || e.ctrlKey) {
         if (e.altKey) return;
@@ -363,6 +373,41 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     if (window.confirm('Clear the whole board? You can undo this.')) resetPlan(store);
   };
 
+  // Plan files (requirement 29, ADR 0005).
+  const [fileProblem, setFileProblem] = useState<FileProblem | null>(null);
+  const openInput = useRef<HTMLInputElement>(null);
+  const savePlanFile = () => downloadText(datedFileName('planning-board', 'json'), planFileText(plan));
+  const openPlanFile = async (file: File) => {
+    const opened = readPlanFile(await file.text());
+    if (!opened.ok) {
+      setFileProblem({ name: file.name, summary: opened.summary, details: opened.details });
+      return;
+    }
+    if (!empty && !window.confirm(`Replace the board with “${file.name}”? You can undo this.`)) return;
+    loadPlan(store, opened.plan);
+    setSelection(new Set());
+    setEditing(null);
+    setNotice({ text: `Opened “${file.name}”`, step: store.undoManager.undoStack.at(-1) });
+  };
+  const fileMenu = (
+    <Menu
+      label="File"
+      testId="file-menu"
+      entries={[
+        { label: 'Open plan file…', onSelect: () => openInput.current?.click() },
+        {
+          label: 'Save plan to file',
+          onSelect: savePlanFile,
+          disabled: empty,
+          title: 'Download the plan as a file you can open again, here or in another browser',
+        },
+        'divider',
+        { label: 'Load sample plan', onSelect: loadSample },
+        { label: 'Reset board', onSelect: reset, disabled: empty },
+      ]}
+    />
+  );
+
   return (
     <div className="app">
       <header className="toolbar">
@@ -401,12 +446,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             Zoom in
           </button>
           <span className="divider" />
-          <button type="button" onClick={loadSample}>
-            Load sample plan
-          </button>
-          <button type="button" onClick={reset} disabled={empty}>
-            Reset
-          </button>
+          {fileMenu}
           <span className="divider" />
           <button
             type="button"
@@ -439,10 +479,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       {empty ? (
         <div className="empty-state">
           <h2>No plan yet</h2>
-          <p>Load the sample plan: about 150 roadmap items for a fictional product line.</p>
-          <button type="button" className="primary" onClick={loadSample}>
-            Load sample plan
-          </button>
+          <p>Load the sample plan: about 150 roadmap items for a fictional product line. Or open a plan file you saved earlier.</p>
+          <div className="empty-actions">
+            <button type="button" className="primary" onClick={loadSample}>
+              Load sample plan
+            </button>
+            <button type="button" onClick={() => openInput.current?.click()}>
+              Open plan file…
+            </button>
+          </div>
         </div>
       ) : (
         <Board
@@ -487,6 +532,39 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         </div>
       )}
       {legendOpen && <Legend onClose={closeLegend} />}
+      <input
+        ref={openInput}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        data-testid="open-plan-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          // Cleared, so choosing the same file again still counts as a change.
+          e.target.value = '';
+          if (file) void openPlanFile(file);
+        }}
+      />
+      {fileProblem && (
+        <Dialog title={`Couldn't open “${fileProblem.name}”`} onClose={() => setFileProblem(null)} testId="file-problem">
+          <p>{fileProblem.summary}</p>
+          {fileProblem.details.length > 0 && (
+            <details>
+              <summary>Details, for fixing the file by hand</summary>
+              <ul className="problem-list">
+                {fileProblem.details.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+          <div className="dialog-actions">
+            <button type="button" className="primary" onClick={() => setFileProblem(null)}>
+              OK
+            </button>
+          </div>
+        </Dialog>
+      )}
       {drag && <DragGhost drag={drag} addAxes={addAxes} />}
     </div>
   );
