@@ -71,6 +71,13 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dd>
           Into a new card you name, or into the one group already selected. <kbd>{keys.ungroup}</kbd> ungroups.
         </dd>
+        <dt>
+          Select groups, press <kbd>{keys.expand}</kbd>
+        </dt>
+        <dd>
+          What's inside shows right here, each card marked with its group. <kbd>{keys.expand}</kbd> on one of them folds
+          the group back.
+        </dd>
       </dl>
       </section>
       <section>
@@ -81,14 +88,16 @@ export function Legend({ onClose }: { onClose: () => void }) {
           <kbd>{keys.zoomIn}</kbd>
         </dt>
         <dd>
-          Shows only what's inside; new cards go inside. Drag a card onto the breadcrumb to move it out.{' '}
-          <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
+          Shows only what's inside; new cards go inside. Select several groups to see all of them. Drag a card onto
+          the breadcrumb to move it out. <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
+        </dd>
+        <dt>Components or releases as an axis</dt>
+        <dd>
+          Their areas or quarters show as bands, each with a "No component" lane for cards with just the area. ▾ folds
+          a band into one lane; its name zooms in.
         </dd>
         <dt>Click a row or column header</dt>
-        <dd>
-          Identity shows its components, Q2 its releases. Cards tagged only Identity wait in "No component" until you
-          drop them on one.
-        </dd>
+        <dd>Identity shows its components, Q2 its releases.</dd>
       </dl>
       </section>
       <section>
@@ -138,8 +147,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Heavier borders</dt>
         <dd>Initiatives and epics, from the Level property. A card with no level hasn't been decided yet.</dd>
-        <dt>Faded cards</dt>
-        <dd>A group, shown wherever the cards inside it are. Double-click to zoom in; it can't be dragged.</dd>
+        <dt>Dashed frames</dt>
+        <dd>
+          A group, shown wherever the cards inside it are, around those cards. Drag them as usual; double-click the
+          group to zoom in.
+        </dd>
         <dt>
           <span className="mismatch">⚠</span> markers
         </dt>

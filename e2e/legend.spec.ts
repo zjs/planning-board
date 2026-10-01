@@ -9,6 +9,8 @@ test('help opens on first visit, stays closed once dismissed, and reopens from t
   await expect(legend).toContainText('File › Import CSV');
   await expect(legend).toContainText('Properties');
   await expect(legend).toContainText('Dependencies');
+  await expect(legend).toContainText('Dashed frames');
+  await expect(legend).toContainText(/Inspect, I/);
   await expect(legend.getByRole('link', { name: 'Feedback and bug reports' })).toHaveAttribute(
     'href',
     'https://github.com/zjs/planning-board/issues/new/choose',

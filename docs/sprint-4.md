@@ -60,8 +60,8 @@ Scope: single user, browser only, no server.
 
 ### 5. Tester-ready
 
-- [ ] The legend covers the inspector, levels, bands, and expanding groups.
-- [ ] A demo note (`docs/demos/sprint-4.md`) and a session script about structuring a plan.
+- [x] The legend covers the inspector, levels, bands, and expanding groups.
+- [x] A demo note (`docs/demos/sprint-4.md`) and a session script about structuring a plan.
 
 ## Deferred (don't build)
 

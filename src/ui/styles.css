@@ -892,7 +892,7 @@ body.dragging * {
   left: 16px;
   bottom: 16px;
   z-index: 50;
-  width: min(920px, calc(100vw - 32px));
+  width: min(1180px, calc(100vw - 32px));
   max-height: calc(100vh - 120px);
   overflow: auto;
   padding: 12px 14px;
@@ -922,7 +922,7 @@ body.dragging * {
 }
 
 .legend-body {
-  columns: 3 250px;
+  columns: 4 230px;
   column-gap: 24px;
 }
 
