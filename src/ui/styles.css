@@ -1458,6 +1458,19 @@ button.link:hover {
   stroke-linecap: round;
 }
 
+.dep-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.dep-line.selected {
+  stroke-width: 4;
+  opacity: 1;
+}
+
 .dep-line.focus {
   stroke: var(--accent);
   opacity: 0.85;

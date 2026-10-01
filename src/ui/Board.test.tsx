@@ -29,6 +29,7 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       onCardZoom={() => undefined}
       lines={[]}
       onHover={() => undefined}
+      onLineClick={() => undefined}
       onSpotDoubleClick={() => undefined}
       onCommitEdit={() => undefined}
       onCancelEdit={() => undefined}

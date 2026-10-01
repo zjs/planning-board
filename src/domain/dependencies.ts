@@ -2,8 +2,11 @@
 // which links can be made, which a card's focus shows, and where a link is
 // drawn when one of its cards is hidden inside a collapsed group.
 
+import { timeSpans } from './conflicts.ts';
 import type { Dependency, ItemId, Plan } from './model.ts';
+import { compareOrderKeys, SEQUENCE, TIME } from './model.ts';
 import { ancestry } from './tree.ts';
+import type { ViewSpec } from './view.ts';
 
 export const linkKey = (d: Dependency) => `${d.from}->${d.to}`;
 
@@ -118,4 +121,138 @@ export function visibleLinks(plan: Plan, links: readonly Dependency[], onScreen:
     else lines.set(key, { from, to, links: [d] });
   }
   return [...lines.values()];
+}
+
+/** Why a link is flagged (requirements 16 and 18, Q37). */
+export type LinkFlag =
+  | { kind: 'order'; axis: 'sequence' | 'time' }
+  | { kind: 'loop' };
+
+/**
+ * Links on a loop: A before B before … before A, which can never all be
+ * met. Found as strongly connected components (Tarjan's algorithm), so a
+ * link is on a loop exactly when its two cards are in the same component.
+ */
+export function dependencyLoops(plan: Plan): Dependency[] {
+  const next = new Map<ItemId, ItemId[]>();
+  for (const d of plan.dependencies) {
+    if (d.from === d.to || !plan.items[d.from] || !plan.items[d.to]) continue;
+    next.set(d.from, [...(next.get(d.from) ?? []), d.to]);
+  }
+  const index = new Map<ItemId, number>();
+  const low = new Map<ItemId, number>();
+  const component = new Map<ItemId, number>();
+  const stack: ItemId[] = [];
+  const onStack = new Set<ItemId>();
+  let counter = 0;
+  let components = 0;
+  // Iterative, so a long chain can't overflow the call stack.
+  for (const start of next.keys()) {
+    if (index.has(start)) continue;
+    const work: { id: ItemId; i: number }[] = [{ id: start, i: 0 }];
+    index.set(start, counter);
+    low.set(start, counter++);
+    stack.push(start);
+    onStack.add(start);
+    while (work.length > 0) {
+      const frame = work[work.length - 1]!;
+      const targets = next.get(frame.id) ?? [];
+      if (frame.i < targets.length) {
+        const to = targets[frame.i++]!;
+        if (!index.has(to)) {
+          index.set(to, counter);
+          low.set(to, counter++);
+          stack.push(to);
+          onStack.add(to);
+          work.push({ id: to, i: 0 });
+        } else if (onStack.has(to)) {
+          low.set(frame.id, Math.min(low.get(frame.id)!, index.get(to)!));
+        }
+        continue;
+      }
+      work.pop();
+      const parent = work[work.length - 1];
+      if (parent) low.set(parent.id, Math.min(low.get(parent.id)!, low.get(frame.id)!));
+      if (low.get(frame.id) === index.get(frame.id)) {
+        let member: ItemId;
+        do {
+          member = stack.pop()!;
+          onStack.delete(member);
+          component.set(member, components);
+        } while (member !== frame.id);
+        components++;
+      }
+    }
+  }
+  return plan.dependencies.filter(
+    (d) => d.from !== d.to && component.has(d.from) && component.get(d.from) === component.get(d.to),
+  );
+}
+
+/**
+ * Links whose prerequisite comes after its dependent on an axis the view
+ * orders by (requirement 16): to its right (or below) on a sequence axis,
+ * or in a later bucket on a time axis, judged at the level the axis shows
+ * (Q12). A time order counts only when it's certain, so a quarter-only
+ * card isn't flagged against a release inside that quarter. Each card's
+ * own values are judged, even when its line is drawn to a group (Q38).
+ */
+export function outOfOrder(plan: Plan, view: ViewSpec): Map<string, LinkFlag> {
+  const out = new Map<string, LinkFlag>();
+  const axes = [view.x, view.y];
+  const sequence = axes.some((a) => a.property === SEQUENCE);
+  const timeLevels = axes.filter((a) => a.property === TIME).map((a) => a.level);
+  const spans = timeLevels.map((level) => timeSpans(plan, level));
+  for (const d of plan.dependencies) {
+    const a = plan.items[d.from];
+    const b = plan.items[d.to];
+    if (!a || !b || d.from === d.to) continue;
+    if (sequence && a.sequence !== null && b.sequence !== null && compareOrderKeys(a.sequence, b.sequence) > 0) {
+      out.set(linkKey(d), { kind: 'order', axis: 'sequence' });
+      continue;
+    }
+    for (const span of spans) {
+      const ta = span(a);
+      const tb = span(b);
+      if (ta && tb && ta.first > tb.last) {
+        out.set(linkKey(d), { kind: 'order', axis: 'time' });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+/** Every flagged link in this view: out of order here, or on a loop anywhere (Q37). */
+export function linkProblems(plan: Plan, view: ViewSpec): Map<string, LinkFlag> {
+  const problems = outOfOrder(plan, view);
+  for (const d of dependencyLoops(plan)) problems.set(linkKey(d), { kind: 'loop' });
+  return problems;
+}
+
+/** A flagged link in plain words: "“A” comes after “B” in the sequence, but must come before it." */
+export function describeLinkProblem(plan: Plan, d: Dependency, problem: LinkFlag): string {
+  const a = `“${plan.items[d.from]?.title ?? ''}”`;
+  const b = `“${plan.items[d.to]?.title ?? ''}”`;
+  if (problem.kind === 'loop') return `${a} → ${b} is part of a loop: each card waits on another in a circle.`;
+  return problem.axis === 'sequence'
+    ? `${a} must come before ${b}, but it's to its right in the sequence.`
+    : `${a} must come before ${b}, but it's dated later.`;
+}
+
+/**
+ * Flagged links inside each group, for its ⚠ count (requirement 18): every
+ * group around either card counts the link, so a collapsed group shows the
+ * problems it hides.
+ */
+export function linkProblemsInside(plan: Plan, problems: ReadonlyMap<string, LinkFlag>): Map<ItemId, string[]> {
+  const inside = new Map<ItemId, string[]>();
+  for (const d of plan.dependencies) {
+    const problem = problems.get(linkKey(d));
+    if (!problem) continue;
+    const line = describeLinkProblem(plan, d, problem);
+    const groups = new Set([...ancestry(plan, d.from).slice(0, -1), ...ancestry(plan, d.to).slice(0, -1)]);
+    for (const g of groups) inside.set(g, [...(inside.get(g) ?? []), line]);
+  }
+  return inside;
 }
