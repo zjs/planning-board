@@ -136,14 +136,16 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <section>
         <h3>What the board tells you</h3>
       <dl>
+        <dt>Heavier borders</dt>
+        <dd>Initiatives and epics, from the Level property. A card with no level hasn't been decided yet.</dd>
         <dt>Faded cards</dt>
         <dd>A group, shown wherever the cards inside it are. Double-click to zoom in; it can't be dragged.</dd>
         <dt>
           <span className="mismatch">⚠</span> markers
         </dt>
         <dd>
-          A card dated outside its group, larger than it, or in another area. On a group, the count covers everything
-          inside. Hover for why; nothing is changed for you.
+          A card dated outside its group, larger than it, in another area, or at or above its level. On a group, the
+          count covers everything inside. Hover for why; nothing is changed for you.
         </dd>
         <dt>Undo, redo, cancel</dt>
         <dd>

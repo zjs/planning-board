@@ -1,6 +1,6 @@
 # 0005: Plan file format
 
-Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now. Amended in sprint 2, slice 1: the writer, `externalKey`, and when a version bump is needed.
+Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now. Amended in sprint 2, slice 1: the writer, `externalKey`, and when a version bump is needed. Amended in sprint 4, slice 2: built-in properties added later.
 
 ## Context
 
@@ -60,3 +60,4 @@ Opening a file goes through `readPlanFile`, which explains a rejected file in on
 - Opening a file replaces the board's content in one Yjs transaction, so one undo brings the previous board back. The file is for exchange and backup, not sync; M2's relay syncs Yjs updates.
 - Item IDs round-trip, so a file saved from one scenario and reopened still compares against its siblings.
 - A new field that older readers can safely ignore, like `externalKey`, doesn't need a version bump: the reader already ignores fields it doesn't know. A change older readers would misread, such as a new value shape or wrapping the plan in scenarios, means a version bump plus an upgrade step in the reader, with a test.
+- A built-in property added after a file was saved, such as Level (Q32), is filled in when the file is opened (`withBuiltIns` in `src/domain/builtins.ts`), with no values on any card. That needs no version bump either: the file is still read exactly as it was written. Boards saved in the browser get the same treatment when they're opened (`ensureBuiltIns`), outside the undo history.

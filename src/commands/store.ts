@@ -2,6 +2,7 @@
 // never touches Yjs itself (CLAUDE.md, storage rule).
 
 import * as Y from 'yjs';
+import { withBuiltIns } from '../domain/builtins.ts';
 import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from '../domain/csvImport.ts';
 import { hasLink, linkProblem } from '../domain/dependencies.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
@@ -50,7 +51,26 @@ export function createPlanStore(doc: Y.Doc = new Y.Doc()): PlanStore {
 export async function openPlanStore(): Promise<{ store: PlanStore; persistence: PersistenceStatus }> {
   const store = createPlanStore();
   const persistence = await persist(store.doc);
+  ensureBuiltIns(store);
   return { store, persistence };
+}
+
+/**
+ * Add any built-in property a board saved before it existed is missing,
+ * such as Level (Q32), with no values on any card. It's part of opening
+ * the board, not an edit, so it isn't an undo step. An empty board stays
+ * empty. Returns whether anything was added.
+ */
+export function ensureBuiltIns(store: PlanStore): boolean {
+  if (isEmpty(store.doc)) return false;
+  const plan = readPlan(store.doc);
+  const missing = Object.values(withBuiltIns(plan).properties).filter((p) => !plan.properties[p.id]);
+  if (missing.length === 0) return false;
+  const properties = root(store.doc).properties;
+  store.doc.transact(() => {
+    for (const property of missing) properties.set(property.id, propertyToY(property));
+  });
+  return true;
 }
 
 function edit(store: PlanStore, change: () => void): void {

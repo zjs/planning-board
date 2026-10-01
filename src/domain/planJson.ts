@@ -2,6 +2,7 @@
 // format is described in docs/decisions/0005-plan-file-format.md.
 
 import { generateNKeysBetween } from 'fractional-indexing';
+import { withBuiltIns } from './builtins.ts';
 import type { Dependency, Item, ItemId, OrderKey, Plan, Property, SelectProperty, ValueNode } from './model.ts';
 import { compareOrderKeys, SEQUENCE } from './model.ts';
 import { isOrderKey } from './sequence.ts';
@@ -350,7 +351,8 @@ export function readPlanFile(text: string): PlanFileResult {
     };
   }
   const result = parsePlanJson(json);
-  if (result.ok) return result;
+  // A file saved before a built-in property existed gets it, with no values (ADR 0005).
+  if (result.ok) return { ok: true, plan: withBuiltIns(result.plan) };
   const n = result.errors.length;
   return {
     ok: false,

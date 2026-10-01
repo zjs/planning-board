@@ -85,8 +85,14 @@ export async function dragTo(page: Page, from: Locator, to: Locator, opts: { alt
   // Mid-drag, bring the target on screen (a person would use edge auto-scroll; tested separately).
   await reveal(to);
   const b = (await to.boundingBox())!;
+  // A cell taller than the board is centered with its top under the pinned headers: aim below them.
+  const headers = await page.evaluate(() => {
+    const bottom = (sel: string) => document.querySelector(sel)?.getBoundingClientRect().bottom ?? 0;
+    return Math.max(bottom('.column-header'), bottom('.corner'));
+  });
+  const y = Math.min(b.y + b.height - 4, Math.max(b.y + Math.min(b.height / 2, 30), headers + 12));
   if (opts.alt) await page.keyboard.down('Alt');
-  await page.mouse.move(b.x + b.width / 2, b.y + Math.min(b.height / 2, 30), { steps: 8 });
+  await page.mouse.move(b.x + b.width / 2, y, { steps: 8 });
   await page.mouse.up();
   if (opts.alt) await page.keyboard.up('Alt');
 }

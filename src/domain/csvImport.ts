@@ -12,9 +12,10 @@
 // before anything touches the board.
 
 import { generateNKeysBetween } from 'fractional-indexing';
+import { LEVELS, levelForIssueType, type LevelId } from './builtins.ts';
 import type { CsvTable } from './csv.ts';
 import type { Dependency, Item, Plan, Property, SelectProperty, ValueNode } from './model.ts';
-import { SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
+import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
 import { wouldCreateCycle } from './tree.ts';
 
 // ---------------------------------------------------------------------------
@@ -28,6 +29,7 @@ export type FieldKind =
   | 'id'
   | 'description'
   | 'project'
+  | 'issueType'
   | 'components'
   | 'versions'
   | 'points'
@@ -42,8 +44,9 @@ export const FIELDS: { kind: FieldKind; label: string; hint: string }[] = [
   { kind: 'title', label: 'Card title', hint: 'Jira: Summary' },
   { kind: 'key', label: 'Jira key', hint: 'Kept on the card, e.g. PAY-123' },
   { kind: 'id', label: 'Issue ID', hint: 'Only used to find parents' },
-  { kind: 'description', label: 'Description', hint: 'Saved, not shown yet' },
+  { kind: 'description', label: 'Description', hint: 'Shown in the inspector' },
   { kind: 'project', label: 'Project', hint: 'Names the default area for its components' },
+  { kind: 'issueType', label: 'Level (from issue type)', hint: 'Epic → Epic; Story, Task, Bug → Story' },
   { kind: 'components', label: 'Components', hint: 'System, at the component level' },
   { kind: 'versions', label: 'Release', hint: 'Time, at the release level' },
   { kind: 'points', label: 'Size (from story points)', hint: 'Bucketed into XS–XL' },
@@ -93,6 +96,7 @@ const DETECT: [RegExp, ColumnMapping][] = [
   [/^issue id$/i, { kind: 'id' }],
   [/^description$/i, { kind: 'description' }],
   [/^project name$/i, { kind: 'project' }],
+  [/^issue ?type$/i, { kind: 'issueType' }],
   [/^components?(\/s)?$/i, { kind: 'components' }],
   [/^fix ?versions?(\/s)?$/i, { kind: 'versions' }],
   [/^story ?points?( estimate)?$/i, { kind: 'points' }],
@@ -132,6 +136,7 @@ export interface DraftItem {
   id: string;
   description: string;
   project: string;
+  issueType: string;
   components: string[];
   versions: string[];
   points: string;
@@ -181,6 +186,7 @@ export function draftFromCsv(table: CsvTable, mapping: Mapping): Draft {
       id: first(row, 'id'),
       description: cells(row, byKind('description')).join('\n\n'),
       project: first(row, 'project'),
+      issueType: first(row, 'issueType'),
       components: cells(row, byKind('components')),
       versions: cells(row, byKind('versions')),
       points: first(row, 'points'),
@@ -193,7 +199,7 @@ export function draftFromCsv(table: CsvTable, mapping: Mapping): Draft {
   return { items, skipped, properties };
 }
 
-const BUILT_IN_NAMES = ['sequence', 'system', 'size', 'time'];
+const BUILT_IN_NAMES = ['sequence', 'system', 'level', 'size', 'time'];
 
 /** Property names from column headers: cleaned, and never clashing with a built-in or each other. */
 function propertyNames(columns: readonly string[]): string[] {
@@ -244,6 +250,8 @@ export interface ValueChoices {
   quarters: Record<string, string | null>;
   /** Story point value, as written → size, or null for none. */
   sizes: Record<string, SizeId | null>;
+  /** Issue type, as written → level, or null for "not decided" (Q32). */
+  levels: Record<string, LevelId | null>;
 }
 
 /** Everything the value table lists, in the order it first appears in the file. */
@@ -254,6 +262,7 @@ export function draftValues(draft: Draft) {
     points: distinct(draft.items.map((i) => i.points).filter((p) => p !== '')).sort(
       (a, b) => Number(a) - Number(b) || a.localeCompare(b),
     ),
+    issueTypes: distinct(draft.items.map((i) => i.issueType).filter((t) => t !== '')),
   };
 }
 
@@ -272,11 +281,12 @@ export function defaultChoices(draft: Draft): ValueChoices {
     const project = item.project || projectOfKey(item.key) || 'Imported';
     for (const component of item.components) areas[component] ??= project;
   }
-  const { versions, points } = draftValues(draft);
+  const { versions, points, issueTypes } = draftValues(draft);
   return {
     areas,
     quarters: Object.fromEntries(versions.map((v) => [v, null])),
     sizes: Object.fromEntries(points.map((p) => [p, sizeForPoints(p)])),
+    levels: Object.fromEntries(issueTypes.map((t) => [t, levelForIssueType(t)])),
   };
 }
 
@@ -359,6 +369,7 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
   }
 
   const size = buildProperty(SIZE, 'Size', ['Size'], false, SIZES.map((s) => ({ id: s.id, label: s.label })), newId);
+  const level = buildProperty(LEVEL, 'Level', ['Level'], false, LEVELS.map((l) => ({ id: l.id, label: l.label })), newId);
 
   const custom = draft.properties.map((p) => {
     const labels = distinct(draft.items.flatMap((i) => i.properties[p.column] ?? []));
@@ -368,6 +379,7 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
   const properties: Record<string, Property> = {
     [SEQUENCE]: { kind: 'sequence', id: SEQUENCE, name: 'Sequence' },
     [SYSTEM]: system.property,
+    [LEVEL]: level.property,
     [SIZE]: size.property,
     [TIME]: time.property,
     ...Object.fromEntries(custom.map((c) => [c.property.id, c.property])),
@@ -395,6 +407,8 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
     if (release !== undefined) values[TIME] = [time.ids.get(`${quarterOf(release)}\u0000${release}`)!];
     const sizeId = choices.sizes[draftItem.points] ?? null;
     if (draftItem.points !== '' && sizeId !== null) values[SIZE] = [sizeId];
+    const levelId = choices.levels[draftItem.issueType] ?? null;
+    if (draftItem.issueType !== '' && levelId !== null) values[LEVEL] = [levelId];
     for (const c of custom) {
       const held = (draftItem.properties[c.column] ?? []).map((label) => c.ids.get(label)!);
       if (held.length > 0) values[c.property.id] = c.multi ? held : held.slice(0, 1);

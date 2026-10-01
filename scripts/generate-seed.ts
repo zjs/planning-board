@@ -300,6 +300,20 @@ for (const { title, time, size, sequence } of AREA_ONLY) {
   if (sequence !== undefined) item.sequence = sequence;
 }
 
+// Card levels (Q32), fixed rather than random so every other value stays as it was. Groups and
+// what's inside them get levels: a group holding groups is an initiative, any other group an
+// epic, and the rest stories. Two cross-cutting cards are epics with nothing inside yet. Every
+// other card has no level: not decided yet, as while brainstorming.
+const EPICS_WITHOUT_CHILDREN = ['Customer-managed encryption keys', 'Tenant data deletion (GDPR)'];
+function setLevel(spec: Spec) {
+  const item = byTitle.get(spec.title)!;
+  const level = !spec.children?.length ? 'story' : spec.children.some((c) => c.children?.length) ? 'initiative' : 'epic';
+  (item.values ??= {}).level = level;
+  spec.children?.forEach(setLevel);
+}
+GROUPS.forEach(setLevel);
+for (const title of EPICS_WITHOUT_CHILDREN) (byTitle.get(title)!.values ??= {}).level = 'epic';
+
 const plan = {
   format: 'planning-board',
   version: 1,
@@ -314,6 +328,16 @@ const plan = {
         label,
         children: components.map(([cid, clabel]) => ({ id: `${id}/${cid}`, label: clabel })),
       })),
+    },
+    {
+      id: 'level',
+      name: 'Level',
+      levels: ['Level'],
+      values: [
+        { id: 'initiative', label: 'Initiative' },
+        { id: 'epic', label: 'Epic' },
+        { id: 'story', label: 'Story' },
+      ],
     },
     {
       id: 'time',
@@ -349,6 +373,7 @@ const stats = {
   multiComponent: items.filter((i) => (i.values?.system?.length ?? 0) > 1).length,
   withSize: items.filter((i) => i.values?.size).length,
   withTime: items.filter((i) => i.values?.time).length,
+  withLevel: items.filter((i) => i.values?.level).length,
   withSequence: items.filter((i) => i.sequence !== undefined).length,
   dependencies: deps.length,
 };

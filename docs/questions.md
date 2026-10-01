@@ -244,6 +244,7 @@ Entry format:
   - **Mismatch marker:** flag a child whose level is at or above its parent's, like the size and date markers. It's on by default, and Q23's noise question applies.
   - **No level:** means "not decided yet", which keeps the brainstorming feel testers liked.
 - Status: answered 2026-10-01: (a), with every detail above as proposed, and the mismatch marker on from the start. Sprint 4, slice 2.
+  - Built in slice 2. An initiative's border is heavier than an epic's, with a strip along the top. Sub-task maps to Story along with Story, Task and Bug; any other issue type gets no level. In the sample plan, groups and their contents have levels (a group of groups is an initiative), plus two epics with nothing inside yet; every other card has none.
 
 ### Q34: Nested axes
 - Context: Requirements 1, 5 and 7, Q18 and Q22, and the backlog's theme B. With components as rows, the areas above them disappear, and every card with an area but no component waits in one lane at the bottom, far from its area. Testers sort in two stages: by area first, then area by area by component.

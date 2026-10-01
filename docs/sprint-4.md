@@ -31,17 +31,17 @@ Scope: single user, browser only, no server.
 
 ### 2. Card levels (Q32)
 
-- [ ] A built-in, ordered, single-value **Level** property. The values are Initiative > Epic > Story by default, and can be renamed and reordered like Size. A card with no level hasn't been decided yet.
-- [ ] A level badge on each card, and a heavier border for initiatives and epics, so levels can be told apart across the board. Level can be an axis like any property.
-- [ ] A mismatch marker, on by default: a child at or above its group's level is flagged. It counts in the group's ⚠ like the other mismatches.
-- [ ] Import maps Jira's Issue Type to Level, in the value table:
+- [x] A built-in, ordered, single-value **Level** property. The values are Initiative > Epic > Story by default, and can be renamed and reordered like Size. A card with no level hasn't been decided yet.
+- [x] A level badge on each card, and a heavier border for initiatives and epics, so levels can be told apart across the board. Level can be an axis like any property.
+- [x] A mismatch marker, on by default: a child at or above its group's level is flagged. It counts in the group's ⚠ like the other mismatches.
+- [x] Import maps Jira's Issue Type to Level, in the value table:
   - Initiative → Initiative;
   - Epic → Epic;
   - Story, Task, Bug, Sub-task → Story;
   - anything else → no level.
 
   The sample plan and the sample export get levels.
-- [ ] Existing boards and plan files get the Level property when opened, with no card given a level.
+- [x] Existing boards and plan files get the Level property when opened, with no card given a level.
 
 ### 3. Nested axes (Q34)
 
