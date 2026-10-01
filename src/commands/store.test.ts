@@ -10,6 +10,7 @@ import type { ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { readPlan } from '../store/schema.ts';
 import {
+  addDependency,
   addValue,
   createItem,
   createProperty,
@@ -18,6 +19,7 @@ import {
   moveValue,
   renameLevel,
   renameProperty,
+  removeDependency,
   renameValue,
   reorderValue,
   createPlanStore,
@@ -500,5 +502,36 @@ describe('importPlan', () => {
     expect(after.dependencies).toHaveLength(1);
     undo(store);
     expect(Object.keys(readPlan(store.doc).items)).toEqual(['a']);
+  });
+});
+
+describe('dependencies', () => {
+  it('links two cards in one undo step, and removing undoes too', () => {
+    const store = storeWith(item('a'), item('b'));
+    expect(addDependency(store, 'a', 'b')).toBeNull();
+    expect(readPlan(store.doc).dependencies).toEqual([{ from: 'a', to: 'b' }]);
+    expect(addDependency(store, 'a', 'b')).toBe('Those cards are already linked.');
+    expect(removeDependency(store, 'a', 'b')).toBe(true);
+    expect(readPlan(store.doc).dependencies).toEqual([]);
+    expect(removeDependency(store, 'a', 'b')).toBe(false);
+    undo(store);
+    expect(readPlan(store.doc).dependencies).toEqual([{ from: 'a', to: 'b' }]);
+    undo(store);
+    expect(readPlan(store.doc).dependencies).toEqual([]);
+  });
+
+  it('allows a loop (Q37)', () => {
+    const store = storeWith(item('a'), item('b'));
+    addDependency(store, 'a', 'b');
+    expect(addDependency(store, 'b', 'a')).toBeNull();
+    expect(readPlan(store.doc).dependencies).toHaveLength(2);
+  });
+
+  it('survives a reload', () => {
+    const store = storeWith(item('a'), item('b'));
+    addDependency(store, 'a', 'b');
+    const reloaded = new Y.Doc();
+    Y.applyUpdate(reloaded, Y.encodeStateAsUpdate(store.doc));
+    expect(readPlan(reloaded).dependencies).toEqual([{ from: 'a', to: 'b' }]);
   });
 });

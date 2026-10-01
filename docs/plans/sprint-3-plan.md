@@ -1,6 +1,6 @@
 # Sprint 3 — engineering plan
 
-Status: **approved 2026-10-01.** Slice 1 in review. Scope is `docs/sprint-3.md`. This doc covers how engineering delivers that scope: order, slices, and what each depends on. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-10-01.** Slice 1 merged (#24). Slice 2 in review. Scope is `docs/sprint-3.md`. This doc covers how engineering delivers that scope: order, slices, and what each depends on. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## What this sprint has to prove
 
