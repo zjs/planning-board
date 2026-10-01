@@ -28,7 +28,7 @@ Cards can be nested to any depth (requirement 11). But on the board, a story tha
 - **A card's level** is something to record and show, not something inferred from whether it has children. An explicit "is a group" flag would contradict the children whenever the two disagree. Q20 already lets any card be zoomed into and given children. → [Q32](questions.md#q32-card-levels)
 - **Show children in context.** Multi-group zoom and frames around faded copies are two forms of one feature: seeing a group's children on the current board, marked with their parent. → [Q33](questions.md#q33-showing-children-in-context)
 
-**Lands:** sprint 4 candidate.
+**Lands:** sprint 4 (slices 2 and 4).
 
 ### B. Hierarchical axes should show their parents
 
@@ -40,7 +40,7 @@ With components or releases as an axis, the areas or quarters above them disappe
 
 **Generalization:** nested axis headers, with a holding lane for each parent. A drop in an area's "no component" lane gives the card that plain area, the same rule as inside a lane zoom (Q22). This could replace, or sit beside, clicking a header to zoom (requirement 7). It's the biggest layout change since sprint 0, and it will need an ADR. → [Q34](questions.md#q34-nested-axes)
 
-**Lands:** sprint 4 candidate.
+**Lands:** sprint 4 (slice 3).
 
 ### C. Edit a card where it is
 
@@ -56,7 +56,7 @@ Dragging into a cell is the core bet, and it's the fastest way to sort many card
 - **A card inspector**: select one or more cards and edit any property in a side panel. It's also a home for already-deferred items: descriptions, the Jira key, and later a card's dependencies. It complements dragging rather than replacing it. → [Q35](questions.md#q35-editing-a-card-without-pivoting)
 - **Give double-click one job** across the board, and give zooming a visible control. → [Q36](questions.md#q36-double-click-does-three-jobs)
 
-**Lands:** renaming groups shipped in sprint 3 (slice 1). The inspector is a sprint 4 candidate.
+**Lands:** renaming groups shipped in sprint 3 (slice 1). The inspector is sprint 4, slice 1.
 
 ### D. Small fixes
 
@@ -70,7 +70,8 @@ No decision needed. Each one goes into the next sprint. Both items below shipped
 ## Planned next
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36). Its tester session (`docs/demos/sprint-3-session.md`) feeds sprint 4.
-- **Sprint 4 candidates:** themes A, B, and C's inspector (Q32–Q35), plus component contention and the conflicts panel (requirements 17–20), which sprint 3 left out to stay focused on dependencies.
+- **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)). Themes A, B, and C's inspector (Q32–Q35).
+- **Sprint 5 candidate:** component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).
 
 ## Deferred, from earlier sprints
 

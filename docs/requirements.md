@@ -58,7 +58,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 4. Cards show non-axis properties as compact attributes, such as a size badge in the sequence view.
 5. Each view has holding lanes for cards missing a value, pinned to the board's edges. A lane at the end of each row holds cards with that row but no column, a lane under each column holds cards with that column but no row, and the corner holds cards with neither. Dropping a card in a holding lane sets the axis it names and clears the other. Holding lanes can show full cards or compact chips.
 6. Sequence views show no step numbers or column labels, so placement doesn't read as a claim of order between unlinked items.
-7. Users can zoom into a lane or column to see the next hierarchy level, and zoom back out. Cards outside the zoomed value are hidden; cards with only the coarser value (an area but no component) wait in the holding lane (Q18).
+7. Users can zoom into a lane or column to see the next hierarchy level, and zoom back out. Cards outside the zoomed value are hidden; cards with only the coarser value (an area but no component) wait in the holding lane (Q18). An axis at a child level also shows its parents as bands, each with its own holding lane, and a band can be collapsed and expanded (Q34).
 8. Users can save named views and switch between them in one step.
 9. Users can filter cards by any property, including custom tags.
 
@@ -67,7 +67,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 10. Users can create, edit, and delete items directly on the board. Deleting a group deletes everything inside it, and one undo restores all of it (Q17). Items imported from Jira keep their Jira key (Q26).
 11. Users can group items into a parent item, recursively, and ungroup them.
 12. Users can zoom into a group to see only its children. The group's own values show in the zoom header (Q19).
-13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value. A collapsed group also shows as a faded "via children" copy in lanes that only its children touch; faded copies can't be dragged (Q16).
+13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value. A collapsed group also shows as a faded frame in lanes that only its children touch, around the child cards that put it there; those children can be dragged (Q16, Q33). Groups can be expanded in place, and several can be zoomed into at once (Q33).
 14. Grouping never creates a cycle, even when two people nest items at the same moment.
 
 **Relationships and conflicts**
@@ -76,7 +76,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view. A time view judges at the level it shows, quarters or releases (Q12).
 17. The tool highlights a component when more items touch it in one time bucket than its concurrency limit allows. No limit applies until a user sets one, per component or as a plan default.
 18. Conflicts inside a collapsed group are visible on the group card. The group's ⚠ count includes out-of-order links and loops inside it.
-19. The tool never blocks a placement because of a conflict. Users can mark a specific conflict as reviewed, with a note; it stays suppressed until an involved item moves.
+19. The tool never blocks a placement because of a conflict. Users can mark a specific conflict as reviewed, with a note; it stays suppressed until an involved item moves, meaning a change to an involved card's checked values, or a card joining or leaving the conflict (Q41).
 20. A conflicts panel lists every active conflict by type, and users can hide any type.
 21. Every feature works on items with no system values; conflict checks skip them. In a system view, dragging a card into a lane tags it, so the view doubles as the fastest way to fill in components.
 
