@@ -12,6 +12,8 @@ Thanks for looking. Planning Board is early, and it's built in the open.
 
 Please don't paste or attach real roadmap data. Made-up titles are fine for describing a problem.
 
+Feedback from issues and user sessions is collected in [`docs/backlog.md`](docs/backlog.md), grouped into themes, so you can see where it went.
+
 ## Code: not yet
 
 Code pull requests aren't being accepted yet, while the core design is still settling. That will change. Until then, an issue that describes the problem is the most useful contribution, and a proposed fix in an issue is welcome.

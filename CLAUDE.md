@@ -5,6 +5,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 @docs/requirements.md
 @docs/sprint-2.md
 @docs/questions.md
+@docs/backlog.md
 
 ## Roles
 
@@ -14,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 2: real data (plan files, custom properties, value editing, CSV import). Scope is in `docs/sprint-2.md`; the slice plan is in `docs/plans/sprint-2-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. Don't build anything on its deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`.
+Sprint 2 is complete: real data (plan files, custom properties, value editing, CSV import). Its scope is in `docs/sprint-2.md` and its slice plan in `docs/plans/sprint-2-plan.md`; the review process is in `docs/plans/sprint-0-plan.md`. Sprint 3 (dependencies, plus the sprint 3 items in `docs/backlog.md`) is next and not planned yet. Until it is, don't build anything on sprint 2's deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`.
 
 ## Architecture rules
 
@@ -39,6 +40,7 @@ Sprint 2: real data (plan files, custom properties, value editing, CSV import). 
 - Start each new piece of work in plan mode: propose, then wait for the PM's approval.
 - Work in thin vertical slices. Each ends with a deployed build and a short demo note: what to click, what should happen, and known gaps.
 - Keep conclusions in the repo, not the chat: ADRs, `questions.md` entries, and sprint doc checkboxes.
+- Feedback goes into `docs/backlog.md` first, under a theme; decisions it needs go into `questions.md`.
 - End each session with a three-line summary: what shipped, what's next, and any open questions for the PM.
 
 ## Commands
