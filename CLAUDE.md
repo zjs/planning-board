@@ -15,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 3: dependencies (drawing links, showing them, order highlights), plus the backlog's sprint 3 fixes. Scope is in `docs/sprint-3.md`; the slice plan is in `docs/plans/sprint-3-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. Don't build anything on its deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`.
+Sprint 3 (dependencies) is complete and awaiting the PM's acceptance and a tester session; sprint 4 isn't planned yet, so start it in plan mode from the candidates in `docs/backlog.md`. Sprint 3's scope is in `docs/sprint-3.md`; the slice plan is in `docs/plans/sprint-3-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. Don't build anything on its deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`.
 
 ## Architecture rules
 

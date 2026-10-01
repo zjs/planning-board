@@ -92,6 +92,24 @@ export function Legend({ onClose }: { onClose: () => void }) {
       </dl>
       </section>
       <section>
+        <h3>Dependencies</h3>
+      <dl>
+        <dt>
+          Select two cards, press <kbd>{keys.link}</kbd>
+        </dt>
+        <dd>
+          The first one selected comes before the second. <kbd>{keys.link}</kbd> again removes the link. With one card
+          selected, <kbd>{keys.link}</kbd> starts a link you can finish anywhere, even inside a group.
+        </dd>
+        <dt>Lines</dt>
+        <dd>
+          Hover a card to see its links; select it to see its whole chain. <span className="legend-red">Red</span> lines
+          always show: a card placed after one it must come before, or a loop. Click a line and press{' '}
+          <kbd>Delete</kbd> to remove it.
+        </dd>
+      </dl>
+      </section>
+      <section>
         <h3>Plans and properties</h3>
       <dl>
         <dt>File › Save plan, Open plan</dt>
