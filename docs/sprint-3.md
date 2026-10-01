@@ -14,18 +14,18 @@ Scope: single user, browser only, no server.
 
 - [x] Select the prerequisite, then the dependent, and press **L** (or the **Link** button) to link them. Pressing L again on the same pair removes the link. Each is one undo step.
 - [x] With one card selected, L starts a pending link that survives zooming: "Linking from X: select the card it comes before, then press L." Esc cancels. This is how cards at different group levels get linked.
-- [ ] Hovering over a line names it ("A → B"). Clicking a line selects it, and Delete removes it.
+- [x] Hovering over a line names it ("A → B"). Clicking a line selects it, and Delete removes it.
 
 ### 2. Showing links (Q14, Q39)
 
-- [ ] Out-of-order links and loops are always drawn. Other links show only for the hovered card (its direct links) or the selected cards (their whole chain, upstream and downstream).
+- [x] Out-of-order links and loops are always drawn. Other links show only for the hovered card (its direct links) or the selected cards (their whole chain, upstream and downstream).
 - [x] Lines are curved, with an arrowhead at the dependent. A card with several copies is linked from its closest copy.
 
 ### 3. Order highlights (requirements 16 and 18)
 
-- [ ] A link is out of order when the prerequisite comes after its dependent on an axis the view orders by: to its right (or below) on a sequence axis, or in a later bucket on a time axis, judged at the level the view shows (Q12). Out-of-order links are drawn in the warning color. Views with no sequence or time axis don't judge order.
-- [ ] Links in a loop are flagged in every view (Q37).
-- [ ] A collapsed group's ⚠ count includes out-of-order links and loops inside it, and hovering lists them.
+- [x] A link is out of order when the prerequisite comes after its dependent on an axis the view orders by: to its right (or below) on a sequence axis, or in a later bucket on a time axis, judged at the level the view shows (Q12). Out-of-order links are drawn in the warning color. Views with no sequence or time axis don't judge order.
+- [x] Links in a loop are flagged in every view (Q37).
+- [x] A collapsed group's ⚠ count includes out-of-order links and loops inside it, and hovering lists them.
 
 ### 4. Links to hidden cards (Q38)
 

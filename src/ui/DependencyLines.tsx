@@ -1,11 +1,13 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import type { VisibleLink } from '../domain/dependencies.ts';
 
 /** One line, as drawn. `tone` picks its color and arrowhead. */
 export interface DrawnLine extends VisibleLink {
   tone: 'focus' | 'problem';
-  /** Hover text: "A → B", one line per link it stands for. */
+  /** Hover text: "A → B" or what's wrong, one line per link it stands for. */
   label: string;
+  /** Clicked, ready for Delete. */
+  selected?: boolean;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -23,14 +25,22 @@ export function DependencyLines({
   board,
   scroller,
   layoutKey,
+  onLineClick,
 }: {
   lines: readonly DrawnLine[];
+  /** A click on a line: select it, so Delete can remove it. */
+  onLineClick: (line: DrawnLine) => void;
   board: RefObject<HTMLDivElement | null>;
   scroller: RefObject<HTMLDivElement | null>;
   /** Changes whenever cards may have moved. */
   layoutKey: unknown;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  // The latest handler, read at click time, so a new handler doesn't force a redraw.
+  const clickRef = useRef(onLineClick);
+  useEffect(() => {
+    clickRef.current = onLineClick;
+  }, [onLineClick]);
 
   useLayoutEffect(() => {
     const svg = svgRef.current;
@@ -51,16 +61,28 @@ export function DependencyLines({
           top: r.top - origin.top,
           bottom: r.bottom - origin.top,
         })) as [Box, Box];
+        const d = curve(a, b);
         const path = document.createElementNS(SVG, 'path');
-        path.setAttribute('d', curve(a, b));
-        path.setAttribute('class', `dep-line ${line.tone}`);
+        path.setAttribute('d', d);
+        path.setAttribute('class', `dep-line ${line.tone}${line.selected ? ' selected' : ''}`);
         path.setAttribute('marker-end', `url(#dep-arrow-${line.tone})`);
         path.dataset.from = line.from;
         path.dataset.to = line.to;
+        // A wide, invisible twin takes the pointer: easier to hover and click than a 2px line.
+        const hit = document.createElementNS(SVG, 'path');
+        hit.setAttribute('d', d);
+        hit.setAttribute('class', 'dep-hit');
+        hit.dataset.from = line.from;
+        hit.dataset.to = line.to;
         const title = document.createElementNS(SVG, 'title');
         title.textContent = line.label;
-        path.append(title);
-        group.append(path);
+        hit.append(title);
+        hit.addEventListener('pointerdown', (e) => e.stopPropagation());
+        hit.addEventListener('click', (e) => {
+          e.stopPropagation();
+          clickRef.current(line);
+        });
+        group.append(path, hit);
       }
     };
     draw();

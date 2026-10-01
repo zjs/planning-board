@@ -19,6 +19,7 @@ import {
   moveValue,
   renameLevel,
   renameProperty,
+  removeDependencies,
   removeDependency,
   renameValue,
   reorderValue,
@@ -533,5 +534,17 @@ describe('dependencies', () => {
     const reloaded = new Y.Doc();
     Y.applyUpdate(reloaded, Y.encodeStateAsUpdate(store.doc));
     expect(readPlan(reloaded).dependencies).toEqual([{ from: 'a', to: 'b' }]);
+  });
+});
+
+describe('removeDependencies', () => {
+  it('removes every link a line stands for in one undo step', () => {
+    const store = storeWith(item('a'), item('b'), item('c'));
+    addDependency(store, 'a', 'b');
+    addDependency(store, 'a', 'c');
+    expect(removeDependencies(store, [{ from: 'a', to: 'b' }, { from: 'a', to: 'c' }, { from: 'c', to: 'a' }])).toBe(2);
+    expect(readPlan(store.doc).dependencies).toEqual([]);
+    undo(store);
+    expect(readPlan(store.doc).dependencies).toHaveLength(2);
   });
 });

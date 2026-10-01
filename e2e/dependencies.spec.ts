@@ -34,7 +34,8 @@ test('select two cards and press L: the first comes before the second; L again r
 
 test('focus: hovering shows direct links, selecting shows the whole chain, and nothing shows otherwise', async ({ page }) => {
   await openApp(page);
-  await expect(page.locator('.dep-line')).toHaveCount(0);
+  // Only flagged links are drawn with nothing in focus (slice 3).
+  await expect(page.locator('.dep-line.focus')).toHaveCount(0);
 
   // scim-2-0-group-push → seat-sync-from-directory → seat-based-add-ons, all at the top level.
   const middle = card(page, 'seat-sync-from-directory').first();
@@ -57,7 +58,7 @@ test('focus: hovering shows direct links, selecting shows the whole chain, and n
   await expect(line(page, 'seat-sync-from-directory', 'seat-based-add-ons')).toHaveCount(1);
 
   await page.keyboard.press('Escape');
-  await expect(page.locator('.dep-line')).toHaveCount(0);
+  await expect(page.locator('.dep-line.focus')).toHaveCount(0);
 });
 
 test('a pending link survives zooming, so a card can be linked to one inside a group (Q38)', async ({ page }) => {

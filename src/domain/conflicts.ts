@@ -35,7 +35,7 @@ function select(plan: Plan, id: string): SelectProperty | null {
  * date covers. A date at or below the level covers one bucket; a coarser
  * date (a quarter, in a release view) covers all the buckets inside it.
  */
-function timeSpans(plan: Plan, level: number): (item: Item) => { first: number; last: number } | null {
+export function timeSpans(plan: Plan, level: number): (item: Item) => { first: number; last: number } | null {
   const time = select(plan, TIME);
   if (!time) return () => null;
   const buckets = valuesAtLevel(time, level);

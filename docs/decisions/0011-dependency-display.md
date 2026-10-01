@@ -1,6 +1,6 @@
 # 0011: Drawing dependency links
 
-Status: Accepted (sprint 3, slice 2). Slice 3 adds the order highlights described below.
+Status: Accepted (sprint 3, slices 2 and 3).
 
 ## Context
 
@@ -11,12 +11,13 @@ Requirements 15, 16 and 18 need links drawn between cards, the focus rules from 
 - **One SVG overlay** sits inside the board grid, above the cells and the pinned lanes but below notices and dialogs. It's drawn imperatively from the cards' positions on screen: React decides which lines to draw, and the overlay measures where they go. It redraws when the lines or the layout change, on resize, and at most once per frame while the board scrolls. Scrolling matters because cards in the pinned lanes move relative to the board. It doesn't take the pointer, so cards stay draggable underneath.
 - **Which lines show is a pure query** (`src/domain/dependencies.ts`):
   - **Focus (Q39).** Hovering a card shows its direct links. Selecting a card shows its whole chain, upstream and downstream. For a group, both include the links of the cards inside it, since a group's dependencies include its children's (requirement 13).
-  - **Problems (slice 3).** Out-of-order links and loops are always drawn, whatever the focus.
+  - **Problems.** Out-of-order links and loops are always drawn in red, whatever the focus. If one pair of cards has both a flagged link and an ordinary one, it gets a single red line.
 - **Hidden ends (Q38).** Each end of a link is drawn at the card itself if it's on screen. Otherwise it's drawn at the nearest group around it that has a solid copy on screen. A link whose ends land on the same card isn't drawn at that level, and neither is a link whose card isn't on screen at all (outside the current zoom). Links that land on the same pair of cards share one line, and its tooltip lists them all.
 - **Copies.** A card with several copies is linked from the pair of copies closest together, faded copies included. So a link to a child in Billing is drawn to the group's faded copy in the Billing row, when it has one.
 - **Shape.** A curve with an arrowhead at the dependent. It leaves and arrives on the facing sides: left and right when the cards are side by side, top and bottom when one is above the other. When the cards share a column, the curve bows out so it doesn't run through the cards between them.
+- **Lines can be picked.** Each line has a wide, invisible twin that takes the pointer, so it can be hovered (a tooltip lists the links it stands for, or what's wrong with them) and clicked. A clicked line is selected, Delete removes every link it stands for in one undo step, and Esc deselects it.
 - **Making links.** Select the prerequisite, then the dependent, and press L or the Link button. The selection keeps click order, so order decides direction. With one card selected, L starts a pending link that survives zooming, and a bar says what it's waiting for. Pressing L on an already-linked pair removes the link. With no cards or three or more selected, L explains itself and does nothing (Q39). Loops are allowed (Q37).
-- **Slice 3: order is judged per view.** A link is out of order on an axis the view orders by (sequence, or time at the level shown, Q12), using each linked card's own values even when its line is drawn to a group. Loops are found as strongly connected components and are flagged in every view.
+- **Order is judged per view.** A link is out of order on an axis the view orders by (sequence, or time at the level shown, Q12), using each linked card's own values even when its line is drawn to a group. Loops are found as strongly connected components and are flagged in every view.
 
 ## Alternatives
 

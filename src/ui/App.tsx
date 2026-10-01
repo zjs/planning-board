@@ -10,6 +10,7 @@ import {
   moveToParent,
   openPlanStore,
   redo,
+  removeDependencies,
   removeDependency,
   renameItem,
   resetPlan,
@@ -20,7 +21,17 @@ import {
   type PlanStore,
 } from '../commands/store.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
-import { chain, directLinks, hasLink, linkKey, visibleLinks } from '../domain/dependencies.ts';
+import {
+  chain,
+  describeLinkProblem,
+  directLinks,
+  hasLink,
+  linkKey,
+  linkProblems,
+  linkProblemsInside,
+  visibleLinks,
+  type VisibleLink,
+} from '../domain/dependencies.ts';
 import { SYSTEM, TIME, type Dependency, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
@@ -129,7 +140,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return [{ which, label: `${property.name}: ${property.values[within]?.label ?? within}` }];
   });
   const counts = useMemo(() => childCounts(plan), [plan]);
-  const mismatches = useMemo(() => findMismatches(plan), [plan]);
+  // Flagged links (requirements 16 and 18, Q37): out of order in this view, or on a loop. A collapsed
+  // group's ⚠ count includes the flagged links inside it.
+  const problems = useMemo(() => linkProblems(plan, view), [plan, view]);
+  const mismatches = useMemo(() => {
+    const found = findMismatches(plan);
+    const inside = new Map(found.inside);
+    for (const [group, lines] of linkProblemsInside(plan, problems)) inside.set(group, [...(inside.get(group) ?? []), ...lines]);
+    return { ...found, inside };
+  }, [plan, problems]);
+  // A clicked line's links, ready for Delete. Viewer state, like the selection.
+  const [selectedLinks, setSelectedLinks] = useState<ReadonlySet<string>>(() => new Set());
   // The add modifier only means something on an axis that holds several values.
   const isMulti = (axis: ViewSpec['x']) => {
     const property = plan.properties[axis.property];
@@ -188,6 +209,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const onCardClick = useCallback(
     (card: CardRef, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
       setAnchor(card);
+      setSelectedLinks(new Set());
       setSelection((current) => {
         if (!(e.shiftKey || e.metaKey || e.ctrlKey)) return new Set([card.itemId]);
         const next = new Set(current);
@@ -198,7 +220,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     },
     [],
   );
-  const clearSelection = useCallback(() => setSelection(new Set()), []);
+  const clearSelection = useCallback(() => {
+    setSelection(new Set());
+    setSelectedLinks(new Set());
+  }, []);
   // Changing a lane zoom hides or shows cards, so the selection is cleared,
   // as it is for group zoom: Delete must never reach a card you can't see.
   // Starts from the axes as shown, which may be a fallback for a deleted property.
@@ -369,17 +394,55 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
 
   // Focus lines (Q14, Q39): the hovered card's direct links, and the selected cards' whole chains.
   const [hovered, setHovered] = useState<ItemId | null>(null);
+  // Problem links are always drawn (Q14): out of order in this view, or on a loop (Q37). A clicked line
+  // stays drawn, ready for Delete.
   const lines = useMemo((): DrawnLine[] => {
     if (dragging) return [];
+    const flagged = plan.dependencies.filter((d) => problems.has(linkKey(d)));
     const focus = new Map<string, Dependency>();
     for (const id of selected) for (const d of chain(plan, id)) focus.set(linkKey(d), d);
     if (hovered !== null && plan.items[hovered]) for (const d of directLinks(plan, hovered)) focus.set(linkKey(d), d);
-    return visibleLinks(plan, [...focus.values()], renamable).map((line) => ({
+    for (const d of plan.dependencies) if (selectedLinks.has(linkKey(d))) focus.set(linkKey(d), d);
+    for (const d of flagged) focus.delete(linkKey(d));
+    const label = (d: Dependency) => {
+      const problem = problems.get(linkKey(d));
+      return problem
+        ? describeLinkProblem(plan, d, problem)
+        : `${plan.items[d.from]?.title ?? ''} → ${plan.items[d.to]?.title ?? ''}`;
+    };
+    const drawn = (tone: DrawnLine['tone']) => (line: VisibleLink): DrawnLine => ({
       ...line,
-      tone: 'focus',
-      label: line.links.map((d) => `${plan.items[d.from]?.title ?? ''} → ${plan.items[d.to]?.title ?? ''}`).join('\n'),
-    }));
-  }, [plan, selected, hovered, renamable, dragging]);
+      tone,
+      label: line.links.map(label).join('\n'),
+      selected: line.links.some((d) => selectedLinks.has(linkKey(d))),
+    });
+    const problemLines = visibleLinks(plan, flagged, renamable).map(drawn('problem'));
+    // A pair of cards with both kinds of link gets one red line.
+    const taken = new Set(problemLines.map((l) => `${l.from}->${l.to}`));
+    const focusLines = visibleLinks(plan, [...focus.values()], renamable)
+      .filter((l) => !taken.has(`${l.from}->${l.to}`))
+      .map(drawn('focus'));
+    return [...focusLines, ...problemLines];
+  }, [plan, problems, selected, hovered, selectedLinks, renamable, dragging]);
+
+  const onLineClick = useCallback((line: DrawnLine) => {
+    setSelectedLinks(new Set(line.links.map(linkKey)));
+    setSelection(new Set());
+  }, []);
+  const deleteSelectedLinks = useCallback(() => {
+    const doomed = plan.dependencies.filter((d) => selectedLinks.has(linkKey(d)));
+    const removed = removeDependencies(store, doomed);
+    setSelectedLinks(new Set());
+    if (removed === 0) return;
+    const first = doomed[0]!;
+    setNotice({
+      text:
+        removed === 1
+          ? `Removed the link ${titleOf(first.from)} → ${titleOf(first.to)}`
+          : `Removed ${removed} links`,
+      step: store.undoManager.undoStack.at(-1),
+    });
+  }, [plan, selectedLinks, store, titleOf]);
 
 
   useEffect(() => {
@@ -407,6 +470,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         // Esc cancels a pending link, then clears the selection, then zooms out a level. Buttons don't use Esc,
         // so this works with one focused.
         if (pendingFrom !== null) setPendingLink(null);
+        else if (selectedLinks.size > 0) setSelectedLinks(new Set());
         else if (selected.size > 0) clearSelection();
         else if (root !== null) zoomOut();
         else if (shown.xWithin || shown.yWithin) setLaneZoom('both', null);
@@ -420,6 +484,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       // Enter and Delete on a focused button belong to the button.
       if (focus?.closest('button, a')) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedLinks.size > 0) {
+          e.preventDefault();
+          deleteSelectedLinks();
+          return;
+        }
         if (selected.size === 0) return;
         e.preventDefault();
         deleteSelection();
@@ -448,6 +517,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     clearSelection,
     pendingFrom,
     linkSelection,
+    selectedLinks,
+    deleteSelectedLinks,
     groupSelection,
     ungroupSelection,
     zoomTo,
@@ -665,6 +736,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           scrollRef={scrollRef}
           lines={lines}
           onHover={setHovered}
+          onLineClick={onLineClick}
           selected={selected}
           editing={editing}
           onCardDoubleClick={onCardDoubleClick}

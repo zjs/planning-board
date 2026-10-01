@@ -6,7 +6,7 @@ import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from 
 import { hasLink, linkProblem } from '../domain/dependencies.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
-import type { ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
+import type { Dependency, ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
 import {
   cardsWithProperty,
@@ -425,9 +425,18 @@ export function addDependency(store: PlanStore, from: ItemId, to: ItemId): strin
 
 /** Remove a link. Returns false (no undo step) if there was none. */
 export function removeDependency(store: PlanStore, from: ItemId, to: ItemId): boolean {
-  if (!hasLink(readPlan(store.doc), from, to)) return false;
-  edit(store, () => root(store.doc).dependencies.delete(dependencyKey({ from, to })));
-  return true;
+  return removeDependencies(store, [{ from, to }]) > 0;
+}
+
+/** Remove several links in one undo step: everything a clicked line stands for. Returns how many were removed. */
+export function removeDependencies(store: PlanStore, links: readonly Dependency[]): number {
+  const plan = readPlan(store.doc);
+  const existing = links.filter((d) => hasLink(plan, d.from, d.to));
+  if (existing.length === 0) return 0;
+  edit(store, () => {
+    for (const d of existing) root(store.doc).dependencies.delete(dependencyKey(d));
+  });
+  return existing.length;
 }
 
 export function undo(store: PlanStore): void {

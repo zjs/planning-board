@@ -52,6 +52,7 @@ interface Props {
   lines: readonly DrawnLine[];
   /** The card under the pointer, for its focus lines (Q39). */
   onHover: (id: ItemId | null) => void;
+  onLineClick: (line: DrawnLine) => void;
 }
 
 /** Palette index by first top-level system area, so cards keep their color across pivots. */
@@ -135,6 +136,7 @@ export const Board = memo(function Board({
   scrollRef,
   lines,
   onHover,
+  onLineClick,
   selected,
   editing,
   onCardDoubleClick,
@@ -332,7 +334,13 @@ export const Board = memo(function Board({
         onPointerLeave={() => onHover(null)}
       >
         <div className="board" ref={boardRef} style={{ gridTemplateColumns }} data-testid="board">
-          {lines.length > 0 && <DependencyLines lines={lines} board={boardRef} scroller={scrollRef} layoutKey={layout} />}
+          {lines.length > 0 && <DependencyLines
+              lines={lines}
+              board={boardRef}
+              scroller={scrollRef}
+              layoutKey={layout}
+              onLineClick={onLineClick}
+            />}
           <div className="corner">
             <span className="axis-name y">{yLabel} ↓</span>
             <span className="axis-name x">{xLabel} →</span>
