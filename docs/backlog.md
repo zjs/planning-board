@@ -56,11 +56,11 @@ Dragging into a cell is the core bet, and it's the fastest way to sort many card
 - **A card inspector**: select one or more cards and edit any property in a side panel. It's also a home for already-deferred items: descriptions, the Jira key, and later a card's dependencies. It complements dragging rather than replacing it. → [Q35](questions.md#q35-editing-a-card-without-pivoting)
 - **Give double-click one job** across the board, and give zooming a visible control. → [Q36](questions.md#q36-double-click-does-three-jobs)
 
-**Lands:** renaming groups in sprint 3 (slice 1). The inspector is a sprint 4 candidate.
+**Lands:** renaming groups shipped in sprint 3 (slice 1). The inspector is a sprint 4 candidate.
 
 ### D. Small fixes
 
-No decision needed. Each one goes into the next sprint.
+No decision needed. Each one goes into the next sprint. Both items below shipped in sprint 3.
 
 | Item | Source | Lands |
 |---|---|---|
@@ -69,7 +69,7 @@ No decision needed. Each one goes into the next sprint.
 
 ## Planned next
 
-- **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)). Drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18). Also the small fixes in D, and group renaming (Q36).
+- **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36). Its tester session (`docs/demos/sprint-3-session.md`) feeds sprint 4.
 - **Sprint 4 candidates:** themes A, B, and C's inspector (Q32–Q35), plus component contention and the conflicts panel (requirements 17–20), which sprint 3 left out to stay focused on dependencies.
 
 ## Deferred, from earlier sprints

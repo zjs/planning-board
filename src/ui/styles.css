@@ -1513,3 +1513,14 @@ button.link:hover {
 .link-bar button {
   margin-left: auto;
 }
+
+.legend-red {
+  color: #e03131;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .legend-red {
+    color: #ff6b6b;
+  }
+}

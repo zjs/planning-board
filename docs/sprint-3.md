@@ -39,8 +39,8 @@ Scope: single user, browser only, no server.
 
 ### 6. Tester-ready
 
-- [ ] The legend covers linking and the highlights.
-- [ ] A demo note (`docs/demos/sprint-3.md`) and a session script focused on reading and arguing about a plan's dependencies.
+- [x] The legend covers linking and the highlights.
+- [x] A demo note (`docs/demos/sprint-3.md`) and a session script focused on reading and arguing about a plan's dependencies.
 
 ## Deferred (don't build)
 
