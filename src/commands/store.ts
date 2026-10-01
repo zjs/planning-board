@@ -5,6 +5,7 @@ import * as Y from 'yjs';
 import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from '../domain/csvImport.ts';
 import { hasLink, linkProblem } from '../domain/dependencies.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
+import { planValueEdit, type ValueEdit } from '../domain/inspector.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
 import type { Dependency, ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
@@ -169,6 +170,26 @@ export function renameItem(store: PlanStore, id: ItemId, title: string): boolean
   const item = root(store.doc).items.get(id);
   if (clean === null || !item || item.get('title') === clean) return false;
   edit(store, () => item.set('title', clean));
+  return true;
+}
+
+/**
+ * Change one property on every selected card, from the inspector (Q35).
+ * Returns how many cards changed; no change records no undo step.
+ */
+export function editCardValues(store: PlanStore, ids: Iterable<ItemId>, property: PropertyId, change: ValueEdit): number {
+  const cards = planValueEdit(readPlan(store.doc), [...ids], property, change);
+  if (cards.length === 0) return 0;
+  edit(store, () => writeCardChanges(store, property, cards));
+  return cards.length;
+}
+
+/** Replace a card's description. Trailing whitespace is dropped; an unchanged one records no undo step. */
+export function setDescription(store: PlanStore, id: ItemId, text: string): boolean {
+  const item = root(store.doc).items.get(id);
+  const clean = text.replace(/\s+$/, '');
+  if (!item || (item.get('description') ?? '') === clean) return false;
+  edit(store, () => item.set('description', clean));
   return true;
 }
 

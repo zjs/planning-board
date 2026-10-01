@@ -8,12 +8,13 @@ export function keyNames(): {
   zoomIn: string;
   zoomOut: string;
   link: string;
+  inspect: string;
 } {
   const nav = typeof navigator === 'undefined' ? undefined : navigator;
   // platform is deprecated and can be empty (fingerprinting protection), so fall back on the user agent.
   const mac = /Mac|iPhone|iPad/.test(nav?.platform || nav?.userAgent || '');
   return mac
-    ? { add: '⌥ Option', undo: '⌘Z', redo: '⇧⌘Z', group: '⌘G', ungroup: '⇧⌘G', zoomIn: '⌘↓', zoomOut: '⌘↑', link: 'L' }
+    ? { add: '⌥ Option', undo: '⌘Z', redo: '⇧⌘Z', group: '⌘G', ungroup: '⇧⌘G', zoomIn: '⌘↓', zoomOut: '⌘↑', link: 'L', inspect: 'I' }
     : {
         add: 'Alt',
         undo: 'Ctrl+Z',
@@ -23,5 +24,6 @@ export function keyNames(): {
         zoomIn: 'Ctrl+↓',
         zoomOut: 'Ctrl+↑',
         link: 'L',
+        inspect: 'I',
       };
 }
