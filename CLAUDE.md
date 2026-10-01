@@ -3,7 +3,7 @@
 A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads) on enterprise product lines. It sits upstream of Jira: a place to brainstorm and argue about a release plan before it's committed. The core bet is pivotable perspectives on one set of items (drag a card into a cell and it writes the values for both axes), plus highlights for dependency and component conflicts. Open source, Apache 2.0.
 
 @docs/requirements.md
-@docs/sprint-2.md
+@docs/sprint-3.md
 @docs/questions.md
 @docs/backlog.md
 
@@ -15,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 2 is complete: real data (plan files, custom properties, value editing, CSV import). Its scope is in `docs/sprint-2.md` and its slice plan in `docs/plans/sprint-2-plan.md`; the review process is in `docs/plans/sprint-0-plan.md`. Sprint 3 (dependencies, plus the sprint 3 items in `docs/backlog.md`) is next and not planned yet. Until it is, don't build anything on sprint 2's deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`.
+Sprint 3: dependencies (drawing links, showing them, order highlights), plus the backlog's sprint 3 fixes. Scope is in `docs/sprint-3.md`; the slice plan is in `docs/plans/sprint-3-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. Don't build anything on its deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`.
 
 ## Architecture rules
 

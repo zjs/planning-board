@@ -72,10 +72,10 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **Relationships and conflicts**
 
-15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14). A link is drawn by selecting the prerequisite, then the dependent, and pressing L (Q24).
-16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view.
+15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14). A link is drawn by selecting the prerequisite, then the dependent, and pressing L (Q24). Pressing L again removes it. With one card selected, L starts a link that survives zooming, so cards at different group levels can be linked. A link to a card inside a collapsed group is drawn to the group (Q38). Loops are allowed and flagged (Q37).
+16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view. A time view judges at the level it shows, quarters or releases (Q12).
 17. The tool highlights a component when more items touch it in one time bucket than its concurrency limit allows. No limit applies until a user sets one, per component or as a plan default.
-18. Conflicts inside a collapsed group are visible on the group card.
+18. Conflicts inside a collapsed group are visible on the group card. The group's ⚠ count includes out-of-order links and loops inside it.
 19. The tool never blocks a placement because of a conflict. Users can mark a specific conflict as reviewed, with a note; it stays suppressed until an involved item moves.
 20. A conflicts panel lists every active conflict by type, and users can hide any type.
 21. Every feature works on items with no system values; conflict checks skip them. In a system view, dragging a card into a lane tags it, so the view doubles as the fastest way to fill in components.

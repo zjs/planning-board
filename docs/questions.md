@@ -34,7 +34,7 @@ Entry format:
   - **Time bucket.** Contention and time-order checks default to quarters. The requirements table says contention is "measured here" on Time → Release, which may mean releases. The function takes either.
   - **Uncertain order.** A dependency is flagged only when the order is certain. A prerequisite in Q2 against a dependent in Q1/R1 is flagged; one in Q1 against Q1/R1 isn't.
 - Recommendation: keep these for sprint 1 and revisit with real data. The time bucket is the one most likely to matter, since it changes which conflicts show at all.
-- Status: open
+- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built.
 
 ### Q21: What happens to a group's dependencies when it's ungrouped?
 - Context: Requirements 11 and 15. Ungrouping removes the group card, but other cards may depend on it, or it on them. Dependencies aren't visible until sprint 2, but ungrouping already has to do something with them.
@@ -114,7 +114,13 @@ Entry format:
 - Context: Requirements 10 and 12, and the backlog's theme C. Double-click creates a card in empty space, renames a card, and zooms into a group. So testers can't find how to rename a group. Enter on a selected group renames it, but nobody finds that. The sprint 1 plan listed this as a risk, with this fallback.
 - Options: (a) double-click always renames, and group cards get a small zoom button, with ⌘↓ still zooming; (b) double-clicking the title renames and double-clicking the rest of the card zooms; (c) keep it as it is, and add F2 and a line in the help.
 - Recommendation: (a). One meaning everywhere, and zooming gets a visible control. Faded copies, which can't be renamed, would still zoom on double-click.
-- Status: open. Sprint 3.
+- Status: open. Scheduled for sprint 3, slice 1, as (a).
+
+### Q39: How much of a card's dependency chain shows on focus?
+- Context: Requirement 15 and Q14: links other than out-of-order ones show only "for the hovered or selected card, upstream and downstream". That could mean direct links or the whole chain. Separately, "select the prerequisite, then the dependent" only defines two cards.
+- Options: for focus, (a) direct links on hover, the whole chain for selected cards; (b) the whole chain in both cases; (c) direct links only. For L with three or more cards selected: (d) do nothing, with a hint; (e) chain them in the order they were selected.
+- Recommendation: (a) and (d). Hovering stays light while you move around the board, and selecting is a deliberate "show me everything this touches". Chaining by click order is easy to get wrong by accident.
+- Status: open. Building (a) and (d) in sprint 3; the session will tell.
 
 ## Answered
 
@@ -243,3 +249,15 @@ Entry format:
 - Options: how far to open (public only; public and hosted, shared quietly; public and announced); whether to take code contributions; whether the process docs stay public.
 - Recommendation: public and hosted on GitHub Pages, shared quietly, with wider promotion after sprint 3 draws dependencies (the other half of the core bet). Issues welcome, code PRs not yet. Keep the process docs public as a decision log.
 - Status: answered 2026-09-30: public and hosted, shared quietly; issues only for now; process docs published as they are. Housekeeping done in one PR: CI on pull requests with read-only permissions, a Pages workflow, a README for new visitors, CONTRIBUTING, SECURITY, issue templates (bug, import problem asking for the header row only, feedback), and the build commit plus a feedback link in the help panel. The PM makes the repo public, sets Pages to deploy from GitHub Actions, turns on private vulnerability reporting, and does the Firefox and Safari check before sharing widely.
+
+### Q37: Can a dependency loop be created?
+- Context: Requirements 15 and 19. A before B and B before A can never both be satisfied.
+- Options: (a) refuse the link that closes a loop, and say why; (b) allow it and flag every link in the loop.
+- Recommendation: (a), since a loop isn't a placement to discuss but a contradiction.
+- Status: answered 2026-10-01: (b), allow and flag, consistent with never blocking (requirement 19). Sprint 3.
+
+### Q38: How does a link show when one of its cards is inside a collapsed group?
+- Context: Requirements 13, 15, and 18. A link to a child is invisible at the top level, where only the group card is placed.
+- Options: (a) draw it to the nearest card on screen (the group), and count out-of-order links inside on the group's ⚠ marker; (b) hide it until zoomed in, with a count on the group.
+- Recommendation: (a). It's what "a group's dependencies include its children's" (requirement 13) looks like.
+- Status: answered 2026-10-01: (a). Order is still judged on the child's own values, not the group's. Sprint 3.
