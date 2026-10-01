@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
+  addDependency,
   createItem,
   deleteItems,
   dropCard,
@@ -9,6 +10,7 @@ import {
   moveToParent,
   openPlanStore,
   redo,
+  removeDependency,
   renameItem,
   resetPlan,
   snapshotSource,
@@ -18,7 +20,8 @@ import {
   type PlanStore,
 } from '../commands/store.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
-import { SYSTEM, TIME, type ItemId, type Plan } from '../domain/model.ts';
+import { chain, directLinks, hasLink, linkKey, visibleLinks } from '../domain/dependencies.ts';
+import { SYSTEM, TIME, type Dependency, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
@@ -43,6 +46,7 @@ import {
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
 import { Dialog } from './Dialog.tsx';
+import type { DrawnLine } from './DependencyLines.tsx';
 import { DragGhost } from './DragGhost.tsx';
 import { ImportDialog } from './ImportDialog.tsx';
 import { datedFileName, downloadText } from './files.ts';
@@ -84,7 +88,8 @@ const NOTICE_MS = 8000;
 /** A short message after a delete, with its own Undo. `step` is the delete's own undo step. */
 interface Notice {
   text: string;
-  step: unknown;
+  /** The undo step it offers to undo. A hint (no step) has no Undo button. */
+  step?: unknown;
 }
 
 /** Why a file couldn't be opened. */
@@ -287,6 +292,48 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     if (released.length > 0) setSelection(new Set(released));
   }, [store, selected]);
 
+  // Dependency links (requirement 15, Q24, Q39). Selection order decides direction: the first card
+  // selected comes before the second. With one card selected, L starts a pending link that survives
+  // zooming, so cards at different group levels can be linked; it's viewer state, never saved.
+  const [pendingLink, setPendingLink] = useState<ItemId | null>(null);
+  const pendingFrom = pendingLink !== null && plan.items[pendingLink] ? pendingLink : null;
+  const titleOf = useCallback((id: ItemId) => `“${plan.items[id]?.title ?? 'card'}”`, [plan]);
+  const toggleLink = useCallback(
+    (from: ItemId, to: ItemId) => {
+      if (hasLink(plan, from, to)) {
+        removeDependency(store, from, to);
+        setNotice({ text: `Removed the link ${titleOf(from)} → ${titleOf(to)}`, step: store.undoManager.undoStack.at(-1) });
+        return;
+      }
+      const problem = addDependency(store, from, to);
+      if (problem !== null) setNotice({ text: problem });
+      else setNotice({ text: `Linked ${titleOf(from)} → ${titleOf(to)}`, step: store.undoManager.undoStack.at(-1) });
+    },
+    [plan, store, titleOf],
+  );
+  const linkSelection = useCallback(() => {
+    const ids = [...selected];
+    if (pendingFrom !== null) {
+      if (ids.length !== 1 || ids[0] === pendingFrom) {
+        setNotice({ text: `Select one other card: the one ${titleOf(pendingFrom)} comes before. Esc cancels.` });
+        return;
+      }
+      toggleLink(pendingFrom, ids[0]!);
+      setPendingLink(null);
+      return;
+    }
+    if (ids.length === 1) setPendingLink(ids[0]!);
+    else if (ids.length === 2) toggleLink(ids[0]!, ids[1]!);
+    else {
+      setNotice({
+        text:
+          ids.length === 0
+            ? 'Select the card that comes first, then the one it comes before, and press L.'
+            : 'Select just two cards: the one that comes first, then the one it comes before.',
+      });
+    }
+  }, [selected, pendingFrom, titleOf, toggleLink]);
+
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(null), NOTICE_MS);
@@ -295,9 +342,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   // The notice's Undo only makes sense while its own step is the latest one. Once
   // anything else happens it's gone for good, rather than coming back when later
   // steps are undone.
-  const noticeCurrent = notice !== null && canUndo && store.undoManager.undoStack.at(-1) === notice.step;
+  const noticeCurrent =
+    notice !== null && (notice.step === undefined || (canUndo && store.undoManager.undoStack.at(-1) === notice.step));
   useEffect(() => {
-    if (!notice) return;
+    if (!notice || notice.step === undefined) return;
     const dismissIfStale = () => {
       if (store.undoManager.undoStack.at(-1) !== notice.step) setNotice(null);
     };
@@ -318,6 +366,21 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const keys = keyNames();
   const { drag, startDrag } = useCardDrag(onDrop, scrollRef, onCardClick);
   const dragging = drag !== null;
+
+  // Focus lines (Q14, Q39): the hovered card's direct links, and the selected cards' whole chains.
+  const [hovered, setHovered] = useState<ItemId | null>(null);
+  const lines = useMemo((): DrawnLine[] => {
+    if (dragging) return [];
+    const focus = new Map<string, Dependency>();
+    for (const id of selected) for (const d of chain(plan, id)) focus.set(linkKey(d), d);
+    if (hovered !== null && plan.items[hovered]) for (const d of directLinks(plan, hovered)) focus.set(linkKey(d), d);
+    return visibleLinks(plan, [...focus.values()], renamable).map((line) => ({
+      ...line,
+      tone: 'focus',
+      label: line.links.map((d) => `${plan.items[d.from]?.title ?? ''} → ${plan.items[d.to]?.title ?? ''}`).join('\n'),
+    }));
+  }, [plan, selected, hovered, renamable, dragging]);
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -341,10 +404,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         return;
       }
       if (e.key === 'Escape') {
-        // Esc clears the selection first, then zooms out a level. Buttons don't use Esc, so this works with one focused.
-        if (selected.size > 0) clearSelection();
+        // Esc cancels a pending link, then clears the selection, then zooms out a level. Buttons don't use Esc,
+        // so this works with one focused.
+        if (pendingFrom !== null) setPendingLink(null);
+        else if (selected.size > 0) clearSelection();
         else if (root !== null) zoomOut();
         else if (shown.xWithin || shown.yWithin) setLaneZoom('both', null);
+        return;
+      }
+      if (e.key.toLowerCase() === 'l' && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        linkSelection();
         return;
       }
       // Enter and Delete on a focused button belong to the button.
@@ -376,6 +446,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setLaneZoom,
     deleteSelection,
     clearSelection,
+    pendingFrom,
+    linkSelection,
     groupSelection,
     ungroupSelection,
     zoomTo,
@@ -456,11 +528,25 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         <h1>Planning Board</h1>
         <AxisPicker plan={plan} choice={shown} onChange={setChoice} />
         <div className="actions">
-          <button type="button" onClick={() => undo(store)} disabled={!canUndo} title={`Undo (${keys.undo})`}>
-            ↶ Undo
+          <button
+            type="button"
+            className="icon"
+            onClick={() => undo(store)}
+            disabled={!canUndo}
+            aria-label="Undo"
+            title={`Undo (${keys.undo})`}
+          >
+            ↶
           </button>
-          <button type="button" onClick={() => redo(store)} disabled={!canRedo} title={`Redo (${keys.redo})`}>
-            ↷ Redo
+          <button
+            type="button"
+            className="icon"
+            onClick={() => redo(store)}
+            disabled={!canRedo}
+            aria-label="Redo"
+            title={`Redo (${keys.redo})`}
+          >
+            ↷
           </button>
           <span className="divider" />
           <button
@@ -486,6 +572,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             title={`Zoom into the selected card to see or add what's inside (${keys.zoomIn})`}
           >
             Zoom in
+          </button>
+          <button
+            type="button"
+            onClick={linkSelection}
+            disabled={pendingFrom === null && selected.size === 0}
+            aria-pressed={pendingFrom !== null}
+            title={`Link the selected cards: the first selected comes before the second (${keys.link})`}
+          >
+            Link
           </button>
           <span className="divider" />
           {fileMenu}
@@ -527,6 +622,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onZoomTo={zoomTo}
         />
       )}
+      {pendingFrom !== null && !empty && (
+        <div className="link-bar" role="status" data-testid="link-bar">
+          Linking from {titleOf(pendingFrom)}: select the card it comes before, then press <kbd>{keys.link}</kbd>.
+          <button type="button" onClick={() => setPendingLink(null)}>
+            Cancel
+          </button>
+        </div>
+      )}
       {empty ? (
         <div className="empty-state">
           <h2>No plan yet</h2>
@@ -560,6 +663,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCardPointerDown={startDrag}
           justMoved={justMoved}
           scrollRef={scrollRef}
+          lines={lines}
+          onHover={setHovered}
           selected={selected}
           editing={editing}
           onCardDoubleClick={onCardDoubleClick}
@@ -586,15 +691,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       {notice && noticeCurrent && (
         <div className="notice" role="status" data-testid="notice">
           {notice.text}
-          <button
-            type="button"
-            onClick={() => {
-              undo(store);
-              setNotice(null);
-            }}
-          >
-            Undo
-          </button>
+          {notice.step !== undefined && (
+            <button
+              type="button"
+              onClick={() => {
+                undo(store);
+                setNotice(null);
+              }}
+            >
+              Undo
+            </button>
+          )}
         </div>
       )}
       {legendOpen && <Legend onClose={closeLegend} />}

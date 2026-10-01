@@ -12,14 +12,14 @@ Scope: single user, browser only, no server.
 
 ### 1. Drawing links (requirement 15, Q24)
 
-- [ ] Select the prerequisite, then the dependent, and press **L** (or the **Link** button) to link them. Pressing L again on the same pair removes the link. Each is one undo step.
-- [ ] With one card selected, L starts a pending link that survives zooming: "Linking from X: select the card it comes before, then press L." Esc cancels. This is how cards at different group levels get linked.
+- [x] Select the prerequisite, then the dependent, and press **L** (or the **Link** button) to link them. Pressing L again on the same pair removes the link. Each is one undo step.
+- [x] With one card selected, L starts a pending link that survives zooming: "Linking from X: select the card it comes before, then press L." Esc cancels. This is how cards at different group levels get linked.
 - [ ] Hovering over a line names it ("A → B"). Clicking a line selects it, and Delete removes it.
 
 ### 2. Showing links (Q14, Q39)
 
 - [ ] Out-of-order links and loops are always drawn. Other links show only for the hovered card (its direct links) or the selected cards (their whole chain, upstream and downstream).
-- [ ] Lines are curved, with an arrowhead at the dependent. A card with several copies is linked from its closest copy.
+- [x] Lines are curved, with an arrowhead at the dependent. A card with several copies is linked from its closest copy.
 
 ### 3. Order highlights (requirements 16 and 18)
 
@@ -29,7 +29,7 @@ Scope: single user, browser only, no server.
 
 ### 4. Links to hidden cards (Q38)
 
-- [ ] A link whose card is inside a collapsed group is drawn to the group, the nearest card on screen. A link that stays inside one group isn't drawn at that level, and a link to a card that isn't on screen at all isn't drawn.
+- [x] A link whose card is inside a collapsed group is drawn to the group, the nearest card on screen. A link that stays inside one group isn't drawn at that level, and a link to a card that isn't on screen at all isn't drawn.
 
 ### 5. Backlog fixes (`docs/backlog.md`)
 

@@ -3,6 +3,7 @@
 
 import * as Y from 'yjs';
 import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from '../domain/csvImport.ts';
+import { hasLink, linkProblem } from '../domain/dependencies.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
 import type { ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
@@ -407,6 +408,25 @@ export function renameLevel(store: PlanStore, propertyId: PropertyId, index: num
   if (property?.kind !== 'select' || !map || clean === null || property.levels[index] === undefined) return false;
   if (property.levels[index] === clean || levelNameProblem(property, index, clean) !== null) return false;
   edit(store, () => map.set('levels', property.levels.map((level, i) => (i === index ? clean : level))));
+  return true;
+}
+
+/**
+ * Link two cards: `from` must come before `to` (requirement 15, Q24).
+ * Loops are allowed (Q37). Returns why it can't be made, or null once it
+ * is. One undo step.
+ */
+export function addDependency(store: PlanStore, from: ItemId, to: ItemId): string | null {
+  const problem = linkProblem(readPlan(store.doc), from, to);
+  if (problem !== null) return problem;
+  edit(store, () => root(store.doc).dependencies.set(dependencyKey({ from, to }), { from, to }));
+  return null;
+}
+
+/** Remove a link. Returns false (no undo step) if there was none. */
+export function removeDependency(store: PlanStore, from: ItemId, to: ItemId): boolean {
+  if (!hasLink(readPlan(store.doc), from, to)) return false;
+  edit(store, () => root(store.doc).dependencies.delete(dependencyKey({ from, to })));
   return true;
 }
 

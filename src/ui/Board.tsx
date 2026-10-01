@@ -1,4 +1,4 @@
-import { memo, useMemo, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
+import { memo, useMemo, useRef, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { badgeProperties, cardAttributes, type CardAttribute } from '../domain/attributes.ts';
 import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
@@ -7,6 +7,7 @@ import { childCounts } from '../domain/tree.ts';
 import type { CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
 import type { Mismatches } from '../domain/mismatches.ts';
 import { Card, DraftCard } from './Card.tsx';
+import { DependencyLines, type DrawnLine } from './DependencyLines.tsx';
 import { isParentTarget, type BoardTarget } from './useCardDrag.ts';
 
 interface Props {
@@ -47,6 +48,10 @@ interface Props {
   zoomableLanes: { x: ReadonlySet<string>; y: ReadonlySet<string> };
   onLaneZoom: (which: 'x' | 'y', key: string) => void;
   scrollRef: RefObject<HTMLDivElement | null>;
+  /** Dependency lines to draw (requirement 15). */
+  lines: readonly DrawnLine[];
+  /** The card under the pointer, for its focus lines (Q39). */
+  onHover: (id: ItemId | null) => void;
 }
 
 /** Palette index by first top-level system area, so cards keep their color across pivots. */
@@ -128,6 +133,8 @@ export const Board = memo(function Board({
   onCardPointerDown,
   justMoved,
   scrollRef,
+  lines,
+  onHover,
   selected,
   editing,
   onCardDoubleClick,
@@ -154,6 +161,7 @@ export const Board = memo(function Board({
     ) : (
       lane.label
     );
+  const boardRef = useRef<HTMLDivElement>(null);
   const renaming = renameCopy(layout, editing);
   const isDraftSpot = (row: string | null, column: string | null) =>
     editing?.kind === 'new' && editing.spot.x === column && editing.spot.y === row;
@@ -315,8 +323,16 @@ export const Board = memo(function Board({
 
   return (
     <div className="board-wrap">
-      <div className="board-scroll" ref={scrollRef} onPointerDown={backgroundPress} onDoubleClick={spotDoubleClick}>
-        <div className="board" style={{ gridTemplateColumns }} data-testid="board">
+      <div
+        className="board-scroll"
+        ref={scrollRef}
+        onPointerDown={backgroundPress}
+        onDoubleClick={spotDoubleClick}
+        onPointerOver={(e) => onHover((e.target as Element).closest<HTMLElement>('.card')?.dataset.item ?? null)}
+        onPointerLeave={() => onHover(null)}
+      >
+        <div className="board" ref={boardRef} style={{ gridTemplateColumns }} data-testid="board">
+          {lines.length > 0 && <DependencyLines lines={lines} board={boardRef} scroller={scrollRef} layoutKey={layout} />}
           <div className="corner">
             <span className="axis-name y">{yLabel} ↓</span>
             <span className="axis-name x">{xLabel} →</span>

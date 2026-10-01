@@ -71,7 +71,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 24px;
+  gap: 8px 16px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
@@ -86,6 +86,13 @@ body {
 /* Labels stay on one line; a narrow window wraps whole groups of controls instead. */
 .toolbar button {
   white-space: nowrap;
+}
+
+.toolbar button.icon {
+  min-width: 32px;
+  padding: 4px 8px;
+  font-size: 15px;
+  line-height: 1;
 }
 
 .actions {
@@ -312,6 +319,7 @@ button.primary {
 }
 
 .board {
+  position: relative;
   display: grid;
   min-width: min-content;
   gap: 1px;
@@ -1430,4 +1438,65 @@ button.link:hover {
 .legend-chip {
   display: inline-flex;
   font-size: 11px;
+}
+
+/* Dependency lines (ADR 0011): one overlay over the whole board, above the pinned lanes so lines
+   reach cards in them, below notices and dialogs. Lines never take the pointer from the cards. */
+.board > svg.dep-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  overflow: visible;
+  background: none;
+  pointer-events: none;
+}
+
+.dep-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.dep-line.focus {
+  stroke: var(--accent);
+  opacity: 0.85;
+}
+
+.dep-arrow.focus {
+  fill: var(--accent);
+}
+
+.dep-line.problem {
+  stroke: #e03131;
+  stroke-width: 2.5;
+}
+
+.dep-arrow.problem {
+  fill: #e03131;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dep-line.problem {
+    stroke: #ff6b6b;
+  }
+
+  .dep-arrow.problem {
+    fill: #ff6b6b;
+  }
+}
+
+/* A pending link, waiting for its second card. */
+.link-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.link-bar button {
+  margin-left: auto;
 }
