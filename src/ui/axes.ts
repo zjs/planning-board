@@ -1,4 +1,5 @@
-import { SEQUENCE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
+import { depthOf } from '../domain/hierarchy.ts';
+import { SEQUENCE, SYSTEM, TIME, type Plan, type PropertyId, type ValueId } from '../domain/model.ts';
 import { propertiesInOrder } from '../domain/properties.ts';
 import type { AxisSpec, ViewSpec } from '../domain/view.ts';
 
@@ -55,11 +56,23 @@ export function optionById(plan: Plan, id: string): AxisOption | undefined {
   return axisOptions(plan).find((o) => o.id === id);
 }
 
+/**
+ * The level a lane-zoomed axis shows: one below the value zoomed into, and
+ * never above the chosen level. Zooming into an area from a component view
+ * stays a component view (ADR 0012).
+ */
+function zoomedLevel(plan: Plan, property: PropertyId, level: number, within: ValueId): number {
+  const p = plan.properties[property];
+  return p?.kind === 'select' ? Math.max(level, depthOf(p, within) + 1) : level + 1;
+}
+
 /** The option an axis shows as: one level down when lane-zoomed. Expects a validChoice. */
 function shownOption(plan: Plan, choice: ViewChoice, which: Which): AxisOption | undefined {
   const option = optionById(plan, choice[which]);
-  if (!option || !choice[withinKey(which)]) return option;
-  return optionById(plan, optionId(option.axis.property, option.axis.level + 1)) ?? option;
+  const within = choice[withinKey(which)];
+  if (!option || !within) return option;
+  const level = zoomedLevel(plan, option.axis.property, option.axis.level, within);
+  return optionById(plan, optionId(option.axis.property, level)) ?? option;
 }
 
 /** Label and holding-lane header for an axis, as currently shown. */
@@ -73,21 +86,22 @@ export function toViewSpec(plan: Plan, choice: ViewChoice): ViewSpec {
   const spec = (which: Which): AxisSpec => {
     const within = choice[withinKey(which)];
     const axis = optionById(plan, choice[which])?.axis ?? { property: choice[which], level: 0 };
-    return within ? { ...axis, level: axis.level + 1, within } : axis;
+    return within ? { ...axis, level: zoomedLevel(plan, axis.property, axis.level, within), within } : axis;
   };
   return { x: spec('x'), y: spec('y') };
 }
 
 /**
- * Whether a lane can be zoomed into: a hierarchy with a level below this
- * one, a value that has something below it, and no lane zoom on the axis yet.
+ * Whether a lane, or a band on a nested axis, can be zoomed into: a value
+ * with a level below it that has something in it, and no lane zoom on the
+ * axis yet.
  */
 export function canZoomLane(plan: Plan, choice: ViewChoice, which: Which, value: string): boolean {
   if (choice[withinKey(which)]) return false;
   const option = optionById(plan, choice[which]);
   if (!option) return false;
   const property = plan.properties[option.axis.property];
-  if (property?.kind !== 'select' || option.axis.level + 1 >= property.levels.length) return false;
+  if (property?.kind !== 'select' || depthOf(property, value) + 1 >= property.levels.length) return false;
   return Object.values(property.values).some((node) => node.parent === value);
 }
 
@@ -227,3 +241,47 @@ export function saveZoomPath(path: readonly string[]): void {
     // A convenience only.
   }
 }
+
+const COLLAPSED_KEY = 'planning-board:collapsed';
+
+/** Collapsed bands per property (ADR 0012), so they stay collapsed across pivots. Remembered per browser. */
+export type Collapsed = Readonly<Record<PropertyId, readonly ValueId[]>>;
+
+export function loadCollapsed(): Collapsed {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? '{}');
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+    return Object.fromEntries(
+      Object.entries(raw).flatMap(([property, values]) =>
+        Array.isArray(values) ? [[property, values.filter((v): v is string => typeof v === 'string')]] : [],
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
+
+export function saveCollapsed(collapsed: Collapsed): void {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed));
+  } catch {
+    // A convenience only.
+  }
+}
+
+/** Collapse a band, or expand it if it's collapsed. */
+export function toggleCollapsed(collapsed: Collapsed, property: PropertyId, value: ValueId): Collapsed {
+  const current = collapsed[property] ?? [];
+  const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+  return { ...collapsed, [property]: next };
+}
+
+/** A view with each axis's collapsed bands. */
+export function withCollapsed(view: ViewSpec, collapsed: Collapsed): ViewSpec {
+  const axis = (a: AxisSpec): AxisSpec => {
+    const values = collapsed[a.property];
+    return values && values.length > 0 ? { ...a, collapsed: values } : a;
+  };
+  return { ...view, x: axis(view.x), y: axis(view.y) };
+}
+

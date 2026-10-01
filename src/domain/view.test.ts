@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
-import { SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
-import { layoutView, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
+import { SEQUENCE, SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
+import { laneKeyOf, layoutView, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
 
 const seqBySystem: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -99,17 +99,18 @@ describe('layoutView', () => {
     expect(cellMap(layout)).toEqual({ 'id / a0': ['placed'] });
   });
 
-  it('treats a value shallower than the view level, or unknown, as missing', () => {
+  it('treats a value shallower than a zoomed view level, or unknown, as missing', () => {
     const layout = layoutView(
       plan(
         item('quarter-only', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
         item('release', { values: { [TIME]: ['q1/r2'], [SYSTEM]: ['id'] } }),
         item('dangling', { values: { [TIME]: ['q9'], [SYSTEM]: ['id'] } }),
       ),
-      { x: { property: TIME, level: 1 }, y: { property: SYSTEM, level: 0 } },
+      { x: { property: TIME, level: 1, within: 'q1' }, y: { property: SYSTEM, level: 0 } },
     );
     expect(cellMap(layout)).toEqual({ 'id / q1/r2': ['release'] });
-    expect(layout.holding.rows[0]!.map((ref) => ref.itemId).sort()).toEqual(['dangling', 'quarter-only']);
+    // The quarter-only card waits for a release; the unknown value is outside the zoom, so it's hidden (Q18).
+    expect(layout.holding.rows[0]!.map((ref) => ref.itemId)).toEqual(['quarter-only']);
   });
 
   it('shows only the children of the card zoomed into (requirement 12)', () => {
@@ -222,3 +223,67 @@ describe('layoutView', () => {
     expect(allHolding(layout)).toEqual([]);
   });
 });
+
+describe('nested axes (ADR 0012)', () => {
+  const releases: ViewSpec = { x: { property: TIME, level: 1 }, y: { property: SYSTEM, level: 0 } };
+  const p = plan(
+    item('quarter-only', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+    item('release', { values: { [TIME]: ['q1/r2'], [SYSTEM]: ['id'] } }),
+    item('dangling', { values: { [TIME]: ['q9'], [SYSTEM]: ['id'] } }),
+    item('undated', { values: { [SYSTEM]: ['pay'] } }),
+  );
+
+  it("gives each parent a band over its children, then a lane of its own for its plain value", () => {
+    const layout = layoutView(p, releases);
+    expect(layout.columns.map((l) => [l.key, l.kind ?? 'value'])).toEqual([
+      ['q1/r1', 'value'],
+      ['q1/r2', 'value'],
+      ['q1', 'parent'],
+      ['q2/r1', 'value'],
+      ['q2', 'parent'],
+    ]);
+    expect(layout.bands.x).toEqual([
+      { key: 'q1', label: 'Q1', depth: 0, start: 0, end: 3, collapsed: false },
+      { key: 'q2', label: 'Q2', depth: 0, start: 3, end: 5, collapsed: false },
+    ]);
+    expect(layout.bands.y).toEqual([]);
+    // The quarter-only card is in Q1's own lane; only cards with no known value wait at the edge.
+    expect(cellMap(layout)).toEqual({ 'id / q1/r2': ['release'], 'id / q1': ['quarter-only'] });
+    expect(allHolding(layout).map((r) => r.itemId).sort()).toEqual(['dangling', 'undated']);
+  });
+
+  it('a collapsed parent is one lane holding everything inside it', () => {
+    const layout = layoutView(p, { ...releases, x: { ...releases.x, collapsed: ['q1'] } });
+    expect(layout.columns.map((l) => [l.key, l.kind, l.inner])).toEqual([
+      ['q1', 'collapsed', 2],
+      ['q2/r1', undefined, undefined],
+      ['q2', 'parent', undefined],
+    ]);
+    expect(layout.bands.x[0]).toMatchObject({ key: 'q1', start: 0, end: 1, collapsed: true });
+    expect(cellMap(layout)).toEqual({ 'id / q1': ['release', 'quarter-only'].sort((a, b) => a.localeCompare(b)) });
+  });
+
+  it('nests rows the same way, with a component in two areas shown in each', () => {
+    const layout = layoutView(
+      plan(item('both', { sequence: 'a0', values: { [SYSTEM]: ['id/sso', 'pay'] } })),
+      { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 1 } },
+    );
+    expect(layout.rows.map((l) => l.key)).toEqual(['id/mfa', 'id/sso', 'id', 'pay/ledger', 'pay']);
+    expect(cellMap(layout)).toEqual({ 'id/sso / a0': ['both'], 'pay / a0': ['both'] });
+  });
+});
+
+describe('laneKeyOf', () => {
+  const axis = { property: TIME, level: 1 };
+  it('maps a value to its lane: its ancestor at the level, its own lane if coarser, or a collapsed parent', () => {
+    const time = plan().properties[TIME] as SelectProperty;
+    expect(laneKeyOf(time, 'q1/r2', axis)).toBe('q1/r2');
+    expect(laneKeyOf(time, 'q1', axis)).toBe('q1');
+    expect(laneKeyOf(time, 'q1/r2', { ...axis, collapsed: ['q1'] })).toBe('q1');
+    expect(laneKeyOf(time, 'q9', axis)).toBeNull();
+    // A top-level or zoomed axis keeps the old rule: coarser values have no lane.
+    expect(laneKeyOf(time, 'q1', { ...axis, within: 'q1' })).toBeNull();
+    expect(laneKeyOf(time, 'q1/r2', { property: TIME, level: 0 })).toBe('q1');
+  });
+});
+

@@ -1,7 +1,7 @@
-import { ancestorAtLevel, isWithin, withoutAncestors } from './hierarchy.ts';
+import { isWithin, withoutAncestors } from './hierarchy.ts';
 import type { Item, OrderKey, Plan, PropertyId, ValueId } from './model.ts';
 import { itemValues } from './model.ts';
-import type { AxisSpec, CardRef, ViewSpec } from './view.ts';
+import { laneKeyOf, type AxisSpec, type CardRef, type ViewSpec } from './view.ts';
 
 /**
  * Where a dragged card copy was dropped, by lane key on each axis. Null is
@@ -73,9 +73,10 @@ export function planDrop(
 const UNCHANGED = Symbol('unchanged');
 type AxisResult = typeof UNCHANGED | { sequence: OrderKey | null } | { values: ValueId[] };
 
-function laneOf(plan: Plan, property: PropertyId, value: ValueId, level: number): ValueId | null {
-  const p = plan.properties[property];
-  return p?.kind === 'select' ? ancestorAtLevel(p, value, level) : null;
+/** The lane a value is in on this axis, nested and collapsed lanes included (ADR 0012). */
+function laneOf(plan: Plan, axis: AxisSpec, value: ValueId): ValueId | null {
+  const p = plan.properties[axis.property];
+  return p?.kind === 'select' ? laneKeyOf(p, value, axis) : null;
 }
 
 function moveOnAxis(
@@ -93,7 +94,7 @@ function moveOnAxis(
   }
 
   const current = itemValues(item, property.id);
-  const inLane = (lane: string) => (v: ValueId) => laneOf(plan, property.id, v, axis.level) === lane;
+  const inLane = (lane: string) => (v: ValueId) => laneOf(plan, axis, v) === lane;
   const alreadyThere = current.some(inLane(to));
 
   if (!property.multi) {
@@ -118,7 +119,7 @@ function backToZoomedValue(plan: Plan, item: Item, axis: AxisSpec, within: Value
   const property = plan.properties[axis.property];
   if (property?.kind !== 'select') return UNCHANGED;
   const current = itemValues(item, property.id);
-  const kept = current.filter((v) => laneOf(plan, property.id, v, axis.level) !== from);
+  const kept = current.filter((v) => laneOf(plan, axis, v) !== from);
   if (kept.length === current.length) return UNCHANGED;
   const stillInside = kept.some((v) => isWithin(property, v, within));
   if (!property.multi) return { values: [within] };
@@ -144,6 +145,6 @@ function clearOnAxis(plan: Plan, item: Item, axis: AxisSpec, from: string): Axis
   if (!property) return UNCHANGED;
   if (property.kind === 'sequence') return item.sequence === null ? UNCHANGED : { sequence: null };
   const current = itemValues(item, property.id);
-  const kept = current.filter((v) => laneOf(plan, property.id, v, axis.level) !== from);
+  const kept = current.filter((v) => laneOf(plan, axis, v) !== from);
   return kept.length === current.length ? UNCHANGED : { values: kept };
 }

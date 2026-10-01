@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
-import { SYSTEM, TIME, type Plan } from '../domain/model.ts';
+import { SEQUENCE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
 import {
   axisNames,
   axisOptions,
   canZoomLane,
   chooseAxis,
   swapAxes,
+  toggleCollapsed,
   toViewSpec,
   validChoice,
+  withCollapsed,
   zoomLane,
 } from './axes.ts';
 
@@ -101,5 +103,35 @@ describe('validChoice', () => {
 
   it('never shows one property on both axes', () => {
     expect(validChoice(p, { x: 'system', y: 'system:1' })).toMatchObject({ x: 'system', y: 'sequence' });
+  });
+});
+
+describe('nested axes (ADR 0012)', () => {
+  it('zooming into an area from a component view stays a component view', () => {
+    const choice = { x: SEQUENCE, y: 'system:1', yWithin: 'id' };
+    expect(toViewSpec(p, choice).y).toEqual({ property: SYSTEM, level: 1, within: 'id' });
+    // From the area view it's the same: one level below the zoomed value.
+    expect(toViewSpec(p, { x: SEQUENCE, y: SYSTEM, yWithin: 'id' }).y).toEqual({
+      property: SYSTEM,
+      level: 1,
+      within: 'id',
+    });
+  });
+
+  it('a band can be zoomed into; a value with nothing below it can’t', () => {
+    const choice = { x: SEQUENCE, y: 'system:1' };
+    expect(canZoomLane(p, choice, 'y', 'id')).toBe(true);
+    expect(canZoomLane(p, choice, 'y', 'id/sso')).toBe(false);
+    expect(canZoomLane(p, { ...choice, yWithin: 'id' }, 'y', 'pay')).toBe(false);
+  });
+
+  it('collapsed bands are kept per property and added to the view', () => {
+    let collapsed = toggleCollapsed({}, SYSTEM, 'id');
+    collapsed = toggleCollapsed(collapsed, SYSTEM, 'pay');
+    collapsed = toggleCollapsed(collapsed, SYSTEM, 'id');
+    expect(collapsed).toEqual({ [SYSTEM]: ['pay'] });
+    const view = withCollapsed(toViewSpec(p, { x: SEQUENCE, y: 'system:1' }), collapsed);
+    expect(view.y.collapsed).toEqual(['pay']);
+    expect(view.x.collapsed).toBeUndefined();
   });
 });

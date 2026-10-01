@@ -45,11 +45,11 @@ Scope: single user, browser only, no server.
 
 ### 3. Nested axes (Q34)
 
-- [ ] With an axis at a child level, such as components or releases, each parent shows as a header band across its children. Areas sit to the left of component rows, and quarters above release columns.
-- [ ] Each parent gets its own holding lane, such as "Identity: no component". It holds cards with only the parent value, and dropping a card there gives it that plain parent value (Q22's rule).
-- [ ] The holding lanes at the board's edges hold only cards with no value at any level.
-- [ ] A band can be collapsed into one lane that shows all its cards, and expanded again. Dragging a card within a collapsed band keeps its precise value. Collapsed bands are remembered per browser, like the view.
-- [ ] Clicking a band's header still zooms into it (requirement 7).
+- [x] With an axis at a child level, such as components or releases, each parent shows as a header band across its children. Areas sit to the left of component rows, and quarters above release columns.
+- [x] Each parent gets its own holding lane, such as "Identity: no component". It holds cards with only the parent value, and dropping a card there gives it that plain parent value (Q22's rule).
+- [x] The holding lanes at the board's edges hold only cards with no value at any level.
+- [x] A band can be collapsed into one lane that shows all its cards, and expanded again. Dragging a card within a collapsed band keeps its precise value. Collapsed bands are remembered per browser, like the view.
+- [x] Clicking a band's header still zooms into it (requirement 7).
 
 ### 4. Children in context (Q33)
 

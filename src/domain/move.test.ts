@@ -200,3 +200,33 @@ describe('planDrop with levels and lane zoom', () => {
     });
   });
 });
+
+describe('planDrop on a nested axis (ADR 0012)', () => {
+  const components: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1 } };
+
+  it("a parent's own lane gives the copy the plain parent value (Q22's rule)", () => {
+    const p = plan(item('a', { values: { [SYSTEM]: ['id/sso', 'pay/ledger'], [TIME]: ['q1'] } }));
+    expect(planDrop(p, components, { itemId: 'a', x: 'q1', y: 'id/sso' }, { x: 'q1', y: 'id' })).toEqual({
+      values: { [SYSTEM]: ['pay/ledger', 'id'] },
+    });
+    const releases: ViewSpec = { x: { property: TIME, level: 1 }, y: { property: SIZE, level: 0 } };
+    const r = plan(item('c', { values: { [TIME]: ['q1/r2'] } }));
+    expect(planDrop(r, releases, { itemId: 'c', x: 'q1/r2', y: null }, { x: 'q1', y: null })).toEqual({
+      values: { [TIME]: ['q1'] },
+    });
+  });
+
+  it('moving within a collapsed lane keeps the precise value; moving into one gives the plain parent', () => {
+    const folded: ViewSpec = { ...components, y: { ...components.y, collapsed: ['id'] } };
+    const p = plan(item('a', { values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1'] } }), item('b', { values: { [SYSTEM]: ['pay/ledger'] } }));
+    expect(planDrop(p, folded, { itemId: 'a', x: 'q1', y: 'id' }, { x: 'q2', y: 'id' })).toEqual({ values: { [TIME]: ['q2'] } });
+    expect(planDrop(p, folded, { itemId: 'b', x: null, y: 'pay/ledger' }, { x: null, y: 'id' })).toEqual({
+      values: { [SYSTEM]: ['id'] },
+    });
+    // A single-valued axis: a release card stays in its release when moved along the other axis.
+    const releases: ViewSpec = { x: { property: TIME, level: 1, collapsed: ['q1'] }, y: { property: SIZE, level: 0 } };
+    const r = plan(item('c', { values: { [TIME]: ['q1/r2'], [SIZE]: ['s'] } }));
+    expect(planDrop(r, releases, { itemId: 'c', x: 'q1', y: 's' }, { x: 'q1', y: 'm' })).toEqual({ values: { [SIZE]: ['m'] } });
+  });
+});
+

@@ -5,7 +5,7 @@ import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
-import type { CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
+import type { Band, CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
 import type { Mismatches } from '../domain/mismatches.ts';
 import { Card, DraftCard } from './Card.tsx';
 import { DependencyLines, type DrawnLine } from './DependencyLines.tsx';
@@ -45,9 +45,13 @@ interface Props {
   onBackgroundPointerDown: () => void;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
-  /** Lanes whose header zooms one level down into them (requirement 7). */
+  /** Lanes, and bands on a nested axis, whose header zooms one level down into them (requirement 7). */
   zoomableLanes: { x: ReadonlySet<string>; y: ReadonlySet<string> };
   onLaneZoom: (which: 'x' | 'y', key: string) => void;
+  /** Collapse or expand a band on a nested axis (ADR 0012). */
+  onBandToggle: (which: 'x' | 'y', key: string) => void;
+  /** The level each axis shows, such as "component", for a collapsed lane's "4 components". */
+  levelNames: { x: string; y: string };
   scrollRef: RefObject<HTMLDivElement | null>;
   /** Dependency lines to draw (requirement 15). */
   lines: readonly DrawnLine[];
@@ -117,6 +121,20 @@ function tracks(lanes: Lane[], layoutGaps: string[] | null): Track[] {
 const trackKey = (t: Track) => (t.kind === 'lane' ? t.lane.key : t.key);
 
 /**
+ * One row of column bands at a band level: each band once, spanning its
+ * lanes, and null for a lane no band at that level covers.
+ */
+function bandCells(bands: Band[], depth: number, lanes: number): (Band | null)[] {
+  const out: (Band | null)[] = [];
+  for (let i = 0; i < lanes; ) {
+    const band = bands.find((b) => b.depth === depth && b.start === i);
+    out.push(band ?? null);
+    i = band ? band.end : i + 1;
+  }
+  return out;
+}
+
+/**
  * Memoized: during a drag only the ghost moves, and the board re-renders
  * only when the drop target changes.
  */
@@ -148,11 +166,22 @@ export const Board = memo(function Board({
   onBackgroundPointerDown,
   zoomableLanes,
   onLaneZoom,
+  onBandToggle,
+  levelNames,
   mismatches,
 }: Props) {
-  /** A lane header: a button that zooms into the lane when there's a level below it. */
-  const laneHeader = (which: 'x' | 'y', lane: Lane) =>
-    zoomableLanes[which].has(lane.key) ? (
+  /**
+   * A lane header: a button that zooms into the lane when there's a level
+   * below it. On a nested axis, a parent's own lane reads "No component",
+   * and a collapsed one says how much it holds (ADR 0012).
+   */
+  const laneHeader = (which: 'x' | 'y', lane: Lane) => {
+    if (lane.kind === 'parent') return <span className="lane-note">{which === 'x' ? xNone : yNone}</span>;
+    if (lane.kind === 'collapsed') {
+      const n = lane.inner ?? 0;
+      return <span className="lane-note">{`${n} ${levelNames[which]}${n === 1 ? '' : 's'}`}</span>;
+    }
+    return zoomableLanes[which].has(lane.key) ? (
       <button
         type="button"
         className="lane-zoom"
@@ -164,6 +193,29 @@ export const Board = memo(function Board({
     ) : (
       lane.label
     );
+  };
+  /** A band's header: collapse or expand it, and zoom into it by its name. */
+  const bandHeader = (which: 'x' | 'y', band: Band) => (
+    <span className="band-head">
+      <button
+        type="button"
+        className="band-toggle"
+        aria-expanded={!band.collapsed}
+        aria-label={`${band.collapsed ? 'Expand' : 'Collapse'} ${band.label}`}
+        title={band.collapsed ? `Show each of ${band.label}'s lanes` : `Fold ${band.label} into one lane`}
+        onClick={() => onBandToggle(which, band.key)}
+      >
+        {band.collapsed ? '▸' : '▾'}
+      </button>
+      {zoomableLanes[which].has(band.key) ? (
+        <button type="button" className="lane-zoom" onClick={() => onLaneZoom(which, band.key)} title={`Zoom into ${band.label}`}>
+          {band.label}
+        </button>
+      ) : (
+        <span>{band.label}</span>
+      )}
+    </span>
+  );
   const boardRef = useRef<HTMLDivElement>(null);
   const renaming = renameCopy(layout, editing);
   const isDraftSpot = (row: string | null, column: string | null) =>
@@ -215,7 +267,12 @@ export const Board = memo(function Board({
   const empty = noLanes(layout.columns, layout.gaps.x) || noLanes(layout.rows, layout.gaps.y);
   // A lone gap (no sequence columns yet) is full width, so there's somewhere obvious to drop.
   const gapSize = (lanes: Lane[]) => (lanes.length === 0 ? 'minmax(var(--column-min), 1fr)' : 'var(--gap-size)');
+  // Band tracks for nested axes (ADR 0012): a column per level of row bands, a row per level of column bands.
+  const depths = (bands: Band[]) => (bands.length === 0 ? 0 : Math.max(...bands.map((b) => b.depth)) + 1);
+  const yDepth = depths(layout.bands.y);
+  const xDepth = depths(layout.bands.x);
   const gridTemplateColumns = [
+    ...Array.from({ length: yDepth }, () => 'var(--band-width)'),
     'var(--row-header)',
     ...(columnTracks.length === 0
       ? ['minmax(var(--column-min), 1fr)']
@@ -240,8 +297,10 @@ export const Board = memo(function Board({
     const isGap = row.kind === 'gap' || column.kind === 'gap';
     // With no sequence lanes yet, the single gap is a full-size cell, so there's somewhere obvious to drop.
     const lone = isGap && (row.kind === 'gap' ? layout.rows.length === 0 : layout.columns.length === 0);
+    const parentLane = (t: Track, lanes: Lane[]) => t.kind === 'lane' && lanes[t.index]!.kind === 'parent';
     const classes = [
       'cell',
+      (parentLane(row, layout.rows) || parentLane(column, layout.columns)) && 'parent-lane',
       isGap && !lone && 'gap',
       isGap && !lone && row.kind === 'gap' && 'gap-row',
       lone && 'lone-gap',
@@ -316,6 +375,39 @@ export const Board = memo(function Board({
     );
   };
 
+  const holdingHead = (
+    <>
+      <span>{xNone}</span>
+      <span className="holding-toggle" role="group" aria-label="Show holding cards as">
+        <button type="button" aria-pressed={!compact} onClick={() => onCompactChange(false)}>
+          Cards
+        </button>
+        <button type="button" aria-pressed={compact} onClick={() => onCompactChange(true)}>
+          Chips
+        </button>
+      </span>
+    </>
+  );
+
+  /** Row bands that start at this row, one per band level; each spans its rows (ADR 0012). */
+  const rowBandCells = (index: number): ReactNode[] =>
+    Array.from({ length: yDepth }, (_, depth) => {
+      const band = layout.bands.y.find((b) => b.depth === depth && b.start <= index && index < b.end);
+      const left = { left: `calc(var(--band-width) * ${depth})` };
+      if (!band) return <div key={`yb-${depth}-${index}`} className="band band-y empty" style={left} />;
+      if (band.start !== index) return null;
+      return (
+        <div
+          key={`yb-${band.key}`}
+          className={band.collapsed ? 'band band-y collapsed' : 'band band-y'}
+          data-band={band.key}
+          style={{ ...left, gridRow: `span ${band.end - band.start}` }}
+        >
+          {bandHeader('y', band)}
+        </div>
+      );
+    }).filter((cell) => cell !== null);
+
   const backgroundPress = (e: PointerEvent<HTMLDivElement>) => {
     if (!(e.target as Element).closest('.card, button, textarea')) onBackgroundPointerDown();
   };
@@ -347,30 +439,42 @@ export const Board = memo(function Board({
               layoutKey={layout}
               onLineClick={onLineClick}
             />}
-          <div className="corner">
+          <div className="corner" style={{ gridRow: `span ${xDepth + 1}`, gridColumn: `span ${yDepth + 1}` }}>
             <span className="axis-name y">{yLabel} ↓</span>
             <span className="axis-name x">{xLabel} →</span>
           </div>
+          {Array.from({ length: xDepth }, (_, depth) => [
+            ...bandCells(layout.bands.x, depth, layout.columns.length).map((b, i) =>
+              b === null ? (
+                <div key={`xb-${depth}-${i}`} className="band band-x empty" style={{ top: `calc(var(--band-height) * ${depth})` }} />
+              ) : (
+                <div
+                  key={`xb-${b.key}`}
+                  className={b.collapsed ? 'band band-x collapsed' : 'band band-x'}
+                  data-band={b.key}
+                  style={{ gridColumn: `span ${b.end - b.start}`, top: `calc(var(--band-height) * ${depth})` }}
+                >
+                  {bandHeader('x', b)}
+                </div>
+              ),
+            ),
+            depth === 0 && <div key="holding-head" className="holding-head" style={{ gridRow: `span ${xDepth + 1}` }}>{holdingHead}</div>,
+          ])}
           {columnTracks.map((t) =>
             t.kind === 'lane' ? (
-              <div key={t.lane.key} className="column-header" data-column={t.lane.key}>
+              <div
+                key={t.lane.key}
+                className={t.lane.kind ? `column-header lane-${t.lane.kind}` : 'column-header'}
+                data-column={t.lane.key}
+                style={xDepth > 0 ? { top: `calc(var(--band-height) * ${xDepth})` } : undefined}
+              >
                 {laneHeader('x', t.lane)}
               </div>
             ) : (
               <div key={t.key} className="column-header gap" />
             ),
           )}
-          <div className="holding-head">
-            <span>{xNone}</span>
-            <span className="holding-toggle" role="group" aria-label="Show holding cards as">
-              <button type="button" aria-pressed={!compact} onClick={() => onCompactChange(false)}>
-                Cards
-              </button>
-              <button type="button" aria-pressed={compact} onClick={() => onCompactChange(true)}>
-                Chips
-              </button>
-            </span>
-          </div>
+          {xDepth === 0 && <div className="holding-head">{holdingHead}</div>}
           {empty && (
             <div className="empty-note">
               No cards have a {(noLanes(layout.columns, layout.gaps.x) ? xLabel : yLabel).toLowerCase()} value yet.
@@ -379,8 +483,14 @@ export const Board = memo(function Board({
           )}
           {/* Rows render even with no columns, so their holding lanes (and cards) still show. */}
           {rowTracks.map((row) => [
+            ...(row.kind === 'lane' ? rowBandCells(row.index) : []),
             row.kind === 'lane' ? (
-              <div key={`h-${row.lane.key}`} className="row-header" data-row={row.lane.key}>
+              <div
+                key={`h-${row.lane.key}`}
+                className={row.lane.kind ? `row-header lane-${row.lane.kind}` : 'row-header'}
+                data-row={row.lane.key}
+                style={yDepth > 0 ? { left: `calc(var(--band-width) * ${yDepth})` } : undefined}
+              >
                 {laneHeader('y', row.lane)}
               </div>
             ) : (
@@ -391,7 +501,9 @@ export const Board = memo(function Board({
               : columnTracks.map((column) => cell(row, column))),
             holdingCell(row, null),
           ])}
-          <div className="holding-row-header">{yNone}</div>
+          <div className="holding-row-header" style={yDepth > 0 ? { gridColumn: `span ${yDepth + 1}` } : undefined}>
+            {yNone}
+          </div>
           {columnTracks.length === 0 ? (
             <div className="cell holding-bottom" />
           ) : (

@@ -66,7 +66,7 @@ No decision needed. Each one goes into the next sprint. The first two shipped in
 |---|---|---|
 | Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
 | Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
-| Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Sprint 4, slice 3 (headers change there) |
+| Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
 
 ## Planned next
 

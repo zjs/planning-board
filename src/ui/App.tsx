@@ -37,7 +37,7 @@ import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import { ancestry, childCounts, childrenOf } from '../domain/tree.ts';
-import { inZoomedScope, layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
+import { inZoomedScope, layoutView, type AxisSpec, type CardRef, type Lane, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
 import {
@@ -54,6 +54,11 @@ import {
   saveViewChoice,
   saveZoomPath,
   toViewSpec,
+  inSentence,
+  loadCollapsed,
+  saveCollapsed,
+  toggleCollapsed,
+  withCollapsed,
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
 import { Dialog } from './Dialog.tsx';
@@ -68,6 +73,13 @@ import { PropertiesPanel } from './PropertiesPanel.tsx';
 import { keyNames } from './platform.ts';
 import { isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
 import { ZoomBar } from './ZoomBar.tsx';
+
+/** The name of the level an axis shows, in a sentence: "component", "release". */
+function levelName(plan: Plan, axis: AxisSpec): string {
+  const property = plan.properties[axis.property];
+  if (property?.kind !== 'select') return 'value';
+  return inSentence(property.levels[axis.level] ?? property.name);
+}
 
 function samplePlan(): Plan {
   const result = parsePlanJson(sample);
@@ -123,17 +135,33 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const root = useMemo(() => [...zoomPath].reverse().find((id) => plan.items[id]) ?? null, [zoomPath, plan]);
   // A lane zoom whose value was deleted is dropped, rather than showing an empty board.
   const shown = useMemo(() => validChoice(plan, choice), [plan, choice]);
-  const view = useMemo(() => ({ ...toViewSpec(plan, shown), root }), [plan, shown, root]);
+  // Collapsed bands on nested axes (ADR 0012): viewer state per property, remembered like the view.
+  const [collapsed, setCollapsed] = useState(loadCollapsed);
+  useEffect(() => saveCollapsed(collapsed), [collapsed]);
+  const view = useMemo(
+    () => ({ ...withCollapsed(toViewSpec(plan, shown), collapsed), root }),
+    [plan, shown, collapsed, root],
+  );
   const names = { x: axisNames(plan, shown, 'x'), y: axisNames(plan, shown, 'y') };
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
+  // A parent's own lane and a collapsed lane aren't zoomed from their headers: their band is (ADR 0012).
   const zoomableLanes = useMemo(() => {
     const lanes = (which: 'x' | 'y', keys: string[]) =>
       new Set(keys.filter((key) => canZoomLane(plan, shown, which, key)));
+    const own = (lanes: Lane[]) => lanes.filter((l) => !l.kind).map((l) => l.key);
     return {
-      x: lanes('x', layout.columns.map((l) => l.key)),
-      y: lanes('y', layout.rows.map((l) => l.key)),
+      x: lanes('x', [...own(layout.columns), ...layout.bands.x.map((b) => b.key)]),
+      y: lanes('y', [...own(layout.rows), ...layout.bands.y.map((b) => b.key)]),
     };
   }, [plan, shown, layout]);
+  const onBandToggle = useCallback(
+    (which: 'x' | 'y', key: string) => setCollapsed((c) => toggleCollapsed(c, view[which].property, key)),
+    [view],
+  );
+  const levelNames = {
+    x: levelName(plan, view.x),
+    y: levelName(plan, view.y),
+  };
   const laneChips = (['x', 'y'] as const).flatMap((which) => {
     const within = which === 'x' ? shown.xWithin : shown.yWithin;
     const property = plan.properties[view[which].property];
@@ -792,6 +820,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           zoomableLanes={zoomableLanes}
           mismatches={mismatches}
           onLaneZoom={onLaneZoom}
+          onBandToggle={onBandToggle}
+          levelNames={levelNames}
         />
         {panel === 'inspector' && (
           <Inspector

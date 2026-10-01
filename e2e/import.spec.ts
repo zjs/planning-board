@@ -96,7 +96,7 @@ test('the value table puts components in areas, versions in quarters, and points
   await expect(epic.locator('.attr[data-property="time"]')).toHaveAttribute('title', `Time: ${quarter!} › 2027.1`);
 
   await page.getByTestId('axis-x').selectOption('time:1');
-  await expect(page.locator('.column-header')).toHaveText(['2027.1']);
+  await expect(page.locator('.column-header:not(.lane-parent)')).toHaveText(['2027.1']);
 });
 
 test('a CSV with only titles imports straight from the columns step', async ({ page }) => {

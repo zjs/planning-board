@@ -15,6 +15,8 @@
   --warn-bg: #fff3bf;
   --warn-text: #5c4400;
   --row-header: 150px;
+  --band-width: 128px;
+  --band-height: 30px;
   --column-min: 150px;
   --holding-width: 240px;
   --holding-right-max: 45vh;
@@ -365,6 +367,75 @@ button.primary {
   background: var(--surface);
   padding: 10px;
   font-weight: 600;
+}
+
+/* Nested axes (ADR 0012): parent bands in their own pinned column (rows) or row (columns). */
+.band {
+  position: sticky;
+  z-index: 2;
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.band-y {
+  z-index: 1;
+  padding: 8px 6px;
+}
+
+.band-y .band-head {
+  position: sticky;
+  top: calc(var(--band-height) * 1 + 44px);
+}
+
+.band-x {
+  top: 0;
+  height: var(--band-height);
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.band-x .band-head {
+  position: sticky;
+  left: calc(var(--row-header) + 8px);
+  line-height: var(--band-height);
+}
+
+.band.empty {
+  background: var(--surface-2);
+}
+
+.band-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+}
+
+.band-toggle {
+  flex: none;
+  width: 20px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.band-toggle:hover {
+  color: var(--text);
+}
+
+/* A parent's own lane ("No component") and its cells read like a holding lane. */
+.lane-note {
+  color: var(--muted);
+  font-weight: normal;
+  font-style: italic;
+}
+
+.cell.parent-lane {
+  background: var(--holding-bg);
 }
 
 .cell {
