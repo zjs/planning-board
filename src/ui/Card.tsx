@@ -27,6 +27,8 @@ interface Props {
   mismatchesInside?: readonly string[];
   onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void;
   onDoubleClick?: (e: MouseEvent<HTMLDivElement>) => void;
+  /** Zoom into this card's group: the button on group cards (Q36). */
+  onZoom?: (() => void) | undefined;
   onRename?: (title: string) => void;
   onCancelEdit?: () => void;
 }
@@ -46,6 +48,7 @@ export function Card({
   mismatchesInside = [],
   onPointerDown,
   onDoubleClick,
+  onZoom,
   onRename,
   onCancelEdit,
 }: Props) {
@@ -83,11 +86,37 @@ export function Card({
         {(mismatches.length > 0 || mismatchesInside.length > 0) && (
           <MismatchMarker own={mismatches} inside={mismatchesInside} />
         )}
-        {isGroup && (
-          <span className="child-count" aria-label={`Group of ${childCount} items`} title={`Group of ${childCount} items`}>
-            {childCount}
-          </span>
-        )}
+        {isGroup &&
+          (onZoom && !editing ? (
+            // The count is the way in (Q36): double-click renames, this opens the group. Only on a
+            // selected group, so a click meant to select it never opens it by accident.
+            <button
+              type="button"
+              className={selected ? 'zoom-into ready' : 'zoom-into'}
+              aria-label={`Open ${item.title} (${childCount} inside)`}
+              title={selected ? `Open: see the ${childCount} cards inside` : `Group of ${childCount} cards. Select it, then click here to open it`}
+              tabIndex={selected ? 0 : -1}
+              onPointerDown={(e) => {
+                // Unselected, the press selects the card like any other; selected, it's a click on the button.
+                if (selected) e.stopPropagation();
+              }}
+              onClick={(e) => {
+                // The second click of a double-click belongs to the card: double-click renames.
+                if (!selected || e.detail > 1) return;
+                e.stopPropagation();
+                onZoom();
+              }}
+            >
+              <span className="child-count">{childCount}</span>
+              <span className="zoom-chevron" aria-hidden="true">
+                ›
+              </span>
+            </button>
+          ) : (
+            <span className="child-count" aria-label={`Group of ${childCount} items`} title={`Group of ${childCount} items`}>
+              {childCount}
+            </span>
+          ))}
       </div>
       {!compact && (attributes.length > 0 || item.externalKey) && (
         <div className="card-attrs">

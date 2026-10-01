@@ -1,6 +1,6 @@
 # 0007: Drag-and-drop approach
 
-Status: Accepted (sprint 0, slice 2)
+Status: Accepted (sprint 0, slice 2). Amended in sprint 1 (click and double-click) and sprint 3, slice 1 (double-click's single job).
 
 ## Context
 
@@ -15,6 +15,7 @@ Dragging is the interaction sprint 0 exists to test. A drop writes two values at
 - ⌥ Option / Alt switches to "add a lane". The ghost shows a "+ add" badge, and the key is read at drop time, so pressing or releasing it mid-drag works.
 - Holding the pointer near the board's edge for 200ms scrolls it. The dwell stops the board from jittering when you merely cross the edge. "The edge" is the inner edge of the pinned headers and holding lanes, so hovering a holding lane never scrolls the board under the pointer. _Amended in sprint 0, slice 5, when the side holding area became pinned lanes._
 - Escape cancels. A drop that changes nothing records no undo step.
+- **Double-click has one job on a card: rename it** (questions.md Q36, sprint 3). Until sprint 3 it also zoomed into groups, so a group couldn't be renamed by double-clicking. A group card's child count is now a button that opens the group, once the group is selected (so a click meant to select it never opens it); ⌘↓ still zooms into any selected card. A faded "via children" copy can't be renamed, so double-clicking it still zooms in. On empty space, double-click creates a card with that spot's values; in a gap between sequence columns, that's a card in a new column, and the gap widens while the title is typed.
 
 ## Alternatives
 

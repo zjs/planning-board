@@ -144,3 +144,22 @@ async function columnOf(page: Page, itemId: string): Promise<string> {
     .first()
     .evaluate((el) => el.closest<HTMLElement>('.cell')!.dataset.column!);
 }
+
+test('double-clicking a gap between sequence columns makes a card in a new column', async ({ page }) => {
+  await openApp(page);
+  const columns = await page.locator('.column-header:not(.gap)').count();
+  await doubleClickEmpty(page, page.locator('.cell.gap[data-row="identity"]').nth(2));
+  await page.keyboard.type('Brand-new step');
+  await page.keyboard.press('Enter');
+  const created = page.locator('.card', { hasText: 'Brand-new step' });
+  await expect(created).toBeVisible();
+  await expect(page.locator('.column-header:not(.gap)')).toHaveCount(columns + 1);
+  // It's alone in its column, in the row it was made in.
+  await expect(created.locator('xpath=ancestor::*[contains(@class, "cell")][1]')).toHaveAttribute('data-row', 'identity');
+});
+
+test('the Rows picker comes before Columns, next to the row headers', async ({ page }) => {
+  await openApp(page);
+  const order = await page.locator('.axis-picker select').evaluateAll((els) => els.map((el) => el.getAttribute('data-testid')));
+  expect(order).toEqual(['axis-y', 'axis-x']);
+});

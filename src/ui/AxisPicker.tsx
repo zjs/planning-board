@@ -28,7 +28,7 @@ export function AxisPicker({ plan, choice, onChange }: Props) {
   );
   return (
     <div className="axis-picker">
-      {select('x', 'Columns')}
+      {select('y', 'Rows')}
       <button
         type="button"
         className="swap"
@@ -38,7 +38,7 @@ export function AxisPicker({ plan, choice, onChange }: Props) {
       >
         ⇄
       </button>
-      {select('y', 'Rows')}
+      {select('x', 'Columns')}
     </div>
   );
 }

@@ -510,12 +510,16 @@ button.primary {
 
 .card-main {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: 6px;
+  gap: 4px 6px;
 }
 
 .card-title {
-  flex: 1;
+  /* In a narrow card the badges wrap under the title rather than squeeze it. */
+  flex: 1 1 7em;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .card-attrs {
@@ -1377,4 +1381,53 @@ button.link:hover {
   padding: 2px 6px;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* A gap being typed into (a new sequence column) opens up for the draft card. */
+.cell.gap.drafting {
+  height: auto;
+  padding: 8px;
+  background: var(--surface-2);
+}
+
+/* A group's count opens it (Q36): double-click renames, this zooms in. */
+.zoom-into {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.zoom-into .zoom-chevron {
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.zoom-into:not(.ready) {
+  cursor: inherit;
+}
+
+.zoom-into.ready .child-count {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.zoom-into.ready .zoom-chevron {
+  color: var(--accent);
+}
+
+.zoom-into.ready:hover .child-count,
+.zoom-into.ready:focus-visible .child-count {
+  background: var(--accent);
+  color: #fff;
+}
+
+.legend-chip {
+  display: inline-flex;
+  font-size: 11px;
 }

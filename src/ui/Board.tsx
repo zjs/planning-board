@@ -33,6 +33,8 @@ interface Props {
   /** A title being typed: a new card at a spot, or a rename of one copy. */
   editing: Editing | null;
   onCardDoubleClick: (card: CardRef) => void;
+  /** The zoom button on a group card. */
+  onCardZoom: (card: CardRef) => void;
   /** Double-click on empty space in a cell or holding lane. */
   onSpotDoubleClick: (spot: DropTarget) => void;
   onCommitEdit: (title: string) => void;
@@ -129,6 +131,7 @@ export const Board = memo(function Board({
   selected,
   editing,
   onCardDoubleClick,
+  onCardZoom,
   onSpotDoubleClick,
   onCommitEdit,
   onCancelEdit,
@@ -183,6 +186,7 @@ export const Board = memo(function Board({
         // A faded copy isn't the group's own value, so it can be clicked but not dragged (Q16).
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title, ref.via !== 'children')}
         onDoubleClick={() => onCardDoubleClick(ref)}
+        onZoom={(counts.get(ref.itemId) ?? 0) > 0 ? () => onCardZoom(ref) : undefined}
         onRename={onCommitEdit}
         onCancelEdit={onCancelEdit}
       />
@@ -199,7 +203,12 @@ export const Board = memo(function Board({
     'var(--row-header)',
     ...(columnTracks.length === 0
       ? ['minmax(var(--column-min), 1fr)']
-      : columnTracks.map((t) => (t.kind === 'lane' ? 'minmax(var(--column-min), 1fr)' : gapSize(layout.columns)))),
+      : columnTracks.map((t) =>
+          // A gap being typed into opens up to a column's width, so the new card has room.
+          t.kind === 'lane' || (editing?.kind === 'new' && editing.spot.x === t.key)
+            ? 'minmax(var(--column-min), 1fr)'
+            : gapSize(layout.columns),
+        )),
     'var(--holding-width)',
   ].join(' ');
 
@@ -221,6 +230,7 @@ export const Board = memo(function Board({
       isGap && !lone && row.kind === 'gap' && 'gap-row',
       lone && 'lone-gap',
       isTarget(rowKey, columnKey) && 'drop-target',
+      isDraftSpot(rowKey, columnKey) && 'drafting',
     ];
     return (
       <div
@@ -293,13 +303,13 @@ export const Board = memo(function Board({
   const backgroundPress = (e: PointerEvent<HTMLDivElement>) => {
     if (!(e.target as Element).closest('.card, button, textarea')) onBackgroundPointerDown();
   };
-  // Double-clicking empty space makes a card there. Not in the thin gaps
-  // between sequence columns: make it in a column, then drag it into a gap.
+  // Double-clicking empty space makes a card there. In a gap between
+  // sequence columns, that's a card in a new column of its own.
   const spotDoubleClick = (e: MouseEvent<HTMLDivElement>) => {
     const el = e.target as Element;
     if (el.closest('.card, button, textarea')) return;
     const spot = el.closest<HTMLElement>('[data-drop="cell"]');
-    if (!spot || spot.classList.contains('gap')) return;
+    if (!spot) return;
     onSpotDoubleClick({ x: spot.dataset.column ?? null, y: spot.dataset.row ?? null });
   };
 

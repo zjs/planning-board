@@ -33,9 +33,9 @@ Scope: single user, browser only, no server.
 
 ### 5. Backlog fixes (`docs/backlog.md`)
 
-- [ ] Double-click always renames, groups included; group cards get a zoom button, and ⌘↓ still zooms. Faded copies still zoom on double-click (Q36).
-- [ ] Double-clicking a gap between sequence columns creates a card in a new column.
-- [ ] The Rows dropdown is to the left of Columns.
+- [x] Double-click always renames, groups included; select a group and click its child count to open it, and ⌘↓ still zooms. Faded copies still zoom on double-click (Q36).
+- [x] Double-clicking a gap between sequence columns creates a card in a new column.
+- [x] The Rows dropdown is to the left of Columns.
 
 ### 6. Tester-ready
 
