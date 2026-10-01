@@ -26,6 +26,12 @@
   --holding-edge-top: 0 -2px 0 0 var(--border-strong);
   --border-strong: #c4bfb4;
   --level-border: #8f897d;
+  --tone-0: #0c8599;
+  --tone-1: #c2255c;
+  --tone-2: #e67700;
+  --tone-3: #5f3dc4;
+  --tone-4: #2b8a3e;
+  --tone-5: #1864ab;
   --gap-size: 14px;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
@@ -51,6 +57,12 @@
     --holding-bg: #17171a;
     --border-strong: #4a4a50;
     --level-border: #7c7c86;
+    --tone-0: #3bc9db;
+    --tone-1: #f06595;
+    --tone-2: #ffa94d;
+    --tone-3: #9775fa;
+    --tone-4: #69db7c;
+    --tone-5: #4dabf7;
     --warn-bg: #3d3314;
     --warn-text: #ffe8a3;
   }
@@ -76,13 +88,13 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 
 .toolbar h1 {
-  font-size: 16px;
+  font-size: 15px;
   margin: 0;
   white-space: nowrap;
 }
@@ -91,6 +103,12 @@ body {
 .toolbar button {
   white-space: nowrap;
 }
+
+/* Room for every action on one row at 1440px. */
+.actions button:not(.icon) {
+  padding: 4px 8px;
+}
+
 
 .toolbar button.icon {
   min-width: 32px;
@@ -874,7 +892,7 @@ body.dragging * {
   left: 16px;
   bottom: 16px;
   z-index: 50;
-  width: min(920px, calc(100vw - 32px));
+  width: min(1180px, calc(100vw - 32px));
   max-height: calc(100vh - 120px);
   overflow: auto;
   padding: 12px 14px;
@@ -904,7 +922,7 @@ body.dragging * {
 }
 
 .legend-body {
-  columns: 3 250px;
+  columns: 4 230px;
   column-gap: 24px;
 }
 
@@ -1761,3 +1779,43 @@ button.link:hover {
 .side-panel button.link:hover {
   text-decoration: underline;
 }
+
+/* Children in context (Q33). A faded group frames the real cards that put it in a cell. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 4px 6px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 8px;
+}
+
+.frame > .card.via-children {
+  border-style: none;
+  border-left: 4px solid transparent;
+  box-shadow: none;
+  background: transparent;
+  padding: 2px 6px;
+}
+
+/* A card shown for its group, when several groups' children share the board: a chip and an edge in the group's tone. */
+.card[data-tone] {
+  box-shadow: inset -4px 0 0 var(--tone-color), 0 1px 1px rgb(0 0 0 / 6%);
+}
+
+.attr.parent-chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tone-color);
+  background: color-mix(in srgb, var(--tone-color) 12%, transparent);
+  font-weight: 600;
+}
+
+.card[data-tone='0'] { --tone-color: var(--tone-0); }
+.card[data-tone='1'] { --tone-color: var(--tone-1); }
+.card[data-tone='2'] { --tone-color: var(--tone-2); }
+.card[data-tone='3'] { --tone-color: var(--tone-3); }
+.card[data-tone='4'] { --tone-color: var(--tone-4); }
+.card[data-tone='5'] { --tone-color: var(--tone-5); }

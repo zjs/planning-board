@@ -14,6 +14,8 @@ interface Props {
   plan: Plan;
   /** The card zoomed into, or null at the top level. */
   root: ItemId | null;
+  /** Other cards zoomed into alongside it (multi-zoom, Q33). */
+  also?: readonly ItemId[];
   lanes: LaneZoomChip[];
   onClearLane: (which: 'x' | 'y') => void;
   /** The drag is over this breadcrumb segment (a parent, or null for the plan). */
@@ -33,7 +35,7 @@ const NO_AXES = { x: { property: '', level: 0 }, y: { property: '', level: 0 } }
  * to the top, and the card's own values. Each segment is also a drop target
  * that moves a card out to that level.
  */
-export function ZoomBar({ plan, root, lanes, onClearLane, target, dragging, empty, onZoomTo }: Props) {
+export function ZoomBar({ plan, root, also = [], lanes, onClearLane, target, dragging, empty, onZoomTo }: Props) {
   const chain = useMemo(() => (root === null ? [] : ancestry(plan, root)), [plan, root]);
   const item = root === null ? undefined : plan.items[root];
   const values = useMemo(() => (item ? cardAttributes(plan, item, NO_AXES) : []), [plan, item]);
@@ -80,12 +82,17 @@ export function ZoomBar({ plan, root, lanes, onClearLane, target, dragging, empt
             </button>
           </li>
         ))}
-        <li aria-current="page" className="crumb-current">
+        <li
+          aria-current="page"
+          className="crumb-current"
+          title={also.length > 0 ? [item.title, ...also.map((id) => plan.items[id]?.title ?? '')].join(', ') : undefined}
+        >
           {item.title}
+          {also.length > 0 && ` + ${also.length}`}
         </li>
       </ol>
       {laneChips}
-      {values.length > 0 && (
+      {values.length > 0 && also.length === 0 && (
         <ul className="zoom-values" aria-label={`${item.title}'s own values`}>
           {values.map((v) => (
             <li key={v.property} className="attr" title={v.title}>

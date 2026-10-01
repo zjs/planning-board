@@ -15,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 4: hierarchy and editing (the card inspector, card levels, nested axes, and children in context). Scope is in `docs/sprint-4.md`; the slice plan is in `docs/plans/sprint-4-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. Don't build anything on its deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Sprint 3 is still awaiting the PM's acceptance and its tester session; its feedback goes into `docs/backlog.md`.
+Sprint 4 (hierarchy and editing) is complete and awaiting the PM's acceptance and a tester session, as is sprint 3's. Sprint 5 isn't planned yet; its candidate is component contention and the conflicts panel (`docs/backlog.md`, Q40, Q41), so start it in plan mode. Sprint 4's scope is in `docs/sprint-4.md`; the slice plan is in `docs/plans/sprint-4-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
 
 ## Architecture rules
 

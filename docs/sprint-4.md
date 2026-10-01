@@ -53,15 +53,15 @@ Scope: single user, browser only, no server.
 
 ### 4. Children in context (Q33)
 
-- [ ] **Expand in place:** select one or more groups and press **E** (or the toolbar's **Expand**). Their children appear on the current board in their own lanes, each marked with a parent chip and a parent-colored edge. **E** again, on a group or on any of its expanded children, collapses it.
-- [ ] **Multi-zoom:** select several groups and zoom in (⌘↓). The board shows only their children, each with a parent chip, and the breadcrumb reads "Plan › EU data residency + 1".
-- [ ] **Faded copies become frames.** A collapsed group's faded "via children" copy becomes a faded frame, labeled with the group, around the real child cards that put it in that lane. Those cards can be dragged, and dragging one edits the child (amends Q16).
-- [ ] Dependency lines, ⚠ counts and drops work on expanded children like on any card on screen.
+- [x] **Expand in place:** select one or more groups and press **E** (or the toolbar's **Expand**). Their children appear on the current board in their own lanes, each marked with a parent chip and a parent-colored edge. **E** again, on a group or on any of its expanded children, collapses it.
+- [x] **Multi-zoom:** select several groups and zoom in (⌘↓). The board shows only their children, each with a parent chip, and the breadcrumb reads "Plan › EU data residency + 1".
+- [x] **Faded copies become frames.** A collapsed group's faded "via children" copy becomes a faded frame, labeled with the group, around the real child cards that put it in that lane. Those cards can be dragged, and dragging one edits the child (amends Q16).
+- [x] Dependency lines, ⚠ counts and drops work on expanded children like on any card on screen.
 
 ### 5. Tester-ready
 
-- [ ] The legend covers the inspector, levels, bands, and expanding groups.
-- [ ] A demo note (`docs/demos/sprint-4.md`) and a session script about structuring a plan.
+- [x] The legend covers the inspector, levels, bands, and expanding groups.
+- [x] A demo note (`docs/demos/sprint-4.md`) and a session script about structuring a plan.
 
 ## Deferred (don't build)
 

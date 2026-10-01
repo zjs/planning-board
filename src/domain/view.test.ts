@@ -287,3 +287,52 @@ describe('laneKeyOf', () => {
   });
 });
 
+
+describe('children in context (Q33)', () => {
+  const p = plan(
+    item('epic', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+    item('story', { parent: 'epic', values: { [TIME]: ['q2'], [SYSTEM]: ['id'] } }),
+    item('task', { parent: 'story', values: { [SYSTEM]: ['pay'] } }),
+    item('inherits', { parent: 'epic' }),
+    item('other', { values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
+    item('lone', { parent: 'other', values: { [TIME]: ['q1'], [SYSTEM]: ['pay'] } }),
+  );
+  const refs = (layout: ViewLayout) =>
+    layout.cells.flat(2).concat(allHolding(layout)).filter((r) => !r.via);
+
+  it('a frame lists the cards that put the group in that cell, with their own lanes', () => {
+    const layout = layoutView(p, timeBySystem);
+    const frame = layout.cells.flat(2).find((r) => r.itemId === 'epic' && r.via === 'children' && r.x === 'q2' && r.y === 'id')!;
+    // The story is dated Q2 itself, but takes Identity as its own value too.
+    expect(frame.inner).toEqual([{ itemId: 'story', x: 'q2', y: 'id' }]);
+    // The task has only its own area; its date comes from the story above it.
+    const pay = layout.cells.flat(2).find((r) => r.itemId === 'epic' && r.via === 'children' && r.y === 'pay')!;
+    expect(pay.inner).toEqual([{ itemId: 'task', x: null, y: 'pay' }]);
+  });
+
+  it('expanding a group shows its children in its place, marked with it, at any depth', () => {
+    const layout = layoutView(p, { ...timeBySystem, expanded: ['epic'] });
+    expect(refs(layout).map((r) => [r.itemId, r.parent ?? null]).sort()).toEqual([
+      ['inherits', 'epic'],
+      ['other', null],
+      ['story', 'epic'],
+    ]);
+    const deeper = layoutView(p, { ...timeBySystem, expanded: ['epic', 'story'] });
+    expect(refs(deeper).map((r) => [r.itemId, r.parent ?? null]).sort()).toEqual([
+      ['inherits', 'epic'],
+      ['other', null],
+      ['task', 'story'],
+    ]);
+  });
+
+  it('zooming into several groups shows all their children, each marked with its group', () => {
+    const layout = layoutView(p, { ...timeBySystem, roots: ['epic', 'other'] });
+    expect(refs(layout).map((r) => [r.itemId, r.parent]).sort()).toEqual([
+      ['inherits', 'epic'],
+      ['lone', 'other'],
+      ['story', 'epic'],
+    ]);
+    // One root is the usual zoom: no marks needed.
+    expect(refs(layoutView(p, { ...timeBySystem, roots: ['epic'] })).every((r) => r.parent === undefined)).toBe(true);
+  });
+});
