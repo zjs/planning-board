@@ -56,7 +56,7 @@ Dragging into a cell is the core bet, and it's the fastest way to sort many card
 - **A card inspector**: select one or more cards and edit any property in a side panel. It's also a home for already-deferred items: descriptions, the Jira key, and later a card's dependencies. It complements dragging rather than replacing it. → [Q35](questions.md#q35-editing-a-card-without-pivoting)
 - **Give double-click one job** across the board, and give zooming a visible control. → [Q36](questions.md#q36-double-click-does-three-jobs)
 
-**Lands:** renaming groups in sprint 3. The inspector is a sprint 4 candidate, or late in sprint 3 if there's room.
+**Lands:** renaming groups in sprint 3 (slice 1). The inspector is a sprint 4 candidate.
 
 ### D. Small fixes
 
@@ -64,16 +64,17 @@ No decision needed. Each one goes into the next sprint.
 
 | Item | Source | Lands |
 |---|---|---|
-| Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Sprint 3 |
-| Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Sprint 3 |
+| Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
+| Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
 
 ## Planned next
 
-- **Sprint 3: dependencies** (requirements 15 and 16). Draw links by selecting two cards and pressing L (Q24). Show them the Q14 way. Highlight out-of-order links. Also: the small fixes in D, and group renaming (Q36).
+- **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)). Drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18). Also the small fixes in D, and group renaming (Q36).
+- **Sprint 4 candidates:** themes A, B, and C's inspector (Q32–Q35), plus component contention and the conflicts panel (requirements 17–20), which sprint 3 left out to stay focused on dependencies.
 
 ## Deferred, from earlier sprints
 
-Already out of scope, listed here so they're in one place: contention and the conflicts panel (requirements 17–20); scenarios (22–24); filters (9); saved views (8); re-importing or updating from Jira (Q26); hierarchical custom properties (Q25); showing card descriptions; nicer release labels than "27.3" once releases can be curated (the PM's note on Q9).
+Already out of scope, listed here so they're in one place: scenarios (22–24); filters (9); saved views (8); re-importing or updating from Jira (Q26); hierarchical custom properties (Q25); showing card descriptions; nicer release labels than "27.3" once releases can be curated (the PM's note on Q9).
 
 ## Housekeeping
 
