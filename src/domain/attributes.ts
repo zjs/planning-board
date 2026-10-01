@@ -1,7 +1,7 @@
 import { compareTreeOrder, depthOf, pathTo } from './hierarchy.ts';
 import type { Item, Plan, PropertyId, SelectProperty } from './model.ts';
 import { itemValues, LEVEL, SIZE, SYSTEM, TIME } from './model.ts';
-import type { AxisSpec, ViewSpec } from './view.ts';
+import { laneKeyOf, type AxisSpec, type ViewSpec } from './view.ts';
 
 /** A compact badge on a card, for a value the view's axes don't already show (requirement 4). */
 export interface CardAttribute {
@@ -26,6 +26,10 @@ export function badgeProperties(plan: Plan): SelectProperty[] {
     .sort((a, b) => rank(a.id) - rank(b.id) || a.name.localeCompare(b.name));
 }
 
+/** A value on a nested axis that's in a collapsed parent's lane, so the board doesn't show it. */
+const folded = (property: SelectProperty, axis: AxisSpec, value: string) =>
+  axis.level > 0 && !axis.within && laneKeyOf(property, value, axis) !== value;
+
 /**
  * Badges for one card. A property on an axis gets a badge only for values
  * more precise than the axis shows (a release in a quarter view, a component
@@ -43,7 +47,8 @@ export function cardAttributes(
   for (const property of properties) {
     const axis = axisFor(property.id);
     const values = itemValues(item, property.id)
-      .filter((v) => depthOf(property, v) >= 0 && (!axis || depthOf(property, v) > axis.level))
+      // On a nested axis, a value inside a collapsed parent's lane gets a badge too (ADR 0012).
+      .filter((v) => depthOf(property, v) >= 0 && (!axis || depthOf(property, v) > axis.level || folded(property, axis, v)))
       .sort((a, b) => compareTreeOrder(property, a, b));
     if (values.length === 0) continue;
     const paths = values.map((v) => pathTo(property, v));

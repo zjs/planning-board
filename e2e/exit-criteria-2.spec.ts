@@ -94,10 +94,10 @@ test('sprint 2 exit criteria', async ({ page }) => {
   await expect(page.locator('.column-header', { hasText: '2027.1 hotfix' })).toHaveCount(1);
   await time.getByRole('button', { name: 'Delete 2027.1', exact: true }).click();
   await expect(page.getByTestId('notice')).toContainText(`cards moved to ${quarters[0]!}`);
-  await expect(page.locator('.column-header')).toHaveText(['2027.1 hotfix', '2027.2', '2027.3', '2027.4']);
+  await expect(page.locator('.column-header:not(.lane-parent)')).toHaveText(['2027.1 hotfix', '2027.2', '2027.3', '2027.4']);
 
   for (let i = 0; i < 4; i++) await undo(page);
-  await expect(page.locator('.column-header')).toHaveText(['2027.1', '2027.2', '2027.3', '2027.4']);
+  await expect(page.locator('.column-header:not(.lane-parent)')).toHaveText(['2027.1', '2027.2', '2027.3', '2027.4']);
   await expect(system.locator('li[data-value] .value-label', { hasText: /^Roles$/ })).toHaveCount(1);
   await expect(system.locator('li[data-value] .value-label', { hasText: 'Roles & Permissions' })).toHaveCount(0);
 

@@ -50,6 +50,17 @@ export function DependencyLines({
       const origin = boardEl.getBoundingClientRect();
       svg.setAttribute('width', String(boardEl.scrollWidth));
       svg.setAttribute('height', String(boardEl.scrollHeight));
+      // Clip to the area under the pinned headers, so a line to a card scrolled beneath them doesn't
+      // seem to point at a header. Lines still reach the pinned holding lanes on the right and bottom.
+      const corner = boardEl.querySelector('.corner')?.getBoundingClientRect();
+      const view = scroller.current?.getBoundingClientRect();
+      const clip = svg.querySelector('clipPath rect')!;
+      if (corner && view) {
+        clip.setAttribute('x', String(corner.right - origin.left));
+        clip.setAttribute('y', String(corner.bottom - origin.top));
+        clip.setAttribute('width', String(Math.max(0, view.right - corner.right)));
+        clip.setAttribute('height', String(Math.max(0, view.bottom - corner.bottom)));
+      }
       const group = svg.querySelector('g.lines')!;
       group.replaceChildren();
       for (const line of lines) {
@@ -125,8 +136,11 @@ export function DependencyLines({
             <path d="M0,0 L10,5 L0,10 z" className={`dep-arrow ${tone}`} />
           </marker>
         ))}
+        <clipPath id="dep-clip">
+          <rect x="0" y="0" width="100%" height="100%" />
+        </clipPath>
       </defs>
-      <g className="lines" />
+      <g className="lines" clipPath="url(#dep-clip)" />
     </svg>
   );
 }

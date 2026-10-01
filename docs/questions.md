@@ -251,6 +251,7 @@ Entry format:
 - Options: at a child level, show each parent as a header band spanning its children (areas over components, quarters over releases), with a holding lane per parent, such as "Identity: no component". A drop there gives the card the plain parent, the same rule as Q22. Then for lane zoom: (a) keep clicking a header to zoom; (b) collapse and expand bands instead; (c) both. Also open: whether the edge holding lanes then hold only cards with no value at any level.
 - Recommendation: nested bands with per-parent lanes, and (c) at first, then see whether people still zoom. Edge lanes hold only cards with no value at all. It's the biggest layout change since sprint 0, so it gets an ADR first.
 - Status: answered 2026-10-01: nested bands with a holding lane per parent, and (c): bands collapse and expand, and clicking a header still zooms. The session will show which one people use. Edge lanes hold only cards with no value at all. Sprint 4, slice 3, with an ADR first.
+  - Built in slice 3 (ADR 0012). A parent's own lane reads "No component" or "No release" under its band, shaded like a holding lane. A collapsed band is one lane that says how much it holds ("4 components"), and its cards show the component they're in as a badge. Collapsed bands are remembered per property, so they stay collapsed when you swap axes. Zooming into a band from a component view stays a component view.
 
 ### Q37: Can a dependency loop be created?
 - Context: Requirements 15 and 19. A before B and B before A can never both be satisfied.
