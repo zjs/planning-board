@@ -21,7 +21,7 @@ test('help opens on first visit, stays closed once dismissed, and reopens from t
   await page.getByTestId('board').waitFor();
   await expect(legend).toHaveCount(0);
 
-  await page.getByRole('button', { name: '? Help' }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
   await expect(legend).toBeVisible();
 });
 

@@ -27,7 +27,8 @@ test('renders a group as one card with its child count, and hides the children',
   const group = card(page, 'eu-data-residency');
   await expect(group).toHaveCount(1);
   await expect(group.locator('.child-count')).toHaveText('4');
-  await expect(page.locator('.card[data-item="eu-kafka-cluster"]')).toHaveCount(0);
+  // Cards inside it show only in its frames, where it reaches a cell through them (Q33).
+  await expect(card(page, 'eu-kafka-cluster')).toHaveCount(0);
 });
 
 test('shows a multi-component card once per matching area lane', async ({ page }) => {

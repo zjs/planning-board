@@ -9,6 +9,8 @@ interface Props {
   areaIndex: number | null;
   /** Levels above the lowest: a heavier border, so initiatives and epics stand out (Q32). */
   levelWeight?: number;
+  /** The group this card is shown for, when several groups' children share the board (Q33). */
+  parentChip?: { title: string; tone: number } | undefined;
   /** Values of properties that aren't on an axis (requirement 4). */
   attributes: CardAttribute[];
   /** A one-line chip: title and child count only (holding lanes, when chosen). */
@@ -40,6 +42,7 @@ export function Card({
   childCount,
   areaIndex,
   levelWeight = 0,
+  parentChip,
   attributes,
   compact,
   selected,
@@ -71,6 +74,7 @@ export function Card({
       data-item={item.id}
       data-area={areaIndex ?? 'none'}
       data-weight={levelWeight > 0 ? Math.min(levelWeight, 2) : undefined}
+      data-tone={parentChip ? parentChip.tone : undefined}
       title={editing ? undefined : viaChildren ? `${item.title} (via cards inside it)` : item.title}
       aria-selected={selected ?? false}
       onPointerDown={editing ? undefined : onPointerDown}
@@ -122,8 +126,13 @@ export function Card({
             </span>
           ))}
       </div>
-      {!compact && (attributes.length > 0 || item.externalKey) && (
+      {!compact && (attributes.length > 0 || item.externalKey || parentChip) && (
         <div className="card-attrs">
+          {parentChip && (
+            <span className="attr parent-chip" title={`Inside ${parentChip.title}`}>
+              {parentChip.title}
+            </span>
+          )}
           {item.externalKey && (
             <span className="attr key" title={`Key in the imported tool: ${item.externalKey}`}>
               {item.externalKey}

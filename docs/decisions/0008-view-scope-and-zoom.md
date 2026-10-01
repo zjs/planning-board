@@ -1,6 +1,6 @@
 # 0008: View scope and zoom
 
-Status: Accepted (sprint 1, slices 3 and 4).
+Status: Accepted (sprint 1, slices 3 and 4). Amended in sprint 4, slice 4: several roots, expanding groups in place, and frames (Q33).
 
 ## Context
 
@@ -25,3 +25,11 @@ Requirements 7 and 12: zoom into a group to see only its children, and zoom into
 - One code path for every level: the drag rules, holding lanes, and badges tested at the top level also hold inside a group.
 - The scroll position is remembered per zoom level in memory only, so it resets on reload; the zoom level itself is remembered.
 - Selection doesn't survive a zoom change. If testers want it to, the delete-invisible-cards risk needs another answer first.
+
+## Amendment: children in context (sprint 4, slice 4, Q33)
+
+- **Several roots.** `ViewSpec.roots` lists the cards zoomed into when there's more than one. The view shows all their children, and each child carries its group as `CardRef.parent`, which the board shows as a chip and a tone on its edge. The UI keeps the extra roots beside the zoom path and remembers them. They must be on the same level as the first one. Zooming anywhere clears them.
+- **Expanding in place.** `ViewSpec.expanded` lists groups replaced by their children wherever they'd be shown, at any depth. Each child is marked with its group, like with several roots. It's viewer state, remembered per browser. E expands the selected groups, and E on an expanded child (or on the group) folds the group back.
+- **Frames.** A faded "via children" copy now carries the cards that put the group in that cell (`CardRef.inner`). These are the cards whose own parent doesn't already put the group there, so a story is listed rather than each of its tasks. The board shows the faded copy as a frame's header, with those cards inside it. They're real cards, so they can be dragged, and a drag changes that card. Their `x` and `y` are their own lanes, or null where they only inherit the group's value, so a drag adds a value there instead of moving one.
+- **One layout still.** All three are inputs to `layoutView`, so drops, holding lanes and badges work the same on expanded children as on any card. Dependency lines treat expanded children as on screen. Cards inside a frame aren't counted as on screen, so a link to one is still drawn to the group's copy (Q38).
+

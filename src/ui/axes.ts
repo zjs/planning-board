@@ -285,3 +285,30 @@ export function withCollapsed(view: ViewSpec, collapsed: Collapsed): ViewSpec {
   return { ...view, x: axis(view.x), y: axis(view.y) };
 }
 
+const EXPANDED_KEY = 'planning-board:expanded';
+const ZOOM_ALSO_KEY = 'planning-board:zoom-also';
+
+function loadIds(key: string): string[] {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');
+    return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveIds(key: string, ids: readonly string[]): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(ids));
+  } catch {
+    // A convenience only.
+  }
+}
+
+/** Groups expanded in place (Q33). Remembered per browser, like the zoom. */
+export const loadExpanded = () => loadIds(EXPANDED_KEY);
+export const saveExpanded = (ids: readonly string[]) => saveIds(EXPANDED_KEY, ids);
+/** Cards zoomed into alongside the zoom path's last one (multi-zoom, Q33). */
+export const loadZoomAlso = () => loadIds(ZOOM_ALSO_KEY);
+export const saveZoomAlso = (ids: readonly string[]) => saveIds(ZOOM_ALSO_KEY, ids);
+

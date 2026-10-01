@@ -233,11 +233,19 @@ export const Board = memo(function Board({
     for (const item of Object.values(plan.items)) out.set(item.id, cardAttributes(plan, item, view, properties));
     return out;
   }, [plan, view]);
-  const renderCard = (ref: CardRef, chip = false) => {
+  // Each group whose children share the board gets its own tone for their chips and edges (Q33).
+  const tones = useMemo(() => {
+    const out = new Map<ItemId, number>();
+    for (const ref of allCopies(layout)) if (ref.parent !== undefined && !out.has(ref.parent)) out.set(ref.parent, out.size % 6);
+    return out;
+  }, [layout]);
+  const renderCard = (ref: CardRef, chip = false, frame?: CardRef) => {
     const item = plan.items[ref.itemId]!;
+    const tone = ref.parent === undefined ? undefined : tones.get(ref.parent);
     return (
       <Card
-        key={`${ref.itemId}|${ref.x}|${ref.y}|${ref.via ?? ''}`}
+        key={`${frame ? `${frame.itemId}>` : ''}${ref.itemId}|${ref.x}|${ref.y}|${ref.via ?? ''}`}
+        parentChip={tone === undefined ? undefined : { title: plan.items[ref.parent!]?.title ?? '', tone }}
         item={item}
         compact={chip}
         childCount={counts.get(ref.itemId) ?? 0}
@@ -253,13 +261,26 @@ export const Board = memo(function Board({
         mismatchesInside={mismatches.inside.get(ref.itemId) ?? NONE}
         // A faded copy isn't the group's own value, so it can be clicked but not dragged (Q16).
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title, ref.via !== 'children')}
-        onDoubleClick={() => onCardDoubleClick(ref)}
+        // A card in a frame isn't on the board's level: double-click opens its group, like the frame's header.
+        onDoubleClick={() => onCardDoubleClick(frame ?? ref)}
         onZoom={(counts.get(ref.itemId) ?? 0) > 0 ? () => onCardZoom(ref) : undefined}
         onRename={onCommitEdit}
         onCancelEdit={onCancelEdit}
       />
     );
   };
+
+  /**
+   * A collapsed group in a cell only its children reach (Q33): its faded
+   * copy as a header, framing the real cards that put it there. Those can be
+   * dragged, and dragging one changes that card.
+   */
+  const renderFrame = (ref: CardRef) => (
+    <div key={`frame|${ref.itemId}|${ref.x}|${ref.y}`} className="frame" data-frame={ref.itemId}>
+      {renderCard(ref)}
+      {(ref.inner ?? []).map((inner) => renderCard(inner, false, ref))}
+    </div>
+  );
 
   const columnTracks = tracks(layout.columns, layout.gaps.x);
   const rowTracks = tracks(layout.rows, layout.gaps.y);
@@ -318,7 +339,7 @@ export const Board = memo(function Board({
       >
         {row.kind === 'lane' &&
           column.kind === 'lane' &&
-          layout.cells[row.index]![column.index]!.map((ref) => renderCard(ref))}
+          layout.cells[row.index]![column.index]!.map((ref) => (ref.via ? renderFrame(ref) : renderCard(ref)))}
         {isDraftSpot(rowKey, columnKey) && draft}
         {lone && <span className="lone-hint">Drop a card here to start the sequence</span>}
       </div>

@@ -31,6 +31,17 @@ export interface ViewSpec {
    * its children. Null or absent for the top level.
    */
   root?: ItemId | null;
+  /**
+   * Multi-zoom (Q33): several cards zoomed into at once. When set, the view
+   * shows the children of all of them, and `root` is ignored.
+   */
+  roots?: readonly ItemId[];
+  /**
+   * Groups expanded in place (Q33): each one at the view's level is replaced
+   * by its children, marked with it as their parent. Applies at any depth,
+   * so an expanded child group shows its own children too.
+   */
+  expanded?: readonly ItemId[];
 }
 
 /** A column or row. `key` is a ValueId, or an OrderKey on the sequence axis. */
@@ -75,6 +86,17 @@ export interface CardRef {
    * (requirement 13, Q16). It can't be dragged: it isn't the group's own value.
    */
   via?: 'children';
+  /**
+   * For a faded copy, the cards inside the group that put it in this cell
+   * (Q33): shown in a frame, and draggable. Each one's `x` and `y` are its
+   * own lanes, or null where it only has its group's value.
+   */
+  inner?: CardRef[];
+  /**
+   * The group this card is shown for, when the view shows the children of
+   * several groups: expanded in place, or several zoomed into (Q33).
+   */
+  parent?: ItemId;
 }
 
 export interface Holding {
@@ -225,28 +247,38 @@ function rolledUpCells(
   ysOf: (item: Item) => string[],
   /** Whether the group has solid copies here at all (it doesn't outside a lane zoom's scope). */
   solid: boolean,
-): { x: string; y: string }[] {
+): { x: string; y: string; inner: CardRef[] }[] {
   if (!kids.has(group.id)) return [];
   const ownXs = xsOf(group);
   const ownYs = ysOf(group);
   const own = new Set(solid ? ownYs.flatMap((y) => ownXs.map((x) => `${x}|${y}`)) : []);
-  const found = new Map<string, { x: string; y: string }>();
-  const walk = (parent: Item, xs: string[], ys: string[], seen: Set<ItemId>) => {
+  const found = new Map<string, { x: string; y: string; inner: CardRef[] }>();
+  // A card is in a cell's frame when it puts the group there and its own parent doesn't already (Q33).
+  const walk = (parent: Item, xs: string[], ys: string[], above: Set<string>, seen: Set<ItemId>) => {
     for (const child of kids.get(parent.id) ?? []) {
       if (seen.has(child.id)) continue;
       seen.add(child.id);
-      const cxs = xsOf(child).length > 0 ? xsOf(child) : xs;
-      const cys = ysOf(child).length > 0 ? ysOf(child) : ys;
+      const ownX = xsOf(child);
+      const ownY = ysOf(child);
+      const cxs = ownX.length > 0 ? ownX : xs;
+      const cys = ownY.length > 0 ? ownY : ys;
+      const keys = new Set<string>();
       for (const y of cys) {
         for (const x of cxs) {
           const key = `${x}|${y}`;
-          if (!own.has(key)) found.set(key, { x, y });
+          keys.add(key);
+          if (own.has(key)) continue;
+          const cell = found.get(key) ?? { x, y, inner: [] };
+          found.set(key, cell);
+          if (!above.has(key)) {
+            cell.inner.push({ itemId: child.id, x: ownX.length > 0 ? x : null, y: ownY.length > 0 ? y : null });
+          }
         }
       }
-      walk(child, cxs, cys, seen);
+      walk(child, cxs, cys, keys, seen);
     }
   };
-  walk(group, ownXs, ownYs, new Set([group.id]));
+  walk(group, ownXs, ownYs, own, new Set([group.id]));
   return [...found.values()];
 }
 
@@ -262,10 +294,42 @@ export function inZoomedScope(plan: Plan, item: Item, axis: AxisSpec): boolean {
  * Lay out one level of the plan for a view: the top-level items, or the
  * children of the card zoomed into, within any lane zoom. Deeper cards stay inside their group.
  */
+/**
+ * The cards a view shows, with the group each is shown for when that needs
+ * saying (Q33): the children of the card or cards zoomed into, with every
+ * expanded group among them replaced by its children, at any depth.
+ */
+function viewItems(plan: Plan, view: ViewSpec): { items: Item[]; parentOf: Map<ItemId, ItemId> } {
+  const roots: (ItemId | null)[] = view.roots && view.roots.length > 0 ? [...view.roots] : [view.root ?? null];
+  const multi = roots.length > 1;
+  const expanded = new Set(view.expanded ?? []);
+  const items: Item[] = [];
+  const parentOf = new Map<ItemId, ItemId>();
+  const seen = new Set<ItemId>();
+  const add = (id: ItemId, parent: ItemId | null) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    const children = childrenOf(plan, id);
+    if (expanded.has(id) && children.length > 0) {
+      for (const child of children) add(child, id);
+      return;
+    }
+    items.push(plan.items[id]!);
+    if (parent !== null) parentOf.set(id, parent);
+  };
+  for (const root of roots) {
+    if (root !== null && !plan.items[root]) continue;
+    for (const id of childrenOf(plan, root)) add(id, multi ? root : null);
+  }
+  return { items: items.sort(compareItems), parentOf };
+}
+
 export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
-  const items = childrenOf(plan, view.root ?? null)
-    .map((id) => plan.items[id]!)
-    .sort(compareItems);
+  const { items, parentOf } = viewItems(plan, view);
+  const marked = (ref: CardRef): CardRef => {
+    const parent = parentOf.get(ref.itemId);
+    return parent === undefined ? ref : { ...ref, parent };
+  };
   const inScope = (item: Item) => inZoomedScope(plan, item, view.x) && inZoomedScope(plan, item, view.y);
   const scoped = items.filter(inScope);
   const { lanes: columns, bands: xBands } = axisLanes(plan, view.x, scoped);
@@ -281,15 +345,15 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
     const xs = axisKeys(plan, item, view.x).filter((key) => columnIndex.has(key));
     const ys = axisKeys(plan, item, view.y).filter((key) => rowIndex.has(key));
     if (xs.length === 0 && ys.length === 0) {
-      holding.corner.push({ itemId: item.id, x: null, y: null });
+      holding.corner.push(marked({ itemId: item.id, x: null, y: null }));
     } else if (xs.length === 0) {
-      for (const y of ys) holding.rows[rowIndex.get(y)!]!.push({ itemId: item.id, x: null, y });
+      for (const y of ys) holding.rows[rowIndex.get(y)!]!.push(marked({ itemId: item.id, x: null, y }));
     } else if (ys.length === 0) {
-      for (const x of xs) holding.columns[columnIndex.get(x)!]!.push({ itemId: item.id, x, y: null });
+      for (const x of xs) holding.columns[columnIndex.get(x)!]!.push(marked({ itemId: item.id, x, y: null }));
     } else {
       for (const y of ys) {
         for (const x of xs) {
-          cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push({ itemId: item.id, x, y });
+          cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push(marked({ itemId: item.id, x, y }));
         }
       }
     }
@@ -301,8 +365,8 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   const kids = childrenIndex(plan);
   for (const item of items) {
     const reached = rolledUpCells(item, kids, inCells(view.x, columnIndex), inCells(view.y, rowIndex), inScope(item));
-    for (const { x, y } of reached) {
-      cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push({ itemId: item.id, x, y, via: 'children' });
+    for (const { x, y, inner } of reached) {
+      cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push(marked({ itemId: item.id, x, y, via: 'children', inner }));
     }
   }
 

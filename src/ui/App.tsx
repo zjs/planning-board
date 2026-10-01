@@ -56,6 +56,10 @@ import {
   toViewSpec,
   inSentence,
   loadCollapsed,
+  loadExpanded,
+  loadZoomAlso,
+  saveExpanded,
+  saveZoomAlso,
   saveCollapsed,
   toggleCollapsed,
   withCollapsed,
@@ -133,14 +137,29 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const [zoomPath, setZoomPath] = useState<ItemId[]>(loadZoomPath);
   useEffect(() => saveZoomPath(zoomPath), [zoomPath]);
   const root = useMemo(() => [...zoomPath].reverse().find((id) => plan.items[id]) ?? null, [zoomPath, plan]);
+  // Multi-zoom (Q33): cards zoomed into alongside the root, at the same level. Viewer state, remembered.
+  const [zoomAlso, setZoomAlso] = useState<ItemId[]>(loadZoomAlso);
+  useEffect(() => saveZoomAlso(zoomAlso), [zoomAlso]);
+  const roots = useMemo(
+    () => (root === null ? [] : [root, ...zoomAlso.filter((id) => id !== root && plan.items[id])]),
+    [root, zoomAlso, plan],
+  );
+  // Groups expanded in place (Q33). Viewer state, remembered per browser.
+  const [expanded, setExpanded] = useState<ItemId[]>(loadExpanded);
+  useEffect(() => saveExpanded(expanded), [expanded]);
   // A lane zoom whose value was deleted is dropped, rather than showing an empty board.
   const shown = useMemo(() => validChoice(plan, choice), [plan, choice]);
   // Collapsed bands on nested axes (ADR 0012): viewer state per property, remembered like the view.
   const [collapsed, setCollapsed] = useState(loadCollapsed);
   useEffect(() => saveCollapsed(collapsed), [collapsed]);
   const view = useMemo(
-    () => ({ ...withCollapsed(toViewSpec(plan, shown), collapsed), root }),
-    [plan, shown, collapsed, root],
+    () => ({
+      ...withCollapsed(toViewSpec(plan, shown), collapsed),
+      root,
+      ...(roots.length > 1 ? { roots } : {}),
+      ...(expanded.length > 0 ? { expanded } : {}),
+    }),
+    [plan, shown, collapsed, root, roots, expanded],
   );
   const names = { x: axisNames(plan, shown, 'x'), y: axisNames(plan, shown, 'y') };
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
@@ -276,6 +295,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       const el = scrollRef.current;
       if (el) scrolls.current.set(root ?? '', { left: el.scrollLeft, top: el.scrollTop });
       setZoomPath(id === null ? [] : ancestry(plan, id));
+      setZoomAlso([]);
       setEditing(null);
       // Selection outside the new level would be invisible, and Delete would still reach it.
       setSelection(new Set());
@@ -294,6 +314,51 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setSelection(new Set([root]));
     setJustMoved(root);
   }, [plan, root, zoomTo]);
+
+  // Several cards selected: zoom into all of them at once (Q33), as long as they're on the same level.
+  const zoomInto = useCallback(
+    (ids: ItemId[]) => {
+      const [first, ...rest] = ids.filter((id) => plan.items[id]);
+      if (first === undefined) return;
+      const level = plan.items[first]!.parent;
+      const same = rest.filter((id) => plan.items[id]!.parent === level);
+      zoomTo(first);
+      setZoomAlso(same);
+      if (same.length < rest.length) {
+        setNotice({ text: 'Zoomed into the cards on the same level as the first one selected.' });
+      }
+    },
+    [plan, zoomTo],
+  );
+  // E: expand the selected groups in place, or collapse them, or the group of a selected expanded child (Q33).
+  const toggleExpand = useCallback(() => {
+    const ids = [...selected];
+    if (ids.length === 0) {
+      setNotice({ text: 'Select a group, then press E to show what’s inside it here.' });
+      return;
+    }
+    const collapse = new Set<ItemId>();
+    const open = new Set<ItemId>();
+    for (const id of ids) {
+      if (expanded.includes(id)) {
+        collapse.add(id);
+        continue;
+      }
+      const parent = layout.cells
+        .flat(2)
+        .concat(layout.holding.rows.flat(), layout.holding.columns.flat(), layout.holding.corner)
+        .find((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent))?.parent;
+      if (parent !== undefined) collapse.add(parent);
+      else if (counts.has(id)) open.add(id);
+    }
+    if (collapse.size === 0 && open.size === 0) {
+      setNotice({ text: 'Only a group can be expanded: select one with cards inside it.' });
+      return;
+    }
+    setExpanded((current) => [...current.filter((id) => !collapse.has(id)), ...[...open].filter((id) => !current.includes(id))]);
+    // Expanded groups leave the board, and collapsed ones come back: select what's now on screen.
+    setSelection(new Set(collapse.size > 0 ? collapse : [...open].flatMap((id) => childrenOf(plan, id))));
+  }, [selected, layout, expanded, counts, plan]);
 
   // Show a card from the inspector: zoom to the level it's on, clear a lane zoom that hides it, select it, and
   // scroll it into view once it's drawn.
@@ -517,7 +582,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         else if (key === 'g' && e.shiftKey) ungroupSelection();
         else if (key === 'g') groupSelection();
         // Any card can be zoomed into, making it a group once it has children (Q20).
-        else if (key === 'arrowdown' && selected.size === 1) zoomTo([...selected][0]!);
+        // Several cards at once is multi-zoom (Q33).
+        else if (key === 'arrowdown' && selected.size > 0) zoomInto([...selected]);
         else if (key === 'arrowup' && root !== null) zoomOut();
         else return;
         e.preventDefault();
@@ -536,6 +602,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       if (e.key.toLowerCase() === 'l' && !e.altKey && !e.shiftKey) {
         e.preventDefault();
         linkSelection();
+        return;
+      }
+      if (e.key.toLowerCase() === 'e' && !e.altKey && !e.shiftKey && !empty) {
+        e.preventDefault();
+        toggleExpand();
         return;
       }
       if (e.key.toLowerCase() === 'i' && !e.altKey && !e.shiftKey && !empty) {
@@ -587,6 +658,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     zoomOut,
     togglePanel,
     empty,
+    zoomInto,
+    toggleExpand,
   ]);
 
   const loadSample = () => {
@@ -701,11 +774,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
           <button
             type="button"
-            onClick={() => zoomTo([...selected][0]!)}
-            disabled={selected.size !== 1}
-            title={`Zoom into the selected card to see or add what's inside (${keys.zoomIn})`}
+            onClick={() => zoomInto([...selected])}
+            disabled={selected.size === 0}
+            title={`Zoom into the selected cards to see or add what's inside (${keys.zoomIn})`}
           >
             Zoom in
+          </button>
+          <button
+            type="button"
+            onClick={toggleExpand}
+            disabled={selected.size === 0}
+            title={`Show what's inside the selected groups right here, or fold them back (${keys.expand})`}
+          >
+            Expand
           </button>
           <button
             type="button"
@@ -739,11 +820,13 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           <span className="divider" />
           <button
             type="button"
+            className="icon"
             onClick={() => (legendOpen ? closeLegend() : setLegendOpen(true))}
             aria-pressed={legendOpen}
+            aria-label="Help"
             title="How it works"
           >
-            ? Help
+            ?
           </button>
         </div>
       </header>
@@ -757,6 +840,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         <ZoomBar
           plan={plan}
           root={root}
+          also={roots.slice(1)}
           lanes={laneChips}
           onClearLane={(which) => setLaneZoom(which, null)}
           target={drag && isParentTarget(drag.target) ? drag.target.parent : undefined}

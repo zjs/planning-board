@@ -48,6 +48,10 @@ export function DependencyLines({
     if (!svg || !boardEl) return;
     const draw = () => {
       const origin = boardEl.getBoundingClientRect();
+      // Measure the board without the overlay: its own size counts in the board's scroll size, so a
+      // board that got narrower (after a pivot) would otherwise keep the old width and a blank strip.
+      svg.setAttribute('width', '0');
+      svg.setAttribute('height', '0');
       svg.setAttribute('width', String(boardEl.scrollWidth));
       svg.setAttribute('height', String(boardEl.scrollHeight));
       // Clip to the area under the pinned headers, so a line to a card scrolled beneath them doesn't

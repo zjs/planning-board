@@ -39,9 +39,12 @@ export function holding(page: Page, lane: { row?: string; column?: string } = {}
   return page.locator(`.holding-cell${row}${column}`);
 }
 
-/** A card's own copies. A group's faded "via children" copies are left out; ask for those explicitly. */
+/**
+ * A card's own copies. A group's faded "via children" copies, and copies
+ * shown inside another group's frame (Q33), are left out; ask for those explicitly.
+ */
 export function card(scope: Page | Locator, itemId: string) {
-  return scope.locator(`.card[data-item="${itemId}"]:not(.via-children)`);
+  return scope.locator(`.card[data-item="${itemId}"]:not(.via-children):not(.frame .card)`);
 }
 
 /**
