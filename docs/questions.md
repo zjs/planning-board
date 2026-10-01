@@ -81,6 +81,41 @@ Entry format:
 - Recommendation: (a). Sequencing is the brainstorming work the board is for, and a PM can drag cards into order after looking at them by time and area. Revisit if testers expect the Jira rank to survive.
 - Status: open. Built (a) in slice 5.
 
+### Q32: Card levels
+- Context: Requirements 11 and 13, and the backlog's theme A. Testers want to tell a story that doesn't have a parent yet from an initiative that doesn't have children yet. Today both look like plain cards. Q20 lets any card become a group by adding children, but "group" only describes what a card contains, not what it is.
+- Options: (a) a built-in, ordered Level property, such as Initiative > Epic > Story; (b) an explicit "this is a group" flag on cards without children; (c) leave it to a custom property.
+- Recommendation: (a). The open details:
+  - **Values:** Initiative > Epic > Story by default, renamable and reorderable like Size.
+  - **On the card:** a badge, plus a subtle style (heavier border or a header strip) so levels can be told apart across the board.
+  - **Import:** Jira's Issue Type maps to Level in the value table. Epic → Epic; Story, Task, and Bug → Story.
+  - **Mismatch marker:** flag a child whose level is at or above its parent's, like the size and date markers. It's on by default, and Q23's noise question applies.
+  - **No level:** means "not decided yet", which keeps the brainstorming feel testers liked.
+- Status: open. Direction agreed 2026-10-01: (a). The details above are open, and it's a sprint 4 candidate.
+
+### Q33: Showing children in context
+- Context: Requirements 12, 13 and 18, Q16, and the backlog's theme A. Testers want to zoom into several groups at once and see which cards belong to which parent. They also want a faded "via children" copy of a group to show which children put it there.
+- Options: (a) expand in place: select groups and expand them, so their children appear on the current board, each marked with its parent (a chip, or the group's frame around them); (b) multi-zoom: zoom into several groups at once, showing only their children, each with a parent chip; (c) both, built as one mechanism, where multi-zoom is expanding with everything else hidden.
+- Recommendation: (c). For faded copies, the group becomes a frame around the real child cards that put it in that lane. Those cards stay draggable, and dragging one edits the child, so faded copies stop being a dead end. This turns the view's zoom root into a set (an amendment to ADR 0008).
+- Status: open. Sprint 4 candidate.
+
+### Q34: Nested axes
+- Context: Requirements 1, 5 and 7, Q18 and Q22, and the backlog's theme B. With components as rows, the areas above them disappear, and every card with an area but no component waits in one lane at the bottom, far from its area. Testers sort in two stages: by area first, then area by area by component.
+- Options: at a child level, show each parent as a header band spanning its children (areas over components, quarters over releases), with a holding lane per parent, such as "Identity: no component". A drop there gives the card the plain parent, the same rule as Q22. Then for lane zoom: (a) keep clicking a header to zoom; (b) collapse and expand bands instead; (c) both. Also open: whether the edge holding lanes then hold only cards with no value at any level.
+- Recommendation: nested bands with per-parent lanes, and (c) at first, then see whether people still zoom. Edge lanes hold only cards with no value at all. It's the biggest layout change since sprint 0, so it gets an ADR first.
+- Status: open. Sprint 4 candidate.
+
+### Q35: Editing a card without pivoting
+- Context: Requirements 2, 4 and 10, and the backlog's theme C. Dragging is the fastest way to set a value on many cards, but sizing one new card means pivoting to Size, dragging, then pivoting back.
+- Options: (a) an inspector panel for the selection: every property with a picker, bulk edits for a multi-selection, and room for the description and Jira key; (b) click a badge on a card to change it in a popover; (c) both.
+- Recommendation: (a) first. It's one place for every property. It's also the home for card descriptions, which are imported but not shown yet, and later for a card's dependencies. Add (b) if testers reach for the badges. Dragging stays the way to sort many cards.
+- Status: open. Sprint 4 candidate, or late in sprint 3 if there's room.
+
+### Q36: Double-click does three jobs
+- Context: Requirements 10 and 12, and the backlog's theme C. Double-click creates a card in empty space, renames a card, and zooms into a group. So testers can't find how to rename a group. Enter on a selected group renames it, but nobody finds that. The sprint 1 plan listed this as a risk, with this fallback.
+- Options: (a) double-click always renames, and group cards get a small zoom button, with ⌘↓ still zooming; (b) double-clicking the title renames and double-clicking the rest of the card zooms; (c) keep it as it is, and add F2 and a line in the help.
+- Recommendation: (a). One meaning everywhere, and zooming gets a visible control. Faded copies, which can't be renamed, would still zoom on double-click.
+- Status: open. Sprint 3.
+
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
