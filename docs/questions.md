@@ -91,7 +91,7 @@ Entry format:
 - Context: Requirements 2, 4 and 10, and the backlog's theme C. Dragging is the fastest way to set a value on many cards, but sizing one new card means pivoting to Size, dragging, then pivoting back.
 - Options: (a) an inspector panel for the selection: every property with a picker, bulk edits for a multi-selection, and room for the description and Jira key; (b) click a badge on a card to change it in a popover; (c) both.
 - Recommendation: (a) first. It's one place for every property. It's also the home for card descriptions, which are imported but not shown yet, and later for a card's dependencies. Add (b) if testers reach for the badges. Dragging stays the way to sort many cards.
-- Status: open. Building (a) in sprint 4, slice 1. The inspector opens from the toolbar or the I key and follows the selection until closed.
+- Status: open. Built (a) in sprint 4, slice 1. The inspector opens from the toolbar or the I key and follows the selection until closed. A component or other multi-value property shows as chips, with "2 of 3" on a value only some selected cards have. Clicking a linked card zooms to it and selects it.
 
 ### Q36: Double-click does three jobs
 - Context: Requirements 10 and 12, and the backlog's theme C. Double-click creates a card in empty space, renames a card, and zooms into a group. So testers can't find how to rename a group. Enter on a selected group renames it, but nobody finds that. The sprint 1 plan listed this as a risk, with this fallback.

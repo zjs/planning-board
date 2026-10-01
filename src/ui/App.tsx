@@ -37,7 +37,7 @@ import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import { ancestry, childCounts, childrenOf } from '../domain/tree.ts';
-import { layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
+import { inZoomedScope, layoutView, type CardRef, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
 import {
@@ -63,6 +63,7 @@ import { ImportDialog } from './ImportDialog.tsx';
 import { datedFileName, downloadText } from './files.ts';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
 import { Menu } from './Menu.tsx';
+import { Inspector } from './Inspector.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
 import { keyNames } from './platform.ts';
 import { isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
@@ -151,6 +152,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   }, [plan, problems]);
   // A clicked line's links, ready for Delete. Viewer state, like the selection.
   const [selectedLinks, setSelectedLinks] = useState<ReadonlySet<string>>(() => new Set());
+  // One side panel at a time: Properties, or the card inspector (Q35), which follows the selection.
+  const [panel, setPanel] = useState<'properties' | 'inspector' | null>(null);
+  const togglePanel = useCallback((which: 'properties' | 'inspector') => setPanel((open) => (open === which ? null : which)), []);
   // The add modifier only means something on an axis that holds several values.
   const isMulti = (axis: ViewSpec['x']) => {
     const property = plan.properties[axis.property];
@@ -262,6 +266,31 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setSelection(new Set([root]));
     setJustMoved(root);
   }, [plan, root, zoomTo]);
+
+  // Show a card from the inspector: zoom to the level it's on, clear a lane zoom that hides it, select it, and
+  // scroll it into view once it's drawn.
+  const revealing = useRef<ItemId | null>(null);
+  const revealCard = useCallback(
+    (id: ItemId) => {
+      const item = plan.items[id];
+      if (!item) return;
+      zoomTo(item.parent);
+      if (!inZoomedScope(plan, item, view.x) || !inZoomedScope(plan, item, view.y)) {
+        setChoice(zoomLane(zoomLane(shown, 'x', null), 'y', null));
+      }
+      setSelection(new Set([id]));
+      setJustMoved(id);
+      revealing.current = id;
+    },
+    [plan, view, shown, zoomTo],
+  );
+  useEffect(() => {
+    const id = revealing.current;
+    if (id === null) return;
+    revealing.current = null;
+    const el = scrollRef.current?.querySelector(`.card[data-item="${CSS.escape(id)}"]:not(.via-children)`);
+    el?.scrollIntoView({ block: 'center', inline: 'center' });
+  });
 
   // Double-click renames, groups included (Q36). A faded copy can't be renamed, so it zooms in;
   // group cards zoom with their button or ⌘↓.
@@ -481,6 +510,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         linkSelection();
         return;
       }
+      if (e.key.toLowerCase() === 'i' && !e.altKey && !e.shiftKey && !empty) {
+        e.preventDefault();
+        togglePanel('inspector');
+        return;
+      }
       // Enter and Delete on a focused button belong to the button.
       if (focus?.closest('button, a')) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -523,6 +557,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     ungroupSelection,
     zoomTo,
     zoomOut,
+    togglePanel,
+    empty,
   ]);
 
   const loadSample = () => {
@@ -564,7 +600,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setImporting({ fileName: file.name, table });
   };
 
-  const [propertiesOpen, setPropertiesOpen] = useState(false);
   const noticeLatest = useCallback(
     (text: string) => setNotice({ text, step: store.undoManager.undoStack.at(-1) }),
     [store],
@@ -657,8 +692,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           {fileMenu}
           <button
             type="button"
-            onClick={() => setPropertiesOpen((open) => !open)}
-            aria-pressed={propertiesOpen}
+            onClick={() => togglePanel('inspector')}
+            aria-pressed={panel === 'inspector'}
+            disabled={empty}
+            title={`See and edit the selected cards without pivoting (${keys.inspect})`}
+          >
+            Inspect
+          </button>
+          <button
+            type="button"
+            onClick={() => togglePanel('properties')}
+            aria-pressed={panel === 'properties'}
             disabled={empty}
             title="Add properties such as Team, and edit their values"
           >
@@ -749,11 +793,22 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           mismatches={mismatches}
           onLaneZoom={onLaneZoom}
         />
-        {propertiesOpen && (
+        {panel === 'inspector' && (
+          <Inspector
+            store={store}
+            plan={plan}
+            selected={[...selected]}
+            mismatches={mismatches.onCard}
+            onClose={() => setPanel(null)}
+            onReveal={revealCard}
+            onNotice={noticeLatest}
+          />
+        )}
+        {panel === 'properties' && (
           <PropertiesPanel
             store={store}
             plan={plan}
-            onClose={() => setPropertiesOpen(false)}
+            onClose={() => setPanel(null)}
             onShowAsRows={(property) => setChoice(chooseAxis(plan, shown, 'y', optionId(property, 0)))}
             onNotice={noticeLatest}
           />

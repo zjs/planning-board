@@ -61,7 +61,7 @@ export function PropertiesPanel({ store, plan, onClose, onShowAsRows, onNotice }
   };
 
   return (
-    <aside className="properties-panel" aria-label="Properties" data-testid="properties-panel">
+    <aside className="side-panel properties-panel" aria-label="Properties" data-testid="properties-panel">
       <header>
         <h2>Properties</h2>
         <button type="button" onClick={onClose} aria-label="Close properties">

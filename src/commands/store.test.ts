@@ -4,7 +4,7 @@ import { JIRA_EXPORT } from '../domain/__fixtures__/jira-export.ts';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
 import { parseCsv } from '../domain/csv.ts';
 import { columnGroups, defaultChoices, detectMapping, draftFromCsv } from '../domain/csvImport.ts';
-import { SEQUENCE, SYSTEM, TIME } from '../domain/model.ts';
+import { SEQUENCE, SIZE, SYSTEM, TIME } from '../domain/model.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import type { ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
@@ -26,6 +26,8 @@ import {
   createPlanStore,
   deleteItems,
   dropCard,
+  editCardValues,
+  setDescription,
   groupItems,
   importPlan,
   loadPlan,
@@ -546,5 +548,41 @@ describe('removeDependencies', () => {
     expect(readPlan(store.doc).dependencies).toEqual([]);
     undo(store);
     expect(readPlan(store.doc).dependencies).toHaveLength(2);
+  });
+});
+
+describe('inspector edits (Q35)', () => {
+  it('sets a value on several cards as one undo step, and skips a change that changes nothing', () => {
+    const store = createPlanStore();
+    loadPlan(store, plan(item('a', { values: { [SIZE]: ['s'] } }), item('b'), item('c', { values: { [SIZE]: ['m'] } })));
+    expect(editCardValues(store, ['a', 'b', 'c'], SIZE, { kind: 'set', values: ['m'] })).toBe(2);
+    const sizes = () => Object.values(readPlan(store.doc).items).map((i) => i.values[SIZE] ?? []);
+    expect(sizes()).toEqual([['m'], ['m'], ['m']]);
+    const steps = store.undoManager.undoStack.length;
+    expect(editCardValues(store, ['a', 'b'], SIZE, { kind: 'set', values: ['m'] })).toBe(0);
+    expect(store.undoManager.undoStack.length).toBe(steps);
+    undo(store);
+    expect(sizes()).toEqual([['s'], [], ['m']]);
+  });
+
+  it('adds and removes a component across a mixed selection', () => {
+    const store = createPlanStore();
+    loadPlan(store, plan(item('a', { values: { [SYSTEM]: ['id'] } }), item('b', { values: { [SYSTEM]: ['pay'] } })));
+    editCardValues(store, ['a', 'b'], SYSTEM, { kind: 'add', value: 'id/sso' });
+    expect(readPlan(store.doc).items['a']!.values[SYSTEM]).toEqual(['id/sso']);
+    expect([...readPlan(store.doc).items['b']!.values[SYSTEM]!].sort()).toEqual(['id/sso', 'pay']);
+    editCardValues(store, ['a', 'b'], SYSTEM, { kind: 'remove', value: 'pay' });
+    expect(readPlan(store.doc).items['b']!.values[SYSTEM]).toEqual(['id/sso']);
+  });
+
+  it('edits a description, undoably, ignoring trailing whitespace', () => {
+    const store = createPlanStore();
+    loadPlan(store, plan(item('a', { description: 'Old' })));
+    expect(setDescription(store, 'a', 'Old  \n')).toBe(false);
+    expect(setDescription(store, 'a', 'New\nsecond line\n')).toBe(true);
+    expect(readPlan(store.doc).items['a']!.description).toBe('New\nsecond line');
+    undo(store);
+    expect(readPlan(store.doc).items['a']!.description).toBe('Old');
+    expect(setDescription(store, 'missing', 'x')).toBe(false);
   });
 });

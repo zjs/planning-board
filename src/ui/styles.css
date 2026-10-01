@@ -71,7 +71,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
+  gap: 8px 12px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
@@ -99,7 +99,7 @@ body {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .actions .divider {
@@ -997,7 +997,7 @@ kbd {
   min-width: 0;
 }
 
-.properties-panel {
+.side-panel {
   flex: 0 0 340px;
   overflow: auto;
   padding: 12px 14px 24px;
@@ -1006,18 +1006,18 @@ kbd {
   font-size: 13px;
 }
 
-.properties-panel header {
+.side-panel header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.properties-panel h2 {
+.side-panel h2 {
   margin: 0;
   font-size: 15px;
 }
 
-.properties-panel header button {
+.side-panel header button {
   padding: 0 6px;
   border: none;
   background: none;
@@ -1523,4 +1523,147 @@ button.link:hover {
   .legend-red {
     color: #ff6b6b;
   }
+}
+
+/* The card inspector (Q35). */
+.inspector-title {
+  width: 100%;
+  margin: 10px 0 4px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+}
+
+.inspector-title:hover,
+.inspector-title:focus {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.inspector-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin: 0 0 8px;
+  color: var(--muted);
+}
+
+.inspector-description {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  font: inherit;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: inherit;
+}
+
+.inspector-mismatches {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--warn-text);
+}
+
+.inspector-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 12px;
+  align-items: start;
+  margin: 12px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.inspector-fields dt {
+  padding-top: 3px;
+  color: var(--muted);
+}
+
+.inspector-fields dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.inspector-fields select {
+  max-width: 100%;
+}
+
+.inspector-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.inspector-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 2px 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.inspector-chips li.partial {
+  border-style: dashed;
+}
+
+.inspector-chips .chip-count {
+  color: var(--muted);
+}
+
+.inspector-chips button,
+.inspector-links .remove {
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+}
+
+.inspector-links {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.inspector-links h3 {
+  margin: 10px 0 4px;
+  font-size: 13px;
+}
+
+.inspector-links ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inspector-links li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.side-panel button.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-panel button.link:hover {
+  text-decoration: underline;
 }

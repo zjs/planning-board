@@ -119,6 +119,13 @@ export function Legend({ onClose }: { onClose: () => void }) {
           From a Jira export: choose what each column becomes, then where components, versions, and story points go.
           It replaces the board, and cards keep their Jira keys.
         </dd>
+        <dt>
+          Inspect, <kbd>{keys.inspect}</kbd>
+        </dt>
+        <dd>
+          Every property of the selected cards, editable without pivoting; select several to change them all at once.
+          Also a card's description and its links.
+        </dd>
         <dt>Properties</dt>
         <dd>
           Add your own, such as Team; each one is a choice of rows or columns. Click a value to rename it; hover for

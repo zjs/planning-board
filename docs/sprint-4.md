@@ -18,16 +18,16 @@ Scope: single user, browser only, no server.
 
 ### 1. Card inspector (Q35, requirements 4 and 10)
 
-- [ ] A side panel for the selected cards. It opens from **Inspect** in the toolbar or with the **I** key, follows the selection until closed, and shares the side-panel slot with Properties.
-- [ ] **Fields:**
+- [x] A side panel for the selected cards. It opens from **Inspect** in the toolbar or with the **I** key, follows the selection until closed, and shares the side-panel slot with Properties.
+- [x] **Fields:**
   - the title;
   - the description, editable (imported descriptions finally show);
   - the Jira key, read-only;
   - the card's group, as a breadcrumb;
   - every select property, with a picker that follows the property's hierarchy and allows several values where the property does;
   - the card's dependencies, listed as "Comes after" and "Comes before". Clicking an entry selects that card, and ✕ removes the link.
-- [ ] **With several cards selected,** each property shows the value they share, or "Mixed". Setting a value sets it on all of them, as one undo step.
-- [ ] Sequence isn't editable here. It's a position on the board, set by dragging.
+- [x] **With several cards selected,** each property shows the value they share, or "Mixed". Setting a value sets it on all of them, as one undo step.
+- [x] Sequence isn't editable here. It's a position on the board, set by dragging.
 
 ### 2. Card levels (Q32)
 
