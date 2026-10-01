@@ -1,5 +1,6 @@
 import { memo, useMemo, useRef, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { badgeProperties, cardAttributes, type CardAttribute } from '../domain/attributes.ts';
+import { levelWeight } from '../domain/builtins.ts';
 import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
@@ -170,6 +171,10 @@ export const Board = memo(function Board({
   const draft = <DraftCard key="draft" onCommit={onCommitEdit} onCancel={onCancelEdit} />;
   const counts = useMemo(() => childCounts(plan), [plan]);
   const areas = useMemo(() => areaIndexes(plan), [plan]);
+  const weights = useMemo(
+    () => new Map(Object.values(plan.items).map((item) => [item.id, levelWeight(plan, item)])),
+    [plan],
+  );
   const attributes = useMemo(() => {
     const properties = badgeProperties(plan);
     const out = new Map<ItemId, CardAttribute[]>();
@@ -185,6 +190,7 @@ export const Board = memo(function Board({
         compact={chip}
         childCount={counts.get(ref.itemId) ?? 0}
         areaIndex={areas.get(ref.itemId) ?? null}
+        levelWeight={weights.get(ref.itemId) ?? 0}
         attributes={attributes.get(ref.itemId) ?? []}
         selected={selected.has(ref.itemId)}
         lifted={lifted !== null && sameCopy(lifted, ref)}

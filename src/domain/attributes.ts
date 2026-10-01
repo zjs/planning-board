@@ -1,6 +1,6 @@
 import { compareTreeOrder, depthOf, pathTo } from './hierarchy.ts';
 import type { Item, Plan, PropertyId, SelectProperty } from './model.ts';
-import { itemValues, SIZE, SYSTEM, TIME } from './model.ts';
+import { itemValues, LEVEL, SIZE, SYSTEM, TIME } from './model.ts';
 import type { AxisSpec, ViewSpec } from './view.ts';
 
 /** A compact badge on a card, for a value the view's axes don't already show (requirement 4). */
@@ -13,7 +13,7 @@ export interface CardAttribute {
 }
 
 /** Built-ins first in a fixed order, then custom properties by name. */
-const PREFERRED: PropertyId[] = [SIZE, TIME, SYSTEM];
+const PREFERRED: PropertyId[] = [LEVEL, SIZE, TIME, SYSTEM];
 const rank = (id: PropertyId) => {
   const i = PREFERRED.indexOf(id);
   return i < 0 ? PREFERRED.length : i;

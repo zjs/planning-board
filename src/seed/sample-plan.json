@@ -98,6 +98,27 @@
       ]
     },
     {
+      "id": "level",
+      "name": "Level",
+      "levels": [
+        "Level"
+      ],
+      "values": [
+        {
+          "id": "initiative",
+          "label": "Initiative"
+        },
+        {
+          "id": "epic",
+          "label": "Epic"
+        },
+        {
+          "id": "story",
+          "label": "Story"
+        }
+      ]
+    },
+    {
       "id": "time",
       "name": "Time",
       "levels": [
@@ -1175,7 +1196,8 @@
           "data/audit"
         ],
         "size": "m",
-        "time": "q1"
+        "time": "q1",
+        "level": "epic"
       },
       "sequence": 2
     },
@@ -1188,7 +1210,8 @@
           "data/search",
           "billing/invoicing",
           "identity/scim"
-        ]
+        ],
+        "level": "epic"
       },
       "sequence": 3
     },
@@ -1462,7 +1485,8 @@
           "data"
         ],
         "size": "xl",
-        "time": "q2/r1"
+        "time": "q2/r1",
+        "level": "initiative"
       },
       "sequence": 9
     },
@@ -1475,7 +1499,8 @@
           "data/pipeline"
         ],
         "size": "m",
-        "time": "q2"
+        "time": "q2",
+        "level": "epic"
       }
     },
     {
@@ -1485,7 +1510,8 @@
       "values": {
         "system": [
           "data/pipeline"
-        ]
+        ],
+        "level": "story"
       },
       "sequence": 3
     },
@@ -1496,7 +1522,8 @@
       "values": {
         "system": [
           "data/pipeline"
-        ]
+        ],
+        "level": "story"
       },
       "sequence": 1
     },
@@ -1510,7 +1537,8 @@
           "data/audit"
         ],
         "size": "m",
-        "time": "q2"
+        "time": "q2",
+        "level": "story"
       },
       "sequence": 5
     },
@@ -1521,7 +1549,8 @@
       "values": {
         "system": [
           "billing/invoicing"
-        ]
+        ],
+        "level": "story"
       },
       "sequence": 4
     },
@@ -1533,7 +1562,8 @@
         "system": [
           "identity/scim"
         ],
-        "time": "q3/r2"
+        "time": "q3/r2",
+        "level": "story"
       },
       "sequence": 8
     },
@@ -1545,7 +1575,8 @@
         "system": [
           "cx/console"
         ],
-        "size": "xl"
+        "size": "xl",
+        "level": "story"
       },
       "sequence": 2
     },
@@ -1557,7 +1588,8 @@
           "billing"
         ],
         "size": "xl",
-        "time": "q4/r1"
+        "time": "q4/r1",
+        "level": "initiative"
       }
     },
     {
@@ -1569,7 +1601,8 @@
           "data/pipeline"
         ],
         "size": "xs",
-        "time": "q4"
+        "time": "q4",
+        "level": "epic"
       },
       "sequence": 10
     },
@@ -1581,7 +1614,8 @@
         "system": [
           "data/pipeline"
         ],
-        "size": "m"
+        "size": "m",
+        "level": "story"
       },
       "sequence": 4
     },
@@ -1593,7 +1627,8 @@
         "system": [
           "data/pipeline"
         ],
-        "size": "m"
+        "size": "m",
+        "level": "story"
       },
       "sequence": 6
     },
@@ -1607,7 +1642,8 @@
           "billing/subscriptions"
         ],
         "size": "s",
-        "time": "q3"
+        "time": "q3",
+        "level": "story"
       },
       "sequence": 8
     },
@@ -1619,7 +1655,8 @@
         "system": [
           "cx/console"
         ],
-        "time": "q4/r2"
+        "time": "q4/r2",
+        "level": "story"
       },
       "sequence": 9
     },
@@ -1630,7 +1667,8 @@
       "values": {
         "system": [
           "cx/notify"
-        ]
+        ],
+        "level": "story"
       },
       "sequence": 10
     },
@@ -1642,7 +1680,8 @@
           "identity/mfa"
         ],
         "size": "m",
-        "time": "q1/r1"
+        "time": "q1/r1",
+        "level": "epic"
       },
       "sequence": 3
     },
@@ -1653,7 +1692,8 @@
       "values": {
         "system": [
           "identity/mfa"
-        ]
+        ],
+        "level": "story"
       },
       "sequence": 1
     },
@@ -1667,7 +1707,8 @@
           "identity/mfa"
         ],
         "size": "m",
-        "time": "q1/r1"
+        "time": "q1/r1",
+        "level": "story"
       },
       "sequence": 2
     },
@@ -1680,7 +1721,8 @@
           "identity/mfa"
         ],
         "size": "l",
-        "time": "q1"
+        "time": "q1",
+        "level": "story"
       },
       "sequence": 0
     },
@@ -1692,7 +1734,8 @@
           "cx/api"
         ],
         "size": "l",
-        "time": "q3/r1"
+        "time": "q3/r1",
+        "level": "initiative"
       }
     },
     {
@@ -1704,7 +1747,8 @@
           "cx/api"
         ],
         "size": "l",
-        "time": "q4"
+        "time": "q4",
+        "level": "epic"
       },
       "sequence": 9
     },
@@ -1716,7 +1760,8 @@
         "system": [
           "identity/sso",
           "cx/api"
-        ]
+        ],
+        "level": "story"
       },
       "sequence": 3
     },
@@ -1730,7 +1775,8 @@
           "cx/api"
         ],
         "size": "s",
-        "time": "q1"
+        "time": "q1",
+        "level": "story"
       },
       "sequence": 2
     },
@@ -1744,7 +1790,8 @@
           "cx/api"
         ],
         "size": "xs",
-        "time": "q1/r1"
+        "time": "q1/r1",
+        "level": "story"
       }
     },
     {
@@ -1756,7 +1803,8 @@
           "cx/api"
         ],
         "size": "m",
-        "time": "q2"
+        "time": "q2",
+        "level": "story"
       },
       "sequence": 5
     },
@@ -1770,7 +1818,8 @@
           "cx/notify"
         ],
         "size": "m",
-        "time": "q2"
+        "time": "q2",
+        "level": "story"
       },
       "sequence": 3
     },
@@ -1782,7 +1831,8 @@
         "system": [
           "cx/api"
         ],
-        "time": "q1"
+        "time": "q1",
+        "level": "story"
       },
       "sequence": 2
     },

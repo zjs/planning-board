@@ -23,6 +23,7 @@
   --holding-edge-left: -2px 0 0 0 var(--border-strong);
   --holding-edge-top: 0 -2px 0 0 var(--border-strong);
   --border-strong: #c4bfb4;
+  --level-border: #8f897d;
   --gap-size: 14px;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
@@ -47,6 +48,7 @@
     --drop: rgb(116 143 252 / 20%);
     --holding-bg: #17171a;
     --border-strong: #4a4a50;
+    --level-border: #7c7c86;
     --warn-bg: #3d3314;
     --warn-text: #ffe8a3;
   }
@@ -421,6 +423,27 @@ button.primary {
 
 .card.lifted {
   opacity: 0.35;
+}
+
+/* Card levels (Q32): an epic's border is heavier, an initiative's heavier still, with a strip along the top. */
+.card[data-weight='1'] {
+  border-width: 2px 2px 2px 4px;
+  border-top-color: var(--level-border);
+  border-right-color: var(--level-border);
+  border-bottom-color: var(--level-border);
+  padding: 5px 7px 5px 10px;
+}
+
+.card[data-weight='2'] {
+  border-width: 5px 2px 2px 4px;
+  border-top-color: var(--level-border);
+  border-right-color: var(--level-border);
+  border-bottom-color: var(--level-border);
+  padding: 3px 7px 5px 10px;
+}
+
+.card[data-weight='2'] .card-title {
+  font-weight: 600;
 }
 
 /* Every copy of a selected item. An outline, so the card doesn't change size. */

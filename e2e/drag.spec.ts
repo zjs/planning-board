@@ -119,7 +119,8 @@ test('holding a dragged card near the board edge scrolls the board', async ({ pa
   const box = (await scroller.boundingBox())!;
   // The scrolling area ends where the pinned "No area" lanes begin.
   const bottom = (await page.locator('.holding-row-header').boundingBox())!.y;
-  const from = card(page, 'tenant-data-deletion-gdpr').first();
+  // A card near the top, so the board starts unscrolled.
+  const from = card(page, 'custom-roles').first();
   const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + 10, a.y + 10);
   await page.mouse.down();
@@ -144,6 +145,7 @@ test('Reset clears the board and can be undone', async ({ page }) => {
 test('a drag released outside the window is cancelled, not left stuck', async ({ page }) => {
   await openApp(page);
   const from = card(page, 'tenant-data-deletion-gdpr').first();
+  await reveal(from);
   const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + 10, a.y + 10);
   await page.mouse.down();

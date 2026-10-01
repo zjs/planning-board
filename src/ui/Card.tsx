@@ -7,6 +7,8 @@ interface Props {
   childCount: number;
   /** Index into the area palette, or null for untagged items. */
   areaIndex: number | null;
+  /** Levels above the lowest: a heavier border, so initiatives and epics stand out (Q32). */
+  levelWeight?: number;
   /** Values of properties that aren't on an axis (requirement 4). */
   attributes: CardAttribute[];
   /** A one-line chip: title and child count only (holding lanes, when chosen). */
@@ -37,6 +39,7 @@ export function Card({
   item,
   childCount,
   areaIndex,
+  levelWeight = 0,
   attributes,
   compact,
   selected,
@@ -67,6 +70,7 @@ export function Card({
       className={classes.join(' ')}
       data-item={item.id}
       data-area={areaIndex ?? 'none'}
+      data-weight={levelWeight > 0 ? Math.min(levelWeight, 2) : undefined}
       title={editing ? undefined : viaChildren ? `${item.title} (via cards inside it)` : item.title}
       aria-selected={selected ?? false}
       onPointerDown={editing ? undefined : onPointerDown}

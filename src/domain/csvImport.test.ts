@@ -13,7 +13,7 @@ import {
   sizeForPoints,
   type Mapping,
 } from './csvImport.ts';
-import { SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
+import { LEVEL, SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
 import { parsePlanJson, planToJson } from './planJson.ts';
 
 const table = parseCsv(JIRA_EXPORT);
@@ -29,12 +29,12 @@ describe('mapping', () => {
     expect(groups.find((g) => g.name === 'Component/s')).toEqual({ name: 'Component/s', columns: [7, 8] });
   });
 
-  it('recognizes Jira’s usual headers, and leaves Status, Priority, and Issue Type out (Q29)', () => {
+  it('recognizes Jira’s usual headers, reads Issue Type as a level (Q32), and leaves Status and Priority out (Q29)', () => {
     expect(detectMapping(groups)).toEqual({
       Summary: { kind: 'title' },
       'Issue key': { kind: 'key' },
       'Issue id': { kind: 'id' },
-      'Issue Type': { kind: 'ignore' },
+      'Issue Type': { kind: 'issueType' },
       Status: { kind: 'ignore' },
       'Project name': { kind: 'project' },
       Priority: { kind: 'ignore' },
@@ -114,6 +114,8 @@ describe('value table', () => {
       areas: { SSO: 'Payments', 'Admin Console': 'Payments', Invoicing: 'Payments' },
       quarters: { '2027.1': null, '2027.2': null },
       sizes: { '1': 'xs', '3': 's', '5': 'm', '8': 'l', '13': 'xl' },
+      // A type that isn't a usual one gets no level: not decided yet.
+      levels: { Epic: 'epic', Story: 'story', Spike: null },
     });
   });
 });
@@ -129,6 +131,13 @@ describe('planFromDraft', () => {
   const { plan } = result;
   const byKey = (key: string) => Object.values(plan.items).find((i) => i.externalKey === key)!;
   const label = (property: string, id: string) => (plan.properties[property] as SelectProperty).values[id]!.label;
+
+  it('gives cards levels from their issue types, with the built-in Level property (Q32)', () => {
+    expect(plan.properties[LEVEL]).toMatchObject({ name: 'Level', multi: false });
+    expect(byKey('PAY-1').values[LEVEL]).toEqual(['epic']);
+    expect(byKey('PAY-2').values[LEVEL]).toEqual(['story']);
+    expect(byKey('PAY-6').values[LEVEL]).toBeUndefined();
+  });
 
   it('makes cards with their Jira keys, titles, and descriptions', () => {
     expect(result.counts).toEqual({ cards: 5, groups: 1, dependencies: 1 });
@@ -223,6 +232,7 @@ describe('the sample export in docs/samples', () => {
       'Summary',
       'Issue key',
       'Issue id',
+      'Issue Type',
       'Project name',
       'Component/s',
       'Fix Version/s',

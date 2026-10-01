@@ -6,16 +6,16 @@ import { generateKeyBetween } from 'fractional-indexing';
 import { depthOf, isWithin, valuesAtLevel, withoutAncestors } from './hierarchy.ts';
 import { cleanTitle } from './items.ts';
 import type { ItemId, OrderKey, Plan, Property, PropertyId, SelectProperty, ValueId, ValueNode } from './model.ts';
-import { compareOrderKeys, itemValues, SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
+import { compareOrderKeys, itemValues, LEVEL, SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
 
-const BUILT_IN = new Set<PropertyId>([SEQUENCE, SYSTEM, SIZE, TIME]);
+const BUILT_IN = new Set<PropertyId>([SEQUENCE, SYSTEM, LEVEL, SIZE, TIME]);
 
 /** Built-in properties carry special logic and are in every plan (requirement 25), so they can't be deleted. */
 export const isBuiltIn = (id: PropertyId) => BUILT_IN.has(id);
 
 /** Built-ins first (sequence, system, size, time), then custom properties by name. The order of the axis picker and the Properties panel. */
 export function propertiesInOrder(plan: Plan): Property[] {
-  const order = [SEQUENCE, SYSTEM, SIZE, TIME];
+  const order = [SEQUENCE, SYSTEM, LEVEL, SIZE, TIME];
   const rank = (p: Property) => {
     const i = order.indexOf(p.id);
     return i < 0 ? order.length : i;

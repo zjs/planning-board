@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { LEVELS, type LevelId } from '../domain/builtins.ts';
 import type { CsvTable } from '../domain/csv.ts';
 import {
   columnGroups,
@@ -35,6 +36,7 @@ interface Overrides {
   areas: Record<string, string>;
   quarters: Record<string, string | null>;
   sizes: Record<string, SizeId | null>;
+  levels: Record<string, LevelId | null>;
 }
 
 /**
@@ -49,7 +51,7 @@ export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
   const draft = useMemo(() => draftFromCsv(table, mapping), [table, mapping]);
   const quarters = useMemo(() => quarterChoices(new Date()), []);
   const [step, setStep] = useState<'columns' | 'values'>('columns');
-  const [overrides, setOverrides] = useState<Overrides>({ areas: {}, quarters: {}, sizes: {} });
+  const [overrides, setOverrides] = useState<Overrides>({ areas: {}, quarters: {}, sizes: {}, levels: {} });
   const choices = useMemo((): ValueChoices => {
     const base = defaultChoices(draft);
     const over = <T,>(defaults: Record<string, T>, chosen: Record<string, T>) =>
@@ -58,10 +60,11 @@ export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
       areas: over(base.areas, overrides.areas),
       quarters: over(base.quarters, overrides.quarters),
       sizes: over(base.sizes, overrides.sizes),
+      levels: over(base.levels, overrides.levels),
     };
   }, [draft, overrides]);
   const values = useMemo(() => draftValues(draft), [draft]);
-  const hasValues = values.components.length + values.versions.length + values.points.length > 0;
+  const hasValues = values.components.length + values.versions.length + values.points.length + values.issueTypes.length > 0;
   const preview = useMemo(() => {
     let n = 0;
     return planFromDraft(draft, choices, (prefix) => `${prefix}${++n}`, quarters);
@@ -101,6 +104,7 @@ export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
               areas: { ...o.areas, ...change.areas },
               quarters: { ...o.quarters, ...change.quarters },
               sizes: { ...o.sizes, ...change.sizes },
+              levels: { ...o.levels, ...change.levels },
             }))
           }
         />
@@ -256,11 +260,11 @@ function sizeLabel(points: string): string {
   return size ? `${SIZES.find((s) => s.id === size)!.label} (${points})` : points;
 }
 
-/** ": 2 groups with cards inside, and 5 dependencies (kept, not drawn yet)", or nothing. */
+/** ", including 2 groups with cards inside, and 5 dependencies", or nothing. */
 function structure(groups: number, dependencies: number): string {
   const parts = [
     groups > 0 && `${groups} ${groups === 1 ? 'group' : 'groups'} with cards inside`,
-    dependencies > 0 && `${dependencies} ${dependencies === 1 ? 'dependency' : 'dependencies'} (kept, not drawn yet)`,
+    dependencies > 0 && `${dependencies} ${dependencies === 1 ? 'dependency' : 'dependencies'}`,
   ].filter(Boolean);
   return parts.length > 0 ? `, including ${parts.join(', and ')}` : '';
 }
@@ -281,15 +285,16 @@ function ValueTable({
   quarters: string[];
   onChange: (change: Partial<Overrides>) => void;
 }) {
-  const { components, versions, points } = draftValues(draft);
+  const { components, versions, points, issueTypes } = draftValues(draft);
   const count = (has: (item: Draft['items'][number]) => boolean) => draft.items.filter(has).length;
   const areaNames = [...new Set(Object.values(choices.areas))];
   const listId = 'import-area-names';
   return (
     <div className="value-table" data-testid="value-table">
       <p className="dialog-lead">
-        Jira’s components, versions, and story points are flat lists. The board groups components into areas, releases
-        into quarters, and sizes cards XS–XL. Check where each one goes; you can change any of it on the board later.
+        Jira’s components, versions, story points, and issue types are flat lists. The board groups components into
+        areas and releases into quarters, sizes cards XS–XL, and gives them levels. Check where each one goes; you can
+        change any of it on the board later.
       </p>
       {components.length > 0 && (
         <section>
@@ -353,6 +358,42 @@ function ValueTable({
                       {quarters.map((q) => (
                         <option key={q} value={q}>
                           {q}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+      {issueTypes.length > 0 && (
+        <section>
+          <h3>Issue types → levels</h3>
+          <table className="import-table" data-testid="type-levels">
+            <thead>
+              <tr>
+                <th>Issue type</th>
+                <th>Cards</th>
+                <th>Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              {issueTypes.map((t) => (
+                <tr key={t}>
+                  <td>{t}</td>
+                  <td className="muted">{count((i) => i.issueType === t)}</td>
+                  <td>
+                    <select
+                      aria-label={`Level for ${t}`}
+                      value={choices.levels[t] ?? ''}
+                      onChange={(e) => onChange({ levels: { [t]: e.target.value === '' ? null : (e.target.value as LevelId) } })}
+                    >
+                      <option value="">Not decided</option>
+                      {LEVELS.map((level) => (
+                        <option key={level.id} value={level.id}>
+                          {level.label}
                         </option>
                       ))}
                     </select>

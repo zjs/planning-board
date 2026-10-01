@@ -4,7 +4,7 @@ import { JIRA_EXPORT } from '../domain/__fixtures__/jira-export.ts';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
 import { parseCsv } from '../domain/csv.ts';
 import { columnGroups, defaultChoices, detectMapping, draftFromCsv } from '../domain/csvImport.ts';
-import { SEQUENCE, SIZE, SYSTEM, TIME } from '../domain/model.ts';
+import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME } from '../domain/model.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import type { ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
@@ -27,6 +27,7 @@ import {
   deleteItems,
   dropCard,
   editCardValues,
+  ensureBuiltIns,
   setDescription,
   groupItems,
   importPlan,
@@ -584,5 +585,18 @@ describe('inspector edits (Q35)', () => {
     undo(store);
     expect(readPlan(store.doc).items['a']!.description).toBe('Old');
     expect(setDescription(store, 'missing', 'x')).toBe(false);
+  });
+});
+
+describe('ensureBuiltIns', () => {
+  it('adds Level to a board saved before it existed, outside the undo history; an empty board stays empty', () => {
+    const store = createPlanStore();
+    expect(ensureBuiltIns(store)).toBe(false);
+    loadPlan(store, plan(item('a')));
+    store.undoManager.clear();
+    expect(ensureBuiltIns(store)).toBe(true);
+    expect(readPlan(store.doc).properties[LEVEL]).toMatchObject({ name: 'Level' });
+    expect(store.undoManager.canUndo()).toBe(false);
+    expect(ensureBuiltIns(store)).toBe(false);
   });
 });

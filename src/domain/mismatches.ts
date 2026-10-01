@@ -4,9 +4,9 @@
 import { groupConflicts, type Conflict } from './conflicts.ts';
 import { pathTo } from './hierarchy.ts';
 import type { ItemId, Plan, PropertyId } from './model.ts';
-import { itemValues, SIZE, SYSTEM, TIME } from './model.ts';
+import { itemValues, LEVEL, SIZE, SYSTEM, TIME } from './model.ts';
 
-type GroupConflict = Extract<Conflict, { kind: 'group-size' | 'group-time' | 'group-system' }>;
+type GroupConflict = Extract<Conflict, { kind: 'group-size' | 'group-time' | 'group-system' | 'group-level' }>;
 
 export interface Mismatches {
   /** Why a card doesn't fit its own group, one line per reason. */
@@ -47,6 +47,8 @@ export function describeMismatch(plan: Plan, c: GroupConflict): string {
       return `Sized ${mine(SIZE)}, larger than its group's ${theirs(SIZE)}`;
     case 'group-time':
       return `Dated ${mine(TIME)}, outside its group's ${theirs(TIME)}`;
+    case 'group-level':
+      return `${mine(LEVEL)}, at or above its group's ${theirs(LEVEL)}`;
     case 'group-system':
       return `In ${outsideAreas(plan, c)}, outside its group's ${theirs(SYSTEM)}`;
   }

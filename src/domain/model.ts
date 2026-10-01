@@ -13,6 +13,7 @@ export const SEQUENCE = 'sequence';
 export const SYSTEM = 'system';
 export const SIZE = 'size';
 export const TIME = 'time';
+export const LEVEL = 'level';
 
 /** One node in a property's value hierarchy, e.g. an area, a component, a quarter. */
 export interface ValueNode {

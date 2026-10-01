@@ -5,7 +5,7 @@
 
 import { ancestorAtLevel, depthOf, pathTo, valuesAtLevel } from './hierarchy.ts';
 import type { Item, ItemId, Plan, SelectProperty, ValueId } from './model.ts';
-import { itemValues, SIZE, SYSTEM, TIME } from './model.ts';
+import { itemValues, LEVEL, SIZE, SYSTEM, TIME } from './model.ts';
 import { topLevelItems } from './tree.ts';
 
 export type Conflict =
@@ -14,7 +14,7 @@ export type Conflict =
   /** More items on one component in one time bucket than its limit allows (requirement 17). */
   | { kind: 'contention'; component: ValueId; bucket: ValueId; items: ItemId[]; limit: number }
   /** A child that doesn't fit its group (requirement 13). */
-  | { kind: 'group-size' | 'group-time' | 'group-system'; group: ItemId; child: ItemId };
+  | { kind: 'group-size' | 'group-time' | 'group-system' | 'group-level'; group: ItemId; child: ItemId };
 
 export interface ConflictOptions {
   /** Time hierarchy level that counts as one bucket. Default 0 (quarter). */
@@ -152,9 +152,11 @@ function overlaps(property: SelectProperty, a: ValueId, b: ValueId): boolean {
  */
 export function groupConflicts(plan: Plan): Conflict[] {
   const size = select(plan, SIZE);
+  const level = select(plan, LEVEL);
   const time = select(plan, TIME);
   const system = select(plan, SYSTEM);
   const sizeRank = new Map(size ? valuesAtLevel(size, 0).map((node, i) => [node.id, i]) : []);
+  const levelRank = new Map(level ? valuesAtLevel(level, 0).map((node, i) => [node.id, i]) : []);
   const areaCache = new Map<ItemId, Set<ValueId>>();
   const areas = (item: Item): Set<ValueId> => {
     let set = areaCache.get(item.id);
@@ -178,6 +180,11 @@ export function groupConflicts(plan: Plan): Conflict[] {
     const cs = sizeRank.get(itemValues(child, SIZE)[0] ?? '');
     const gs = sizeRank.get(itemValues(group, SIZE)[0] ?? '');
     if (cs !== undefined && gs !== undefined && cs > gs) out.push({ kind: 'group-size', ...pair });
+
+    // Levels run top down (Initiative first), so a child ranked at or before its group is at or above it (Q32).
+    const cl = levelRank.get(itemValues(child, LEVEL)[0] ?? '');
+    const gl = levelRank.get(itemValues(group, LEVEL)[0] ?? '');
+    if (cl !== undefined && gl !== undefined && cl <= gl) out.push({ kind: 'group-level', ...pair });
 
     const ct = knownTime(child);
     const gt = knownTime(group);

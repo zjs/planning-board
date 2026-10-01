@@ -60,12 +60,13 @@ Dragging into a cell is the core bet, and it's the fastest way to sort many card
 
 ### D. Small fixes
 
-No decision needed. Each one goes into the next sprint. Both items below shipped in sprint 3.
+No decision needed. Each one goes into the next sprint. The first two shipped in sprint 3.
 
 | Item | Source | Lands |
 |---|---|---|
 | Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
 | Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
+| Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Sprint 4, slice 3 (headers change there) |
 
 ## Planned next
 

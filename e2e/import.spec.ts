@@ -28,7 +28,7 @@ test('Jira columns are recognized, the preview shows the first rows, and the imp
   await expect(preview.locator('tbody tr')).toHaveCount(5);
   await expect(preview.locator('tbody tr').first()).toContainText('Self-serve SSO setup');
   await expect(preview.locator('tbody tr').first()).toContainText('XL (13)');
-  await expect(dialog(page).getByTestId('import-summary')).toContainText('Imports 5 cards, including 1 group with cards inside, and 1 dependency (kept, not drawn yet).');
+  await expect(dialog(page).getByTestId('import-summary')).toContainText('Imports 5 cards, including 1 group with cards inside, and 1 dependency.');
   await expect(dialog(page).getByTestId('import-summary')).toContainText('1 row has no title and was skipped (row 6).');
 
   // Turn Status into a custom property, then import.
