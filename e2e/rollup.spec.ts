@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { card, cell, openApp, pickAxes, reveal } from './app.ts';
+import { card, cell, openApp, openGroup, pickAxes, reveal } from './app.ts';
 
 const EU = 'eu-data-residency'; // Data Platform, Q2; one card inside is in Billing, Q2
 
@@ -37,7 +37,7 @@ test('mismatch markers: a count on the collapsed group, and the reason on the ca
   await expect(marker).toHaveText('⚠ 4');
   await expect(marker).toHaveAttribute('title', /Region-pinned directory sync: Dated Q3 2027 › 27\.6, outside its group's Q2 2027 › 27\.3/);
 
-  await card(page, EU).first().dblclick();
+  await openGroup(card(page, EU).first());
   const child = card(page, 'region-pinned-directory-sync').first().locator('.mismatch');
   await expect(child).toHaveText('⚠');
   await expect(child).toHaveAttribute('title', /Dated Q3 2027 › 27\.6, outside its group's Q2 2027 › 27\.3/);

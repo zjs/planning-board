@@ -114,7 +114,7 @@ Entry format:
 - Context: Requirements 10 and 12, and the backlog's theme C. Double-click creates a card in empty space, renames a card, and zooms into a group. So testers can't find how to rename a group. Enter on a selected group renames it, but nobody finds that. The sprint 1 plan listed this as a risk, with this fallback.
 - Options: (a) double-click always renames, and group cards get a small zoom button, with ⌘↓ still zooming; (b) double-clicking the title renames and double-clicking the rest of the card zooms; (c) keep it as it is, and add F2 and a line in the help.
 - Recommendation: (a). One meaning everywhere, and zooming gets a visible control. Faded copies, which can't be renamed, would still zoom on double-click.
-- Status: open. Scheduled for sprint 3, slice 1, as (a).
+- Status: open. Built (a) in sprint 3, slice 1, with one change: instead of a separate zoom button, the group card's child count is the button ("4 ›"), because a separate button didn't fit narrow cards. The count opens the group only once the group is selected, so a click meant to select it never opens it by accident.
 
 ### Q39: How much of a card's dependency chain shows on focus?
 - Context: Requirement 15 and Q14: links other than out-of-order ones show only "for the hovered or selected card, upstream and downstream". That could mean direct links or the whole chain. Separately, "select the prerequisite, then the dependent" only defines two cards.

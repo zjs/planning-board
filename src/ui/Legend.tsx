@@ -61,7 +61,10 @@ export function Legend({ onClose }: { onClose: () => void }) {
           selection, and everything inside a group.
         </dd>
         <dt>Double-click empty space</dt>
-        <dd>Makes a card there with that cell's values. Double-click a card, or press Enter, to rename it.</dd>
+        <dd>
+          Makes a card there with that cell's values; in a gap between sequence columns, it's a new column. Double-click
+          a card, or press Enter, to rename it.
+        </dd>
         <dt>
           <kbd>{keys.group}</kbd> groups the selection
         </dt>
@@ -74,7 +77,8 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <h3>Zooming</h3>
       <dl>
         <dt>
-          Double-click a group, or <kbd>{keys.zoomIn}</kbd>
+          Select a group and click its count <span className="legend-chip"><span className="child-count">4</span>›</span>, or{' '}
+          <kbd>{keys.zoomIn}</kbd>
         </dt>
         <dd>
           Shows only what's inside; new cards go inside. Drag a card onto the breadcrumb to move it out.{' '}

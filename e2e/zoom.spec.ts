@@ -1,15 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, doubleClickEmpty, dragTo, openApp } from './app.ts';
+import { card, doubleClickEmpty, dragTo, openApp, openGroup } from './app.ts';
 
 const EU = 'eu-data-residency';
 const zoomBar = (page: Page) => page.getByTestId('zoom-bar');
 const crumb = (page: Page, label: string) => zoomBar(page).getByRole('button', { name: label, exact: true });
 
 
-test('double-clicking a group zooms in to its children, with its own values; Esc zooms back out', async ({ page }) => {
+test('a group\'s zoom button shows its children, with its own values; Esc zooms back out', async ({ page }) => {
   await openApp(page);
   await expect(zoomBar(page)).toHaveCount(0);
-  await card(page, EU).dblclick();
+  await openGroup(card(page, EU));
 
   await expect(zoomBar(page)).toContainText('EU data residency');
   await expect(crumb(page, 'Plan')).toBeVisible();
@@ -35,8 +35,8 @@ test('double-clicking a group zooms in to its children, with its own values; Esc
 
 test('nested zoom shows the path, and a breadcrumb segment zooms out to that level', async ({ page }) => {
   await openApp(page);
-  await card(page, EU).dblclick();
-  await card(page, 'regional-pipeline-shards').first().dblclick();
+  await openGroup(card(page, EU));
+  await openGroup(card(page, 'regional-pipeline-shards').first());
   await expect(zoomBar(page).locator('.crumbs')).toHaveText(/Plan.*EU data residency.*Regional pipeline shards/);
   await expect(card(page, 'eu-kafka-cluster')).toBeVisible();
 
@@ -49,7 +49,7 @@ test('nested zoom shows the path, and a breadcrumb segment zooms out to that lev
 
 test('cards made inside a group become its children; dragging one to the breadcrumb moves it out', async ({ page }) => {
   await openApp(page);
-  await card(page, EU).dblclick();
+  await openGroup(card(page, EU));
   const target = page.locator('.cell:not(.gap):not(.holding-cell)').first();
   await doubleClickEmpty(page, target);
   await page.keyboard.type('Residency audit trail');
@@ -102,4 +102,24 @@ test('any card can be zoomed into, and its first child makes it a group (Q20)', 
 
   await page.keyboard.press('ControlOrMeta+ArrowUp');
   await expect(plain.locator('.child-count')).toHaveText('1');
+});
+
+test('double-clicking a group renames it (Q36)', async ({ page }) => {
+  await openApp(page);
+  await card(page, EU).dblclick();
+  await expect(zoomBar(page)).toHaveCount(0);
+  const field = card(page, EU).getByRole('textbox', { name: 'Card title' });
+  await field.fill('EU residency program');
+  await field.press('Enter');
+  await expect(card(page, EU).locator('.card-title')).toHaveText('EU residency program');
+});
+
+test('a click on an unselected group\'s count selects it rather than opening it', async ({ page }) => {
+  await openApp(page);
+  const group = card(page, EU);
+  await group.locator('.zoom-into').click();
+  await expect(zoomBar(page)).toHaveCount(0);
+  await expect(group).toHaveClass(/selected/);
+  await group.locator('.zoom-into').click();
+  await expect(zoomBar(page)).toContainText('EU data residency');
 });

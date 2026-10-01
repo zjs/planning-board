@@ -90,3 +90,10 @@ export async function dragTo(page: Page, from: Locator, to: Locator, opts: { alt
   await page.mouse.up();
   if (opts.alt) await page.keyboard.up('Alt');
 }
+
+/** Zoom into a group: select it, then click its count (Q36: double-click renames). */
+export async function openGroup(group: Locator) {
+  await reveal(group);
+  await group.locator('.card-title').click();
+  await group.getByRole('button', { name: /^Open / }).click();
+}

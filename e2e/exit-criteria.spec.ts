@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, doubleClickEmpty, dragTo, holding, openApp, pickAxes } from './app.ts';
+import { card, cell, doubleClickEmpty, dragTo, holding, openApp, openGroup, pickAxes } from './app.ts';
 
 // Sprint 1's exit criteria (docs/sprint-1.md), end to end, in order. If this
 // passes, the walkthrough in docs/demos/sprint-1.md works.
@@ -20,7 +20,7 @@ test('sprint 1 exit criteria', async ({ page }) => {
   await expect(groupCard(page, 'Role management').locator('.child-count')).toHaveText('3');
 
   // 2. Zoom into the group, add a child, rename one, and move one out through the breadcrumb.
-  await groupCard(page, 'Role management').dblclick();
+  await openGroup(groupCard(page, 'Role management'));
   await expect(zoomBar(page)).toContainText('Role management');
   await doubleClickEmpty(page, page.locator('.cell:not(.gap):not(.holding-cell)').first());
   await page.keyboard.type('Role audit trail');
@@ -61,7 +61,7 @@ test('sprint 1 exit criteria', async ({ page }) => {
   // 7. Spot a mismatch marker on a collapsed group, and zoom in to find the child that causes it.
   const marker = card(page, 'eu-data-residency').first().locator('.mismatch');
   await expect(marker).toHaveText('⚠ 4');
-  await card(page, 'eu-data-residency').first().dblclick();
+  await openGroup(card(page, 'eu-data-residency').first());
   await expect(card(page, 'region-pinned-directory-sync').first().locator('.mismatch')).toBeVisible();
   await page.keyboard.press('Escape');
 

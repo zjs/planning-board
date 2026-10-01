@@ -233,10 +233,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setJustMoved(root);
   }, [plan, root, zoomTo]);
 
-  // Double-click zooms into a group, and renames any other card (Q20: ⌘↓ zooms into those).
+  // Double-click renames, groups included (Q36). A faded copy can't be renamed, so it zooms in;
+  // group cards zoom with their button or ⌘↓.
   const onCardDoubleClick = useCallback(
     (card: CardRef) => {
-      if (counts.has(card.itemId)) {
+      if (card.via === 'children') {
         zoomTo(card.itemId);
         return;
       }
@@ -244,8 +245,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       setAnchor(card);
       setEditing({ kind: 'rename', card });
     },
-    [counts, zoomTo],
+    [zoomTo],
   );
+  const onCardZoom = useCallback((card: CardRef) => zoomTo(card.itemId), [zoomTo]);
   const onSpotDoubleClick = useCallback((spot: DropTarget) => setEditing({ kind: 'new', spot }), []);
   const onCancelEdit = useCallback(() => setEditing(null), []);
   const onCommitEdit = useCallback(
@@ -561,6 +563,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           selected={selected}
           editing={editing}
           onCardDoubleClick={onCardDoubleClick}
+          onCardZoom={onCardZoom}
           onSpotDoubleClick={onSpotDoubleClick}
           onCommitEdit={onCommitEdit}
           onCancelEdit={onCancelEdit}
