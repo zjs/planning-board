@@ -1,6 +1,6 @@
 # 0011: Drawing dependency links
 
-Status: Accepted (sprint 3, slices 2 and 3).
+Status: Accepted (sprint 3, slices 2 and 3). Amended in sprint 5, slice 4: copy lines.
 
 ## Context
 
@@ -30,3 +30,13 @@ Requirements 15, 16 and 18 need links drawn between cards, the focus rules from 
 - Lines can lag a frame behind fast scrolling. That's the price of measuring the page instead of computing layout twice.
 - An overlay above the pinned lanes means lines can cross headers when the board is scrolled. It's accepted, so lines can reach cards that are in holding lanes.
 - More links make more measuring. Focus keeps the count small; if a plan has many out-of-order links, only lines that touch the visible area will need drawing.
+
+## Copy lines (sprint 5)
+
+A card with values in several lanes has a copy in each, and testers lost track of them (questions.md Q45). The same overlay now draws the copies of the hovered card and the selected cards, when there's more than one on the board, in the same measuring pass as the dependency lines:
+
+- Each copy is joined to the nearest copy already joined, a minimum spanning tree (`nearestNeighbors`), so copies in neighboring lanes are joined to each other rather than all to one far-off copy.
+- A copy line uses the same curve as a dependency, dashed, gray, with no arrow, and takes no clicks. It's drawn under the dependency lines.
+- Every copy gets a dashed outline (`copy-focus`), which also marks copies scrolled out of the line's reach.
+- A dependency is still drawn once, from the copy nearest its other end. The joined copies show that it belongs to the card under the pointer, without multiplying lines.
+- A group's faded copies aren't copies of the card itself, so they're left out.

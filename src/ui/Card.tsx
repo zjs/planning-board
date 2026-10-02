@@ -21,6 +21,8 @@ interface Props {
   lifted?: boolean;
   /** A dragged card has rested over this one: dropping puts it inside (hold to nest). */
   nestTarget?: boolean;
+  /** One of several copies of a hovered or selected card, outlined so they can be found (Q45). */
+  copyFocus?: boolean;
   /** Briefly highlighted after a drop, so you can see where it landed. */
   justMoved?: boolean;
   /** Show a title field instead of the title. */
@@ -52,6 +54,7 @@ export function Card({
   selected,
   lifted,
   nestTarget,
+  copyFocus,
   justMoved,
   editing,
   viaChildren,
@@ -73,6 +76,7 @@ export function Card({
     viaChildren && 'via-children',
     lifted && 'lifted',
     nestTarget && 'nest-target',
+    copyFocus && 'copy-focus',
     justMoved && 'just-moved',
   ].filter(Boolean);
   return (

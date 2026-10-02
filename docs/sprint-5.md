@@ -54,7 +54,7 @@ Scope: single user, browser only, no server.
 
 ### 4. A card's copies (Q45)
 
-- [ ] Hovering or selecting a card with several copies joins the copies with a dashed line, with no arrow and styled unlike a dependency. Every copy is outlined, and the links from every copy show.
+- [x] Hovering or selecting a card with several copies joins the copies with a dashed line, with no arrow and styled unlike a dependency. Every copy is outlined, and the links from every copy show.
 
 ### 5. Tester-ready
 
