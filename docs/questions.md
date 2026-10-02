@@ -42,12 +42,6 @@ Entry format:
 - Recommendation: (a). It keeps every ordering constraint the plan had, and it's what decomposing an epic means (the "Group" definition in `requirements.md`). The catch is that one link can become many; the dependency UI will show whether that's noisy.
 - Status: open. Built (a) in slice 2; one undo restores the original links.
 
-### Q22: In a zoomed lane, what does dropping a card on "No component" do?
-- Context: Requirements 3, 5, and 7, and Q18. Outside a zoom, a holding lane removes the dragged copy's value on that axis. Inside a zoom on Identity, the rows are Identity's components and the "No component" lane holds cards tagged Identity with no component yet. Removing the value would take the card out of Identity altogether, so it would vanish from the view you just dropped it into.
-- Options: (a) inside a zoom, "No component" means "Identity, nothing more precise": the copy loses its component and goes back to plain Identity, so it stays in view; (b) the same as outside a zoom: the value is removed, and the card leaves the view.
-- Recommendation: (a). It matches what the lane shows, and it's the inverse of refining (dropping an Identity-only card on SSO makes it Identity/SSO). The same goes for time: a release dropped on "No release" inside a Q2 zoom goes back to plain Q2.
-- Status: open. Built (a) in slice 4.
-
 ### Q23: Are group mismatch markers too noisy on real plans?
 - Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
 - Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
@@ -61,49 +55,23 @@ Entry format:
 - Status: open. Built (a).
   - Slices 4–5: the import dialog's Values step lists each component with an area field (defaulting to the project's name) and each version with a quarter menu (defaulting to "Not dated").
 
-### Q28: How do story points become sizes?
-- Context: Requirement 28 and the Size property (ordered XS–XL, no roll-up). Jira exports story points as numbers, and teams use different scales.
-- Options: (a) fixed buckets, editable in the import's value table; (b) buckets by quantile of the imported points; (c) don't import points.
-- Recommendation: (a), with defaults 1 → XS, 2–3 → S, 5 → M, 8 → L, 13 and up → XL. They follow the usual Fibonacci scale _(recalled)_ and are easy to read and change. (b) shifts every card's size whenever the export changes.
-- Status: open. Built (a).
-  - Slices 4–5: the Values step lists each story point value with its size, editable.
+### Q46: Order within a cell
+- Context: The backlog's theme H. Cards in a cell sort by sequence, then title. In PM testing, people wanted to put cards in order within a cell, in views without a sequence axis. Sequence is already a layout, though: its keys are the sequence view's columns (Q8), so changing a card's key to reorder it in a time view would also move it to another column in the sequence view. Remembering positions per view is out of scope for v1.
+- Options: (a) cells keep sorting by sequence, and can't be reordered by hand; (b) dragging within a cell changes the card's sequence key, accepting that it moves in the sequence view too; (c) a separate plan-wide rank, like Jira's: cells sort by it in every view, dragging within a cell changes it, and imports can fill it from Jira's rank or row order (Q30); sequence stays the sequence view's columns.
+- Recommendation: (c). Rearranging doesn't disturb the sequence view, there's still only one order for the whole plan (not one per view), and Jira's rank gets a home.
+- Status: open.
 
-### Q29: What happens to Jira fields with no built-in home?
-- Context: Requirements 26 and 28. Status, Priority, Sprint and Assignee are in most exports. None of them match a built-in property, and several describe execution rather than planning.
-- Options: (a) off by default, and any of them can become a custom property in the mapping step; (b) import all of them as custom properties; (c) not importable.
-- Recommendation: (a). The board stays about the plan, and anyone who wants to pivot by Status can turn it on. Team and Labels are on by default, because they're the pivots the sprint tests.
-- Status: open. Built (a).
-  - Slice 4: the mapping step shows them as "Don't import", and any column can be turned into a custom property.
+### Q47: Selecting every card that matches
+- Context: The backlog's theme G. "Expand every initiative" is a selection problem: select them all, then Expand. Filters (requirement 9) are deferred.
+- Options: (a) ⇧-click a row or column header to select every card in that lane, so pivoting to Level and ⇧-clicking Initiative selects every initiative; (b) a "Select all like this" command that matches the selected card on a property you pick; (c) wait for filters, then ⌘A selects what's visible.
+- Recommendation: (a), plus ⌘A for every card on the board. Both reuse what's on screen, and (a) works for any property, not just levels.
+- Status: open.
 
-### Q30: Should imported cards get sequence positions?
-- Context: Requirements 6 and 28. Jira exports carry an order (rank, or just row order), but the board's sequence is a hand-placed layout, and dependency links carry all the ordering the tool checks. Imported cards have no position, so in a sequence view every one of them waits in "No position".
-- Options: (a) no positions, and the board switches to Time × System after an import, so cards land where the export put them; (b) give each card its own column in file order, which could mean 150 columns and would read as a claim of order; (c) put them all in one column, which is a tidier version of "No position".
-- Recommendation: (a). Sequencing is the brainstorming work the board is for, and a PM can drag cards into order after looking at them by time and area. Revisit if testers expect the Jira rank to survive.
-- Status: open. Built (a) in slice 5.
-
-### Q33: Showing children in context
-- Context: Requirements 12, 13 and 18, Q16, and the backlog's theme A. Testers want to zoom into several groups at once and see which cards belong to which parent. They also want a faded "via children" copy of a group to show which children put it there.
-- Options: (a) expand in place: select groups and expand them, so their children appear on the current board, each marked with its parent (a chip, or the group's frame around them); (b) multi-zoom: zoom into several groups at once, showing only their children, each with a parent chip; (c) both, built as one mechanism, where multi-zoom is expanding with everything else hidden.
-- Recommendation: (c). For faded copies, the group becomes a frame around the real child cards that put it in that lane. Those cards stay draggable, and dragging one edits the child, so faded copies stop being a dead end. This turns the view's zoom root into a set (an amendment to ADR 0008).
-- Status: open. Built (c) in sprint 4, slice 4 (ADR 0008, amended). Engineering's call on the gesture: E expands and collapses the selected groups, since ⌘← is Back in some Mac browsers. Each child shown for its group gets a chip with the group's name and a colored edge, one color per group. A frame lists the cards that put the group in that cell, not every card below them: a story rather than each of its tasks. Zooming into several groups needs them to be on the same level. Expanded groups and multi-zoom are remembered per browser.
-
-### Q35: Editing a card without pivoting
-- Context: Requirements 2, 4 and 10, and the backlog's theme C. Dragging is the fastest way to set a value on many cards, but sizing one new card means pivoting to Size, dragging, then pivoting back.
-- Options: (a) an inspector panel for the selection: every property with a picker, bulk edits for a multi-selection, and room for the description and Jira key; (b) click a badge on a card to change it in a popover; (c) both.
-- Recommendation: (a) first. It's one place for every property. It's also the home for card descriptions, which are imported but not shown yet, and later for a card's dependencies. Add (b) if testers reach for the badges. Dragging stays the way to sort many cards.
-- Status: open. Built (a) in sprint 4, slice 1. The inspector opens from the toolbar or the I key and follows the selection until closed. A component or other multi-value property shows as chips, with "2 of 3" on a value only some selected cards have. Clicking a linked card zooms to it and selects it.
-
-### Q36: Double-click does three jobs
-- Context: Requirements 10 and 12, and the backlog's theme C. Double-click creates a card in empty space, renames a card, and zooms into a group. So testers can't find how to rename a group. Enter on a selected group renames it, but nobody finds that. The sprint 1 plan listed this as a risk, with this fallback.
-- Options: (a) double-click always renames, and group cards get a small zoom button, with ⌘↓ still zooming; (b) double-clicking the title renames and double-clicking the rest of the card zooms; (c) keep it as it is, and add F2 and a line in the help.
-- Recommendation: (a). One meaning everywhere, and zooming gets a visible control. Faded copies, which can't be renamed, would still zoom on double-click.
-- Status: open. Built (a) in sprint 3, slice 1, with one change: instead of a separate zoom button, the group card's child count is the button ("4 ›"), because a separate button didn't fit narrow cards. The count opens the group only once the group is selected, so a click meant to select it never opens it by accident.
-
-### Q39: How much of a card's dependency chain shows on focus?
-- Context: Requirement 15 and Q14: links other than out-of-order ones show only "for the hovered or selected card, upstream and downstream". That could mean direct links or the whole chain. Separately, "select the prerequisite, then the dependent" only defines two cards.
-- Options: for focus, (a) direct links on hover, the whole chain for selected cards; (b) the whole chain in both cases; (c) direct links only. For L with three or more cards selected: (d) do nothing, with a hint; (e) chain them in the order they were selected.
-- Recommendation: (a) and (d). Hovering stays light while you move around the board, and selecting is a deliberate "show me everything this touches". Chaining by click order is easy to get wrong by accident.
-- Status: open. Building (a) and (d) in sprint 3; the session will tell.
+### Q48: Dragging several cards
+- Context: Requirements 2 and 3, and the backlog's theme H. With several cards selected, a drag moves only the card under the pointer today.
+- Options: (a) every selected card gets the drop's values on both axes; on a multi-value axis, each card's value in the dragged copy's lane is replaced, or the value is added if the card has nothing in that lane; (b) every card keeps its offset from the dragged one, moving the same number of lanes.
+- Recommendation: (a). It reads as "put these here", and it's one undo step. (b) breaks on cards with several copies, and at the edges of the board.
+- Status: open.
 
 ## Answered
 
@@ -210,6 +178,12 @@ Entry format:
 - Recommendation: (a). Decomposing usually means writing new child cards, which (a) covers directly, and it adds no new gesture. The cost is that moving existing cards into a plain card takes two steps: create one child first, then ⌘G.
 - Status: answered 2026-09-26: (a), as recommended. Built in slice 3: select any card and press ⌘↓ (or Zoom in); an empty card shows "Nothing inside yet", and its first child makes it a group.
 
+### Q22: In a zoomed lane, what does dropping a card on "No component" do?
+- Context: Requirements 3, 5, and 7, and Q18. Outside a zoom, a holding lane removes the dragged copy's value on that axis. Inside a zoom on Identity, the rows are Identity's components and the "No component" lane holds cards tagged Identity with no component yet. Removing the value would take the card out of Identity altogether, so it would vanish from the view you just dropped it into.
+- Options: (a) inside a zoom, "No component" means "Identity, nothing more precise": the copy loses its component and goes back to plain Identity, so it stays in view; (b) the same as outside a zoom: the value is removed, and the card leaves the view.
+- Recommendation: (a). It matches what the lane shows, and it's the inverse of refining (dropping an Identity-only card on SSO makes it Identity/SSO). The same goes for time: a release dropped on "No release" inside a Q2 zoom goes back to plain Q2.
+- Status: answered 2026-10-02: keep (a) until there's a reason to switch. Built (a) in sprint 1, slice 4.
+
 ### Q24: How are dependency links drawn?
 - Context: Requirements 15 and 16, and Q14 (how they're displayed). Sprint 2 planning, for building in sprint 3.
 - Options: (a) select the prerequisite, then the dependent, and press L; (b) drag from a handle on the card to another card; (c) both.
@@ -227,6 +201,26 @@ Entry format:
 - Options: (a) replace the board, undoably, and keep each card's Jira key; (b) add the imported cards to the board; (c) merge by Jira key.
 - Recommendation: (a). It's simple to reason about and one undo reverses it. Keeping the key leaves room for (c) later, as "update from a fresh export".
 - Status: answered 2026-09-30: (a). The build targets Jira's CSV format, tested with a synthetic export in the repo. The PM checks their own export locally.
+
+### Q28: How do story points become sizes?
+- Context: Requirement 28 and the Size property (ordered XS–XL, no roll-up). Jira exports story points as numbers, and teams use different scales.
+- Options: (a) fixed buckets, editable in the import's value table; (b) buckets by quantile of the imported points; (c) don't import points.
+- Recommendation: (a), with defaults 1 → XS, 2–3 → S, 5 → M, 8 → L, 13 and up → XL. They follow the usual Fibonacci scale _(recalled)_ and are easy to read and change. (b) shifts every card's size whenever the export changes.
+- Status: answered 2026-10-02: keep (a) until there's a reason to switch.
+  - Slices 4–5: the Values step lists each story point value with its size, editable.
+
+### Q29: What happens to Jira fields with no built-in home?
+- Context: Requirements 26 and 28. Status, Priority, Sprint and Assignee are in most exports. None of them match a built-in property, and several describe execution rather than planning.
+- Options: (a) off by default, and any of them can become a custom property in the mapping step; (b) import all of them as custom properties; (c) not importable.
+- Recommendation: (a). The board stays about the plan, and anyone who wants to pivot by Status can turn it on. Team and Labels are on by default, because they're the pivots the sprint tests.
+- Status: answered 2026-10-02: keep (a) until there's a reason to switch.
+  - Slice 4: the mapping step shows them as "Don't import", and any column can be turned into a custom property.
+
+### Q30: Should imported cards get sequence positions?
+- Context: Requirements 6 and 28. Jira exports carry an order (rank, or just row order), but the board's sequence is a hand-placed layout, and dependency links carry all the ordering the tool checks. Imported cards have no position, so in a sequence view every one of them waits in "No position".
+- Options: (a) no positions, and the board switches to Time × System after an import, so cards land where the export put them; (b) give each card its own column in file order, which could mean 150 columns and would read as a claim of order; (c) put them all in one column, which is a tidier version of "No position".
+- Recommendation: (a). Sequencing is the brainstorming work the board is for, and a PM can drag cards into order after looking at them by time and area. Revisit if testers expect the Jira rank to survive.
+- Status: answered 2026-10-02: keep (a) until there's a reason to switch. Built (a) in sprint 2, slice 5.
 
 ### Q31: Is the repository ready to open, and how?
 - Context: After sprint 2, the CSV import lets potential users try the tool on their own data without a guided session. Before opening: no secrets or real data in the history, the build makes no network requests, and the dependencies are MIT or CC0. What was missing was a way to open the app without a GitHub login, CI for pull requests, a README for strangers, and a feedback route.
@@ -246,12 +240,31 @@ Entry format:
 - Status: answered 2026-10-01: (a), with every detail above as proposed, and the mismatch marker on from the start. Sprint 4, slice 2.
   - Built in slice 2. An initiative's border is heavier than an epic's, with a strip along the top. Sub-task maps to Story along with Story, Task and Bug; any other issue type gets no level. In the sample plan, groups and their contents have levels (a group of groups is an initiative), plus two epics with nothing inside yet; every other card has none.
 
+### Q33: Showing children in context
+- Context: Requirements 12, 13 and 18, Q16, and the backlog's theme A. Testers want to zoom into several groups at once and see which cards belong to which parent. They also want a faded "via children" copy of a group to show which children put it there.
+- Options: (a) expand in place: select groups and expand them, so their children appear on the current board, each marked with its parent (a chip, or the group's frame around them); (b) multi-zoom: zoom into several groups at once, showing only their children, each with a parent chip; (c) both, built as one mechanism, where multi-zoom is expanding with everything else hidden.
+- Recommendation: (c). For faded copies, the group becomes a frame around the real child cards that put it in that lane. Those cards stay draggable, and dragging one edits the child, so faded copies stop being a dead end. This turns the view's zoom root into a set (an amendment to ADR 0008).
+- Status: answered 2026-10-02: move to (a), expanding in place, as part of Q42. Multi-zoom goes with the rest of zoom. Built (c) in sprint 4, slice 4 (ADR 0008, amended): E expands and folds, each child shown for its group has a chip and a colored edge, and a frame lists the cards that put a group in a cell. Frames and expanding stay; multi-zoom will be removed.
+
 ### Q34: Nested axes
 - Context: Requirements 1, 5 and 7, Q18 and Q22, and the backlog's theme B. With components as rows, the areas above them disappear, and every card with an area but no component waits in one lane at the bottom, far from its area. Testers sort in two stages: by area first, then area by area by component.
 - Options: at a child level, show each parent as a header band spanning its children (areas over components, quarters over releases), with a holding lane per parent, such as "Identity: no component". A drop there gives the card the plain parent, the same rule as Q22. Then for lane zoom: (a) keep clicking a header to zoom; (b) collapse and expand bands instead; (c) both. Also open: whether the edge holding lanes then hold only cards with no value at any level.
 - Recommendation: nested bands with per-parent lanes, and (c) at first, then see whether people still zoom. Edge lanes hold only cards with no value at all. It's the biggest layout change since sprint 0, so it gets an ADR first.
 - Status: answered 2026-10-01: nested bands with a holding lane per parent, and (c): bands collapse and expand, and clicking a header still zooms. The session will show which one people use. Edge lanes hold only cards with no value at all. Sprint 4, slice 3, with an ADR first.
   - Built in slice 3 (ADR 0012). A parent's own lane reads "No component" or "No release" under its band, shaded like a holding lane. A collapsed band is one lane that says how much it holds ("4 components"), and its cards show the component they're in as a badge. Collapsed bands are remembered per property, so they stay collapsed when you swap axes. Zooming into a band from a component view stays a component view.
+  - 2026-10-02, PM testing: folding wins over zooming, so lane zoom goes, and one axis choice per property replaces the area and component choices (Q43).
+
+### Q35: Editing a card without pivoting
+- Context: Requirements 2, 4 and 10, and the backlog's theme C. Dragging is the fastest way to set a value on many cards, but sizing one new card means pivoting to Size, dragging, then pivoting back.
+- Options: (a) an inspector panel for the selection: every property with a picker, bulk edits for a multi-selection, and room for the description and Jira key; (b) click a badge on a card to change it in a popover; (c) both.
+- Recommendation: (a) first. It's one place for every property. It's also the home for card descriptions, which are imported but not shown yet, and later for a card's dependencies. Add (b) if testers reach for the badges. Dragging stays the way to sort many cards.
+- Status: answered 2026-10-02: (a) works well so far. Built in sprint 4, slice 1: the inspector opens from the toolbar or the I key and follows the selection until closed. A multi-value property shows as chips, with "2 of 3" on a value only some selected cards have. Clicking a linked card zooms to it and selects it.
+
+### Q36: Double-click does three jobs
+- Context: Requirements 10 and 12, and the backlog's theme C. Double-click creates a card in empty space, renames a card, and zooms into a group. So testers can't find how to rename a group. Enter on a selected group renames it, but nobody finds that. The sprint 1 plan listed this as a risk, with this fallback.
+- Options: (a) double-click always renames, and group cards get a small zoom button, with ⌘↓ still zooming; (b) double-clicking the title renames and double-clicking the rest of the card zooms; (c) keep it as it is, and add F2 and a line in the help.
+- Recommendation: (a). One meaning everywhere, and zooming gets a visible control. Faded copies, which can't be renamed, would still zoom on double-click.
+- Status: answered 2026-10-02: superseded by Q42. Zooming into a group goes away, so double-click keeps one job (rename), and the child count, which opened the group, can expand it instead. Built (a) in sprint 3, slice 1, with the child count as the zoom button ("4 ›").
 
 ### Q37: Can a dependency loop be created?
 - Context: Requirements 15 and 19. A before B and B before A can never both be satisfied.
@@ -265,6 +278,12 @@ Entry format:
 - Recommendation: (a). It's what "a group's dependencies include its children's" (requirement 13) looks like.
 - Status: answered 2026-10-01: (a). Order is still judged on the child's own values, not the group's. Sprint 3.
 
+### Q39: How much of a card's dependency chain shows on focus?
+- Context: Requirement 15 and Q14: links other than out-of-order ones show only "for the hovered or selected card, upstream and downstream". That could mean direct links or the whole chain. Separately, "select the prerequisite, then the dependent" only defines two cards.
+- Options: for focus, (a) direct links on hover, the whole chain for selected cards; (b) the whole chain in both cases; (c) direct links only. For L with three or more cards selected: (d) do nothing, with a hint; (e) chain them in the order they were selected.
+- Recommendation: (a) and (d). Hovering stays light while you move around the board, and selecting is a deliberate "show me everything this touches". Chaining by click order is easy to get wrong by accident.
+- Status: answered 2026-10-02: (a) and (d) work well so far. Built in sprint 3.
+
 ### Q40: What does the conflicts panel list as you pivot?
 - Context: Requirements 16, 17 and 20, and Q12. Time-based checks are judged at the level the view shows, and a view by size or team doesn't judge order at all. So "every active conflict" depends on the view.
 - Options: (a) the panel follows the view: it lists what the board in front of you highlights, and in a view with no time axis it says to pivot to a time view to check order and contention; loops and group mismatches show in every view; (b) the panel always checks the whole plan at one plan-wide level, whatever the view.
@@ -276,3 +295,36 @@ Entry format:
 - Options: (a) any relevant change: an involved card's values that the check uses change (its time or components, for contention), or a card joins or leaves the conflict; (b) only a change to the cards it was reviewed with; (c) never, until someone un-reviews it.
 - Recommendation: (a). A fourth card on a component reviewed at three is a new situation. The note stays attached, so the earlier reasoning is still visible.
 - Status: answered 2026-10-01: (a). For the conflicts sprint (sprint 5 candidate).
+
+### Q42: Replace zooming with expand and fold
+- Context: Requirements 7, 10, 11 and 12, Q20, Q33, Q34 and Q36, and the backlog's theme G. Sprint 4 left four ways to see detail: zooming into a group, zooming into a lane, expanding in place, and folding bands. In PM testing, expanding and folding did what zooming did, kept the rest of the board and its links in view, and were easier to find than zooming out with Esc. Zooming is also how you add the first card inside a group and move a card out of one, so those need new homes.
+- Options: (a) replace zoom with expand and fold, and give adding and moving their own controls; (b) keep zoom as a secondary action beside expand; (c) decide after a session.
+- Recommendation: (a). One way to look deeper, and it fixes the clumsy part of moving cards between groups.
+- Status: answered 2026-10-02: (a). Details for sprint planning, engineering's defaults:
+  - **Expand and fold are separate actions,** so an expanded group's children can be expanded in turn (the bug in theme G). E expands the selected groups; ⇧E folds the groups of the selected cards. The child count on a group card expands it.
+  - **A Group picker in the inspector** moves the selected cards into a group, between groups, or out to the top level.
+  - **Adding a card inside a group:** "Add a card inside" in the inspector for the selected group, which expands it if it's folded. That covers a card with nothing inside yet (Q20).
+  - **Zoom goes:** group zoom, multi-zoom, lane zoom (Q43), the zoom bar's breadcrumb, and its drop-to-move-out. The group's own values, which the zoom bar showed (Q19), are in the inspector.
+
+### Q43: One axis choice per property
+- Context: Requirements 1 and 7, Q34, and the backlog's theme G. With bands (ADR 0012), "System (area)" and "System (component)" show the same thing at two depths, and folding moves between them.
+- Options: (a) one choice per property, showing its deepest level with every parent as a band, folded by default, with Fold all and Unfold all, and a click on a folded lane unfolding it; lane zoom goes; (b) keep a choice per level and lane zoom, and add fold all.
+- Recommendation: (a). It's one control instead of two, and folding keeps the other areas and their links in view.
+- Status: answered 2026-10-02: (a). For planning: views saved in a browser by level (`system:1`) fall back to the property, and their folded bands carry over.
+
+### Q44: "Related to" links
+- Context: Requirement 15 and the backlog's theme F. Dependencies have one type, "comes before". Plans also have looser relationships worth seeing that don't imply an order. The "typed dependencies" out of scope for v1 are ordering types, such as finish-to-start; this one carries no order at all.
+- Options: (a) a second, undirected kind of link, drawn dotted with no arrow, never judged for order or counted in ⚠, shown by the same focus rules as dependencies (Q14, Q39); (b) leave it to descriptions or a custom tag.
+- Recommendation: (a).
+- Status: answered 2026-10-02: (a), in the next sprint. Details for planning, engineering's defaults:
+  - **Making one:** select two cards and press ⌥L. Order doesn't matter, and ⌥L again removes it.
+  - **On the board:** dotted, with no arrow, drawn on hover and selection, and never red.
+  - **In the inspector:** a "Related" list beside Comes after and Comes before.
+  - **On import:** Jira's "Relates" link columns become related links.
+  - **Plan files:** related links are stored beside dependencies. Older readers ignore them, so the file version stays at 1 (ADR 0005).
+
+### Q45: Showing a card's copies
+- Context: Requirements 3 and 15, and the backlog's theme E. A card in several lanes has a copy in each, often off screen. A card's dependency lines leave from whichever copy is closest, so its links can be split across copies.
+- Options: (a) hovering or selecting any copy joins all its copies with a dashed line, no arrow, styled differently from related links, and shows the links from every copy; (b) only highlight the copies, as selection does now.
+- Recommendation: (a).
+- Status: answered 2026-10-02: (a), in the next sprint.

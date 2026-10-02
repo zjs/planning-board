@@ -42,7 +42,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **View.** A choice of X and Y axes, each a property at some level of its hierarchy. Other properties show as attributes on the card. Every view has holding lanes along its right and bottom edges for cards with no value on one or both axes yet.
 
-**Zoom.** Moving one level down a hierarchy: within a property (area → service), along an axis (quarter → release), or into the item tree (a group → its children).
+**Folding and expanding.** Seeing one level further down a hierarchy, without leaving the board: unfolding a property's band (area → service, quarter → release), or expanding a group in place to show its children (Q42, Q43). These replace zooming, which hid the rest of the board.
 
 **Group.** Any item can contain other items, recursively, like grouping in a diagram editor. An item has at most one parent. A group keeps its own values, such as a PM's ballpark date or size, while its children refine them. Decomposing an item means turning it into a group and moving its dependencies to the specific children that have them.
 
@@ -58,21 +58,21 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 4. Cards show non-axis properties as compact attributes, such as a size badge in the sequence view.
 5. Each view has holding lanes for cards missing a value, pinned to the board's edges. A lane at the end of each row holds cards with that row but no column, a lane under each column holds cards with that column but no row, and the corner holds cards with neither. Dropping a card in a holding lane sets the axis it names and clears the other. Holding lanes can show full cards or compact chips.
 6. Sequence views show no step numbers or column labels, so placement doesn't read as a claim of order between unlinked items.
-7. Users can zoom into a lane or column to see the next hierarchy level, and zoom back out. Cards outside the zoomed value are hidden; cards with only the coarser value (an area but no component) wait in the holding lane (Q18). An axis at a child level also shows its parents as bands, each with its own holding lane, and a band can be collapsed and expanded (Q34).
+7. A hierarchical property is one axis choice. It shows its deepest level, with each parent as a band, and each band has its own holding lane for cards with only the parent value (Q34). Users can fold a band into one lane and unfold it again, one at a time or all at once (Q43).
 8. Users can save named views and switch between them in one step.
 9. Users can filter cards by any property, including custom tags.
 
 **Items and groups**
 
 10. Users can create, edit, and delete items directly on the board. Deleting a group deletes everything inside it, and one undo restores all of it (Q17). Items imported from Jira keep their Jira key (Q26).
-11. Users can group items into a parent item, recursively, and ungroup them.
-12. Users can zoom into a group to see only its children. The group's own values show in the zoom header (Q19).
-13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value. A collapsed group also shows as a faded frame in lanes that only its children touch, around the child cards that put it there; those children can be dragged (Q16, Q33). Groups can be expanded in place, and several can be zoomed into at once (Q33).
+11. Users can group items into a parent item, recursively, and ungroup them. They can move items into another group, or out to the top level (Q42).
+12. Users can expand a group in place to see its children on the current board, each marked with its group, and fold it back (Q33, Q42). A group's own values show in the inspector (Q19, Q35).
+13. Groups hold their own values, and a group's dependencies and component touches include its children's. The tool highlights a child dated outside its group, sized larger than its group, or in a different system area, and never overwrites either value. A collapsed group also shows as a faded frame in lanes that only its children touch, around the child cards that put it there; those children can be dragged (Q16, Q33). Groups can be expanded in place (Q33, Q42).
 14. Grouping never creates a cycle, even when two people nest items at the same moment.
 
 **Relationships and conflicts**
 
-15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14). A link is drawn by selecting the prerequisite, then the dependent, and pressing L (Q24). Pressing L again removes it. With one card selected, L starts a link that survives zooming, so cards at different group levels can be linked. A link to a card inside a collapsed group is drawn to the group (Q38). Loops are allowed and flagged (Q37).
+15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14). A link is drawn by selecting the prerequisite, then the dependent, and pressing L (Q24). Pressing L again removes it. With one card selected, L starts a link that can be finished on any card, so cards at different group levels can be linked. A link to a card inside a collapsed group is drawn to the group (Q38). Loops are allowed and flagged (Q37). Cards can also be linked as "related", which implies no order and is never flagged (Q44). Hovering a card shows its other copies, and the links from all of them (Q45).
 16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view. A time view judges at the level it shows, quarters or releases (Q12).
 17. The tool highlights a component when more items touch it in one time bucket than its concurrency limit allows. No limit applies until a user sets one, per component or as a plan default.
 18. Conflicts inside a collapsed group are visible on the group card. The group's ⚠ count includes out-of-order links and loops inside it.
@@ -139,7 +139,7 @@ flowchart LR
 - Server-readable storage, user accounts, SSO, and permissions.
 - Auto-scheduling, or constraints that prevent conflicting placements.
 - Capacity planning against team availability.
-- Typed dependencies (finish-to-start, finish-to-finish, and so on).
+- Typed dependencies (finish-to-start, finish-to-finish, and so on). "Related to" links carry no order, so they're in scope (Q44).
 - Summing relative sizes into totals.
 - Soft "prefer before" links (possible future enhancement).
 - Remembering card positions within a cell per view (hard to manage across screen sizes).
