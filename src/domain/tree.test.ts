@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
-import { ancestry, childCounts, childrenOf, topLevelItems, wouldCreateCycle } from './tree.ts';
+import { ancestry, canNest, childCounts, childrenOf, topLevelItems, wouldCreateCycle } from './tree.ts';
 
 const p = plan(
   item('epic'),
@@ -67,5 +67,23 @@ describe('childrenOf and ancestry', () => {
     expect(ancestry(p, 'orphan')).toEqual(['orphan']);
     expect(ancestry(p, 'a')).toEqual(['a']);
     expect(ancestry(p, 'nope')).toEqual([]);
+  });
+});
+
+describe('canNest', () => {
+  const p = plan(item('epic'), item('story', { parent: 'epic' }), item('task', { parent: 'story' }), item('other'));
+
+  it('lets a card go inside any other card, plain or a group', () => {
+    expect(canNest(p, 'other', 'epic')).toBe(true);
+    expect(canNest(p, 'other', 'task')).toBe(true);
+    expect(canNest(p, 'task', 'epic')).toBe(true);
+  });
+
+  it('refuses itself, its own group, anything inside it, and missing cards', () => {
+    expect(canNest(p, 'epic', 'epic')).toBe(false);
+    expect(canNest(p, 'story', 'epic')).toBe(false);
+    expect(canNest(p, 'epic', 'task')).toBe(false);
+    expect(canNest(p, 'gone', 'epic')).toBe(false);
+    expect(canNest(p, 'epic', 'gone')).toBe(false);
   });
 });

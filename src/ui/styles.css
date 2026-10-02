@@ -514,6 +514,13 @@ button.primary {
   opacity: 0.35;
 }
 
+/* Hold to nest: the card a dragged card will go inside. */
+.card.nest-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+  background-image: linear-gradient(var(--drop), var(--drop));
+}
+
 /* Card levels (Q32): an epic's border is heavier, an initiative's heavier still, with a strip along the top. */
 .card[data-weight='1'] {
   border-width: 2px 2px 2px 4px;
@@ -730,7 +737,8 @@ body.dragging * {
   opacity: 0.95;
 }
 
-.add-badge {
+.add-badge,
+.nest-badge {
   flex: none;
   padding: 0 6px;
   border-radius: 10px;
@@ -738,6 +746,15 @@ body.dragging * {
   color: #fff;
   font-size: 11px;
   font-weight: 600;
+}
+
+.nest-badge {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 
 .child-count {
@@ -1100,9 +1117,32 @@ kbd {
 
 /* The board and, when open, the Properties panel beside it. */
 .workspace {
+  position: relative;
   flex: 1;
   display: flex;
   min-height: 0;
+}
+
+/* While a card in a group is dragged: drop here to move it up one level. Floats, so the board doesn't shift. */
+.move-out {
+  position: absolute;
+  z-index: 30;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 14%);
+  white-space: nowrap;
+}
+
+.move-out.drop-target {
+  background-image: linear-gradient(var(--drop), var(--drop));
 }
 
 .workspace > .board-wrap {
@@ -1707,6 +1747,56 @@ button.link:hover {
 
 .inspector-fields select {
   max-width: 100%;
+}
+
+.group-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+}
+
+.group-field input {
+  flex: 1 1 100%;
+  box-sizing: border-box;
+}
+
+.group-matches {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.group-matches button {
+  display: block;
+  width: 100%;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.group-matches button:hover,
+.group-matches button:focus-visible {
+  background: var(--drop);
+}
+
+.group-matches .panel-hint {
+  padding: 4px 6px;
+}
+
+.group-where {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.inspector-actions {
+  margin: 0 0 12px;
 }
 
 .inspector-chips {

@@ -13,10 +13,10 @@ describe('cardAttributes', () => {
     // Time is an axis at quarter level, but the release is more precise, so it still shows.
     expect(cardAttributes(p, p.items['a']!, timeBySize).map((a) => a.property)).toEqual([TIME, SYSTEM]);
     expect(cardAttributes(p, p.items['a']!, seqBySystem)).toEqual([
-      { property: SIZE, text: 'M', title: 'Size: M' },
-      { property: TIME, text: 'Q1/R2', title: 'Time: Q1 › Q1/R2' },
+      { property: SIZE, text: 'M', title: 'Size: M', value: 'm' },
+      { property: TIME, text: 'Q1/R2', title: 'Time: Q1 › Q1/R2', value: 'q1/r2' },
       // System is an axis, but at area level; the component is more precise, so it still shows.
-      { property: SYSTEM, text: 'ID/SSO', title: 'System: ID › ID/SSO' },
+      { property: SYSTEM, text: 'ID/SSO', title: 'System: ID › ID/SSO', value: 'id/sso' },
     ]);
   });
 
@@ -31,7 +31,8 @@ describe('cardAttributes', () => {
     const p = plan(item('a', { values: { [SYSTEM]: ['id/sso', 'pay/ledger', 'id'] } }));
     expect(cardAttributes(p, p.items['a']!, timeBySize)).toEqual([
       // Tree order, not storage order, so the first value shown is stable.
-      { property: SYSTEM, text: 'ID +2', title: 'System: ID, ID › ID/SSO, PAY › PAY/LEDGER' },
+      // ⇧-click selects by the value shown first.
+      { property: SYSTEM, text: 'ID +2', title: 'System: ID, ID › ID/SSO, PAY › PAY/LEDGER', value: 'id' },
     ]);
   });
 

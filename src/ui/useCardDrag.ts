@@ -8,14 +8,21 @@ import type { CardRef } from '../domain/view.ts';
 // data-column lane keys. A holding lane leaves out the axis it has no value
 // on, which reads as null. The pinned edges of the board (.corner,
 // .holding-head, .holding-row-header) bound the area that edge-scrolls.
-// Breadcrumb segments carry data-drop="parent" data-parent=… (empty for the
-// top level): dropping there moves the card out to that level.
+// Breadcrumb segments and the move-out strip carry data-drop="parent"
+// data-parent=… (empty for the top level): dropping there moves the card out
+// to that level. Holding the card over another card (.card[data-item]) for
+// NEST_DWELL_MS turns the target into that card: dropping puts it inside.
 
-/** A cell or holding lane, or a level of the tree to move a card to. */
-export type BoardTarget = DropTarget | { parent: ItemId | null };
+/** A cell or holding lane, a level of the tree to move a card to, or a card to put it inside. */
+export type BoardTarget = DropTarget | { parent: ItemId | null } | { into: ItemId };
 
 export const isParentTarget = (t: BoardTarget | null): t is { parent: ItemId | null } =>
   t !== null && 'parent' in t;
+
+export const isIntoTarget = (t: BoardTarget | null): t is { into: ItemId } => t !== null && 'into' in t;
+
+/** A cell or holding lane, rather than a place in the group tree. */
+export const isCellTarget = (t: BoardTarget | null): t is DropTarget => t !== null && !isParentTarget(t) && !isIntoTarget(t);
 
 export interface DragState {
   card: CardRef;
@@ -36,6 +43,14 @@ const EDGE_PX = 56;
 const MAX_SCROLL_PX_PER_FRAME = 18;
 /** The pointer must rest near an edge this long before scrolling starts, so merely crossing an edge doesn't. */
 const EDGE_DWELL_MS = 200;
+/** How long a dragged card rests over another before dropping would put it inside (hold to nest). */
+export const NEST_DWELL_MS = 500;
+
+/** The card under the pointer, other than a draft. */
+function cardAt(x: number, y: number): ItemId | null {
+  const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('.card[data-item]');
+  return el?.dataset.item ?? null;
+}
 
 function targetAt(x: number, y: number): BoardTarget | null {
   const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop]');
@@ -48,6 +63,7 @@ function targetAt(x: number, y: number): BoardTarget | null {
 export function sameTarget(a: BoardTarget | null, b: BoardTarget | null): boolean {
   if (a === null || b === null) return a === b;
   if (isParentTarget(a) || isParentTarget(b)) return isParentTarget(a) && isParentTarget(b) && a.parent === b.parent;
+  if (isIntoTarget(a) || isIntoTarget(b)) return isIntoTarget(a) && isIntoTarget(b) && a.into === b.into;
   return a.x === b.x && a.y === b.y;
 }
 
@@ -84,12 +100,14 @@ export function edgeSpeed(pos: number, start: number, end: number): number {
 /**
  * Drag cards between cells. `scrollRef` is the board's scroll container,
  * which scrolls when the pointer nears its edges. A press that never moves
- * past the drag threshold is a click, reported to `onClick`.
+ * past the drag threshold is a click, reported to `onClick`. `canNest` says
+ * whether the dragged card may go inside the card it's held over.
  */
 export function useCardDrag(
   onDrop: (card: CardRef, target: BoardTarget, mode: DropMode) => void,
   scrollRef: React.RefObject<HTMLElement | null>,
   onClick: (card: CardRef, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void = () => undefined,
+  canNest: (card: ItemId, into: ItemId) => boolean = () => false,
 ) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -106,26 +124,36 @@ export function useCardDrag(
   const edgeSince = useRef<number | null>(null);
   /** Set by an Alt-drop, so the Alt release that follows it is swallowed too. */
   const swallowAltUp = useRef(false);
+  /** The card the dragged one is resting over, and the timer that nests it there. */
+  const hover = useRef<{ id: ItemId; timer: ReturnType<typeof setTimeout> | null } | null>(null);
   const onDropRef = useRef(onDrop);
   const onClickRef = useRef(onClick);
+  const canNestRef = useRef(canNest);
   useEffect(() => {
     onDropRef.current = onDrop;
     onClickRef.current = onClick;
-  }, [onDrop, onClick]);
+    canNestRef.current = canNest;
+  }, [onDrop, onClick, canNest]);
 
   const update = useCallback((next: DragState | null) => {
     dragRef.current = next;
     setDrag(next);
   }, []);
 
+  const clearHover = useCallback(() => {
+    if (hover.current?.timer) clearTimeout(hover.current.timer);
+    hover.current = null;
+  }, []);
+
   const stop = useCallback(() => {
     pending.current = null;
+    clearHover();
     if (frame.current !== null) cancelAnimationFrame(frame.current);
     frame.current = null;
     edgeSince.current = null;
     document.body.classList.remove('dragging');
     update(null);
-  }, [update]);
+  }, [update, clearHover]);
 
   useEffect(() => {
     // Keep scrolling while the pointer rests near an edge, re-checking the target underneath.
@@ -152,6 +180,8 @@ export function useCardDrag(
       scroller.scrollBy(dx, dy);
       // At the scroll limit nothing moved; don't re-render 60 times a second for nothing.
       if (scroller.scrollLeft !== scrollLeft || scroller.scrollTop !== scrollTop) {
+        // The board moved under the pointer, so whatever card it was resting over is gone.
+        clearHover();
         const target = targetAt(current.x, current.y);
         if (!sameTarget(target, current.target)) update({ ...current, target });
       }
@@ -180,7 +210,23 @@ export function useCardDrag(
         grabY: start!.startY - start!.rect.top,
         width: start!.rect.width,
       };
-      const target = targetAt(e.clientX, e.clientY);
+      // Hold to nest: resting over another card starts a timer; moving off it cancels.
+      const under = cardAt(e.clientX, e.clientY);
+      if (under !== (hover.current?.id ?? null)) {
+        clearHover();
+        if (under !== null && canNestRef.current(base.card.itemId, under)) {
+          const timer = setTimeout(() => {
+            if (hover.current?.id !== under || !dragRef.current) return;
+            hover.current.timer = null;
+            update({ ...dragRef.current, target: { into: under } });
+          }, NEST_DWELL_MS);
+          hover.current = { id: under, timer };
+        } else if (under !== null) {
+          hover.current = { id: under, timer: null };
+        }
+      }
+      const nesting = current && isIntoTarget(current.target) && current.target.into === under;
+      const target = nesting ? current.target : targetAt(e.clientX, e.clientY);
       update({
         ...base,
         x: e.clientX,
@@ -234,7 +280,7 @@ export function useCardDrag(
       window.removeEventListener('keydown', key);
       window.removeEventListener('keyup', key);
     };
-  }, [scrollRef, stop, update]);
+  }, [scrollRef, stop, update, clearHover]);
 
   const startDrag = useCallback((e: ReactPointerEvent<HTMLElement>, card: CardRef, title: string, draggable = true) => {
     if (e.button !== 0) return;

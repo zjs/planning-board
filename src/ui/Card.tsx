@@ -19,6 +19,8 @@ interface Props {
   selected?: boolean;
   /** This copy is the one being dragged. */
   lifted?: boolean;
+  /** A dragged card has rested over this one: dropping puts it inside (hold to nest). */
+  nestTarget?: boolean;
   /** Briefly highlighted after a drop, so you can see where it landed. */
   justMoved?: boolean;
   /** Show a title field instead of the title. */
@@ -31,10 +33,12 @@ interface Props {
   mismatchesInside?: readonly string[];
   onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void;
   onDoubleClick?: (e: MouseEvent<HTMLDivElement>) => void;
-  /** Zoom into this card's group: the button on group cards (Q36). */
-  onZoom?: (() => void) | undefined;
+  /** Expand this group in place: the child count on group cards (Q36, Q42). */
+  onExpand?: (() => void) | undefined;
   onRename?: (title: string) => void;
   onCancelEdit?: () => void;
+  /** ⇧-click on a badge: select every card on the board with its value (Q47). */
+  onSelectMatching?: (property: string, value: string) => void;
 }
 
 export function Card({
@@ -47,6 +51,7 @@ export function Card({
   compact,
   selected,
   lifted,
+  nestTarget,
   justMoved,
   editing,
   viaChildren,
@@ -54,9 +59,10 @@ export function Card({
   mismatchesInside = [],
   onPointerDown,
   onDoubleClick,
-  onZoom,
+  onExpand,
   onRename,
   onCancelEdit,
+  onSelectMatching,
 }: Props) {
   const isGroup = childCount > 0;
   const classes = [
@@ -66,6 +72,7 @@ export function Card({
     selected && 'selected',
     viaChildren && 'via-children',
     lifted && 'lifted',
+    nestTarget && 'nest-target',
     justMoved && 'just-moved',
   ].filter(Boolean);
   return (
@@ -95,14 +102,14 @@ export function Card({
           <MismatchMarker own={mismatches} inside={mismatchesInside} />
         )}
         {isGroup &&
-          (onZoom && !editing ? (
-            // The count is the way in (Q36): double-click renames, this opens the group. Only on a
-            // selected group, so a click meant to select it never opens it by accident.
+          (onExpand && !editing ? (
+            // The count is the way in (Q36, Q42): double-click renames, this expands the group. Only on a
+            // selected group, so a click meant to select it never expands it by accident.
             <button
               type="button"
               className={selected ? 'zoom-into ready' : 'zoom-into'}
-              aria-label={`Open ${item.title} (${childCount} inside)`}
-              title={selected ? `Open: see the ${childCount} cards inside` : `Group of ${childCount} cards. Select it, then click here to open it`}
+              aria-label={`Expand ${item.title} (${childCount} inside)`}
+              title={selected ? `Expand: show the ${childCount} cards inside right here` : `Group of ${childCount} cards. Select it, then click here to expand it`}
               tabIndex={selected ? 0 : -1}
               onPointerDown={(e) => {
                 // Unselected, the press selects the card like any other; selected, it's a click on the button.
@@ -112,7 +119,7 @@ export function Card({
                 // The second click of a double-click belongs to the card: double-click renames.
                 if (!selected || e.detail > 1) return;
                 e.stopPropagation();
-                onZoom();
+                onExpand();
               }}
             >
               <span className="child-count">{childCount}</span>
@@ -139,7 +146,19 @@ export function Card({
             </span>
           )}
           {attributes.map((a) => (
-            <span key={a.property} className="attr" data-property={a.property} title={a.title}>
+            <span
+              key={a.property}
+              className="attr"
+              data-property={a.property}
+              title={a.title}
+              onPointerDown={(e) => {
+                // ⇧-click on a badge selects its matches, rather than adding this card to the selection.
+                if (!e.shiftKey || !onSelectMatching) return;
+                e.stopPropagation();
+                e.preventDefault();
+                onSelectMatching(a.property, a.value);
+              }}
+            >
               {a.text}
             </span>
           ))}

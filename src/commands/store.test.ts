@@ -12,6 +12,7 @@ import { readPlan } from '../store/schema.ts';
 import {
   addDependency,
   addValue,
+  createChild,
   createItem,
   createProperty,
   deleteProperty,
@@ -310,6 +311,32 @@ describe('moveToParent', () => {
     expect(moveToParent(store, ['story'], 'epic')).toEqual([]);
     expect(moveToParent(store, ['epic'], 'story')).toEqual([]);
     expect(moveToParent(store, ['epic'], 'gone')).toEqual([]);
+    expect(store.undoManager.canUndo()).toBe(false);
+  });
+});
+
+describe('createChild', () => {
+  it('adds a card inside another, with its values on the view axes only, as one undo step', () => {
+    const store = storeWith(
+      item('epic', { sequence: 'a3', values: { [SYSTEM]: ['id', 'pay'], [TIME]: ['q2'], [SIZE]: ['l'] } }),
+    );
+    const id = createChild(store, seqBySystem, 'epic', '  First story ')!;
+    expect(readPlan(store.doc).items[id]).toMatchObject({
+      title: 'First story',
+      parent: 'epic',
+      sequence: 'a3',
+      values: { [SYSTEM]: ['id', 'pay'] },
+    });
+    const other = createChild(store, timeBySystem, 'epic', 'Second')!;
+    expect(readPlan(store.doc).items[other]).toMatchObject({ sequence: null, values: { [SYSTEM]: ['id', 'pay'], [TIME]: ['q2'] } });
+    undo(store);
+    expect(readPlan(store.doc).items[other]).toBeUndefined();
+  });
+
+  it('needs a title and a parent that exists', () => {
+    const store = storeWith(item('epic'));
+    expect(createChild(store, seqBySystem, 'epic', '  ')).toBeNull();
+    expect(createChild(store, seqBySystem, 'gone', 'Story')).toBeNull();
     expect(store.undoManager.canUndo()).toBe(false);
   });
 });

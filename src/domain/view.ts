@@ -324,6 +324,24 @@ function viewItems(plan: Plan, view: ViewSpec): { items: Item[]; parentOf: Map<I
   return { items: items.sort(compareItems), parentOf };
 }
 
+/**
+ * Whether a card inside `parent` (null for the top level) is on this view:
+ * its group is the level shown, or is expanded and itself on the view. For
+ * deciding, after moving a card, whether it can stay selected.
+ */
+export function shownInside(plan: Plan, view: ViewSpec, parent: ItemId | null): boolean {
+  const roots: (ItemId | null)[] = view.roots && view.roots.length > 0 ? [...view.roots] : [view.root ?? null];
+  const expanded = new Set(view.expanded ?? []);
+  const seen = new Set<ItemId>();
+  let current = parent;
+  for (;;) {
+    if (roots.includes(current)) return true;
+    if (current === null || seen.has(current) || !expanded.has(current)) return false;
+    seen.add(current);
+    current = plan.items[current]?.parent ?? null;
+  }
+}
+
 export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   const { items, parentOf } = viewItems(plan, view);
   const marked = (ref: CardRef): CardRef => {

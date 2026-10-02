@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   addDependency,
+  createChild,
   createItem,
   deleteItems,
   dropCard,
@@ -36,8 +37,9 @@ import { SYSTEM, TIME, type Dependency, type ItemId, type Plan } from '../domain
 import type { DropMode, DropTarget } from '../domain/move.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
-import { ancestry, childCounts, childrenOf } from '../domain/tree.ts';
-import { inZoomedScope, layoutView, type AxisSpec, type CardRef, type Lane, type ViewSpec } from '../domain/view.ts';
+import { cardsOnBoard, laneCards, matchingCards } from '../domain/selecting.ts';
+import { ancestry, canNest, childCounts, childrenOf } from '../domain/tree.ts';
+import { inZoomedScope, layoutView, shownInside, type AxisSpec, type CardRef, type Lane, type ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
 import {
@@ -75,7 +77,7 @@ import { Menu } from './Menu.tsx';
 import { Inspector } from './Inspector.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
 import { keyNames } from './platform.ts';
-import { isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
+import { isCellTarget, isIntoTarget, isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
 import { ZoomBar } from './ZoomBar.tsx';
 
 /** The name of the level an axis shows, in a sentence: "component", "release". */
@@ -240,21 +242,45 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   // Deleted or undone items drop out of the selection.
   const selected = useMemo(() => new Set([...selection].filter((id) => plan.items[id])), [selection, plan]);
 
+  // Move cards to another group: hold to nest, the move-out strip, the breadcrumb, or the inspector. Only
+  // the group changes, never the values. Cards that leave the board leave the selection, so Delete can't
+  // reach them, and their new group is selected instead when it's on screen.
+  const moveCards = useCallback(
+    (ids: ItemId[], parent: ItemId | null, text: (moved: ItemId[]) => string) => {
+      const moved = moveToParent(store, ids, parent);
+      if (moved.length === 0) return;
+      if (shownInside(plan, view, parent)) {
+        setJustMoved(moved[0]!);
+      } else if (parent !== null && renamable.has(parent)) {
+        setSelection(new Set([parent]));
+        setJustMoved(parent);
+      } else {
+        setSelection((current) => new Set([...current].filter((id) => !moved.includes(id))));
+      }
+      setNotice({ text: text(moved), step: store.undoManager.undoStack.at(-1) });
+    },
+    [store, plan, view, renamable],
+  );
+
   const onDrop = useCallback(
     (card: CardRef, target: BoardTarget, mode: DropMode) => {
-      if (!isParentTarget(target)) {
+      if (isCellTarget(target)) {
         if (dropCard(store, view, card, target, mode)) setJustMoved(card.itemId);
         return;
       }
-      // Dropped on the breadcrumb: move the card out to that level. It leaves this view, so say where it went.
-      if (moveToParent(store, [card.itemId], target.parent).length === 0) return;
-      // It's no longer on screen, so it mustn't stay selected where Delete or ⌘G could reach it.
-      setSelection((current) => new Set([...current].filter((id) => id !== card.itemId)));
-      const title = plan.items[card.itemId]?.title ?? 'card';
-      const to = target.parent === null ? 'the plan' : (plan.items[target.parent]?.title ?? 'the plan');
-      setNotice({ text: `Moved “${title}” out to ${to}`, step: store.undoManager.undoStack.at(-1) });
+      // Held over a card (hold to nest), or dropped on the move-out strip or the breadcrumb.
+      const parent = isIntoTarget(target) ? target.into : target.parent;
+      const from = plan.items[card.itemId]?.parent ?? null;
+      const titleOf = (id: ItemId | null) => (id === null ? 'the plan' : `“${plan.items[id]?.title ?? ''}”`);
+      moveCards([card.itemId], parent, () =>
+        isIntoTarget(target)
+          ? `Put ${titleOf(card.itemId)} inside ${titleOf(parent)}`
+          : parent === (from === null ? null : (plan.items[from]?.parent ?? null))
+            ? `Moved ${titleOf(card.itemId)} out of ${titleOf(from)}`
+            : `Moved ${titleOf(card.itemId)} out to ${titleOf(parent)}`,
+      );
     },
-    [store, view, plan],
+    [store, view, plan, moveCards],
   );
 
   const onCardClick = useCallback(
@@ -271,6 +297,31 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     },
     [],
   );
+  // Selecting many at once (Q47): every match for a badge, every card in a lane, or everything.
+  const selectMany = useCallback((ids: ItemId[], what: string) => {
+    setSelection(new Set(ids));
+    setSelectedLinks(new Set());
+    setAnchor(null);
+    setNotice({ text: ids.length === 0 ? `No cards ${what}` : `Selected ${ids.length} ${ids.length === 1 ? 'card' : 'cards'} ${what}` });
+  }, []);
+  const onSelectMatching = useCallback(
+    (property: string, value: string) => {
+      const prop = plan.properties[property];
+      const label = prop?.kind === 'select' ? (prop.values[value]?.label ?? value) : value;
+      selectMany(matchingCards(plan, layout, property, value), `with ${label}`);
+    },
+    [plan, layout, selectMany],
+  );
+  const onSelectLanes = useCallback(
+    (which: 'x' | 'y', start: number, end: number) => {
+      const lanes = which === 'x' ? layout.columns : layout.rows;
+      const band = [...layout.bands[which]].reverse().find((b) => b.start === start && b.end === end && end - start > 1);
+      const label = band?.label ?? (end - start === 1 ? lanes[start]?.label : null);
+      selectMany(laneCards(layout, which, start, end), label ? `in ${label}` : 'in this lane');
+    },
+    [layout, selectMany],
+  );
+  const selectAll = useCallback(() => selectMany(cardsOnBoard(layout), 'on the board'), [layout, selectMany]);
   const clearSelection = useCallback(() => {
     setSelection(new Set());
     setSelectedLinks(new Set());
@@ -330,35 +381,69 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     },
     [plan, zoomTo],
   );
-  // E: expand the selected groups in place, or collapse them, or the group of a selected expanded child (Q33).
-  const toggleExpand = useCallback(() => {
-    const ids = [...selected];
-    if (ids.length === 0) {
-      setNotice({ text: 'Select a group, then press E to show what’s inside it here.' });
-      return;
-    }
-    const collapse = new Set<ItemId>();
-    const open = new Set<ItemId>();
-    for (const id of ids) {
-      if (expanded.includes(id)) {
-        collapse.add(id);
-        continue;
+  /** Every copy on the board, for finding which group a selected card is shown for. */
+  const shownCopies = useMemo(
+    () => layout.cells.flat(2).concat(layout.holding.rows.flat(), layout.holding.columns.flat(), layout.holding.corner),
+    [layout],
+  );
+  // E: expand the selected groups in place, at any depth (Q33, Q42). Expanding never folds anything.
+  const expandGroups = useCallback(
+    (ids: ItemId[]) => {
+      if (ids.length === 0) {
+        setNotice({ text: 'Select a group, then press E to show what’s inside it here.' });
+        return;
       }
-      const parent = layout.cells
-        .flat(2)
-        .concat(layout.holding.rows.flat(), layout.holding.columns.flat(), layout.holding.corner)
-        .find((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent))?.parent;
-      if (parent !== undefined) collapse.add(parent);
-      else if (counts.has(id)) open.add(id);
+      const open = ids.filter((id) => counts.has(id) && !expanded.includes(id));
+      if (open.length === 0) {
+        setNotice({
+          text: ids.some((id) => counts.has(id)) ? 'Already expanded.' : 'Only a group can be expanded: select one with cards inside it.',
+        });
+        return;
+      }
+      setExpanded((current) => [...current, ...open.filter((id) => !current.includes(id))]);
+      // Expanded groups leave the board, and their children take their place: select those.
+      setSelection(new Set(open.flatMap((id) => childrenOf(plan, id))));
+    },
+    [expanded, counts, plan],
+  );
+  const expandSelection = useCallback(() => expandGroups([...selected]), [expandGroups, selected]);
+  // ⇧E: fold the groups the selected cards are shown for, one level up.
+  const foldSelection = useCallback(() => {
+    const fold = new Set<ItemId>();
+    for (const id of selected) {
+      const parent = shownCopies.find((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent))?.parent;
+      if (parent !== undefined) fold.add(parent);
     }
-    if (collapse.size === 0 && open.size === 0) {
-      setNotice({ text: 'Only a group can be expanded: select one with cards inside it.' });
+    if (fold.size === 0) {
+      setNotice({ text: 'Select a card inside an expanded group, then press ⇧E to fold the group back up.' });
       return;
     }
-    setExpanded((current) => [...current.filter((id) => !collapse.has(id)), ...[...open].filter((id) => !current.includes(id))]);
-    // Expanded groups leave the board, and collapsed ones come back: select what's now on screen.
-    setSelection(new Set(collapse.size > 0 ? collapse : [...open].flatMap((id) => childrenOf(plan, id))));
-  }, [selected, layout, expanded, counts, plan]);
+    setExpanded((current) => current.filter((id) => !fold.has(id)));
+    setSelection(fold);
+  }, [selected, shownCopies, expanded]);
+
+  // The inspector's Group field.
+  const onInspectorMove = useCallback(
+    (ids: ItemId[], parent: ItemId | null) =>
+      moveCards(ids, parent, (moved) => {
+        const what = moved.length === 1 ? `“${plan.items[moved[0]!]?.title ?? ''}”` : `${moved.length} cards`;
+        return parent === null ? `Moved ${what} to the top level` : `Moved ${what} into “${plan.items[parent]?.title ?? ''}”`;
+      }),
+    [moveCards, plan],
+  );
+  // "Add a card inside": the new card takes the parent's place on the board, so the parent is expanded,
+  // and the new card's title is ready to type over.
+  const addInside = useCallback(
+    (parent: ItemId) => {
+      const id = createChild(store, view, parent, 'New card');
+      if (id === null) return;
+      setExpanded((current) => (current.includes(parent) ? current : [...current, parent]));
+      setSelection(new Set([id]));
+      setAnchor(null);
+      setEditing({ kind: 'rename', card: { itemId: id, x: null, y: null } });
+    },
+    [store, view],
+  );
 
   // Show a card from the inspector: zoom to the level it's on, clear a lane zoom that hides it, select it, and
   // scroll it into view once it's drawn.
@@ -385,21 +470,21 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     el?.scrollIntoView({ block: 'center', inline: 'center' });
   });
 
-  // Double-click renames, groups included (Q36). A faded copy can't be renamed, so it zooms in;
-  // group cards zoom with their button or ⌘↓.
+  // Double-click renames, groups included (Q36). A faded copy can't be renamed, so it expands its group;
+  // a group card expands with its child count or E.
   const onCardDoubleClick = useCallback(
     (card: CardRef) => {
       if (card.via === 'children') {
-        zoomTo(card.itemId);
+        expandGroups([card.itemId]);
         return;
       }
       setSelection(new Set([card.itemId]));
       setAnchor(card);
       setEditing({ kind: 'rename', card });
     },
-    [zoomTo],
+    [expandGroups],
   );
-  const onCardZoom = useCallback((card: CardRef) => zoomTo(card.itemId), [zoomTo]);
+  const onCardExpand = useCallback((card: CardRef) => expandGroups([card.itemId]), [expandGroups]);
   const onSpotDoubleClick = useCallback((spot: DropTarget) => setEditing({ kind: 'new', spot }), []);
   const onCancelEdit = useCallback(() => setEditing(null), []);
   const onCommitEdit = useCallback(
@@ -511,8 +596,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     rememberLegendClosed();
   };
   const keys = keyNames();
-  const { drag, startDrag } = useCardDrag(onDrop, scrollRef, onCardClick);
+  const canNestCard = useCallback((id: ItemId, into: ItemId) => canNest(plan, id, into), [plan]);
+  const { drag, startDrag } = useCardDrag(onDrop, scrollRef, onCardClick, canNestCard);
   const dragging = drag !== null;
+  // While a card in a group is dragged, a strip moves it up one level.
+  const draggedParent = drag ? (plan.items[drag.card.itemId]?.parent ?? null) : null;
+  const moveOut =
+    draggedParent !== null && plan.items[draggedParent]
+      ? {
+          from: plan.items[draggedParent].title,
+          to: plan.items[draggedParent].parent,
+          over: isParentTarget(drag?.target ?? null) && (drag!.target as { parent: ItemId | null }).parent === plan.items[draggedParent].parent,
+        }
+      : null;
 
   // Focus lines (Q14, Q39): the hovered card's direct links, and the selected cards' whole chains.
   const [hovered, setHovered] = useState<ItemId | null>(null);
@@ -581,6 +677,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         // ⌘G is also the browser's "find next", so it's always claimed here.
         else if (key === 'g' && e.shiftKey) ungroupSelection();
         else if (key === 'g') groupSelection();
+        else if (key === 'a' && !e.shiftKey) selectAll();
         // Any card can be zoomed into, making it a group once it has children (Q20).
         // Several cards at once is multi-zoom (Q33).
         else if (key === 'arrowdown' && selected.size > 0) zoomInto([...selected]);
@@ -604,9 +701,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         linkSelection();
         return;
       }
-      if (e.key.toLowerCase() === 'e' && !e.altKey && !e.shiftKey && !empty) {
+      if (e.key.toLowerCase() === 'e' && !e.altKey && !empty) {
         e.preventDefault();
-        toggleExpand();
+        if (e.shiftKey) foldSelection();
+        else expandSelection();
         return;
       }
       if (e.key.toLowerCase() === 'i' && !e.altKey && !e.shiftKey && !empty) {
@@ -659,7 +757,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     togglePanel,
     empty,
     zoomInto,
-    toggleExpand,
+    expandSelection,
+    foldSelection,
+    selectAll,
   ]);
 
   const loadSample = () => {
@@ -782,11 +882,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
           <button
             type="button"
-            onClick={toggleExpand}
+            onClick={expandSelection}
             disabled={selected.size === 0}
-            title={`Show what's inside the selected groups right here, or fold them back (${keys.expand})`}
+            title={`Show what's inside the selected groups right here (${keys.expand})`}
           >
             Expand
+          </button>
+          <button
+            type="button"
+            onClick={foldSelection}
+            disabled={![...selected].some((id) => shownCopies.some((ref) => ref.itemId === id && ref.parent !== undefined))}
+            title={`Fold the groups the selected cards are in back up (${keys.fold})`}
+          >
+            Fold
           </button>
           <button
             type="button"
@@ -875,6 +983,16 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         </div>
       ) : (
         <div className="workspace">
+        {moveOut && (
+          <div
+            className={moveOut.over ? 'move-out drop-target' : 'move-out'}
+            data-drop="parent"
+            data-parent={moveOut.to ?? ''}
+            data-testid="move-out"
+          >
+            Move out of “{moveOut.from}”
+          </div>
+        )}
         <Board
           plan={plan}
           view={view}
@@ -896,7 +1014,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           selected={selected}
           editing={editing}
           onCardDoubleClick={onCardDoubleClick}
-          onCardZoom={onCardZoom}
+          onCardExpand={onCardExpand}
           onSpotDoubleClick={onSpotDoubleClick}
           onCommitEdit={onCommitEdit}
           onCancelEdit={onCancelEdit}
@@ -905,6 +1023,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           mismatches={mismatches}
           onLaneZoom={onLaneZoom}
           onBandToggle={onBandToggle}
+          onSelectLanes={onSelectLanes}
+          onSelectMatching={onSelectMatching}
           levelNames={levelNames}
         />
         {panel === 'inspector' && (
@@ -916,6 +1036,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             onClose={() => setPanel(null)}
             onReveal={revealCard}
             onNotice={noticeLatest}
+            onMove={onInspectorMove}
+            onAddInside={addInside}
           />
         )}
         {panel === 'properties' && (
@@ -1010,7 +1132,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </div>
         </Dialog>
       )}
-      {drag && <DragGhost drag={drag} addAxes={addAxes} />}
+      {drag && <DragGhost drag={drag} addAxes={addAxes} titleOf={(id) => plan.items[id]?.title ?? ''} />}
     </div>
   );
 }

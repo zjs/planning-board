@@ -29,7 +29,7 @@ test('a faded group frames the cards that put it there, and dragging one changes
   await expect(child).toBeVisible();
 });
 
-test('E expands groups in place, each child marked with its group; E on a child folds its group back', async ({ page }) => {
+test('E expands groups in place, each child marked with its group; ⇧E on a child folds its group back', async ({ page }) => {
   await openApp(page);
   await select(page, 'eu-data-residency', 'passwordless-login');
   await page.keyboard.press('e');
@@ -40,8 +40,12 @@ test('E expands groups in place, each child marked with its group; E on a child 
   const tone = (id: string) => card(page, id).first().getAttribute('data-tone');
   expect(await tone('eu-invoice-storage')).not.toBe(await tone('webauthn-enrollment'));
 
+  // E on a child that isn't a group changes nothing.
   await select(page, 'eu-invoice-storage');
   await page.keyboard.press('e');
+  await expect(chip(page, 'eu-invoice-storage')).toHaveText('EU data residency');
+
+  await page.keyboard.press('Shift+E');
   await expect(card(page, 'eu-data-residency').first()).toBeVisible();
   // Folded back, the child shows only in the group's frame again, with no chip.
   await expect(page.locator('.parent-chip', { hasText: 'EU data residency' })).toHaveCount(0);
@@ -51,6 +55,27 @@ test('E expands groups in place, each child marked with its group; E on a child 
   await page.reload();
   await page.getByTestId('board').waitFor();
   await expect(chip(page, 'webauthn-enrollment')).toHaveText('Passwordless login');
+});
+
+test('an epic inside an expanded initiative expands too, and ⇧E folds one level at a time', async ({ page }) => {
+  await openApp(page);
+  await select(page, 'eu-data-residency');
+  await page.keyboard.press('e');
+  await expect(chip(page, 'regional-pipeline-shards')).toHaveText('EU data residency');
+
+  // The bug this replaces: E on the expanded epic folded the initiative.
+  await select(page, 'regional-pipeline-shards');
+  await page.keyboard.press('e');
+  await expect(card(page, 'regional-pipeline-shards')).toHaveCount(0);
+  await expect(chip(page, 'eu-kafka-cluster')).toHaveText('Regional pipeline shards');
+  await expect(chip(page, 'eu-invoice-storage')).toHaveText('EU data residency');
+
+  // ⇧E on a story folds only its epic.
+  await select(page, 'eu-kafka-cluster');
+  await page.keyboard.press('Shift+E');
+  await expect(chip(page, 'regional-pipeline-shards')).toHaveText('EU data residency');
+  await expect(card(page, 'eu-kafka-cluster')).toHaveCount(0);
+  await expect(chip(page, 'eu-invoice-storage')).toHaveText('EU data residency');
 });
 
 test('zooming into several groups shows only their children, each marked with its group', async ({ page }) => {

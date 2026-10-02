@@ -65,7 +65,7 @@ test('cards made inside a group become its children; dragging one to the breadcr
   await card(page, 'eu-invoice-storage').first().click();
   await dragTo(page, card(page, 'eu-invoice-storage').first(), crumb(page, 'Plan'));
   await expect(card(page, 'eu-invoice-storage')).toHaveCount(0);
-  await expect(page.getByTestId('notice')).toContainText('Moved “EU invoice storage” out to the plan');
+  await expect(page.getByTestId('notice')).toContainText('Moved “EU invoice storage” out of “EU data residency”');
   // It left the view, so it's no longer selected: Delete can't reach it.
   await page.keyboard.press('Delete');
   await expect(page.getByTestId('notice')).toContainText('Moved');
@@ -114,12 +114,15 @@ test('double-clicking a group renames it (Q36)', async ({ page }) => {
   await expect(card(page, EU).locator('.card-title')).toHaveText('EU residency program');
 });
 
-test('a click on an unselected group\'s count selects it rather than opening it', async ({ page }) => {
+test('a click on an unselected group\'s count selects it rather than expanding it', async ({ page }) => {
   await openApp(page);
   const group = card(page, EU);
   await group.locator('.zoom-into').click();
-  await expect(zoomBar(page)).toHaveCount(0);
+  await expect(page.locator('.parent-chip')).toHaveCount(0);
   await expect(group).toHaveClass(/selected/);
+  // Selected, the count expands it in place (Q42).
   await group.locator('.zoom-into').click();
-  await expect(zoomBar(page)).toContainText('EU data residency');
+  await expect(group).toHaveCount(0);
+  await expect(page.locator('.parent-chip', { hasText: 'EU data residency' }).first()).toBeVisible();
+  await expect(zoomBar(page)).toHaveCount(0);
 });

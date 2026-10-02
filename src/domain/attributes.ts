@@ -1,5 +1,5 @@
 import { compareTreeOrder, depthOf, pathTo } from './hierarchy.ts';
-import type { Item, Plan, PropertyId, SelectProperty } from './model.ts';
+import type { Item, Plan, PropertyId, SelectProperty, ValueId } from './model.ts';
 import { itemValues, LEVEL, SIZE, SYSTEM, TIME } from './model.ts';
 import { laneKeyOf, type AxisSpec, type ViewSpec } from './view.ts';
 
@@ -10,6 +10,8 @@ export interface CardAttribute {
   text: string;
   /** Full text for a tooltip. */
   title: string;
+  /** The value the badge shows first, which ⇧-click selects every card with (Q47). */
+  value: ValueId;
 }
 
 /** Built-ins first in a fixed order, then custom properties by name. */
@@ -55,7 +57,7 @@ export function cardAttributes(
     const leaves = paths.map((path) => path[path.length - 1]!.label);
     const text = leaves.length > 1 ? `${leaves[0]!} +${leaves.length - 1}` : leaves[0]!;
     const title = `${property.name}: ${paths.map((path) => path.map((n) => n.label).join(' › ')).join(', ')}`;
-    out.push({ property: property.id, text, title });
+    out.push({ property: property.id, text, title, value: values[0]! });
   }
   return out;
 }

@@ -1,6 +1,6 @@
 # 0007: Drag-and-drop approach
 
-Status: Accepted (sprint 0, slice 2). Amended in sprint 1 (click and double-click) and sprint 3, slice 1 (double-click's single job).
+Status: Accepted (sprint 0, slice 2). Amended in sprint 1 (click and double-click), sprint 3, slice 1 (double-click's single job), and sprint 5, slice 2 (hold to nest and the move-out strip).
 
 ## Context
 
@@ -27,3 +27,11 @@ Dragging is the interaction sprint 0 exists to test. A drop writes two values at
 - About 200 lines we own. The rules live in `planDrop`, where they're unit-tested; the hook only turns pointer movement into targets.
 - Not yet supported: keyboard drag (an accessibility gap to close before M1), and touch (pointer events would support it, but it's untested and would need long-press to tell a drag from a scroll).
 - Alt-drag is taken by some Linux window managers. If testers on Linux can't add lanes, the Q1 fallback (a visible "add to lane" control) becomes necessary.
+
+## Hold to nest and moving out (sprint 5)
+
+Moving a card between groups is a drag too (questions.md Q42), so it needs no picker:
+
+- **Hold to nest.** While dragging, the hook notes the card under the pointer (`.card[data-item]`). If the pointer rests over it for `NEST_DWELL_MS` (500 ms), the target becomes `{ into: card }`: the card gets a dashed outline, and the ghost says "Put inside …". Moving off the card, or the board scrolling under the pointer, drops back to the cell underneath. Dropping calls `moveToParent`, so values never change. `canNest` in `src/domain/tree.ts` decides which cards highlight: not the card itself, not its current group, and nothing inside it.
+- **Moving out.** While a card that's in a group is dragged, a strip floats at the top of the board with the same `data-drop="parent"` target the breadcrumb uses, for the group's own parent. It floats over the headers rather than pushing the board down, so the card under the pointer doesn't move when the drag starts.
+- A quick drop is still a cell drop. The dwell is long enough that dragging across cards on the way to a cell never nests by accident; the session will tell whether half a second is right.

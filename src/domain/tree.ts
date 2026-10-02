@@ -78,3 +78,18 @@ export function ancestry(plan: Plan, id: ItemId): ItemId[] {
   }
   return chain;
 }
+
+/**
+ * Whether `id` can be dragged inside `into` (hold to nest): another card,
+ * not already its group, and not inside `id`, which would make a loop.
+ */
+export function canNest(plan: Plan, id: ItemId, into: ItemId): boolean {
+  const item = plan.items[id];
+  return (
+    item !== undefined &&
+    plan.items[into] !== undefined &&
+    id !== into &&
+    item.parent !== into &&
+    !wouldCreateCycle(plan, id, into)
+  );
+}

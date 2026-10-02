@@ -1,7 +1,7 @@
 // Creating and deleting items, as pure rules over plan snapshots. The
 // commands in src/commands/ apply the results to the Yjs document.
 
-import type { Dependency, ItemId, OrderKey, Plan, PropertyId, ValueId } from './model.ts';
+import { SEQUENCE, type Dependency, type Item, type ItemId, type OrderKey, type Plan, type PropertyId, type ValueId } from './model.ts';
 import { planDrop, type DropTarget } from './move.ts';
 import type { ViewSpec } from './view.ts';
 
@@ -37,6 +37,21 @@ export function valuesForNewItem(plan: Plan, view: ViewSpec, target: DropTarget)
     if (key === null && axis.within) values[axis.property] = [axis.within];
   }
   return { sequence: change?.sequence ?? null, values };
+}
+
+/**
+ * The values a card added inside `parent` starts with: the parent's values
+ * on the view's two axes, so it appears where the parent was. Nothing else
+ * is copied: a child's size or level is its own.
+ */
+export function valuesForChild(parent: Item, view: ViewSpec): NewItemValues {
+  let sequence: OrderKey | null = null;
+  const values: Record<PropertyId, ValueId[]> = {};
+  for (const axis of [view.x, view.y]) {
+    if (axis.property === SEQUENCE) sequence = parent.sequence;
+    else if ((parent.values[axis.property] ?? []).length > 0) values[axis.property] = [...parent.values[axis.property]!];
+  }
+  return { sequence, values };
 }
 
 /**
