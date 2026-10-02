@@ -52,4 +52,5 @@ Sprint 5: shore up what we have. The compatibility gate, expand and fold replaci
 - End-to-end tests: `npm run build && npm run e2e`. Playwright runs Chromium against `dist/index.html` over `file://`. Locally, the config uses `/opt/pw-browsers/chromium` if it exists; don't run `playwright install` in the cloud container.
 - Regenerate the sample plan: `npm run seed`
 - Regenerate the sample Jira export (`docs/samples/jira-export.csv`): `npm run sample:jira`
+- Add compatibility fixtures for a new release (ADR 0005): add its commit to `VERSIONS` in `scripts/generate-compat-fixtures.ts`, then `npm run compat:fixtures`. Existing fixtures are never rewritten.
 - Deploy: automatic. `.github/workflows/pages.yml` publishes every `main` build to https://zjs.github.io/planning-board/. CI also attaches `dist/index.html` to every run as the `planning-board-<sha>` artifact.

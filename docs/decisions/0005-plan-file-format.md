@@ -1,6 +1,6 @@
 # 0005: Plan file format
 
-Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now. Amended in sprint 2, slice 1: the writer, `externalKey`, and when a version bump is needed. Amended in sprint 4, slice 2: built-in properties added later.
+Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now. Amended in sprint 2, slice 1: the writer, `externalKey`, and when a version bump is needed. Amended in sprint 4, slice 2: built-in properties added later. Amended in sprint 5, slice 1: the compatibility gate.
 
 ## Context
 
@@ -61,3 +61,17 @@ Opening a file goes through `readPlanFile`, which explains a rejected file in on
 - Item IDs round-trip, so a file saved from one scenario and reopened still compares against its siblings.
 - A new field that older readers can safely ignore, like `externalKey`, doesn't need a version bump: the reader already ignores fields it doesn't know. A change older readers would misread, such as a new value shape or wrapping the plan in scenarios, means a version bump plus an upgrade step in the reader, with a test.
 - A built-in property added after a file was saved, such as Level (Q32), is filled in when the file is opened (`withBuiltIns` in `src/domain/builtins.ts`), with no values on any card. That needs no version bump either: the file is still read exactly as it was written. Boards saved in the browser get the same treatment when they're opened (`ensureBuiltIns`), outside the undo history.
+
+## Compatibility (sprint 5)
+
+The repo is public, so plans saved by any released build must keep opening in every later one. A break is a CI failure, not a release note.
+
+- **Fixtures.** `src/domain/__fixtures__/compat/` holds what each released version saved, written by that version's own code (`npm run compat:fixtures`, which checks each one out into a temporary worktree):
+  - `<version>.plan.json`: its sample plan saved through its own writer. Sprints 0 and 1 had no writer, so theirs is the hand-written sample file they shipped.
+  - `<version>.board.yjs`: the board as that build kept it in the browser, an encoded Yjs update.
+  - `<version>.import.plan.json`, from sprint 2 on: the synthetic Jira export imported and saved, which covers Jira keys, descriptions and custom properties.
+- **Tests.** `src/domain/compat.test.ts` opens every plan file and checks that it keeps every card, value, group and link, and that saving and reopening gives the same plan. `src/commands/compat.test.ts` opens every stored board through the store and `ensureBuiltIns`, checks it against the plan file the same version saved, and edits and saves it. Both run in `npm run check`.
+- **Policy.**
+  - Fixtures are never regenerated or edited. A test that fails on an old fixture means the reader has to change, not the fixture.
+  - Each released sprint adds its last commit to `VERSIONS` in `scripts/generate-compat-fixtures.ts`, and the script writes only the new version's files.
+  - A change to the file format or the Yjs schema also adds a fixture straight away, written from the commit before the change. It doesn't wait for the sprint's release.

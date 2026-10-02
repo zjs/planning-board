@@ -15,6 +15,7 @@
     "e2e": "playwright test",
     "seed": "node scripts/generate-seed.ts",
     "sample:jira": "node scripts/generate-jira-sample.ts",
+    "compat:fixtures": "node scripts/generate-compat-fixtures.ts",
     "check": "npm run typecheck && npm run lint && npm test"
   },
   "devDependencies": {
