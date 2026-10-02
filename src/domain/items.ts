@@ -28,14 +28,6 @@ export function valuesForNewItem(plan: Plan, view: ViewSpec, target: DropTarget)
   const change = planDrop(withProbe, view, { itemId: probe, x: null, y: null }, target);
   const values: Record<PropertyId, ValueId[]> = {};
   for (const [property, ids] of Object.entries(change?.values ?? {})) if (ids.length > 0) values[property] = ids;
-  // In a lane zoom, the holding lane means "the zoomed value, nothing more precise" (Q22),
-  // so a card made there gets that value and stays in view.
-  for (const [axis, key] of [
-    [view.x, target.x],
-    [view.y, target.y],
-  ] as const) {
-    if (key === null && axis.within) values[axis.property] = [axis.within];
-  }
   return { sequence: change?.sequence ?? null, values };
 }
 

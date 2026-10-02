@@ -99,30 +99,14 @@ describe('layoutView', () => {
     expect(cellMap(layout)).toEqual({ 'id / a0': ['placed'] });
   });
 
-  it('treats a value shallower than a zoomed view level, or unknown, as missing', () => {
-    const layout = layoutView(
-      plan(
-        item('quarter-only', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
-        item('release', { values: { [TIME]: ['q1/r2'], [SYSTEM]: ['id'] } }),
-        item('dangling', { values: { [TIME]: ['q9'], [SYSTEM]: ['id'] } }),
-      ),
-      { x: { property: TIME, level: 1, within: 'q1' }, y: { property: SYSTEM, level: 0 } },
-    );
-    expect(cellMap(layout)).toEqual({ 'id / q1/r2': ['release'] });
-    // The quarter-only card waits for a release; the unknown value is outside the zoom, so it's hidden (Q18).
-    expect(layout.holding.rows[0]!.map((ref) => ref.itemId)).toEqual(['quarter-only']);
-  });
-
-  it('shows only the children of the card zoomed into (requirement 12)', () => {
+  it('shows the top-level cards; deeper cards stay inside their groups (requirement 12)', () => {
     const p = plan(
       item('epic', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
       item('child', { parent: 'epic', values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
       item('grandchild', { parent: 'child', values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
       item('other', { values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
     );
-    expect(cellMap(layoutView(p, { ...timeBySystem, root: 'epic' }))).toEqual({ 'pay / q2': ['child'] });
-    expect(allHolding(layoutView(p, { ...timeBySystem, root: 'other' }))).toEqual([]);
-    expect(cellMap(layoutView(p, { ...timeBySystem, root: null }))).toEqual({
+    expect(cellMap(layoutView(p, timeBySystem))).toEqual({
       'id / q1': ['epic'],
       'pay / q2': ['other', 'epic (via)'],
     });
@@ -168,26 +152,6 @@ describe('layoutView', () => {
     expect(layout.holding.corner.map((ref) => ref.itemId)).toEqual(['x']);
   });
 
-  it('zooms into one lane: its children become lanes, coarse cards wait, the rest are hidden (Q18)', () => {
-    const layout = layoutView(
-      plan(
-        item('sso', { values: { [SYSTEM]: ['id/sso'], [TIME]: ['q1'] } }),
-        item('both', { values: { [SYSTEM]: ['id/mfa', 'pay/ledger'], [TIME]: ['q1'] } }),
-        item('area-only', { values: { [SYSTEM]: ['id'], [TIME]: ['q2'] } }),
-        item('billing', { values: { [SYSTEM]: ['pay/ledger'], [TIME]: ['q1'] } }),
-        item('untagged', { values: { [TIME]: ['q1'] } }),
-      ),
-      { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1, within: 'id' } },
-    );
-    // Identity's components, in tree order; Payments' ledger isn't a lane.
-    expect(layout.rows.map((l) => l.key)).toEqual(['id/mfa', 'id/sso']);
-    // A card also in Billing shows only in its Identity lane.
-    expect(cellMap(layout)).toEqual({ 'id/mfa / q1': ['both'], 'id/sso / q1': ['sso'] });
-    // "Identity, no component yet" waits in the holding lane under its quarter.
-    expect(layout.holding.columns[1]).toEqual([{ itemId: 'area-only', x: 'q2', y: null }]);
-    expect(allHolding(layout).map((r) => r.itemId)).toEqual(['area-only']);
-  });
-
   it('adds faded "via children" copies of a group where only its descendants reach (Q16)', () => {
     const layout = layoutView(
       plan(
@@ -211,17 +175,6 @@ describe('layoutView', () => {
     });
   });
 
-  it('shows only faded copies of a group outside a lane zoom, where its children are inside', () => {
-    const layout = layoutView(
-      plan(
-        item('epic', { values: { [TIME]: ['q1'], [SYSTEM]: ['pay'] } }),
-        item('child', { parent: 'epic', values: { [TIME]: ['q2'], [SYSTEM]: ['id/sso'] } }),
-      ),
-      { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1, within: 'id' } },
-    );
-    expect(cellMap(layout)).toEqual({ 'id/sso / q2': ['epic (via)'] });
-    expect(allHolding(layout)).toEqual([]);
-  });
 });
 
 describe('nested axes (ADR 0012)', () => {
@@ -281,8 +234,7 @@ describe('laneKeyOf', () => {
     expect(laneKeyOf(time, 'q1', axis)).toBe('q1');
     expect(laneKeyOf(time, 'q1/r2', { ...axis, collapsed: ['q1'] })).toBe('q1');
     expect(laneKeyOf(time, 'q9', axis)).toBeNull();
-    // A top-level or zoomed axis keeps the old rule: coarser values have no lane.
-    expect(laneKeyOf(time, 'q1', { ...axis, within: 'q1' })).toBeNull();
+    // A top-level axis has no coarser values.
     expect(laneKeyOf(time, 'q1/r2', { property: TIME, level: 0 })).toBe('q1');
   });
 });
@@ -324,17 +276,6 @@ describe('children in context (Q33)', () => {
       ['task', 'story'],
     ]);
   });
-
-  it('zooming into several groups shows all their children, each marked with its group', () => {
-    const layout = layoutView(p, { ...timeBySystem, roots: ['epic', 'other'] });
-    expect(refs(layout).map((r) => [r.itemId, r.parent]).sort()).toEqual([
-      ['inherits', 'epic'],
-      ['lone', 'other'],
-      ['story', 'epic'],
-    ]);
-    // One root is the usual zoom: no marks needed.
-    expect(refs(layoutView(p, { ...timeBySystem, roots: ['epic'] })).every((r) => r.parent === undefined)).toBe(true);
-  });
 });
 
 describe('shownInside', () => {
@@ -347,11 +288,5 @@ describe('shownInside', () => {
     // An expanded epic inside a folded initiative isn't on the board.
     expect(shownInside(p, { ...timeBySystem, expanded: ['epic'] }, 'epic')).toBe(false);
     expect(shownInside(p, { ...timeBySystem, expanded: ['init', 'epic'] }, 'epic')).toBe(true);
-  });
-
-  it('follows a zoom', () => {
-    expect(shownInside(p, { ...timeBySystem, root: 'init' }, 'init')).toBe(true);
-    expect(shownInside(p, { ...timeBySystem, root: 'init' }, null)).toBe(false);
-    expect(shownInside(p, { ...timeBySystem, roots: ['init', 'other'] }, 'other')).toBe(true);
   });
 });

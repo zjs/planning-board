@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, openApp, openGroup, pickAxes, reveal } from './app.ts';
+import { card, openApp, expandGroup, pickAxes, reveal } from './app.ts';
 
 // Card levels (Q32): a built-in Level property, shown as a badge and a heavier border, with a
 // marker for a child at or above its group's level, and Jira's Issue Type on import.
@@ -31,7 +31,7 @@ test('a child at or above its group’s level is flagged, and the group counts i
   const marker = group.locator('.mismatch');
   const before = Number((await marker.textContent())!.replace(/\D/g, ''));
 
-  await openGroup(group);
+  await expandGroup(group);
   const child = card(page, 'webauthn-enrollment').first();
   await reveal(child);
   await child.locator('.card-title').click();
@@ -39,7 +39,8 @@ test('a child at or above its group’s level is flagged, and the group counts i
   await inspector(page).getByLabel('Level', { exact: true }).selectOption('epic');
   await expect(child.locator('.mismatch')).toHaveAttribute('title', /Epic, at or above its group's Epic/);
 
-  await page.getByTestId('zoom-bar').getByRole('button', { name: 'Plan', exact: true }).click();
+  // Folded back, the group counts it.
+  await page.keyboard.press('Shift+E');
   await expect(marker).toHaveText(`⚠ ${before + 1}`);
   await page.keyboard.press('ControlOrMeta+z');
   await expect(marker).toHaveText(`⚠ ${before}`);

@@ -1,6 +1,6 @@
 # 0012: Nested axes
 
-Status: Accepted (sprint 4, slice 3).
+Status: Accepted (sprint 4, slice 3). Lane zoom superseded in sprint 5 by [0013](0013-expand-and-fold-replace-zoom.md), and collapsed bands became folded-by-default viewer state there.
 
 ## Context
 

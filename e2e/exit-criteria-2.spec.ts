@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { dragTo, openApp, pickAxes } from './app.ts';
+import { dragTo, foldAll, openApp, pickAxes } from './app.ts';
 
 // Sprint 2's exit criteria (docs/sprint-2.md) 1–6, end to end, in order,
 // with the sample export in docs/samples/. If this passes, the walkthrough
@@ -22,10 +22,16 @@ async function save(page: Page): Promise<string> {
   return readFile(await (await download).path(), 'utf8');
 }
 
-/** A lane's key, found by its header text (imported values have random IDs). */
+/**
+ * A lane's key, found by its header text (imported values have random IDs). A folded band's lane
+ * (ADR 0013) is keyed by the band, whose name is in the band header.
+ */
 async function laneKey(page: Page, kind: 'row' | 'column', label: string) {
-  const header = page.locator(`.${kind}-header`, { hasText: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`) });
-  return (await header.getAttribute(`data-${kind}`))!;
+  const exact = new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+  const header = page.locator(`.${kind}-header`, { hasText: exact });
+  if ((await header.count()) > 0) return (await header.getAttribute(`data-${kind}`))!;
+  const band = page.locator(`.band-${kind === 'row' ? 'y' : 'x'}`).filter({ has: page.locator('.band-head span', { hasText: exact }) });
+  return (await band.getAttribute('data-band'))!;
 }
 
 test('sprint 2 exit criteria', async ({ page }) => {
@@ -58,7 +64,7 @@ test('sprint 2 exit criteria', async ({ page }) => {
     quarters.push(label);
   }
   await dialog.getByRole('button', { name: 'Import 53 cards' }).click();
-  await expect(page.locator('.row-header')).toHaveText(['Identity Platform', 'Customer Experience', 'Payments', 'Data Platform']);
+  await expect(page.locator('.band-y .band-head')).toHaveText([/Identity Platform/, /Customer Experience/, /Payments/, /Data Platform/]);
   // Epics are groups, story points are sizes, and cards carry their Jira keys.
   const epic = titled(page, 'Enterprise SSO self-service').first();
   await expect(epic.locator('.child-count')).toHaveText('4');
@@ -77,7 +83,8 @@ test('sprint 2 exit criteria', async ({ page }) => {
   await expect(titled(page.locator(`.cell[data-row="${platform}"][data-column="${q4}"]`), 'Custom roles')).toBeVisible();
 
   // 4. Rename a component, move it to another area, add a release, and delete one. Undo each.
-  await pickAxes(page, 'time:1', 'system');
+  await pickAxes(page, 'time', 'system');
+  await foldAll(page, 'Time', false);
   await page.getByRole('button', { name: 'Properties', exact: true }).click();
   const system = section(page, 'System');
   await system.locator('summary').click();

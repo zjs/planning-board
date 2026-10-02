@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, openApp, openGroup, reveal } from './app.ts';
+import { card, openApp, expandGroup, reveal } from './app.ts';
 
 // The card inspector (Q35): edit a card where it is, without pivoting.
 
@@ -80,7 +80,7 @@ test("a card's links are listed; ✕ removes one, and clicking one shows that ca
   // Custom roles → Region-pinned directory sync, which is inside EU data residency.
   await select(page, 'custom-roles');
   await page.keyboard.press('l');
-  await openGroup(card(page, 'eu-data-residency').first());
+  await expandGroup(card(page, 'eu-data-residency').first());
   await select(page, 'region-pinned-directory-sync');
   await page.keyboard.press('l');
   await expect(notice(page)).toContainText('Linked “Custom roles” → “Region-pinned directory sync”');
@@ -89,7 +89,7 @@ test("a card's links are listed; ✕ removes one, and clicking one shows that ca
   const after = inspector(page).getByRole('region', { name: 'Dependencies' });
   await expect(after).toContainText('Custom roles');
   await expect(inspector(page)).toContainText('In EU data residency');
-  // Clicking it zooms out to Custom roles and selects it.
+  // Clicking it shows Custom roles on the board and selects it.
   await after.getByRole('button', { name: 'Custom roles', exact: true }).click();
   await expect(card(page, 'custom-roles').first()).toHaveClass(/selected/);
   await expect(inspector(page).getByLabel('Card title')).toHaveValue('Custom roles');

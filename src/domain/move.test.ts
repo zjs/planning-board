@@ -165,38 +165,19 @@ describe('planDrop into a holding lane', () => {
   });
 });
 
-describe('planDrop with levels and lane zoom', () => {
-  const byComponent: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1, within: 'id' } };
+describe('planDrop with levels', () => {
+  const components: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1 } };
 
   it('refining replaces the coarser value instead of keeping both', () => {
     const p = plan(item('a', { values: { [SYSTEM]: ['id', 'pay/ledger'], [TIME]: ['q1'] } }));
-    // From "No component" (it only has Identity) into the SSO lane.
-    expect(planDrop(p, byComponent, { itemId: 'a', x: 'q1', y: null }, { x: 'q1', y: 'id/sso' })).toEqual({
+    // From Identity's own lane ("No component", it only has Identity) into the SSO lane.
+    expect(planDrop(p, components, { itemId: 'a', x: 'q1', y: 'id' }, { x: 'q1', y: 'id/sso' })).toEqual({
       values: { [SYSTEM]: ['pay/ledger', 'id/sso'] },
     });
     // Adding a value inside an existing one works the same way at any level.
     const q = plan(item('b', { values: { [SYSTEM]: ['id'] } }));
-    const components: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 1 } };
     expect(planDrop(q, components, { itemId: 'b', x: null, y: null }, { x: null, y: 'id/mfa' }, 'add')).toEqual({
       values: { [SYSTEM]: ['id/mfa'] },
-    });
-  });
-
-  it("in a zoomed lane, the holding lane means 'inside, nothing more precise' (Q22)", () => {
-    const p = plan(item('a', { values: { [SYSTEM]: ['id/sso', 'pay'], [TIME]: ['q1'] } }));
-    expect(planDrop(p, byComponent, { itemId: 'a', x: 'q1', y: 'id/sso' }, { x: 'q1', y: null })).toEqual({
-      values: { [SYSTEM]: ['pay', 'id'] },
-    });
-    // Still inside through another component: nothing coarser is added.
-    const q = plan(item('b', { values: { [SYSTEM]: ['id/sso', 'id/mfa'] } }));
-    expect(planDrop(q, byComponent, { itemId: 'b', x: null, y: 'id/sso' }, { x: null, y: null })).toEqual({
-      values: { [SYSTEM]: ['id/mfa'] },
-    });
-    // Single-valued: a release zoomed within Q1 goes back to Q1.
-    const r = plan(item('c', { values: { [TIME]: ['q1/r2'] } }));
-    const byRelease: ViewSpec = { x: { property: TIME, level: 1, within: 'q1' }, y: { property: SIZE, level: 0 } };
-    expect(planDrop(r, byRelease, { itemId: 'c', x: 'q1/r2', y: null }, { x: null, y: null })).toEqual({
-      values: { [TIME]: ['q1'] },
     });
   });
 });

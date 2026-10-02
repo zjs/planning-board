@@ -1,19 +1,22 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, dragTo, openApp, pickAxes, reveal } from './app.ts';
+import { APP_URL, card, dragTo, foldAll, openApp, pickAxes, reveal } from './app.ts';
 
-// Nested axes (Q34, ADR 0012): parent bands, a lane per parent, collapsing, and zoom.
+// Nested axes (Q34, ADR 0012) folded and unfolded (Q43, ADR 0013): one axis choice per property,
+// parent bands folded by default, a lane per parent, and folding instead of zoom.
 
 const rowOf = (page: Page, id: string) =>
   card(page, id).first().locator('xpath=ancestor::*[contains(@class, "cell")][1]');
 
-test('components as rows: area bands, a "no component" lane per area, and the edge lane for no system at all', async ({ page }) => {
+test('unfolded System: area bands, a "no component" lane per area, and the edge lane for no system at all', async ({ page }) => {
   await openApp(page);
-  await pickAxes(page, 'sequence', 'system:1');
-  await expect(page.locator('.band-y .band-head')).toHaveText(['▾Identity & Access', '▾Billing', '▾Data Platform', '▾Customer Experience']);
+  await foldAll(page, 'System', false);
+  await expect(page.locator('.band-y .band-head')).toHaveText([/▾\s*Identity & Access/, /▾\s*Billing/, /▾\s*Data Platform/, /▾\s*Customer Experience/]);
   await expect(page.locator('.row-header.lane-parent')).toHaveCount(4);
+  await expect(page.locator('.row-header.lane-parent').first()).toHaveText('No component');
   // An area-only card sits in its area's own lane, not at the board's edge.
   await expect(rowOf(page, 'contractor-and-guest-identities')).toHaveAttribute('data-row', 'identity');
   await expect(page.locator('.holding-bottom .card[data-item="contractor-and-guest-identities"]')).toHaveCount(0);
+  await expect(page.locator('.holding-row-header')).toHaveText('No area');
   await expect(page.locator('.holding-bottom .card[data-item="accessibility-audit-fixes"]').first()).toBeAttached();
 
   // Dropping a card on Identity's own lane gives it plain Identity (Q22's rule); undo puts RBAC back.
@@ -24,48 +27,75 @@ test('components as rows: area bands, a "no component" lane per area, and the ed
   await expect(rowOf(page, 'custom-roles')).toHaveAttribute('data-row', 'identity/rbac');
 });
 
-test('a collapsed band is one lane; moving a card within it keeps its component; it stays collapsed after a reload', async ({ page }) => {
+test('a folded band is one lane; moving a card within it keeps its component; folding is remembered', async ({ page }) => {
   await openApp(page);
-  await pickAxes(page, 'sequence', 'system:1');
-  await page.getByRole('button', { name: 'Collapse Identity & Access' }).click();
-  await expect(page.locator('.row-header.lane-collapsed')).toHaveText('4 components');
+  // Folded by default, so a fresh view looks like the area view did.
+  await expect(page.locator('.row-header.lane-collapsed').first()).toHaveText('4 components ▸');
   await expect(rowOf(page, 'custom-roles')).toHaveAttribute('data-row', 'identity');
-  // The component it's hidden in shows as a badge.
+  // The component it's folded into shows as a badge.
   await expect(card(page, 'custom-roles').locator('.attr[data-property="system"]')).toHaveText('Roles & Permissions');
 
   const target = page.locator('.cell[data-row="identity"]').nth(3);
   await dragTo(page, card(page, 'custom-roles'), target);
   await expect(card(page, 'custom-roles').locator('.attr[data-property="system"]')).toHaveText('Roles & Permissions');
 
+  // Clicking the folded lane's header unfolds it: a bigger target than ▸.
+  await page.locator('.row-header.lane-collapsed').first().getByRole('button').click();
+  await expect(rowOf(page, 'custom-roles')).toHaveAttribute('data-row', 'identity/rbac');
   await page.reload();
   await page.getByTestId('board').waitFor();
-  await expect(page.locator('.row-header.lane-collapsed')).toHaveText('4 components');
-  await page.getByRole('button', { name: 'Expand Identity & Access' }).click();
   await expect(rowOf(page, 'custom-roles')).toHaveAttribute('data-row', 'identity/rbac');
+  await page.getByRole('button', { name: 'Fold Identity & Access' }).click();
+  await expect(rowOf(page, 'custom-roles')).toHaveAttribute('data-row', 'identity');
 });
 
-test('clicking a band zooms into it, and zooming out brings the bands back (requirement 7)', async ({ page }) => {
+test('Fold all and Unfold all, and there is no zoom: a band header folds rather than zooms', async ({ page }) => {
   await openApp(page);
-  await pickAxes(page, 'sequence', 'system:1');
+  await expect(page.getByTestId('axis-y').locator('option')).not.toContainText(['System (component)']);
+  await foldAll(page, 'System', false);
+  await expect(page.locator('.row-header.lane-collapsed')).toHaveCount(0);
   const billing = page.locator('.band-y[data-band="billing"]');
   await reveal(billing);
-  await billing.locator('.lane-zoom').click();
-  await expect(page.locator('.row-header')).toHaveText(['Invoicing', 'Payment Gateway', 'Tax Engine', 'Subscriptions']);
-  await expect(page.locator('.band')).toHaveCount(0);
-  await page.keyboard.press('Escape');
+  await billing.getByRole('button', { name: 'Fold Billing' }).click();
+  await expect(page.locator('.row-header.lane-collapsed')).toHaveCount(1);
   await expect(page.locator('.band-y')).toHaveCount(4);
+  await expect(page.getByTestId('zoom-bar')).toHaveCount(0);
+  await foldAll(page, 'System', true);
+  await expect(page.locator('.row-header.lane-collapsed')).toHaveCount(4);
+  // ⌘↓ does nothing now.
+  await card(page, 'eu-data-residency').locator('.card-title').click();
+  await page.keyboard.press('ControlOrMeta+ArrowDown');
+  await expect(card(page, 'custom-roles')).toHaveCount(1);
 });
 
-test('releases as columns: quarter bands, a "no release" column per quarter, and collapsing a quarter', async ({ page }) => {
+test('Time: quarter bands, a "no release" column per quarter, and folding a quarter', async ({ page }) => {
   await openApp(page);
-  await pickAxes(page, 'time:1', 'system');
-  await expect(page.locator('.band-x .band-head')).toHaveText(['▾Q1 2027', '▾Q2 2027', '▾Q3 2027', '▾Q4 2027']);
+  await pickAxes(page, 'time', 'system');
+  await foldAll(page, 'Time', false);
+  await expect(page.locator('.band-x .band-head')).toHaveText([/Q1 2027/, /Q2 2027/, /Q3 2027/, /Q4 2027/]);
   await expect(page.locator('.column-header.lane-parent')).toHaveText(['No release', 'No release', 'No release', 'No release']);
   // A quarter-only card is in its quarter's own column.
   const quarterOnly = card(page, 'contractor-and-guest-identities').first();
   await reveal(quarterOnly);
   await expect(quarterOnly.locator('xpath=ancestor::*[contains(@class, "cell")][1]')).toHaveAttribute('data-column', 'q3');
 
-  await page.getByRole('button', { name: 'Collapse Q1 2027' }).click();
-  await expect(page.locator('.column-header.lane-collapsed')).toHaveText('2 releases');
+  await page.getByRole('button', { name: 'Fold Q1 2027' }).click();
+  await expect(page.locator('.column-header.lane-collapsed')).toHaveText('2 releases ▸');
+});
+
+test('a view saved by an earlier build carries over: "System (component)" opens unfolded', async ({ page }) => {
+  await openApp(page);
+  await page.evaluate(() => {
+    localStorage.removeItem('planning-board:folding');
+    localStorage.setItem('planning-board:view', JSON.stringify({ x: 'sequence', y: 'system:1', yWithin: 'billing' }));
+    localStorage.setItem('planning-board:collapsed', JSON.stringify({ system: ['data'] }));
+    localStorage.setItem('planning-board:zoom', JSON.stringify(['eu-data-residency']));
+  });
+  await page.goto(APP_URL);
+  await page.getByTestId('board').waitFor();
+  await expect(page.getByTestId('axis-y')).toHaveValue('system');
+  // Unfolded, except the band it had collapsed; the lane zoom and group zoom are dropped.
+  await expect(page.locator('.row-header.lane-collapsed')).toHaveCount(1);
+  await expect(page.locator('.band-y.collapsed')).toHaveAttribute('data-band', 'data');
+  await expect(card(page, 'eu-data-residency')).toHaveCount(1);
 });

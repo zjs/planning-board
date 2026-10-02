@@ -300,6 +300,7 @@ Entry format:
   - **Moving a card out:** while a card that's in a group is dragged, a "Move out of X" strip appears at the top of the board, and dropping there moves it up a level.
   - **Inspector fallbacks:** a Group field moves the selected cards into a group or out to the top level, for targets that aren't on screen. "Add a card inside" adds a child to the selected card.
   - **Zoom goes:** group zoom, multi-zoom, lane zoom (Q43), the zoom bar's breadcrumb, and its drop-to-move-out. The group's own values, which the zoom bar showed (Q19), are in the inspector.
+  - Zoom removed in slice 3 (ADR 0013), along with lane zoom (Q43). "Show it on the board" in the inspector expands the groups around a card. A new card made by double-clicking is always at the top level; "Add a card inside" makes children.
   - Built in sprint 5, slice 2, all but zoom's removal (slice 3). The hold delay is 0.5 s; the target gets a dashed outline, and the dragged card says "Put inside …". A card can't go inside itself, anything inside it, or the group it's already in. After a nest, the card leaves the board if its new group is folded, and the group is selected instead, so Delete can't reach a card you can't see. Double-clicking a frame's group expands it. The Group field searches every card by title, and each match says which groups it's in, so two cards with one title can be told apart. "Add a card inside" names the new card "New card" with its title ready to type over, and it takes the parent's values on the two axes shown.
 
 ### Q43: One axis choice per property
@@ -307,6 +308,7 @@ Entry format:
 - Options: (a) one choice per property, showing its deepest level with every parent as a band, folded by default, with Fold all and Unfold all, and a click on a folded lane unfolding it; lane zoom goes; (b) keep a choice per level and lane zoom, and add fold all.
 - Recommendation: (a). It's one control instead of two, and folding keeps the other areas and their links in view.
 - Status: answered 2026-10-02: (a). For planning: views saved in a browser by level (`system:1`) fall back to the property, and their folded bands carry over.
+  - Built in sprint 5, slice 3 (ADR 0013). The axis menu lists System and Time once each. Fold all and Unfold all sit beside each picker for a property with bands, and a folded lane's header ("4 components ▸") unfolds it. The edge lane is named for the top level ("No area"), and a parent's own lane for the level below ("No component"). Time order is judged by the lanes shown, so a folded quarter flags only across quarters. A browser that last showed "System (component)" opens with System unfolded, except the bands it had collapsed.
 
 ### Q44: "Related to" links
 - Context: Requirement 15 and the backlog's theme F. Dependencies have one type, "comes before". Plans also have looser relationships worth seeing that don't imply an order. The "typed dependencies" out of scope for v1 are ordering types, such as finish-to-start; this one carries no order at all.

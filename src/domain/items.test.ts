@@ -23,13 +23,12 @@ describe('valuesForNewItem', () => {
     expect(valuesForNewItem(plan(), timeBySystem, { x: null, y: null })).toEqual({ sequence: null, values: {} });
   });
 
-  it("takes the zoomed value in a lane-zoomed holding lane, so it stays in view (Q22)", () => {
-    const zoomed: ViewSpec = { x: { property: TIME, level: 1, within: 'q1' }, y: { property: SYSTEM, level: 1, within: 'id' } };
-    expect(valuesForNewItem(plan(), zoomed, { x: 'q1/r2', y: null })).toEqual({
+  it("takes the plain parent in a parent's own lane on a nested axis (Q22's rule)", () => {
+    const nested: ViewSpec = { x: { property: TIME, level: 1 }, y: { property: SYSTEM, level: 1 } };
+    expect(valuesForNewItem(plan(), nested, { x: 'q1/r2', y: 'id' })).toEqual({
       sequence: null,
       values: { [TIME]: ['q1/r2'], [SYSTEM]: ['id'] },
     });
-    expect(valuesForNewItem(plan(), zoomed, { x: null, y: null }).values).toEqual({ [TIME]: ['q1'], [SYSTEM]: ['id'] });
   });
 
   it('takes a sequence position, including a new one from a gap', () => {

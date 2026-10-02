@@ -5,12 +5,16 @@ test('shows the sample plan as sequence × system with unlabeled sequence column
   await openApp(page);
   await expect(page.getByTestId('axis-x')).toHaveValue('sequence');
   await expect(page.getByTestId('axis-y')).toHaveValue('system');
-  await expect(page.locator('.row-header')).toHaveText([
-    'Identity & Access',
-    'Billing',
-    'Data Platform',
-    'Customer Experience',
+  // System is one choice, folded by default: one lane per area, like the area view before (ADR 0013).
+  await expect(page.locator('.band-y .band-head')).toHaveText([
+    /Identity & Access/,
+    /Billing/,
+    /Data Platform/,
+    /Customer Experience/,
   ]);
+  await expect(page.locator('.row-header')).toHaveCount(4);
+  await expect(page.locator('.row-header.lane-collapsed')).toHaveCount(4);
+  await expect(page.locator('.row-header').first()).toHaveText(/\d+ components ▸/);
   const headers = page.locator('.column-header');
   expect(await headers.count()).toBeGreaterThan(5);
   for (const text of await headers.allTextContents()) expect(text).toBe('');
@@ -41,7 +45,8 @@ test('shows a multi-component card once per matching area lane', async ({ page }
 test('pivots to time × system and places cards by quarter', async ({ page }) => {
   await openApp(page);
   await pickAxes(page, 'time', 'system');
-  await expect(page.locator('.column-header')).toHaveText(['Q1 2027', 'Q2 2027', 'Q3 2027', 'Q4 2027']);
+  await expect(page.locator('.band-x .band-head')).toHaveText([/Q1 2027/, /Q2 2027/, /Q3 2027/, /Q4 2027/]);
+  await expect(page.locator('.column-header.lane-collapsed')).toHaveCount(4);
   await expect(cell(page, 'identity', 'q1').locator('.card[data-item="passwordless-login"]')).toBeVisible();
   // Only about half the items have a quarter, so the "No quarter" lanes are busy here.
   expect(await page.locator('.holding-right .card').count()).toBeGreaterThan(40);

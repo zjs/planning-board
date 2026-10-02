@@ -16,6 +16,8 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       yLabel="Y"
       xNone="No X"
       yNone="No Y"
+      xParentNone="No X below"
+      yParentNone="No Y below"
       compact={compact}
       onCompactChange={() => undefined}
       lifted={null}
@@ -36,8 +38,6 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       onCommitEdit={() => undefined}
       onCancelEdit={() => undefined}
       onBackgroundPointerDown={() => undefined}
-      zoomableLanes={{ x: new Set(), y: new Set() }}
-      onLaneZoom={() => undefined}
       onBandToggle={() => undefined}
       levelNames={{ x: 'value', y: 'value' }}
       mismatches={{ onCard: new Map(), inside: new Map() }}

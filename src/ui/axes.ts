@@ -6,193 +6,128 @@ import type { AxisSpec, ViewSpec } from '../domain/view.ts';
 export interface AxisOption {
   id: string;
   label: string;
-  /** Header of the holding lane for cards with no value on this axis. */
+  /** Header of the edge holding lane, for cards with no value on this axis at any level. */
   none: string;
+  /** A parent's own lane on a nested axis, for cards with the plain parent value: "No component". */
+  parentNone: string;
   axis: AxisSpec;
 }
-
-/** An option's ID: the property's ID at its top level, "property:level" below that. */
-export const optionId = (property: string, level: number) => (level === 0 ? property : `${property}:${level}`);
 
 /** "Area" → "area", but "OKR" stays "OKR". */
 export const inSentence = (name: string) => (/^[A-Z][a-z]/.test(name) ? name[0]!.toLowerCase() + name.slice(1) : name);
 
 /**
- * Axis choices: every level of every property in the plan (requirement 1),
- * so a new custom property is an axis as soon as it exists.
+ * Axis choices: one per property in the plan (requirement 1, Q43), so a new
+ * custom property is an axis as soon as it exists. A hierarchical property
+ * shows its deepest level, with each parent as a band that folds (ADR 0013).
  */
 export function axisOptions(plan: Plan): AxisOption[] {
-  return propertiesInOrder(plan).flatMap((property): AxisOption[] => {
+  return propertiesInOrder(plan).map((property): AxisOption => {
     if (property.kind === 'sequence') {
-      return [{ id: SEQUENCE, label: property.name, none: 'No position', axis: { property: SEQUENCE, level: 0 } }];
+      return { id: SEQUENCE, label: property.name, none: 'No position', parentNone: 'No position', axis: { property: SEQUENCE, level: 0 } };
     }
     const levels = property.levels.length > 0 ? property.levels : [property.name];
-    return levels.map((level, i) => ({
-      id: optionId(property.id, i),
-      label: levels.length > 1 ? `${property.name} (${inSentence(level)})` : property.name,
-      none: `No ${inSentence(level)}`,
-      axis: { property: property.id, level: i },
-    }));
+    return {
+      id: property.id,
+      label: property.name,
+      none: `No ${inSentence(levels[0]!)}`,
+      parentNone: `No ${inSentence(levels[levels.length - 1]!)}`,
+      axis: { property: property.id, level: levels.length - 1 },
+    };
   });
 }
 
 export const DEFAULT_VIEW: ViewChoice = { x: SEQUENCE, y: SYSTEM };
 
-/**
- * The viewer's axes, plus any lane zoom on each (requirement 7): `xWithin`
- * is the column value zoomed into, shown one level down.
- */
+/** The viewer's axes: a property ID for each. */
 export interface ViewChoice {
   x: string;
   y: string;
-  xWithin?: string | null;
-  yWithin?: string | null;
 }
 
 type Which = 'x' | 'y';
-const withinKey = (which: Which) => (which === 'x' ? 'xWithin' : 'yWithin');
 
 export function optionById(plan: Plan, id: string): AxisOption | undefined {
   return axisOptions(plan).find((o) => o.id === id);
 }
 
-/**
- * The level a lane-zoomed axis shows: one below the value zoomed into, and
- * never above the chosen level. Zooming into an area from a component view
- * stays a component view (ADR 0012).
- */
-function zoomedLevel(plan: Plan, property: PropertyId, level: number, within: ValueId): number {
-  const p = plan.properties[property];
-  return p?.kind === 'select' ? Math.max(level, depthOf(p, within) + 1) : level + 1;
-}
-
-/** The option an axis shows as: one level down when lane-zoomed. Expects a validChoice. */
-function shownOption(plan: Plan, choice: ViewChoice, which: Which): AxisOption | undefined {
+/** Label and holding-lane headers for an axis. */
+export function axisNames(plan: Plan, choice: ViewChoice, which: Which): { label: string; none: string; parentNone: string } {
   const option = optionById(plan, choice[which]);
-  const within = choice[withinKey(which)];
-  if (!option || !within) return option;
-  const level = zoomedLevel(plan, option.axis.property, option.axis.level, within);
-  return optionById(plan, optionId(option.axis.property, level)) ?? option;
-}
-
-/** Label and holding-lane header for an axis, as currently shown. */
-export function axisNames(plan: Plan, choice: ViewChoice, which: Which): { label: string; none: string } {
-  const option = shownOption(plan, choice, which);
-  return option ? { label: option.label, none: option.none } : { label: choice[which], none: 'No value' };
+  return option ?? { label: choice[which], none: 'No value', parentNone: 'No value' };
 }
 
 /** The view an (already valid) choice shows. */
 export function toViewSpec(plan: Plan, choice: ViewChoice): ViewSpec {
-  const spec = (which: Which): AxisSpec => {
-    const within = choice[withinKey(which)];
-    const axis = optionById(plan, choice[which])?.axis ?? { property: choice[which], level: 0 };
-    return within ? { ...axis, level: zoomedLevel(plan, axis.property, axis.level, within), within } : axis;
-  };
+  const spec = (which: Which): AxisSpec => optionById(plan, choice[which])?.axis ?? { property: choice[which], level: 0 };
   return { x: spec('x'), y: spec('y') };
 }
 
 /**
- * Whether a lane, or a band on a nested axis, can be zoomed into: a value
- * with a level below it that has something in it, and no lane zoom on the
- * axis yet.
- */
-export function canZoomLane(plan: Plan, choice: ViewChoice, which: Which, value: string): boolean {
-  if (choice[withinKey(which)]) return false;
-  const option = optionById(plan, choice[which]);
-  if (!option) return false;
-  const property = plan.properties[option.axis.property];
-  if (property?.kind !== 'select' || depthOf(property, value) + 1 >= property.levels.length) return false;
-  return Object.values(property.values).some((node) => node.parent === value);
-}
-
-export function zoomLane(choice: ViewChoice, which: Which, value: string | null): ViewChoice {
-  return { ...choice, [withinKey(which)]: value };
-}
-
-/**
- * The choice as this plan can show it. An axis whose property or level no
- * longer exists falls back (to the default view if it can, otherwise to the
- * first property the other axis isn't using), and a lane zoom whose value
- * was deleted is dropped, so a view never shows nothing for no reason. The
- * saved choice itself is left alone, so an undo brings the view back.
+ * The choice as this plan can show it. An axis whose property no longer
+ * exists falls back (to the default view if it can, otherwise to the first
+ * property the other axis isn't using), so a view never shows nothing for
+ * no reason. The saved choice itself is left alone, so an undo brings the
+ * view back.
  */
 export function validChoice(plan: Plan, choice: ViewChoice): ViewChoice {
   const options = axisOptions(plan);
   const find = (id: string) => options.find((o) => o.id === id);
-  const propertyOf = (id: string) => find(id)?.axis.property;
   let { x, y } = choice;
   const pick = (avoid: string | undefined, preferred: string) =>
-    find(preferred) && propertyOf(preferred) !== avoid
-      ? preferred
-      : (options.find((o) => o.axis.property !== avoid)?.id ?? preferred);
-  if (!find(x)) x = pick(propertyOf(y), DEFAULT_VIEW.x === y ? DEFAULT_VIEW.y : DEFAULT_VIEW.x);
-  if (!find(y) || propertyOf(y) === propertyOf(x)) y = pick(propertyOf(x), DEFAULT_VIEW.y === x ? DEFAULT_VIEW.x : DEFAULT_VIEW.y);
-  const check = (which: Which, id: string) => {
-    const within = choice[withinKey(which)];
-    if (!within || id !== choice[which]) return null;
-    const property = plan.properties[propertyOf(id) ?? ''];
-    return property?.kind === 'select' && property.values[within] ? within : null;
-  };
-  const xWithin = check('x', x);
-  const yWithin = check('y', y);
-  return x === choice.x && y === choice.y && xWithin === (choice.xWithin ?? null) && yWithin === (choice.yWithin ?? null)
-    ? choice
-    : { x, y, xWithin, yWithin };
+    find(preferred) && preferred !== avoid ? preferred : (options.find((o) => o.id !== avoid)?.id ?? preferred);
+  if (!find(x)) x = pick(y, DEFAULT_VIEW.x === y ? DEFAULT_VIEW.y : DEFAULT_VIEW.x);
+  if (!find(y) || y === x) y = pick(x, DEFAULT_VIEW.y === x ? DEFAULT_VIEW.x : DEFAULT_VIEW.y);
+  return x === choice.x && y === choice.y ? choice : { x, y };
 }
 
-/**
- * Pick a new axis, which clears that axis's lane zoom. Choosing a property
- * the other axis already shows, at any level, swaps the two.
- */
-export function chooseAxis(plan: Plan, choice: ViewChoice, which: Which, id: string): ViewChoice {
+/** Pick a new axis. Choosing the property the other axis shows swaps the two. */
+export function chooseAxis(choice: ViewChoice, which: Which, id: string): ViewChoice {
   const other: Which = which === 'x' ? 'y' : 'x';
-  if (optionById(plan, choice[other])?.axis.property === optionById(plan, id)?.axis.property) {
-    // The other axis takes over this one's property and lane zoom.
-    return {
-      ...choice,
-      [which]: id,
-      [other]: choice[which],
-      [withinKey(which)]: null,
-      [withinKey(other)]: choice[withinKey(which)] ?? null,
-    };
-  }
-  return { ...choice, [which]: id, [withinKey(which)]: null };
+  if (choice[other] === id) return { ...choice, [which]: id, [other]: choice[which] };
+  return { ...choice, [which]: id };
 }
 
 export function swapAxes(choice: ViewChoice): ViewChoice {
-  return { x: choice.y, y: choice.x, xWithin: choice.yWithin ?? null, yWithin: choice.xWithin ?? null };
+  return { x: choice.y, y: choice.x };
 }
 
 const STORAGE_KEY = 'planning-board:view';
 
-/** Option IDs saved by sprint 1 builds, before axis options came from the plan. */
-const LEGACY_IDS: Record<string, string> = { component: optionId(SYSTEM, 1), release: optionId(TIME, 1) };
+/**
+ * Option IDs saved by earlier builds: sprint 1's names, and sprint 2–4's
+ * "property:level" (ADR 0013). Each is the property now; `unfolded` says the
+ * view showed a level below the top, so its bands open unfolded.
+ */
+function fromSavedId(id: string): { id: string; unfolded: boolean } {
+  if (id === 'component') return { id: SYSTEM, unfolded: true };
+  if (id === 'release') return { id: TIME, unfolded: true };
+  const match = /^(.*):(\d+)$/.exec(id);
+  return match ? { id: match[1]!, unfolded: Number(match[2]) > 0 } : { id, unfolded: false };
+}
 
-/** The remembered choice. It's checked against the plan (validChoice) when shown. */
-export function loadViewChoice(): ViewChoice {
+function readSavedView(): { x: string; y: string } | null {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
-    if (typeof raw === 'object' && raw !== null && 'x' in raw && 'y' in raw) {
-      const str = (v: unknown) => (typeof v === 'string' ? v : null);
-      const id = (v: unknown) => {
-        const s = str(v);
-        return s === null ? null : (LEGACY_IDS[s] ?? s);
-      };
-      const x = id(raw.x);
-      const y = id(raw.y);
-      if (x !== null && y !== null && x !== y) {
-        return {
-          x,
-          y,
-          xWithin: 'xWithin' in raw ? str(raw.xWithin) : null,
-          yWithin: 'yWithin' in raw ? str(raw.yWithin) : null,
-        };
-      }
+    if (typeof raw === 'object' && raw !== null && 'x' in raw && 'y' in raw && typeof raw.x === 'string' && typeof raw.y === 'string') {
+      return { x: raw.x, y: raw.y };
     }
   } catch {
     // Storage can be unavailable (private windows, file:// quirks); fall through.
   }
-  return DEFAULT_VIEW;
+  return null;
+}
+
+/**
+ * The remembered choice. It's checked against the plan (validChoice) when
+ * shown. A lane zoom saved by an earlier build is dropped.
+ */
+export function loadViewChoice(): ViewChoice {
+  const saved = readSavedView();
+  if (!saved) return DEFAULT_VIEW;
+  const x = fromSavedId(saved.x).id;
+  const y = fromSavedId(saved.y).id;
+  return x === y ? DEFAULT_VIEW : { x, y };
 }
 
 export function saveViewChoice(choice: ViewChoice): void {
@@ -222,71 +157,104 @@ export function saveCompactHolding(compact: boolean): void {
   }
 }
 
-const ZOOM_KEY = 'planning-board:zoom';
-
-/** The path of cards zoomed into, top first (ADR 0008). Remembered per browser, like the axes. */
-export function loadZoomPath(): string[] {
-  try {
-    const raw: unknown = JSON.parse(localStorage.getItem(ZOOM_KEY) ?? '[]');
-    return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveZoomPath(path: readonly string[]): void {
-  try {
-    localStorage.setItem(ZOOM_KEY, JSON.stringify(path));
-  } catch {
-    // A convenience only.
-  }
-}
-
 const COLLAPSED_KEY = 'planning-board:collapsed';
+const FOLDING_KEY = 'planning-board:folding';
 
-/** Collapsed bands per property (ADR 0012), so they stay collapsed across pivots. Remembered per browser. */
-export type Collapsed = Readonly<Record<PropertyId, readonly ValueId[]>>;
+/**
+ * How one property's bands are folded (ADR 0013): all folded or all
+ * unfolded, except the bands listed. Folded is the default, so a fresh view
+ * looks like the top level. A value added later follows `all`.
+ */
+export interface Folding {
+  all: 'folded' | 'unfolded';
+  except: readonly ValueId[];
+}
 
-export function loadCollapsed(): Collapsed {
+/** Folding per property, so it carries across pivots. Remembered per browser. */
+export type Foldings = Readonly<Record<PropertyId, Folding>>;
+
+const FOLDED: Folding = { all: 'folded', except: [] };
+
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+
+/**
+ * The remembered folding. A browser last used by a sprint 4 build has none
+ * yet: an axis it showed below the top level ("System (component)") opens
+ * unfolded, keeping the bands it had collapsed folded.
+ */
+export function loadFoldings(): Foldings {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? '{}');
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
-    return Object.fromEntries(
-      Object.entries(raw).flatMap(([property, values]) =>
-        Array.isArray(values) ? [[property, values.filter((v): v is string => typeof v === 'string')]] : [],
-      ),
-    );
+    const raw: unknown = JSON.parse(localStorage.getItem(FOLDING_KEY) ?? 'null');
+    if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+      return Object.fromEntries(
+        Object.entries(raw).flatMap(([property, f]: [string, unknown]) =>
+          typeof f === 'object' && f !== null && 'all' in f && (f.all === 'folded' || f.all === 'unfolded')
+            ? [[property, { all: f.all, except: 'except' in f ? strings(f.except) : [] }]]
+            : [],
+        ),
+      );
+    }
+    const saved = readSavedView();
+    if (!saved) return {};
+    const collapsed: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? '{}');
+    const out: Record<PropertyId, Folding> = {};
+    for (const id of [saved.x, saved.y]) {
+      const { id: property, unfolded } = fromSavedId(id);
+      if (!unfolded) continue;
+      const old = typeof collapsed === 'object' && collapsed !== null ? (collapsed as Record<string, unknown>)[property] : [];
+      out[property] = { all: 'unfolded', except: strings(old) };
+    }
+    return out;
   } catch {
     return {};
   }
 }
 
-export function saveCollapsed(collapsed: Collapsed): void {
+export function saveFoldings(foldings: Foldings): void {
   try {
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed));
+    localStorage.setItem(FOLDING_KEY, JSON.stringify(foldings));
   } catch {
     // A convenience only.
   }
 }
 
-/** Collapse a band, or expand it if it's collapsed. */
-export function toggleCollapsed(collapsed: Collapsed, property: PropertyId, value: ValueId): Collapsed {
-  const current = collapsed[property] ?? [];
-  const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
-  return { ...collapsed, [property]: next };
+/** Fold a band, or unfold it if it's folded. */
+export function toggleFold(foldings: Foldings, property: PropertyId, value: ValueId): Foldings {
+  const f = foldings[property] ?? FOLDED;
+  const except = f.except.includes(value) ? f.except.filter((v) => v !== value) : [...f.except, value];
+  return { ...foldings, [property]: { all: f.all, except } };
 }
 
-/** A view with each axis's collapsed bands. */
-export function withCollapsed(view: ViewSpec, collapsed: Collapsed): ViewSpec {
+/** Fold all of a property's bands, or unfold them all. */
+export function setAllFolded(foldings: Foldings, property: PropertyId, folded: boolean): Foldings {
+  return { ...foldings, [property]: { all: folded ? 'folded' : 'unfolded', except: [] } };
+}
+
+/**
+ * The bands that can fold on an axis: parents above the axis level that
+ * have something below them. A parent with nothing below it looks the same
+ * either way, so it stays open.
+ */
+export function foldableBands(plan: Plan, axis: AxisSpec): ValueId[] {
+  const property = plan.properties[axis.property];
+  if (property?.kind !== 'select' || axis.level === 0) return [];
+  const parents = new Set(Object.values(property.values).flatMap((node) => (node.parent === null ? [] : [node.parent])));
+  return Object.keys(property.values).filter((id) => parents.has(id) && depthOf(property, id) < axis.level);
+}
+
+/** A view with each axis's folded bands. */
+export function withFolding(plan: Plan, view: ViewSpec, foldings: Foldings): ViewSpec {
   const axis = (a: AxisSpec): AxisSpec => {
-    const values = collapsed[a.property];
-    return values && values.length > 0 ? { ...a, collapsed: values } : a;
+    const bands = foldableBands(plan, a);
+    if (bands.length === 0) return a;
+    const f = foldings[a.property] ?? FOLDED;
+    const collapsed = bands.filter((b) => (f.all === 'folded') !== f.except.includes(b));
+    return collapsed.length > 0 ? { ...a, collapsed } : a;
   };
   return { ...view, x: axis(view.x), y: axis(view.y) };
 }
 
 const EXPANDED_KEY = 'planning-board:expanded';
-const ZOOM_ALSO_KEY = 'planning-board:zoom-also';
 
 function loadIds(key: string): string[] {
   try {
@@ -305,10 +273,7 @@ function saveIds(key: string, ids: readonly string[]): void {
   }
 }
 
-/** Groups expanded in place (Q33). Remembered per browser, like the zoom. */
+/** Groups expanded in place (Q33). Remembered per browser, like the view. */
 export const loadExpanded = () => loadIds(EXPANDED_KEY);
 export const saveExpanded = (ids: readonly string[]) => saveIds(EXPANDED_KEY, ids);
-/** Cards zoomed into alongside the zoom path's last one (multi-zoom, Q33). */
-export const loadZoomAlso = () => loadIds(ZOOM_ALSO_KEY);
-export const saveZoomAlso = (ids: readonly string[]) => saveIds(ZOOM_ALSO_KEY, ids);
 

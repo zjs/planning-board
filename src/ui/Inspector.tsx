@@ -14,7 +14,7 @@ interface Props {
   /** Why each card doesn't fit its group (requirement 13). */
   mismatches: ReadonlyMap<ItemId, string[]>;
   onClose: () => void;
-  /** Show a card on the board: zoom to its level and select it. */
+  /** Show a card on the board: expand the groups around it and select it. */
   onReveal: (id: ItemId) => void;
   /** Say what just happened, with an Undo for it. */
   onNotice: (text: string) => void;

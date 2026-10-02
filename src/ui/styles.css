@@ -218,115 +218,36 @@ button.primary {
   cursor: pointer;
 }
 
-/* Where you are when zoomed into a card: breadcrumb, the card's own values (Q19), hints. */
-.zoom-bar {
+.axis-group {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px 14px;
-  padding: 6px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-
-.crumbs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.crumbs li + li::before {
-  content: '›';
-  margin: 0 6px;
-  color: var(--muted);
-}
-
-.crumb {
-  padding: 1px 7px;
-  border: 2px solid transparent;
-  background: transparent;
-  color: var(--accent);
-}
-
-.crumb:hover {
-  background: var(--surface-2);
-}
-
-/* While dragging, every level is a place to move the card out to. */
-.zoom-bar.dragging .crumb {
-  border: 2px dashed var(--border);
-}
-
-.zoom-bar.dragging .crumb.drop-target {
-  border-color: var(--accent);
-  background: var(--drop);
-}
-
-.crumb-current {
-  font-weight: 600;
-}
-
-.zoom-values {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
-/* A lane header you can zoom into: reads as a header, with a hint that it opens. */
-.lane-zoom {
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  font-weight: inherit;
-  text-align: left;
-  color: inherit;
-}
-
-.lane-zoom::after {
-  content: ' ⤢';
-  color: var(--muted);
-  font-weight: normal;
-  opacity: 0;
-}
-
-.lane-zoom:hover {
-  color: var(--accent);
-}
-
-.lane-zoom:hover::after,
-.lane-zoom:focus-visible::after {
-  opacity: 1;
-}
-
-.lane-chip {
+.fold-all {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 2px 1px 8px;
-  border: 1px solid var(--accent);
-  border-radius: 12px;
-  color: var(--accent);
+}
+
+.fold-all button {
+  padding: 3px 6px;
   font-size: 12px;
-}
-
-.lane-chip button {
-  padding: 0 5px;
-  border: none;
-  background: none;
-  color: inherit;
-  line-height: 1;
-}
-
-.zoom-hint {
   color: var(--muted);
-  font-size: 12px;
+  background: none;
+  border: 1px solid var(--border);
+}
+
+.fold-all button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.fold-all button:last-child {
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+}
+
+.fold-all button:hover {
+  color: var(--text);
+  background: var(--surface-2);
 }
 
 .board-wrap {
@@ -426,23 +347,46 @@ button.primary {
 
 .band-head {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 2px;
   max-width: 100%;
 }
 
+/* A band's whole header folds and unfolds it. */
 .band-toggle {
-  flex: none;
-  width: 20px;
   padding: 0;
   border: none;
   background: none;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.band-toggle > span:first-child {
+  flex: none;
+  width: 14px;
   color: var(--muted);
   font-size: 12px;
 }
 
 .band-toggle:hover {
-  color: var(--text);
+  color: var(--accent);
+}
+
+/* A folded lane's header: "4 components ▸" unfolds it. */
+.lane-unfold {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--muted);
+  font-style: italic;
+  text-align: left;
+}
+
+.lane-unfold:hover {
+  color: var(--accent);
 }
 
 /* A parent's own lane ("No component") and its cells read like a holding lane. */
@@ -1550,7 +1494,7 @@ button.link:hover {
   background: var(--surface-2);
 }
 
-/* A group's count opens it (Q36): double-click renames, this zooms in. */
+/* A group's count expands it in place (Q36, Q42): double-click renames, this expands. */
 .zoom-into {
   flex: none;
   display: inline-flex;

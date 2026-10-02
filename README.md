@@ -16,8 +16,8 @@ This is being built in the open, a few weeks at a time. It's usable for trying t
 
 **Works today**
 
-- Pivot any two properties, at any level (area or component, quarter or release), and drag cards to set values. Undo everything.
-- Groups: select cards and press ⌘G / Ctrl+G, zoom into a group to break it down, zoom into a lane to see the next level.
+- Pivot any two properties, folding areas and quarters or unfolding them to components and releases, and drag cards to set values. Undo everything.
+- Groups: select cards and press ⌘G / Ctrl+G, expand a group in place to see what's inside, and hold a dragged card over another to put it inside.
 - Markers on cards that don't fit their group (dated outside it, sized larger, in another area).
 - Your own properties, such as Team, and editing any property's values (rename, move, reorder, delete).
 - **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, and story points go. Epics become groups, "Blocks" links become dependencies.

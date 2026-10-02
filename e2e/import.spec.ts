@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { JIRA_EXPORT } from '../src/domain/__fixtures__/jira-export.ts';
-import { openApp } from './app.ts';
+import { foldAll, openApp } from './app.ts';
 
 // CSV import (requirement 28): map the columns, check the preview, import.
 
@@ -89,13 +89,13 @@ test('the value table puts components in areas, versions in quarters, and points
   await expect(values.getByLabel('Area for SSO')).toHaveValue('Identity');
   await dialog(page).getByRole('button', { name: 'Import 5 cards' }).click();
 
-  await expect(page.locator('.row-header')).toHaveText(['Identity', 'Customer Experience', 'Payments']);
+  await expect(page.locator('.band-y .band-head')).toHaveText([/Identity/, /Customer Experience/, /Payments/]);
   const epic = page.locator('.card.group:not(.via-children)');
   await expect(epic.locator('.attr[data-property="size"]')).toHaveText('L');
   await expect(epic.locator('.attr[data-property="time"]')).toHaveText('2027.1');
   await expect(epic.locator('.attr[data-property="time"]')).toHaveAttribute('title', `Time: ${quarter!} › 2027.1`);
 
-  await page.getByTestId('axis-x').selectOption('time:1');
+  await foldAll(page, 'Time', false);
   await expect(page.locator('.column-header:not(.lane-parent)')).toHaveText(['2027.1']);
 });
 
