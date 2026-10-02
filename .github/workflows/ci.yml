@@ -20,9 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -50,11 +50,17 @@ jobs:
       - name: End-to-end tests (against dist/index.html over file://)
         run: npm run e2e
 
+      # Named for its commit, and uploaded unzipped, so the download is the app itself: open it in a browser.
+      - name: Name the build for its commit
+        env:
+          BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: cp dist/index.html "planning-board-${BUILD_COMMIT}.html"
+
       - name: Attach build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: planning-board-${{ github.event.pull_request.head.sha || github.sha }}
-          path: dist/index.html
+          path: planning-board-${{ github.event.pull_request.head.sha || github.sha }}.html
+          archive: false
           if-no-files-found: error
 
       - name: Build summary
@@ -64,12 +70,12 @@ jobs:
           {
             echo "### Build ready"
             echo
-            echo "Download **planning-board-${BUILD_COMMIT}** from the Artifacts section below, unzip it, and open \`index.html\` in a browser."
+            echo "Download **planning-board-${BUILD_COMMIT}.html** from the Artifacts section below, and open it in a browser."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ github.event.pull_request.head.sha || github.sha }}
           path: |

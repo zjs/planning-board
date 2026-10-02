@@ -40,6 +40,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <section>
         <h3>Moving cards</h3>
       <dl>
+        <dt>Rows and Columns, at the top</dt>
+        <dd>
+          Pick any two properties, and the same cards rearrange. <b>⇄</b> swaps them. Nothing is lost by pivoting: every
+          card keeps all its values.
+        </dd>
         <dt>Drag a card into a cell</dt>
         <dd>
           It takes that row's and column's values. A card in several areas has a copy in each; drag one to move it.
@@ -48,7 +53,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dt>
           Hold <kbd>{keys.add}</kbd> while dropping
         </dt>
-        <dd>Adds that area instead of moving there.</dd>
+        <dd>Adds that row's or column's value instead of replacing the one it came from.</dd>
         <dt>Gaps between sequence columns</dt>
         <dd>Drop there to open a new position. Columns have no numbers on purpose.</dd>
         <dt>Lanes along the right and bottom edges</dt>
@@ -124,8 +129,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dt>Lines</dt>
         <dd>
           Hover a card to see its links; select it to see its whole chain. <span className="legend-red">Red</span> lines
-          always show: a card placed after one it must come before, or a loop. A folded quarter counts as one, so
-          only its unfolded releases are judged one by one. Click a line and press <kbd>Delete</kbd> to remove it.
+          always show: a card placed after one it must come before, or a loop. A folded quarter counts as one lane,
+          so the releases inside it are judged against each other only once it's unfolded. Click a line and press{' '}
+          <kbd>Delete</kbd> to remove it.
         </dd>
       </dl>
       </section>
@@ -169,8 +175,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
           <span className="mismatch">⚠</span> markers
         </dt>
         <dd>
-          A card dated outside its group, larger than it, in another area, or at or above its level. On a group, the
-          count covers everything inside. Hover for why; nothing is changed for you.
+          A card that doesn't fit its group: dated outside it, larger than it, in another area, or at or above its
+          level (an epic inside an epic). On a group, the count covers everything inside. Hover for why; nothing is
+          changed for you.
         </dd>
         <dt>Undo, redo, cancel</dt>
         <dd>

@@ -41,6 +41,7 @@ Sprint 5 (shore up what we have) is complete and awaiting the PM's acceptance, a
 - Work in thin vertical slices. Each ends with a deployed build and a short demo note: what to click, what should happen, and known gaps.
 - Keep conclusions in the repo, not the chat: ADRs, `questions.md` entries, and sprint doc checkboxes.
 - Feedback goes into `docs/backlog.md` first, under a theme; decisions it needs go into `questions.md`.
+- Housekeeping follows `docs/housekeeping.md` (proposed, Q49): its definition of done in every slice, a release pass in each sprint's last slice, and a maintenance pass before planning each sprint.
 - End each session with a three-line summary: what shipped, what's next, and any open questions for the PM.
 
 ## Commands
@@ -53,4 +54,4 @@ Sprint 5 (shore up what we have) is complete and awaiting the PM's acceptance, a
 - Regenerate the sample plan: `npm run seed`
 - Regenerate the sample Jira export (`docs/samples/jira-export.csv`): `npm run sample:jira`
 - Add compatibility fixtures for a new release (ADR 0005): add its commit to `VERSIONS` in `scripts/generate-compat-fixtures.ts`, then `npm run compat:fixtures`. Existing fixtures are never rewritten.
-- Deploy: automatic. `.github/workflows/pages.yml` publishes every `main` build to https://zjs.github.io/planning-board/. CI also attaches `dist/index.html` to every run as the `planning-board-<sha>` artifact.
+- Deploy: automatic. `.github/workflows/pages.yml` publishes every `main` build to https://zjs.github.io/planning-board/. CI also attaches the build to every run, unzipped, as `planning-board-<sha>.html`.

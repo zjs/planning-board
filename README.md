@@ -12,25 +12,27 @@ The app is one static HTML file. It runs entirely in your browser, makes no netw
 
 ## Status: early preview
 
-This is being built in the open, a few weeks at a time. It's usable for trying the idea on your own data, but it isn't finished, and plans are single-user for now.
+This is being built in the open, a sprint at a time. It's usable for trying the idea on your own data, but it isn't finished, and plans are single-user for now.
 
 **Works today**
 
-- Pivot any two properties, folding areas and quarters or unfolding them to components and releases, and drag cards to set values. Undo everything.
-- Groups: select cards and press ⌘G / Ctrl+G, expand a group in place to see what's inside, and hold a dragged card over another to put it inside.
-- Markers on cards that don't fit their group (dated outside it, sized larger, in another area).
-- Your own properties, such as Team, and editing any property's values (rename, move, reorder, delete).
-- **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, and story points go. Epics become groups, "Blocks" links become dependencies.
-- Save and open plan files: a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)).
+- **Pivot** any two properties as rows and columns, and drag cards to set both values. Areas and quarters fold into one lane each, or unfold into components and releases. Undo everything.
+- **Dependencies:** select two cards and press L. Links show when you point at a card, and links whose order contradicts the board are always drawn in red, along with loops.
+- **Groups and levels:** cards nest to any depth, as initiatives, epics, and stories. Expand a group in place to see what's inside, and hold a dragged card over another to put it inside. Markers flag cards that don't fit their group: dated outside it, larger than it, in another area, or at or above its level.
+- **An inspector** for editing any card's properties, description, group, and links without pivoting, for one card or many.
+- **Your own properties,** such as Team, and editing any property's values (rename, move, reorder, delete).
+- **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, and "Blocks" links become dependencies.
+- **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
 
 **Not yet**
 
-- Dependencies are imported and kept, but not drawn yet, and there are no dependency or component conflict highlights yet. They're next.
-- No scenarios, filters, or saved views.
+- Component contention (too much work landing on one component at once), and a panel listing every conflict. They're next.
+- "Related to" links, ordering cards within a cell, and dragging several cards at once.
+- Scenarios, filters, and saved views.
 - An import replaces the board. Updating a board from a fresh export isn't built.
 - One person at a time. Live collaboration comes later, through a relay that only ever sees encrypted data.
 
-The full picture is in [`docs/requirements.md`](docs/requirements.md). Decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).
+What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). What's coming is in [`docs/backlog.md`](docs/backlog.md), and decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).
 
 **Browsers:** automated tests run in Chromium (Chrome, Edge). Firefox and Safari haven't been checked thoroughly yet; reports are welcome. If the board says it can't save, the page is still usable, but changes won't survive a reload.
 
@@ -40,7 +42,7 @@ The full picture is in [`docs/requirements.md`](docs/requirements.md). Decisions
 
 ## Other ways to run it
 
-- **Offline copy:** every CI run on `main` attaches the app as one self-contained file. Open a run under **Actions**, download the `planning-board-<commit>` artifact, unzip it, and open `index.html`. This needs a GitHub login.
+- **Offline copy:** open the hosted page and save it (it's one self-contained file), or download a build from any CI run under **Actions**: the `planning-board-<commit>.html` artifact opens straight in a browser. The CI download needs a GitHub login.
 - **From source:** needs Node 22 or later.
 
 ```sh
@@ -51,6 +53,7 @@ npm run build        # dist/index.html, the single-file app
 npm run e2e          # Playwright tests against dist/index.html (build first)
 npm run seed         # regenerate the sample plan, src/seed/sample-plan.json
 npm run sample:jira  # regenerate the sample Jira export, docs/samples/jira-export.csv
+npm run compat:fixtures  # save fixtures from a newly released build (ADR 0005)
 ```
 
 ## Layout
@@ -59,7 +62,9 @@ npm run sample:jira  # regenerate the sample Jira export, docs/samples/jira-expo
 - `src/commands/`: every change to a plan, each one Yjs transaction and one undo step.
 - `src/store/`: the Yjs document layout and browser storage.
 - `src/ui/`: React components.
-- `docs/`: requirements, sprint scopes and plans, decision records, demo notes, and sample data.
+- `e2e/`: Playwright tests, including each sprint's exit criteria.
+- `scripts/`: generators for the sample plan, the sample Jira export, and the compatibility fixtures.
+- `docs/`: requirements, the backlog and open questions, sprint scopes and plans, decision records, demo notes, and sample data. [`docs/housekeeping.md`](docs/housekeeping.md) is how the repo is kept tidy.
 
 ## License
 
