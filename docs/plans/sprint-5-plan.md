@@ -1,6 +1,6 @@
 # Sprint 5: engineering plan
 
-Status: **approved 2026-10-02.** In progress: slices 1–4 merged. Scope is in `docs/sprint-5.md`. This doc covers how engineering delivers it: the slices, their order, and the defaults engineering chose. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-10-02.** **Complete 2026-10-02.** All five slices merged (#35–#39). The PM validates the build and runs the combined sprint 3–5 tester session (`docs/demos/sprint-5-session.md`). Scope is in `docs/sprint-5.md`. This doc covers how engineering delivers it: the slices, their order, and the defaults engineering chose. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## What this sprint has to prove
 

@@ -1,5 +1,7 @@
 # Sprint 3 tester session: script (20 minutes)
 
+> Superseded by the combined [sprints 3–5 session](sprint-5-session.md). This script describes zoom, which sprint 5 removed; it's kept as a record.
+
 For the PM running a session with one or two PMs or EMs, ideally on an export of their own with real Blocks links. There are two things to learn. First, do the red lines point at problems they'd raise in a planning meeting, or at noise? Second, does the board stay readable once dependencies show? Stay quiet while they drive. Note where they hesitate, which lines they talk about, and which they ignore.
 
 ## Before (10 minutes, with the tester)

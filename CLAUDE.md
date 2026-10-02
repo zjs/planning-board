@@ -15,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 5: shore up what we have. The compatibility gate, expand and fold replacing zoom, nesting by drag, selecting every match, and a card's copies. Scope is in `docs/sprint-5.md`; the slice plan is in `docs/plans/sprint-5-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. Don't build anything on its deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Sprints 3 and 4 still await the PM's acceptance and tester sessions; feedback goes into `docs/backlog.md`.
+Sprint 5 (shore up what we have) is complete and awaiting the PM's acceptance, as are sprints 3 and 4. One combined tester session covers all three (`docs/demos/sprint-5-session.md`). Sprint 6 isn't planned yet; its candidates are in `docs/backlog.md` ("related to" links, order within a cell, dragging several cards, and contention with the conflicts panel), so start it in plan mode. Sprint 5's scope is in `docs/sprint-5.md`, the slice plan in `docs/plans/sprint-5-plan.md`, and the review process in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
 
 ## Architecture rules
 

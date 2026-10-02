@@ -58,8 +58,8 @@ Scope: single user, browser only, no server.
 
 ### 5. Tester-ready
 
-- [ ] The legend covers expand and fold, nesting, moving out, selecting matches, and copies.
-- [ ] A demo note (`docs/demos/sprint-5.md`) and a session script, run together with the sprint 3 and 4 sessions.
+- [x] The legend covers expand and fold, nesting, moving out, selecting matches, and copies.
+- [x] A demo note (`docs/demos/sprint-5.md`) and a session script, run together with the sprint 3 and 4 sessions.
 
 ## Deferred (don't build)
 

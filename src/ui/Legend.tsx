@@ -41,7 +41,10 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <h3>Moving cards</h3>
       <dl>
         <dt>Drag a card into a cell</dt>
-        <dd>It takes that row's and column's values. A card in several areas has a copy in each; drag one to move it.</dd>
+        <dd>
+          It takes that row's and column's values. A card in several areas has a copy in each; drag one to move it.
+          Hover it to see every copy, joined by dashed lines.
+        </dd>
         <dt>
           Hold <kbd>{keys.add}</kbd> while dropping
         </dt>
@@ -62,9 +65,15 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Click to select</dt>
         <dd>
-          <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>⇧ Shift</kbd>-click a badge,
-          such as Initiative, or a row or column header, to select every card that matches; <kbd>{keys.selectAll}</kbd>{' '}
-          selects them all. <kbd>Delete</kbd> removes the selection, and everything inside a group.
+          <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>Delete</kbd> removes the
+          selection, and everything inside a group.
+        </dd>
+        <dt>
+          <kbd>⇧ Shift</kbd>-click a badge or a header
+        </dt>
+        <dd>
+          Selects every card that matches, in any pivot: every Initiative, or everything in a row.{' '}
+          <kbd>{keys.selectAll}</kbd> selects every card on the board.
         </dd>
         <dt>Double-click empty space</dt>
         <dd>
@@ -83,8 +92,12 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dd>
           What's inside shows right here, each card marked with its group, and groups inside expand the same way. A
           selected group's count <span className="legend-chip"><span className="child-count">4</span>›</span> does it
-          too. <kbd>{keys.fold}</kbd> on a card folds its group back.
+          too.
         </dd>
+        <dt>
+          <kbd>{keys.fold}</kbd> on a card inside
+        </dt>
+        <dd>Folds its group back into one card.</dd>
       </dl>
       </section>
       <section>
@@ -111,8 +124,8 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dt>Lines</dt>
         <dd>
           Hover a card to see its links; select it to see its whole chain. <span className="legend-red">Red</span> lines
-          always show: a card placed after one it must come before, or a loop. Click a line and press{' '}
-          <kbd>Delete</kbd> to remove it.
+          always show: a card placed after one it must come before, or a loop. A folded quarter counts as one, so
+          only its unfolded releases are judged one by one. Click a line and press <kbd>Delete</kbd> to remove it.
         </dd>
       </dl>
       </section>
@@ -145,6 +158,8 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Heavier borders</dt>
         <dd>Initiatives and epics, from the Level property. A card with no level hasn't been decided yet.</dd>
+        <dt>Dashed lines and outlines</dt>
+        <dd>The copies of the card you're pointing at or have selected, when it's in more than one lane.</dd>
         <dt>Dashed frames</dt>
         <dd>
           A group, shown wherever the cards inside it are, around those cards. Drag them as usual; double-click the
