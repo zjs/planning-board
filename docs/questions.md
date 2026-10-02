@@ -61,12 +61,6 @@ Entry format:
 - Recommendation: (c). Rearranging doesn't disturb the sequence view, there's still only one order for the whole plan (not one per view), and Jira's rank gets a home.
 - Status: open.
 
-### Q47: Selecting every card that matches
-- Context: The backlog's theme G. "Expand every initiative" is a selection problem: select them all, then Expand. Filters (requirement 9) are deferred.
-- Options: (a) ⇧-click a row or column header to select every card in that lane, so pivoting to Level and ⇧-clicking Initiative selects every initiative; (b) a "Select all like this" command that matches the selected card on a property you pick; (c) wait for filters, then ⌘A selects what's visible.
-- Recommendation: (a), plus ⌘A for every card on the board. Both reuse what's on screen, and (a) works for any property, not just levels.
-- Status: open.
-
 ### Q48: Dragging several cards
 - Context: Requirements 2 and 3, and the backlog's theme H. With several cards selected, a drag moves only the card under the pointer today.
 - Options: (a) every selected card gets the drop's values on both axes; on a multi-value axis, each card's value in the dragged copy's lane is replaced, or the value is added if the card has nothing in that lane; (b) every card keeps its offset from the dragged one, moving the same number of lanes.
@@ -302,8 +296,9 @@ Entry format:
 - Recommendation: (a). One way to look deeper, and it fixes the clumsy part of moving cards between groups.
 - Status: answered 2026-10-02: (a). Details for sprint planning, engineering's defaults:
   - **Expand and fold are separate actions,** so an expanded group's children can be expanded in turn (the bug in theme G). E expands the selected groups; ⇧E folds the groups of the selected cards. The child count on a group card expands it.
-  - **A Group picker in the inspector** moves the selected cards into a group, between groups, or out to the top level.
-  - **Adding a card inside a group:** "Add a card inside" in the inspector for the selected group, which expands it if it's folded. That covers a card with nothing inside yet (Q20).
+  - **Moving cards into a group is a drag** (PM, 2026-10-02): hold a dragged card over another card for about half a second, and dropping puts it inside. Values never change on a nest, a quick drop still goes into the cell, and it works on a card with nothing inside yet (Q20).
+  - **Moving a card out:** while a card that's in a group is dragged, a "Move out of X" strip appears at the top of the board, and dropping there moves it up a level.
+  - **Inspector fallbacks:** a Group field moves the selected cards into a group or out to the top level, for targets that aren't on screen. "Add a card inside" adds a child to the selected card.
   - **Zoom goes:** group zoom, multi-zoom, lane zoom (Q43), the zoom bar's breadcrumb, and its drop-to-move-out. The group's own values, which the zoom bar showed (Q19), are in the inspector.
 
 ### Q43: One axis choice per property
@@ -316,7 +311,7 @@ Entry format:
 - Context: Requirement 15 and the backlog's theme F. Dependencies have one type, "comes before". Plans also have looser relationships worth seeing that don't imply an order. The "typed dependencies" out of scope for v1 are ordering types, such as finish-to-start; this one carries no order at all.
 - Options: (a) a second, undirected kind of link, drawn dotted with no arrow, never judged for order or counted in ⚠, shown by the same focus rules as dependencies (Q14, Q39); (b) leave it to descriptions or a custom tag.
 - Recommendation: (a).
-- Status: answered 2026-10-02: (a), in the next sprint. Details for planning, engineering's defaults:
+- Status: answered 2026-10-02: (a). First agreed for the next sprint, then moved to sprint 6 when sprint 5 became a cleanup sprint. Details for planning, engineering's defaults:
   - **Making one:** select two cards and press ⌥L. Order doesn't matter, and ⌥L again removes it.
   - **On the board:** dotted, with no arrow, drawn on hover and selection, and never red.
   - **In the inspector:** a "Related" list beside Comes after and Comes before.
@@ -327,4 +322,10 @@ Entry format:
 - Context: Requirements 3 and 15, and the backlog's theme E. A card in several lanes has a copy in each, often off screen. A card's dependency lines leave from whichever copy is closest, so its links can be split across copies.
 - Options: (a) hovering or selecting any copy joins all its copies with a dashed line, no arrow, styled differently from related links, and shows the links from every copy; (b) only highlight the copies, as selection does now.
 - Recommendation: (a).
-- Status: answered 2026-10-02: (a), in the next sprint.
+- Status: answered 2026-10-02: (a). Sprint 5, slice 4.
+
+### Q47: Selecting every card that matches
+- Context: The backlog's theme G. "Expand every initiative" is a selection problem: select them all, then Expand. Filters (requirement 9) are deferred.
+- Options: (a) ⇧-click a row or column header to select every card in that lane, so pivoting to Level and ⇧-clicking Initiative selects every initiative; (a′) ⇧-click a badge on any card to select every card with that value, in any pivot; (b) a "Select all like this" command that matches the selected card on a property you pick; (c) wait for filters, then ⌘A selects what's visible.
+- Recommendation: (a) and (a′), plus ⌘A for every card on the board. They reuse what's on screen, and they work for any property, not just levels.
+- Status: answered 2026-10-02: ⇧-click a badge on any card to select every card on the board with that value, in any pivot, so "every initiative" works without pivoting to Level. ⇧-click a row or column header to select its lane, and ⌘A to select everything on the board. Sprint 5, slice 2.

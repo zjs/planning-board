@@ -3,7 +3,7 @@
 A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads) on enterprise product lines. It sits upstream of Jira: a place to brainstorm and argue about a release plan before it's committed. The core bet is pivotable perspectives on one set of items (drag a card into a cell and it writes the values for both axes), plus highlights for dependency and component conflicts. Open source, Apache 2.0.
 
 @docs/requirements.md
-@docs/sprint-4.md
+@docs/sprint-5.md
 @docs/questions.md
 @docs/backlog.md
 
@@ -15,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprints 3 and 4 are complete, and the PM's feedback on them is recorded in `docs/backlog.md` (themes E–H) and `docs/questions.md` (Q42–Q48). Sprint 5 isn't planned yet; the PM will plan it in a separate session, in plan mode. The candidates are in the backlog's "Planned next": themes E–H, component contention and the conflicts panel (Q40, Q41), and the plan-file compatibility gate. The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
+Sprint 5: shore up what we have. The compatibility gate, expand and fold replacing zoom, nesting by drag, selecting every match, and a card's copies. Scope is in `docs/sprint-5.md`; the slice plan is in `docs/plans/sprint-5-plan.md`, and the review process is in `docs/plans/sprint-0-plan.md`. Don't build anything on its deferred list. If `requirements.md` and the sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Sprints 3 and 4 still await the PM's acceptance and tester sessions; feedback goes into `docs/backlog.md`.
 
 ## Architecture rules
 
