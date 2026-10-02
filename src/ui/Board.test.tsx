@@ -32,6 +32,7 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       onSelectMatching={() => undefined}
       onCardExpand={() => undefined}
       lines={[]}
+      copyFocus={[]}
       onHover={() => undefined}
       onLineClick={() => undefined}
       onSpotDoubleClick={() => undefined}

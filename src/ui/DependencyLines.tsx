@@ -13,8 +13,9 @@ export interface DrawnLine extends VisibleLink {
 const SVG = 'http://www.w3.org/2000/svg';
 
 /**
- * Dependency lines (requirement 15, ADR 0011): one SVG overlay over the
- * board, positioned from the cards' rectangles on screen. It re-measures
+ * Dependency lines (requirement 15, ADR 0011), and the dashed lines that
+ * join a card's copies (Q45): one SVG overlay over the board, positioned
+ * from the cards' rectangles on screen. It re-measures
  * when the lines or the layout change, on resize, and once per frame
  * while the board scrolls (the holding lanes are pinned, so their cards
  * move relative to the board). Drawn imperatively: positions come from the
@@ -22,12 +23,15 @@ const SVG = 'http://www.w3.org/2000/svg';
  */
 export function DependencyLines({
   lines,
+  copies,
   board,
   scroller,
   layoutKey,
   onLineClick,
 }: {
   lines: readonly DrawnLine[];
+  /** Cards whose copies are joined, each copy to its nearest neighbor (Q45). */
+  copies: readonly string[];
   /** A click on a line: select it, so Delete can remove it. */
   onLineClick: (line: DrawnLine) => void;
   board: RefObject<HTMLDivElement | null>;
@@ -67,15 +71,29 @@ export function DependencyLines({
       }
       const group = svg.querySelector('g.lines')!;
       group.replaceChildren();
+      const local = (r: DOMRect): Box => ({
+        left: r.left - origin.left,
+        right: r.right - origin.left,
+        top: r.top - origin.top,
+        bottom: r.bottom - origin.top,
+      });
+      // A card's copies, under its dependency lines: dashed, with no arrow, and never in the pointer's way.
+      for (const id of copies) {
+        const rects = [...boardEl.querySelectorAll<HTMLElement>(`.card[data-item="${CSS.escape(id)}"]:not(.via-children)`)].map(
+          (el) => local(el.getBoundingClientRect()),
+        );
+        for (const [a, b] of nearestNeighbors(rects)) {
+          const path = document.createElementNS(SVG, 'path');
+          path.setAttribute('d', curve(a, b));
+          path.setAttribute('class', 'copy-line');
+          path.dataset.item = id;
+          group.append(path);
+        }
+      }
       for (const line of lines) {
         const ends = closestCopies(boardEl, line.from, line.to);
         if (!ends) continue;
-        const [a, b] = ends.map((r) => ({
-          left: r.left - origin.left,
-          right: r.right - origin.left,
-          top: r.top - origin.top,
-          bottom: r.bottom - origin.top,
-        })) as [Box, Box];
+        const [a, b] = ends.map(local) as [Box, Box];
         const d = curve(a, b);
         const path = document.createElementNS(SVG, 'path');
         path.setAttribute('d', d);
@@ -121,7 +139,7 @@ export function DependencyLines({
       window.removeEventListener('resize', soon);
       resize.disconnect();
     };
-  }, [lines, board, scroller, layoutKey]);
+  }, [lines, copies, board, scroller, layoutKey]);
 
   return (
     <svg ref={svgRef} className="dep-lines" aria-hidden="true" data-testid="dependency-lines">
@@ -149,11 +167,40 @@ export function DependencyLines({
   );
 }
 
-interface Box {
+export interface Box {
   left: number;
   right: number;
   top: number;
   bottom: number;
+}
+
+const centerDistance = (a: Box, b: Box) =>
+  Math.hypot((a.left + a.right) / 2 - (b.left + b.right) / 2, (a.top + a.bottom) / 2 - (b.top + b.bottom) / 2);
+
+/**
+ * Pairs that join every copy with the least total length: each copy is
+ * joined to the nearest one already joined (a minimum spanning tree), so
+ * copies in neighboring lanes are joined to each other rather than all to
+ * one far-off copy.
+ */
+export function nearestNeighbors(boxes: readonly Box[]): [Box, Box][] {
+  if (boxes.length < 2) return [];
+  const joined = [boxes[0]!];
+  const rest = boxes.slice(1);
+  const pairs: [Box, Box][] = [];
+  while (rest.length > 0) {
+    let best: [number, Box, number] = [Infinity, joined[0]!, 0];
+    for (const [i, box] of rest.entries()) {
+      for (const from of joined) {
+        const d = centerDistance(from, box);
+        if (d < best[0]) best = [d, from, i];
+      }
+    }
+    const [next] = rest.splice(best[2], 1);
+    pairs.push([best[1], next!]);
+    joined.push(next!);
+  }
+  return pairs;
 }
 
 /** A card with several copies (one per lane) is linked from the pair of copies closest together. */

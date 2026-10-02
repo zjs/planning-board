@@ -326,6 +326,7 @@ Entry format:
 - Options: (a) hovering or selecting any copy joins all its copies with a dashed line, no arrow, styled differently from related links, and shows the links from every copy; (b) only highlight the copies, as selection does now.
 - Recommendation: (a).
 - Status: answered 2026-10-02: (a). Sprint 5, slice 4.
+  - Built in slice 4 (ADR 0011, amended). Copies are joined each to its nearest neighbor, dashed and gray with no arrow, and every copy gets a dashed outline. This works for the hovered card and for every selected card. Each dependency is still drawn once, from the copy nearest its other end; the joined copies show whose it is. Hovering *Seat sync from directory* shows both its copies and both its links.
 
 ### Q47: Selecting every card that matches
 - Context: The backlog's theme G. "Expand every initiative" is a selection problem: select them all, then Expand. Filters (requirement 9) are deferred.

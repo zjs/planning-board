@@ -59,6 +59,8 @@ interface Props {
   scrollRef: RefObject<HTMLDivElement | null>;
   /** Dependency lines to draw (requirement 15). */
   lines: readonly DrawnLine[];
+  /** Cards whose copies are joined and outlined: the hovered and selected ones with several (Q45). */
+  copyFocus: readonly ItemId[];
   /** The card under the pointer, for its focus lines (Q39). */
   onHover: (id: ItemId | null) => void;
   onLineClick: (line: DrawnLine) => void;
@@ -160,6 +162,7 @@ export const Board = memo(function Board({
   justMoved,
   scrollRef,
   lines,
+  copyFocus,
   onHover,
   onLineClick,
   selected,
@@ -257,6 +260,7 @@ export const Board = memo(function Board({
         selected={selected.has(ref.itemId)}
         lifted={lifted !== null && sameCopy(lifted, ref)}
         nestTarget={isIntoTarget(target) && target.into === ref.itemId}
+        copyFocus={!ref.via && copyFocus.includes(ref.itemId)}
         justMoved={justMoved === ref.itemId}
         editing={renaming !== null && sameCopy(renaming, ref)}
         viaChildren={ref.via === 'children'}
@@ -458,8 +462,9 @@ export const Board = memo(function Board({
         onPointerLeave={() => onHover(null)}
       >
         <div className="board" ref={boardRef} style={{ gridTemplateColumns }} data-testid="board">
-          {lines.length > 0 && <DependencyLines
+          {(lines.length > 0 || copyFocus.length > 0) && <DependencyLines
               lines={lines}
+              copies={copyFocus}
               board={boardRef}
               scroller={scrollRef}
               layoutKey={layout}

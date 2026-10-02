@@ -555,6 +555,22 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return [...focusLines, ...problemLines];
   }, [plan, problems, selected, hovered, selectedLinks, renamable, dragging]);
 
+  // A card's copies (Q45): the hovered card's and the selected cards', when there's more than one on the board.
+  const copyCounts = useMemo(() => {
+    const counts = new Map<ItemId, number>();
+    for (const ref of shownCopies) {
+      for (const real of ref.via ? (ref.inner ?? []) : [ref]) counts.set(real.itemId, (counts.get(real.itemId) ?? 0) + 1);
+    }
+    return counts;
+  }, [shownCopies]);
+  const copyFocus = useMemo(
+    () =>
+      dragging
+        ? []
+        : [...new Set([...(hovered === null ? [] : [hovered]), ...selected])].filter((id) => (copyCounts.get(id) ?? 0) > 1),
+    [dragging, hovered, selected, copyCounts],
+  );
+
   const onLineClick = useCallback((line: DrawnLine) => {
     setSelectedLinks(new Set(line.links.map(linkKey)));
     setSelection(new Set());
@@ -888,6 +904,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           justMoved={justMoved}
           scrollRef={scrollRef}
           lines={lines}
+          copyFocus={copyFocus}
           onHover={setHovered}
           onLineClick={onLineClick}
           selected={selected}

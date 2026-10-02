@@ -1595,6 +1595,19 @@ button.link:hover {
   }
 }
 
+/* A card's copies (Q45): dashed, with no arrow, unlike a dependency. */
+.copy-line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.card.copy-focus {
+  outline: 2px dashed var(--muted);
+  outline-offset: 2px;
+}
+
 /* A pending link, waiting for its second card. */
 .link-bar {
   display: flex;
