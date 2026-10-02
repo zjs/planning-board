@@ -136,9 +136,9 @@ No decision needed. Each one goes into the next sprint. The first two shipped in
 
 ## Planned next
 
-- **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36). Its tester session (`docs/demos/sprint-3-session.md`) feeds sprint 4.
-- **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35). Its tester session (`docs/demos/sprint-4-session.md`) feeds sprint 5.
-- **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)). The compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45).
+- **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
+- **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35).
+- **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–5 (`docs/demos/sprint-5-session.md`), and feeds sprint 6.
 - **Sprint 6 candidates:**
   - "related to" links (theme F, Q44);
   - order within a cell (Q46), and dragging several cards (Q48);

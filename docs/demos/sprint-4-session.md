@@ -1,5 +1,7 @@
 # Sprint 4 tester session: script (20 minutes)
 
+> Superseded by the combined [sprints 3–5 session](sprint-5-session.md). This script describes zoom, which sprint 5 removed; it's kept as a record.
+
 For the PM running a session with one or two PMs or EMs, ideally on an export of their own that includes Epic and Story issue types. There are three things to learn:
 
 1. Do levels, bands and expanded groups make the plan's shape readable, or do they add clutter?
