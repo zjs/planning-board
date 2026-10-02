@@ -69,7 +69,7 @@ A card in several lanes has a copy in each (requirement 3). On a board the size 
 
 **Generalization:** a card is one thing however many copies it has. Hovering any copy shows every copy, joined by a dashed line without arrows, along with the links from all of them. → [Q45](questions.md#q45-showing-a-cards-copies)
 
-**Lands:** next sprint (agreed 2026-10-02); not yet planned.
+**Lands:** sprint 5 ([`docs/sprint-5.md`](sprint-5.md), slice 4).
 
 ### F. Links other than "comes before"
 
@@ -81,7 +81,7 @@ Dependencies have one type: A comes before B (requirement 15). Plans also have l
 
 **Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
 
-**Lands:** next sprint (agreed 2026-10-02); not yet planned.
+**Lands:** sprint 6 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02).
 
 ### G. One way to look deeper: expand and fold, not zoom
 
@@ -103,7 +103,7 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 - **Expand and fold are separate actions**, so an expanded group's children can be expanded in turn. This fixes the bug. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
 - **Select every card that matches**, so a bulk expand is: select every initiative, then Expand. → [Q47](questions.md#q47-selecting-every-card-that-matches)
 
-**Lands:** direction agreed 2026-10-02 (Q42, Q43); not yet planned. The bug goes into the next sprint either way (D).
+**Lands:** sprint 5 (slices 2 and 3), including the bug and selecting every match (Q47).
 
 ### H. Arranging and moving cards
 
@@ -119,9 +119,9 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 
 - **A card's place within a cell** is an order the plan keeps, one for the whole plan rather than one per view, which stays out of scope. The catch is that sequence is already a layout: its keys define the sequence view's columns. → [Q46](questions.md#q46-order-within-a-cell)
 - **Dragging a selection** moves every selected card, with the same drop rules as one card. → [Q48](questions.md#q48-dragging-several-cards)
-- **A card's group is a property you can edit.** A Group picker in the inspector moves cards into a group, between groups, or out to the top. With zoom gone (Q42), it's also the main way to move cards between groups. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
+- **Moving a card into a group is a drag:** hold it over the group to put it inside, or drop it on a "Move out" strip. A Group field in the inspector is the fallback for targets that aren't on screen. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
 
-**Lands:** not yet planned.
+**Lands:** moving between groups in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are sprint 6 candidates.
 
 ### D. Small fixes
 
@@ -132,16 +132,17 @@ No decision needed. Each one goes into the next sprint. The first two shipped in
 | Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
 | Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
 | Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
-| Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Next sprint |
+| Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Sprint 5, slice 2 |
 
 ## Planned next
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36). Its tester session (`docs/demos/sprint-3-session.md`) feeds sprint 4.
 - **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35). Its tester session (`docs/demos/sprint-4-session.md`) feeds sprint 5.
-- **Sprint 5: not yet planned** (PM, 2026-10-02: record the sprint 3 and 4 feedback first, then plan in a separate session). The candidates:
-  - themes E–H: copies on hover, "related to" links, expand and fold instead of zoom, and arranging and moving cards;
-  - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41);
-  - the plan file compatibility tests (Housekeeping).
+- **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)). The compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45).
+- **Sprint 6 candidates:**
+  - "related to" links (theme F, Q44);
+  - order within a cell (Q46), and dragging several cards (Q48);
+  - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).
 
 ## Deferred, from earlier sprints
 
@@ -149,7 +150,7 @@ Already out of scope, listed here so they're in one place: scenarios (22–24); 
 
 ## Housekeeping
 
-- **Plan file compatibility, as a CI gate.** "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.)
+- **Plan file compatibility, as a CI gate** (sprint 5, slice 1). "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.)
   - Today: unit tests round-trip the current format, and Level is filled in for older files (ADR 0005). There's no fixture saved by an earlier build.
   - Plan: commit a plan file from each released version, starting with sample plans from sprints 0 to 4 out of git history, and test that every one opens and saves cleanly. Boards kept in browser storage get the same check through the store.
   - It runs in `npm run check`, so it blocks CI. Engineering decision, scheduled first in the next sprint.
