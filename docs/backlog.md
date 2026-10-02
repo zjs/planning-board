@@ -150,9 +150,6 @@ Already out of scope, listed here so they're in one place: scenarios (22–24); 
 
 ## Housekeeping
 
-- **Plan file compatibility, as a CI gate** (sprint 5, slice 1). "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.)
-  - Today: unit tests round-trip the current format, and Level is filled in for older files (ADR 0005). There's no fixture saved by an earlier build.
-  - Plan: commit a plan file from each released version, starting with sample plans from sprints 0 to 4 out of git history, and test that every one opens and saves cleanly. Boards kept in browser storage get the same check through the store.
-  - It runs in `npm run check`, so it blocks CI. Engineering decision, scheduled first in the next sprint.
+- **Plan file compatibility, as a CI gate.** Shipped in sprint 5, slice 1. "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.) Plan files and browser boards from every released build, sprints 0 to 4, are fixtures that `npm run check` opens, so a break fails CI. Each release adds its own (ADR 0005).
 - Check the app in Firefox and Safari. It's been open since sprint 1, and it matters more now that the app is public.
 - Fold in the sprint 1 and 2 session notes, and any tester reactions to the open questions, as they arrive.

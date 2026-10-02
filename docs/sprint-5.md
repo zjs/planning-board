@@ -18,12 +18,12 @@ Scope: single user, browser only, no server.
 
 ### 1. Compatibility gate (backlog: Housekeeping)
 
-- [ ] Fixtures saved by every past version:
+- [x] Fixtures saved by every past version:
   - plan files written by each earlier build's own writer;
   - the hand-written sample files from sprints 0 and 1;
   - boards as stored in the browser by each earlier build.
-- [ ] Each fixture opens with every card, value, group and link intact. Saving it and opening it again gives the same plan.
-- [ ] The tests run in `npm run check`, so a compatibility break fails CI. Every future format change adds a fixture (ADR 0005).
+- [x] Each fixture opens with every card, value, group and link intact. Saving it and opening it again gives the same plan.
+- [x] The tests run in `npm run check`, so a compatibility break fails CI. Every future format change adds a fixture (ADR 0005).
 
 ### 2. Expand, fold, nest, and select (Q42, Q47)
 
