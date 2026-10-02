@@ -34,7 +34,8 @@ Entry format:
   - **Time bucket.** Contention and time-order checks default to quarters. The requirements table says contention is "measured here" on Time → Release, which may mean releases. The function takes either.
   - **Uncertain order.** A dependency is flagged only when the order is certain. A prerequisite in Q2 against a dependent in Q1/R1 is flagged; one in Q1 against Q1/R1 isn't.
 - Recommendation: keep these for sprint 1 and revisit with real data. The time bucket is the one most likely to matter, since it changes which conflicts show at all.
-- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built.
+- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 6 candidate).
+  - Sprint 5 (ADR 0013): with one Time axis that folds, "the level it shows" became the lanes it shows. A folded quarter is one bucket, and an unfolded one a bucket per release.
 
 ### Q21: What happens to a group's dependencies when it's ungrouped?
 - Context: Requirements 11 and 15. Ungrouping removes the group card, but other cards may depend on it, or it on them. Dependencies aren't visible until sprint 2, but ungrouping already has to do something with them.
@@ -45,8 +46,8 @@ Entry format:
 ### Q23: Are group mismatch markers too noisy on real plans?
 - Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
 - Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
-- Recommendation: (a) for the sprint 1 session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds sprint 2's conflicts panel.
-- Status: open.
+- Recommendation: (a), and watch the tester session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds the conflicts panel.
+- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 6 candidate.
 
 ### Q27: Where do flat Jira values go in our two-level hierarchies?
 - Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
@@ -66,6 +67,14 @@ Entry format:
 - Options: (a) every selected card gets the drop's values on both axes; on a multi-value axis, each card's value in the dragged copy's lane is replaced, or the value is added if the card has nothing in that lane; (b) every card keeps its offset from the dragged one, moving the same number of lanes.
 - Recommendation: (a). It reads as "put these here", and it's one undo step. (b) breaks on cards with several copies, and at the edges of the board.
 - Status: open.
+
+### Q49: How housekeeping fits into our way of working
+- Context: The repo is public, and its README, help panel, backlog and questions drifted out of date over sprints 3–5. Dependencies and CI actions aged on their own. A cleanup pass on 2026-10-02 fixed them, and [`docs/housekeeping.md`](housekeeping.md) proposes how to keep it that way.
+- Options:
+  - **The process.** (a) Four activities, each with its own trigger: a definition of done in every slice; a release pass in each sprint's last slice; a maintenance pass before planning each sprint; and intake when feedback arrives. (b) One periodic cleanup pass, as on 2026-10-02.
+  - **Automation.** (c) Dependabot for npm and GitHub Actions, monthly, with minor and patch updates grouped into one PR. (d) A scheduled routine that runs the maintenance pass and opens a PR. (e) Neither, for now.
+- Recommendation: (a), because each kind of rot is cheapest to fix when it's caused. Also (c): it catches security fixes between sprints, and its PRs go through the same CI and merge-on-green as engineering's. Skip (d) while sprints follow each other closely.
+- Status: open. The 2026-10-02 pass followed (a)'s checklists, and `CLAUDE.md` points to them as a proposal.
 
 ## Answered
 
@@ -138,6 +147,7 @@ Entry format:
 - Options: (a) select cards, then Group (⌘G), and zoom in to add or move children out; (b) ⇧-drop a card onto another card to nest it; (c) both.
 - Recommendation: (a). It's how diagram editors work, it avoids a third drop modifier, and dependency focus reuses the selection later.
 - Status: answered 2026-09-26: (a). Sprint 1, slices 1–3.
+  - Sprint 5 (Q42): zoom is gone. Cards go into a group by holding them over it, or with the inspector's Group field, and come out through the "Move out" strip.
 
 ### Q16: Does a collapsed group show in lanes its children touch?
 - Context: Requirement 13 says a group's component touches include its children's. An epic tagged Identity with a child in Billing: does the group show in the Billing row?
@@ -145,6 +155,7 @@ Entry format:
 - Recommendation: (a). The Billing row then shows everything that touches Billing, and no drag writes a value the group never had.
 - Status: answered 2026-09-26: (a). Sprint 1, slice 5.
   - Sprint 4 amends this (Q33): a faded copy becomes a faded frame around the real child cards that put the group in that lane, and those cards can be dragged.
+  - Sprint 5 (Q42): double-clicking a frame's group expands it, rather than zooming in.
 
 ### Q17: What does deleting a group delete?
 - Context: Requirements 10 and 11, sprint 1. Delete and ungroup are both available on a selected group.
@@ -159,24 +170,28 @@ Entry format:
 - Options: for cards in other lanes, (a) hide them or (b) keep them in the holding lanes. For area-only cards, (c) show them in "No component" or (d) show them in every component lane.
 - Recommendation: (a) and (c). A zoomed view is about one area, and "No component" doubles as the to-do list for refining, just as system views double as a tagging tool (req. 21).
 - Status: answered 2026-09-26: (a) and (c), as recommended. Sprint 1, slice 4.
+  - Superseded in sprint 5 (Q43): lane zoom is gone. Unfolding an area shows its components with every other area still on the board, and the area's own lane ("No component") holds its area-only cards.
 
 ### Q19: When zoomed into a group, how do its own values show?
 - Context: Requirement 13. A group keeps its own values, such as a PM's ballpark quarter, while its children refine them. Inside the group, you see only the children.
 - Options: (a) as badges in the zoom header; (b) also shade the lane or column matching the group's value, so children outside it stand out; (c) both.
 - Recommendation: (a) for sprint 1, since the mismatch markers already flag children that don't fit. Revisit (b) after the session.
 - Status: answered 2026-09-26: (a), as recommended. Sprint 1, slice 3.
+  - Superseded in sprint 5 (Q42): there's no zoom header, and a group's own values show in the inspector.
 
 ### Q20: How does a plain card become a group, so an epic can be decomposed?
 - Context: Requirements 11 and 12, the "Group" definition ("decomposing an item means turning it into a group"), and Q15. As built in slice 2, ⌘G adds cards to a card only if it's already a group. With a plain epic plus some stories selected, ⌘G makes a *new* group containing all of them, including the epic, which is the wrong shape for decomposing.
 - Options: (a) in slice 3, let any card be zoomed into, not just groups, and treat a card with no children as an empty group you can add child cards to (once it has one child, ⌘G can move more cards into it); (b) a second shortcut, such as ⌥⌘G, that puts the selection inside the card you clicked last; (c) a "Move into…" command that picks the target from a list.
 - Recommendation: (a). Decomposing usually means writing new child cards, which (a) covers directly, and it adds no new gesture. The cost is that moving existing cards into a plain card takes two steps: create one child first, then ⌘G.
 - Status: answered 2026-09-26: (a), as recommended. Built in slice 3: select any card and press ⌘↓ (or Zoom in); an empty card shows "Nothing inside yet", and its first child makes it a group.
+  - Sprint 5 (Q42): without zoom, the inspector's "Add a card inside" gives any card its first child, and holding a dragged card over a plain card puts it inside.
 
 ### Q22: In a zoomed lane, what does dropping a card on "No component" do?
 - Context: Requirements 3, 5, and 7, and Q18. Outside a zoom, a holding lane removes the dragged copy's value on that axis. Inside a zoom on Identity, the rows are Identity's components and the "No component" lane holds cards tagged Identity with no component yet. Removing the value would take the card out of Identity altogether, so it would vanish from the view you just dropped it into.
 - Options: (a) inside a zoom, "No component" means "Identity, nothing more precise": the copy loses its component and goes back to plain Identity, so it stays in view; (b) the same as outside a zoom: the value is removed, and the card leaves the view.
 - Recommendation: (a). It matches what the lane shows, and it's the inverse of refining (dropping an Identity-only card on SSO makes it Identity/SSO). The same goes for time: a release dropped on "No release" inside a Q2 zoom goes back to plain Q2.
 - Status: answered 2026-10-02: keep (a) until there's a reason to switch. Built (a) in sprint 1, slice 4.
+  - Since sprint 5 there's no lane zoom, so the rule lives on a nested axis: dropping a card in an unfolded area's own "No component" lane gives it the plain area (ADR 0012, ADR 0013).
 
 ### Q24: How are dependency links drawn?
 - Context: Requirements 15 and 16, and Q14 (how they're displayed). Sprint 2 planning, for building in sprint 3.
@@ -238,7 +253,7 @@ Entry format:
 - Context: Requirements 12, 13 and 18, Q16, and the backlog's theme A. Testers want to zoom into several groups at once and see which cards belong to which parent. They also want a faded "via children" copy of a group to show which children put it there.
 - Options: (a) expand in place: select groups and expand them, so their children appear on the current board, each marked with its parent (a chip, or the group's frame around them); (b) multi-zoom: zoom into several groups at once, showing only their children, each with a parent chip; (c) both, built as one mechanism, where multi-zoom is expanding with everything else hidden.
 - Recommendation: (c). For faded copies, the group becomes a frame around the real child cards that put it in that lane. Those cards stay draggable, and dragging one edits the child, so faded copies stop being a dead end. This turns the view's zoom root into a set (an amendment to ADR 0008).
-- Status: answered 2026-10-02: move to (a), expanding in place, as part of Q42. Multi-zoom goes with the rest of zoom. Built (c) in sprint 4, slice 4 (ADR 0008, amended): E expands and folds, each child shown for its group has a chip and a colored edge, and a frame lists the cards that put a group in a cell. Frames and expanding stay; multi-zoom will be removed.
+- Status: answered 2026-10-02: move to (a), expanding in place, as part of Q42. Multi-zoom goes with the rest of zoom. Built (c) in sprint 4, slice 4 (ADR 0008, amended): E expands and folds, each child shown for its group has a chip and a colored edge, and a frame lists the cards that put a group in a cell. Frames and expanding stayed; multi-zoom was removed in sprint 5 (ADR 0013).
 
 ### Q34: Nested axes
 - Context: Requirements 1, 5 and 7, Q18 and Q22, and the backlog's theme B. With components as rows, the areas above them disappear, and every card with an area but no component waits in one lane at the bottom, far from its area. Testers sort in two stages: by area first, then area by area by component.
@@ -246,19 +261,19 @@ Entry format:
 - Recommendation: nested bands with per-parent lanes, and (c) at first, then see whether people still zoom. Edge lanes hold only cards with no value at all. It's the biggest layout change since sprint 0, so it gets an ADR first.
 - Status: answered 2026-10-01: nested bands with a holding lane per parent, and (c): bands collapse and expand, and clicking a header still zooms. The session will show which one people use. Edge lanes hold only cards with no value at all. Sprint 4, slice 3, with an ADR first.
   - Built in slice 3 (ADR 0012). A parent's own lane reads "No component" or "No release" under its band, shaded like a holding lane. A collapsed band is one lane that says how much it holds ("4 components"), and its cards show the component they're in as a badge. Collapsed bands are remembered per property, so they stay collapsed when you swap axes. Zooming into a band from a component view stays a component view.
-  - 2026-10-02, PM testing: folding wins over zooming, so lane zoom goes, and one axis choice per property replaces the area and component choices (Q43).
+  - 2026-10-02, PM testing: folding wins over zooming, so lane zoom goes, and one axis choice per property replaces the area and component choices (Q43). Both done in sprint 5 (ADR 0013).
 
 ### Q35: Editing a card without pivoting
 - Context: Requirements 2, 4 and 10, and the backlog's theme C. Dragging is the fastest way to set a value on many cards, but sizing one new card means pivoting to Size, dragging, then pivoting back.
 - Options: (a) an inspector panel for the selection: every property with a picker, bulk edits for a multi-selection, and room for the description and Jira key; (b) click a badge on a card to change it in a popover; (c) both.
 - Recommendation: (a) first. It's one place for every property. It's also the home for card descriptions, which are imported but not shown yet, and later for a card's dependencies. Add (b) if testers reach for the badges. Dragging stays the way to sort many cards.
-- Status: answered 2026-10-02: (a) works well so far. Built in sprint 4, slice 1: the inspector opens from the toolbar or the I key and follows the selection until closed. A multi-value property shows as chips, with "2 of 3" on a value only some selected cards have. Clicking a linked card zooms to it and selects it.
+- Status: answered 2026-10-02: (a) works well so far. Built in sprint 4, slice 1: the inspector opens from the toolbar or the I key and follows the selection until closed. A multi-value property shows as chips, with "2 of 3" on a value only some selected cards have. Clicking a linked card shows it on the board and selects it; since sprint 5 that expands the groups around it rather than zooming.
 
 ### Q36: Double-click does three jobs
 - Context: Requirements 10 and 12, and the backlog's theme C. Double-click creates a card in empty space, renames a card, and zooms into a group. So testers can't find how to rename a group. Enter on a selected group renames it, but nobody finds that. The sprint 1 plan listed this as a risk, with this fallback.
 - Options: (a) double-click always renames, and group cards get a small zoom button, with ⌘↓ still zooming; (b) double-clicking the title renames and double-clicking the rest of the card zooms; (c) keep it as it is, and add F2 and a line in the help.
 - Recommendation: (a). One meaning everywhere, and zooming gets a visible control. Faded copies, which can't be renamed, would still zoom on double-click.
-- Status: answered 2026-10-02: superseded by Q42. Zooming into a group goes away, so double-click keeps one job (rename), and the child count, which opened the group, can expand it instead. Built (a) in sprint 3, slice 1, with the child count as the zoom button ("4 ›").
+- Status: answered 2026-10-02: superseded by Q42. Built (a) in sprint 3, slice 1, with the child count as the zoom button ("4 ›"). In sprint 5 zooming into a group went away: double-click keeps one job (rename), and the child count expands the group instead.
 
 ### Q37: Can a dependency loop be created?
 - Context: Requirements 15 and 19. A before B and B before A can never both be satisfied.
@@ -282,13 +297,13 @@ Entry format:
 - Context: Requirements 16, 17 and 20, and Q12. Time-based checks are judged at the level the view shows, and a view by size or team doesn't judge order at all. So "every active conflict" depends on the view.
 - Options: (a) the panel follows the view: it lists what the board in front of you highlights, and in a view with no time axis it says to pivot to a time view to check order and contention; loops and group mismatches show in every view; (b) the panel always checks the whole plan at one plan-wide level, whatever the view.
 - Recommendation: (a), so the panel never names a conflict the board doesn't show.
-- Status: answered 2026-10-01: (a). For the conflicts sprint (sprint 5 candidate).
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 6 candidate.
 
 ### Q41: What brings a reviewed conflict back?
 - Context: Requirement 19: a reviewed conflict "stays suppressed until an involved item moves".
 - Options: (a) any relevant change: an involved card's values that the check uses change (its time or components, for contention), or a card joins or leaves the conflict; (b) only a change to the cards it was reviewed with; (c) never, until someone un-reviews it.
 - Recommendation: (a). A fourth card on a component reviewed at three is a new situation. The note stays attached, so the earlier reasoning is still visible.
-- Status: answered 2026-10-01: (a). For the conflicts sprint (sprint 5 candidate).
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 6 candidate.
 
 ### Q42: Replace zooming with expand and fold
 - Context: Requirements 7, 10, 11 and 12, Q20, Q33, Q34 and Q36, and the backlog's theme G. Sprint 4 left four ways to see detail: zooming into a group, zooming into a lane, expanding in place, and folding bands. In PM testing, expanding and folding did what zooming did, kept the rest of the board and its links in view, and were easier to find than zooming out with Esc. Zooming is also how you add the first card inside a group and move a card out of one, so those need new homes.
@@ -300,8 +315,8 @@ Entry format:
   - **Moving a card out:** while a card that's in a group is dragged, a "Move out of X" strip appears at the top of the board, and dropping there moves it up a level.
   - **Inspector fallbacks:** a Group field moves the selected cards into a group or out to the top level, for targets that aren't on screen. "Add a card inside" adds a child to the selected card.
   - **Zoom goes:** group zoom, multi-zoom, lane zoom (Q43), the zoom bar's breadcrumb, and its drop-to-move-out. The group's own values, which the zoom bar showed (Q19), are in the inspector.
-  - Zoom removed in slice 3 (ADR 0013), along with lane zoom (Q43). "Show it on the board" in the inspector expands the groups around a card. A new card made by double-clicking is always at the top level; "Add a card inside" makes children.
   - Built in sprint 5, slice 2, all but zoom's removal (slice 3). The hold delay is 0.5 s; the target gets a dashed outline, and the dragged card says "Put inside …". A card can't go inside itself, anything inside it, or the group it's already in. After a nest, the card leaves the board if its new group is folded, and the group is selected instead, so Delete can't reach a card you can't see. Double-clicking a frame's group expands it. The Group field searches every card by title, and each match says which groups it's in, so two cards with one title can be told apart. "Add a card inside" names the new card "New card" with its title ready to type over, and it takes the parent's values on the two axes shown.
+  - Zoom removed in slice 3 (ADR 0013), along with lane zoom (Q43). "Show it on the board" in the inspector expands the groups around a card. A new card made by double-clicking is always at the top level; "Add a card inside" makes children.
 
 ### Q43: One axis choice per property
 - Context: Requirements 1 and 7, Q34, and the backlog's theme G. With bands (ADR 0012), "System (area)" and "System (component)" show the same thing at two depths, and folding moves between them.

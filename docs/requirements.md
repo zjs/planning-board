@@ -40,7 +40,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 | Time → Release | Built-in, ordered, hierarchical | Checked against dependencies; contention measured here |
 | Team, Customer, Theme, etc. | Custom select or tag, any depth | None; usable as axes and filters |
 
-**View.** A choice of X and Y axes, each a property at some level of its hierarchy. Other properties show as attributes on the card. Every view has holding lanes along its right and bottom edges for cards with no value on one or both axes yet.
+**View.** A choice of X and Y axes, each a property, with its hierarchy folded or unfolded to the depth wanted. Other properties show as attributes on the card. Every view has holding lanes along its right and bottom edges for cards with no value on one or both axes yet.
 
 **Folding and expanding.** Seeing one level further down a hierarchy, without leaving the board: unfolding a property's band (area → service, quarter → release), or expanding a group in place to show its children (Q42, Q43). These replace zooming, which hid the rest of the board.
 
@@ -73,7 +73,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 **Relationships and conflicts**
 
 15. Users can draw dependency links between items, including between items at different group levels. Out-of-order links are always drawn; the others are drawn only for the hovered or selected card, upstream and downstream (Q14). A link is drawn by selecting the prerequisite, then the dependent, and pressing L (Q24). Pressing L again removes it. With one card selected, L starts a link that can be finished on any card, so cards at different group levels can be linked. A link to a card inside a collapsed group is drawn to the group (Q38). Loops are allowed and flagged (Q37). Cards can also be linked as "related", which implies no order and is never flagged (Q44). Hovering a card shows its other copies, and the links from all of them (Q45).
-16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later bucket in a time view. A time view judges at the level it shows, quarters or releases (Q12).
+16. The tool highlights a dependency when the prerequisite is placed after its dependent: to its right in a sequence view, or in a later lane in a time view. A time view judges by the lanes it shows, so a folded quarter is one bucket and an unfolded one is a bucket per release (Q12, Q43).
 17. The tool highlights a component when more items touch it in one time bucket than its concurrency limit allows. No limit applies until a user sets one, per component or as a plan default.
 18. Conflicts inside a collapsed group are visible on the group card. The group's ⚠ count includes out-of-order links and loops inside it.
 19. The tool never blocks a placement because of a conflict. Users can mark a specific conflict as reviewed, with a note; it stays suppressed until an involved item moves, meaning a change to an involved card's checked values, or a card joining or leaving the conflict (Q41).

@@ -11,7 +11,54 @@ How things flow:
 
 Each feedback item says where and when it came from. Themes are generalized from the feedback rather than copied, so one theme can answer several requests.
 
-## Themes
+## Open themes
+
+Themes with work still to do. Each says where it lands.
+
+### F. Links other than "comes before"
+
+Dependencies have one type: A comes before B (requirement 15). Plans also have looser relationships that people want to see without implying any order.
+
+**Feedback** (PM testing, 2026-10-02):
+
+- *"Related to" links.* "We may need other types of links, including 'related to' rather than just 'comes before' and 'comes after'. Perhaps these could also be shown as dotted or dashed lines without arrows", styled differently from the lines joining a card's copies.
+
+**Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
+
+**Lands:** sprint 6 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02).
+
+### H. Arranging and moving cards
+
+Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.
+
+**Feedback** (PM testing, 2026-10-02):
+
+- *Order within a cell.* "When sequence isn't an active dimension, could it be used to sort cards within a cell, and to allow them to be re-arranged within a cell? (Instead of sorting alphabetically?)"
+- *Dragging a selection.* "It'd be useful to be able to multi-select and then drag-and-drop."
+- *Moving between groups.* "The inspect panel simplifies a variety of editing operations, but moving items out of a group or between two groups is still a little cumbersome."
+
+**Generalization:**
+
+- **A card's place within a cell** is an order the plan keeps, one for the whole plan rather than one per view, which stays out of scope. The catch is that sequence is already a layout: its keys define the sequence view's columns. → [Q46](questions.md#q46-order-within-a-cell)
+- **Dragging a selection** moves every selected card, with the same drop rules as one card. → [Q48](questions.md#q48-dragging-several-cards)
+- **Moving a card into a group is a drag:** hold it over the group to put it inside, or drop it on a "Move out" strip. A Group field in the inspector is the fallback for targets that aren't on screen. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
+
+**Lands:** moving between groups shipped in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are open, and sprint 6 candidates.
+
+### D. Small fixes
+
+No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
+
+| Item | Source | Lands |
+|---|---|---|
+| Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
+| Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
+| Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
+| Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
+
+## Shipped themes
+
+Kept for the record: the feedback behind each, and how it was generalized.
 
 ### A. The card hierarchy is invisible on the board
 
@@ -69,19 +116,7 @@ A card in several lanes has a copy in each (requirement 3). On a board the size 
 
 **Generalization:** a card is one thing however many copies it has. Hovering any copy shows every copy, joined by a dashed line without arrows, along with the links from all of them. → [Q45](questions.md#q45-showing-a-cards-copies)
 
-**Lands:** sprint 5 ([`docs/sprint-5.md`](sprint-5.md), slice 4).
-
-### F. Links other than "comes before"
-
-Dependencies have one type: A comes before B (requirement 15). Plans also have looser relationships that people want to see without implying any order.
-
-**Feedback** (PM testing, 2026-10-02):
-
-- *"Related to" links.* "We may need other types of links, including 'related to' rather than just 'comes before' and 'comes after'. Perhaps these could also be shown as dotted or dashed lines without arrows", styled differently from the lines joining a card's copies.
-
-**Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
-
-**Lands:** sprint 6 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02).
+**Lands:** shipped in sprint 5 ([`docs/sprint-5.md`](sprint-5.md), slice 4).
 
 ### G. One way to look deeper: expand and fold, not zoom
 
@@ -103,38 +138,12 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 - **Expand and fold are separate actions**, so an expanded group's children can be expanded in turn. This fixes the bug. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
 - **Select every card that matches**, so a bulk expand is: select every initiative, then Expand. → [Q47](questions.md#q47-selecting-every-card-that-matches)
 
-**Lands:** sprint 5 (slices 2 and 3), including the bug and selecting every match (Q47).
+**Lands:** shipped in sprint 5 (slices 2 and 3), including the bug fix and selecting every match (Q47).
 
-### H. Arranging and moving cards
+## Sprints
 
-Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.
+Sprints 3, 4 and 5 await the PM's acceptance and one combined tester session.
 
-**Feedback** (PM testing, 2026-10-02):
-
-- *Order within a cell.* "When sequence isn't an active dimension, could it be used to sort cards within a cell, and to allow them to be re-arranged within a cell? (Instead of sorting alphabetically?)"
-- *Dragging a selection.* "It'd be useful to be able to multi-select and then drag-and-drop."
-- *Moving between groups.* "The inspect panel simplifies a variety of editing operations, but moving items out of a group or between two groups is still a little cumbersome."
-
-**Generalization:**
-
-- **A card's place within a cell** is an order the plan keeps, one for the whole plan rather than one per view, which stays out of scope. The catch is that sequence is already a layout: its keys define the sequence view's columns. → [Q46](questions.md#q46-order-within-a-cell)
-- **Dragging a selection** moves every selected card, with the same drop rules as one card. → [Q48](questions.md#q48-dragging-several-cards)
-- **Moving a card into a group is a drag:** hold it over the group to put it inside, or drop it on a "Move out" strip. A Group field in the inspector is the fallback for targets that aren't on screen. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
-
-**Lands:** moving between groups in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are sprint 6 candidates.
-
-### D. Small fixes
-
-No decision needed. Each one goes into the next sprint. The first two shipped in sprint 3.
-
-| Item | Source | Lands |
-|---|---|---|
-| Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
-| Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
-| Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
-| Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Sprint 5, slice 2 |
-
-## Planned next
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
 - **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35).
@@ -150,6 +159,16 @@ Already out of scope, listed here so they're in one place: scenarios (22–24); 
 
 ## Housekeeping
 
-- **Plan file compatibility, as a CI gate.** Shipped in sprint 5, slice 1. "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.) Plan files and browser boards from every released build, sprints 0 to 4, are fixtures that `npm run check` opens, so a break fails CI. Each release adds its own (ADR 0005).
-- Check the app in Firefox and Safari. It's been open since sprint 1, and it matters more now that the app is public.
-- Fold in the sprint 1 and 2 session notes, and any tester reactions to the open questions, as they arrive.
+Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housekeeping.md`](housekeeping.md) says when each kind is done.
+
+**Open**
+
+- **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
+- **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02).
+- **Node 24 in CI.** CI and the docs use Node 22, which is supported until April 2027 _(recalled)_. Move to Node 24, the current LTS, in a maintenance pass well before then, and check the build and tests on it.
+- **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–5 session, as they arrive.
+
+**Done**
+
+- **Plan file compatibility, as a CI gate** (sprint 5, slice 1). "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.) Plan files and browser boards from every released build are fixtures that `npm run check` opens, so a break fails CI. Each release adds its own (ADR 0005); sprint 5's were added in the 2026-10-02 housekeeping pass.
+- **Housekeeping pass, 2026-10-02:** dependencies updated within their ranges, CI actions moved to their current majors (checkout and setup-node v6, upload-artifact v7, upload-pages-artifact v5), and CI builds now download as a single `.html` file with no zip. The README, the help panel, `questions.md` and this backlog were brought up to date.

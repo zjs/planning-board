@@ -11,7 +11,7 @@ Sprint 4 left five overlapping ways to look deeper into a plan. Moving a card be
 
 The app is one HTML file, with nothing to install and no server.
 
-- **Latest `main`:** https://zjs.github.io/planning-board/. Every merge to `main` publishes there. Each CI run also attaches the same file as the `planning-board-<commit>` artifact.
+- **Latest `main`:** https://zjs.github.io/planning-board/. Every merge to `main` publishes there. Each CI run also attaches the same file, unzipped, as `planning-board-<commit>.html`.
 - **For testers:** send them the link, or the downloaded `index.html`.
 
 Your board is saved in the browser you open it in. **File › Reset board**, then **Load the sample plan**, starts fresh. If your browser last showed "System (component)", System opens with its areas unfolded. **Fold all** brings it back to areas.
