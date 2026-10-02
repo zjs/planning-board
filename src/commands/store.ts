@@ -7,7 +7,7 @@ import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from 
 import { hasLink, linkProblem } from '../domain/dependencies.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { planValueEdit, type ValueEdit } from '../domain/inspector.ts';
-import { cleanTitle, deletionOf, valuesForNewItem } from '../domain/items.ts';
+import { cleanTitle, deletionOf, valuesForChild, valuesForNewItem } from '../domain/items.ts';
 import type { Dependency, ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
 import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
 import {
@@ -177,6 +177,22 @@ export function createItem(
   const clean = cleanTitle(title);
   if (clean === null) return null;
   const { sequence, values } = valuesForNewItem(readPlan(store.doc), view, target);
+  const id = newItemId();
+  edit(store, () =>
+    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, values })),
+  );
+  return id;
+}
+
+/**
+ * Add a card inside `parent`, which becomes a group if it wasn't one, with
+ * the parent's values on the view's axes (`valuesForChild`). One undo step.
+ */
+export function createChild(store: PlanStore, view: ViewSpec, parent: ItemId, title: string): ItemId | null {
+  const clean = cleanTitle(title);
+  const item = readPlan(store.doc).items[parent];
+  if (clean === null || !item) return null;
+  const { sequence, values } = valuesForChild(item, view);
   const id = newItemId();
   edit(store, () =>
     root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, values })),

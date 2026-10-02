@@ -100,9 +100,25 @@ export async function dragTo(page: Page, from: Locator, to: Locator, opts: { alt
   if (opts.alt) await page.keyboard.up('Alt');
 }
 
-/** Zoom into a group: select it, then click its count (Q36: double-click renames). */
+/** Zoom into a group: select it, then ⌘↓ (its count expands it in place instead, Q42). */
 export async function openGroup(group: Locator) {
   await reveal(group);
   await group.locator('.card-title').click();
-  await group.getByRole('button', { name: /^Open / }).click();
+  await group.page().keyboard.press('Control+ArrowDown');
+}
+
+/**
+ * Start dragging `from` and rest it over `to` long enough to nest (hold to
+ * nest, about half a second). Leaves the mouse down: the caller drops.
+ */
+export async function holdOver(page: Page, from: Locator, to: Locator, ms = 800) {
+  await reveal(from);
+  const a = (await from.boundingBox())!;
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(a.x + a.width / 2 + 10, a.y + a.height / 2 + 10, { steps: 3 });
+  await reveal(to);
+  const b = (await to.boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 });
+  await page.waitForTimeout(ms);
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
-import { laneKeyOf, layoutView, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
+import { laneKeyOf, layoutView, shownInside, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
 
 const seqBySystem: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -334,5 +334,24 @@ describe('children in context (Q33)', () => {
     ]);
     // One root is the usual zoom: no marks needed.
     expect(refs(layoutView(p, { ...timeBySystem, roots: ['epic'] })).every((r) => r.parent === undefined)).toBe(true);
+  });
+});
+
+describe('shownInside', () => {
+  const p = plan(item('init'), item('epic', { parent: 'init' }), item('story', { parent: 'epic' }), item('other'));
+
+  it('is true for the level the view shows, and inside expanded groups on it', () => {
+    expect(shownInside(p, timeBySystem, null)).toBe(true);
+    expect(shownInside(p, timeBySystem, 'init')).toBe(false);
+    expect(shownInside(p, { ...timeBySystem, expanded: ['init'] }, 'init')).toBe(true);
+    // An expanded epic inside a folded initiative isn't on the board.
+    expect(shownInside(p, { ...timeBySystem, expanded: ['epic'] }, 'epic')).toBe(false);
+    expect(shownInside(p, { ...timeBySystem, expanded: ['init', 'epic'] }, 'epic')).toBe(true);
+  });
+
+  it('follows a zoom', () => {
+    expect(shownInside(p, { ...timeBySystem, root: 'init' }, 'init')).toBe(true);
+    expect(shownInside(p, { ...timeBySystem, root: 'init' }, null)).toBe(false);
+    expect(shownInside(p, { ...timeBySystem, roots: ['init', 'other'] }, 'other')).toBe(true);
   });
 });

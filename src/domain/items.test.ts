@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
-import { cleanTitle, deletionOf, valuesForNewItem } from './items.ts';
+import { cleanTitle, deletionOf, valuesForChild, valuesForNewItem } from './items.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
 import type { ViewSpec } from './view.ts';
 
@@ -78,5 +78,21 @@ describe('cleanTitle', () => {
   it('trims and collapses whitespace, and treats blank as nothing', () => {
     expect(cleanTitle('  Passwordless\n login ')).toBe('Passwordless login');
     expect(cleanTitle('   ')).toBeNull();
+  });
+});
+
+describe('valuesForChild', () => {
+  const epic = item('epic', { sequence: 'a3', values: { [SYSTEM]: ['id/sso'], [TIME]: ['q2'], [SIZE]: ['l'] } });
+
+  it("copies the parent's values on the view's axes, and nothing else", () => {
+    const seq: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
+    expect(valuesForChild(epic, seq)).toEqual({ sequence: 'a3', values: { [SYSTEM]: ['id/sso'] } });
+    const time: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SIZE, level: 0 } };
+    expect(valuesForChild(epic, time)).toEqual({ sequence: null, values: { [TIME]: ['q2'], [SIZE]: ['l'] } });
+  });
+
+  it('leaves an axis empty where the parent has no value', () => {
+    const seq: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
+    expect(valuesForChild(item('plain'), seq)).toEqual({ sequence: null, values: {} });
   });
 });

@@ -91,7 +91,7 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await expect(card(page, 'eu-invoice-storage').locator('.parent-chip')).toHaveText('EU data residency');
   await expect(card(page, 'usage-dashboard').locator('.parent-chip')).toHaveText('Usage-based pricing');
   await select(page, 'usage-dashboard');
-  await page.keyboard.press('e');
+  await page.keyboard.press('Shift+E');
   await expect(card(page, 'usage-based-pricing').first()).toBeVisible();
 
   // 8. Zoom into two groups at once.
@@ -103,7 +103,7 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await toPlan(page);
   // Fold EU back, so its frames show.
   await select(page, 'eu-invoice-storage');
-  await page.keyboard.press('e');
+  await page.keyboard.press('Shift+E');
 
   // 9. A faded copy is a frame around the cards that put it there; dragging one changes that card.
   await pickAxes(page, 'time', 'system');

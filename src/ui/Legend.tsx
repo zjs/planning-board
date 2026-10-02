@@ -50,6 +50,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dd>Drop there to open a new position. Columns have no numbers on purpose.</dd>
         <dt>Lanes along the right and bottom edges</dt>
         <dd>Cards missing a column (right), a row (bottom), or both (corner). Drop there to clear a value.</dd>
+        <dt>Hold a card over another</dt>
+        <dd>
+          After a moment it highlights: drop to put the card inside it, keeping its values. Dragging a card that's in a
+          group shows a strip at the top that moves it out a level.
+        </dd>
       </dl>
       </section>
       <section>
@@ -57,8 +62,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Click to select</dt>
         <dd>
-          <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>Delete</kbd> removes the
-          selection, and everything inside a group.
+          <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>⇧ Shift</kbd>-click a badge,
+          such as Initiative, or a row or column header, to select every card that matches; <kbd>{keys.selectAll}</kbd>{' '}
+          selects them all. <kbd>Delete</kbd> removes the selection, and everything inside a group.
         </dd>
         <dt>Double-click empty space</dt>
         <dd>
@@ -75,8 +81,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Select groups, press <kbd>{keys.expand}</kbd>
         </dt>
         <dd>
-          What's inside shows right here, each card marked with its group. <kbd>{keys.expand}</kbd> on one of them folds
-          the group back.
+          What's inside shows right here, each card marked with its group, and groups inside expand the same way. A
+          selected group's count <span className="legend-chip"><span className="child-count">4</span>›</span> does it
+          too. <kbd>{keys.fold}</kbd> on a card folds its group back.
         </dd>
       </dl>
       </section>
@@ -84,8 +91,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <h3>Zooming</h3>
       <dl>
         <dt>
-          Select a group and click its count <span className="legend-chip"><span className="child-count">4</span>›</span>, or{' '}
-          <kbd>{keys.zoomIn}</kbd>
+          Select a group, press <kbd>{keys.zoomIn}</kbd>
         </dt>
         <dd>
           Shows only what's inside; new cards go inside. Select several groups to see all of them. Drag a card onto
@@ -133,7 +139,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
         </dt>
         <dd>
           Every property of the selected cards, editable without pivoting; select several to change them all at once.
-          Also a card's description and its links.
+          Also a card's description, its group, and its links, and a way to add a card inside it.
         </dd>
         <dt>Properties</dt>
         <dd>
@@ -150,7 +156,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <dt>Dashed frames</dt>
         <dd>
           A group, shown wherever the cards inside it are, around those cards. Drag them as usual; double-click the
-          group to zoom in.
+          group to expand it.
         </dd>
         <dt>
           <span className="mismatch">⚠</span> markers

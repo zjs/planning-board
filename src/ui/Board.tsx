@@ -9,7 +9,7 @@ import type { Band, CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.t
 import type { Mismatches } from '../domain/mismatches.ts';
 import { Card, DraftCard } from './Card.tsx';
 import { DependencyLines, type DrawnLine } from './DependencyLines.tsx';
-import { isParentTarget, type BoardTarget } from './useCardDrag.ts';
+import { isCellTarget, isIntoTarget, type BoardTarget } from './useCardDrag.ts';
 
 interface Props {
   plan: Plan;
@@ -35,8 +35,8 @@ interface Props {
   /** A title being typed: a new card at a spot, or a rename of one copy. */
   editing: Editing | null;
   onCardDoubleClick: (card: CardRef) => void;
-  /** The zoom button on a group card. */
-  onCardZoom: (card: CardRef) => void;
+  /** The child count on a group card, which expands it. */
+  onCardExpand: (card: CardRef) => void;
   /** Double-click on empty space in a cell or holding lane. */
   onSpotDoubleClick: (spot: DropTarget) => void;
   onCommitEdit: (title: string) => void;
@@ -50,6 +50,10 @@ interface Props {
   onLaneZoom: (which: 'x' | 'y', key: string) => void;
   /** Collapse or expand a band on a nested axis (ADR 0012). */
   onBandToggle: (which: 'x' | 'y', key: string) => void;
+  /** ⇧-click on a lane or band header: select every card in lanes `start` up to `end` (Q47). */
+  onSelectLanes: (which: 'x' | 'y', start: number, end: number) => void;
+  /** ⇧-click on a card's badge: select every card on the board with that value (Q47). */
+  onSelectMatching: (property: string, value: string) => void;
   /** The level each axis shows, such as "component", for a collapsed lane's "4 components". */
   levelNames: { x: string; y: string };
   scrollRef: RefObject<HTMLDivElement | null>;
@@ -159,7 +163,7 @@ export const Board = memo(function Board({
   selected,
   editing,
   onCardDoubleClick,
-  onCardZoom,
+  onCardExpand,
   onSpotDoubleClick,
   onCommitEdit,
   onCancelEdit,
@@ -167,6 +171,8 @@ export const Board = memo(function Board({
   zoomableLanes,
   onLaneZoom,
   onBandToggle,
+  onSelectLanes,
+  onSelectMatching,
   levelNames,
   mismatches,
 }: Props) {
@@ -216,6 +222,13 @@ export const Board = memo(function Board({
       )}
     </span>
   );
+  /** ⇧-click anywhere on a header selects its lanes' cards, before the click can zoom or fold. */
+  const selectOnShift = (which: 'x' | 'y', start: number, end: number) => (e: MouseEvent<HTMLElement>) => {
+    if (!e.shiftKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onSelectLanes(which, start, end);
+  };
   const boardRef = useRef<HTMLDivElement>(null);
   const renaming = renameCopy(layout, editing);
   const isDraftSpot = (row: string | null, column: string | null) =>
@@ -254,6 +267,7 @@ export const Board = memo(function Board({
         attributes={attributes.get(ref.itemId) ?? []}
         selected={selected.has(ref.itemId)}
         lifted={lifted !== null && sameCopy(lifted, ref)}
+        nestTarget={isIntoTarget(target) && target.into === ref.itemId}
         justMoved={justMoved === ref.itemId}
         editing={renaming !== null && sameCopy(renaming, ref)}
         viaChildren={ref.via === 'children'}
@@ -261,9 +275,10 @@ export const Board = memo(function Board({
         mismatchesInside={mismatches.inside.get(ref.itemId) ?? NONE}
         // A faded copy isn't the group's own value, so it can be clicked but not dragged (Q16).
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title, ref.via !== 'children')}
-        // A card in a frame isn't on the board's level: double-click opens its group, like the frame's header.
+        // A card in a frame isn't on the board's level: double-click expands its group, like the frame's header.
         onDoubleClick={() => onCardDoubleClick(frame ?? ref)}
-        onZoom={(counts.get(ref.itemId) ?? 0) > 0 ? () => onCardZoom(ref) : undefined}
+        onExpand={(counts.get(ref.itemId) ?? 0) > 0 ? () => onCardExpand(ref) : undefined}
+        onSelectMatching={onSelectMatching}
         onRename={onCommitEdit}
         onCancelEdit={onCancelEdit}
       />
@@ -307,7 +322,7 @@ export const Board = memo(function Board({
   ].join(' ');
 
   const isTarget = (row: string | null, column: string | null) =>
-    target !== null && !isParentTarget(target) && target.x === column && target.y === row;
+    isCellTarget(target) && target.x === column && target.y === row;
   // Sequence lanes stay unnumbered even for screen readers (requirement 6).
   const trackName = (t: Track, axis: string) =>
     t.kind === 'gap' ? `new ${axis.toLowerCase()} position` : (t.lane.label ?? `${axis} column`);
@@ -423,6 +438,7 @@ export const Board = memo(function Board({
           className={band.collapsed ? 'band band-y collapsed' : 'band band-y'}
           data-band={band.key}
           style={{ ...left, gridRow: `span ${band.end - band.start}` }}
+          onClickCapture={selectOnShift('y', band.start, band.end)}
         >
           {bandHeader('y', band)}
         </div>
@@ -474,6 +490,7 @@ export const Board = memo(function Board({
                   className={b.collapsed ? 'band band-x collapsed' : 'band band-x'}
                   data-band={b.key}
                   style={{ gridColumn: `span ${b.end - b.start}`, top: `calc(var(--band-height) * ${depth})` }}
+                  onClickCapture={selectOnShift('x', b.start, b.end)}
                 >
                   {bandHeader('x', b)}
                 </div>
@@ -488,6 +505,7 @@ export const Board = memo(function Board({
                 className={t.lane.kind ? `column-header lane-${t.lane.kind}` : 'column-header'}
                 data-column={t.lane.key}
                 style={xDepth > 0 ? { top: `calc(var(--band-height) * ${xDepth})` } : undefined}
+                onClickCapture={selectOnShift('x', t.index, t.index + 1)}
               >
                 {laneHeader('x', t.lane)}
               </div>
@@ -511,6 +529,7 @@ export const Board = memo(function Board({
                 className={row.lane.kind ? `row-header lane-${row.lane.kind}` : 'row-header'}
                 data-row={row.lane.key}
                 style={yDepth > 0 ? { left: `calc(var(--band-width) * ${yDepth})` } : undefined}
+                onClickCapture={selectOnShift('y', row.index, row.index + 1)}
               >
                 {laneHeader('y', row.lane)}
               </div>

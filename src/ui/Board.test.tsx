@@ -26,7 +26,9 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       selected={new Set()}
       editing={null}
       onCardDoubleClick={() => undefined}
-      onCardZoom={() => undefined}
+      onSelectLanes={() => undefined}
+      onSelectMatching={() => undefined}
+      onCardExpand={() => undefined}
       lines={[]}
       onHover={() => undefined}
       onLineClick={() => undefined}

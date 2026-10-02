@@ -27,15 +27,15 @@ Scope: single user, browser only, no server.
 
 ### 2. Expand, fold, nest, and select (Q42, Q47)
 
-- [ ] **Expand and fold are separate actions.** **E** expands the selected groups at any depth, so an epic inside an expanded initiative expands too. **⇧E** folds the groups of the selected cards. A selected group's child count ("4 ›") expands it, and double-clicking a frame's group expands it.
-- [ ] **Hold to nest.**
+- [x] **Expand and fold are separate actions.** **E** expands the selected groups at any depth, so an epic inside an expanded initiative expands too. **⇧E** folds the groups of the selected cards. A selected group's child count ("4 ›") expands it, and double-clicking a frame's group expands it.
+- [x] **Hold to nest.**
   - Drag a card over another card and hold for about half a second. The target highlights, "Put inside *Passwordless login*", and dropping makes the dragged card its child. A quick drop still goes into the cell.
   - Nesting changes only the card's group, never its values, and a notice offers Undo.
   - It works on a plain card too, which gets its first child.
   - A drop that would put a card inside itself isn't allowed.
-- [ ] **Move out.** While a card that's in a group is dragged, a "Move out of *EU data residency*" strip appears at the top of the board. Dropping there moves the card up one level.
-- [ ] **Inspector fallbacks.** A **Group** field, which you can type into to search, moves the selected cards into a group or out to the top level. **Add a card inside** makes a child of the selected card, expands it, and opens the new card for naming.
-- [ ] **Select every card that matches.** ⇧-click a badge on any card, such as "Initiative", to select every card on the board with that value, in any pivot. ⇧-click a row or column header to select its lane. **⌘A** selects every card on the board.
+- [x] **Move out.** While a card that's in a group is dragged, a "Move out of *EU data residency*" strip appears at the top of the board. Dropping there moves the card up one level.
+- [x] **Inspector fallbacks.** A **Group** field, which you can type into to search, moves the selected cards into a group or out to the top level. **Add a card inside** makes a child of the selected card, expands it, and opens the new card for naming.
+- [x] **Select every card that matches.** ⇧-click a badge on any card, such as "Initiative", to select every card on the board with that value, in any pivot. ⇧-click a row or column header to select its lane. **⌘A** selects every card on the board.
 
 ### 3. Zoom goes; one axis choice per property (Q42, Q43)
 

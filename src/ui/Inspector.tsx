@@ -4,7 +4,7 @@ import { compareTreeOrder, depthOf, pathTo } from '../domain/hierarchy.ts';
 import { ownLinks, selectionValues, type FieldValue, type ValueEdit } from '../domain/inspector.ts';
 import type { Dependency, ItemId, Plan, SelectProperty, ValueId } from '../domain/model.ts';
 import { propertiesInOrder } from '../domain/properties.ts';
-import { ancestry } from '../domain/tree.ts';
+import { ancestry, canNest } from '../domain/tree.ts';
 
 interface Props {
   store: PlanStore;
@@ -18,6 +18,10 @@ interface Props {
   onReveal: (id: ItemId) => void;
   /** Say what just happened, with an Undo for it. */
   onNotice: (text: string) => void;
+  /** Move cards into a group, or to the top level for null. */
+  onMove: (ids: ItemId[], parent: ItemId | null) => void;
+  /** Add a card inside this one, expand it, and start naming the new card. */
+  onAddInside: (id: ItemId) => void;
 }
 
 /**
@@ -25,7 +29,7 @@ interface Props {
  * cards, editable without pivoting, plus a single card's title,
  * description, Jira key and links. Edits apply to every selected card.
  */
-export function Inspector({ store, plan, selected, mismatches, onClose, onReveal, onNotice }: Props) {
+export function Inspector({ store, plan, selected, mismatches, onClose, onReveal, onNotice, onMove, onAddInside }: Props) {
   const ids = selected.filter((id) => plan.items[id]);
   const single = ids.length === 1 ? plan.items[ids[0]!]! : null;
   const properties = propertiesInOrder(plan).filter((p): p is SelectProperty => p.kind === 'select');
@@ -70,6 +74,7 @@ export function Inspector({ store, plan, selected, mismatches, onClose, onReveal
       )}
       {ids.length > 0 && (
         <dl className="inspector-fields">
+          <GroupField plan={plan} ids={ids} onMove={onMove} />
           {properties.map((property) => (
             <PropertyField
               key={property.id}
@@ -83,6 +88,13 @@ export function Inspector({ store, plan, selected, mismatches, onClose, onReveal
             />
           ))}
         </dl>
+      )}
+      {single && (
+        <p className="inspector-actions">
+          <button type="button" onClick={() => onAddInside(single.id)}>
+            Add a card inside
+          </button>
+        </p>
       )}
       {single && <Links store={store} plan={plan} id={single.id} onReveal={onReveal} onNotice={onNotice} />}
     </aside>
@@ -169,6 +181,75 @@ function GroupPath({ plan, id, onReveal }: { plan: Plan; id: ItemId; onReveal: (
         </span>
       ))}
     </span>
+  );
+}
+
+/** How many matches the Group field lists while you type. */
+const GROUP_MATCHES = 8;
+
+/**
+ * The selected cards' group, and a search for another one to move them
+ * into (sprint 5). The whiteboard way is to hold a card over a group; this
+ * reaches groups that aren't on screen.
+ */
+function GroupField({ plan, ids, onMove }: { plan: Plan; ids: readonly ItemId[]; onMove: (ids: ItemId[], parent: ItemId | null) => void }) {
+  const [query, setQuery] = useState('');
+  const parents = [...new Set(ids.map((id) => plan.items[id]?.parent ?? null))];
+  const current =
+    parents.length > 1 ? 'Mixed' : parents[0] === null || parents[0] === undefined ? 'Top level' : (plan.items[parents[0]]?.title ?? 'Top level');
+  const q = query.trim().toLowerCase();
+  const matches =
+    q === ''
+      ? []
+      : Object.values(plan.items)
+          .filter((item) => !ids.includes(item.id) && item.title.toLowerCase().includes(q) && ids.some((id) => canNest(plan, id, item.id)))
+          .sort((a, b) => a.title.localeCompare(b.title))
+          .slice(0, GROUP_MATCHES);
+  const move = (parent: ItemId | null) => {
+    setQuery('');
+    onMove([...ids], parent);
+  };
+  /** "In Initiative › Epic", so two groups with one title can be told apart. */
+  const where = (id: ItemId) => {
+    const above = ancestry(plan, id).slice(0, -1);
+    return above.length === 0 ? '' : `In ${above.map((g) => plan.items[g]?.title).join(' › ')}`;
+  };
+  return (
+    <>
+      <dt>Group</dt>
+      <dd className="group-field">
+        <span className="group-current">{current}</span>
+        {parents.some((p) => p !== null) && (
+          <button type="button" className="link" onClick={() => move(null)}>
+            Move to the top level
+          </button>
+        )}
+        <input
+          type="search"
+          aria-label="Move into a group"
+          placeholder="Move into…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && matches[0]) move(matches[0].id);
+            if (e.key === 'Escape') setQuery('');
+          }}
+        />
+        {q !== '' && (
+          <ul className="group-matches" aria-label="Groups to move into">
+            {matches.length === 0 && <li className="panel-hint">No card by that name to move into.</li>}
+            {matches.map((item) => (
+              <li key={item.id}>
+                <button type="button" onClick={() => move(item.id)} title={where(item.id) || undefined}>
+                  {item.title}
+                  {where(item.id) && <span className="group-where"> · {where(item.id)}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </dd>
+    </>
   );
 }
 
