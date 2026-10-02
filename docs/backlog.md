@@ -58,6 +58,71 @@ Dragging into a cell is the core bet, and it's the fastest way to sort many card
 
 **Lands:** renaming groups shipped in sprint 3 (slice 1). The inspector shipped in sprint 4, slice 1.
 
+### E. A card's copies are hard to follow
+
+A card in several lanes has a copy in each (requirement 3). On a board the size of the sample plan, the other copies are often off screen. Selecting a card highlights every copy, but you can't see the ones that aren't in view. Dependency lines go from whichever copy is closest, so a card's links can leave from different copies.
+
+**Feedback** (PM testing of sprints 3 and 4, 2026-10-02):
+
+- *Lost duplicates.* After adding Billing to *Least-privilege default role* from the inspector, the new copy was easy to lose. "Now that we have dependencies show on hover, perhaps we should consider having something happen when hovering over a card that has duplicates. Should they be connected by dotted or dashed lines, perhaps without arrows?"
+- *Links split across copies.* *Seat sync from directory* has its incoming links on one copy and its outgoing links on its Billing copy. That can carry nuance ("the Billing work comes before the pen-test remediation"), but "when hovering on one card, the links to its duplicates should probably be shown as well."
+
+**Generalization:** a card is one thing however many copies it has. Hovering any copy shows every copy, joined by a dashed line without arrows, along with the links from all of them. → [Q45](questions.md#q45-showing-a-cards-copies)
+
+**Lands:** next sprint (agreed 2026-10-02); not yet planned.
+
+### F. Links other than "comes before"
+
+Dependencies have one type: A comes before B (requirement 15). Plans also have looser relationships that people want to see without implying any order.
+
+**Feedback** (PM testing, 2026-10-02):
+
+- *"Related to" links.* "We may need other types of links, including 'related to' rather than just 'comes before' and 'comes after'. Perhaps these could also be shown as dotted or dashed lines without arrows", styled differently from the lines joining a card's copies.
+
+**Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
+
+**Lands:** next sprint (agreed 2026-10-02); not yet planned.
+
+### G. One way to look deeper: expand and fold, not zoom
+
+Sprint 4 added three ways to see more detail: zooming into a group or a lane, expanding groups in place, and folding bands. Testing suggests that expanding and folding cover what zooming did, keep the surrounding context and links in view, and are easier to discover than zooming out with Esc.
+
+**Feedback** (PM testing, 2026-10-02):
+
+- *Two pivot choices per property feel redundant.* "With the row-/column-span hierarchy in 'System (component)' or 'Time (release)', it doesn't seem necessary to include both hierarchy levels in the pivot selection process. However, it'd be helpful to have some way to fold/unfold all rows or columns."
+- *Small fold targets.* "The click target for folding/unfolding is small. If a row is folded, maybe clicking on 'N components' should unfold?"
+- *Lane zoom.* "Maybe it's no longer necessary to be able to zoom into a parent property (like component or release); unfolding seems very similar, and more powerful. Zooming reduces clutter, but essentially hides information including links. Plus, it seems easier to discover unfolding than the esc-to-zoom-out."
+- *Group zoom (Q36).* "Do we need to be able to zoom into a group at all, or could we replace this with a more complete set of functionality around 'expand'? It seems like this might not only address the double-click gesture in particular, but simplify the set of operations for users to understand."
+- *Bulk expand.* "Now that we have levels, it might be interesting to have some sort of bulk version. E.g., expand all initiatives so that we're looking at the epic-level view." Possibly by selecting every card that matches an attribute, then **Expand**.
+- *Expanding inside an expansion folds instead (bug).* Expanding an initiative and then pressing E on one of its epics folds the initiative back, because E on an expanded child means "fold its group". "Perhaps expand/contract need to be separate operations?"
+
+**Generalization:**
+
+- **Expand and fold replace zoom** for groups and for lanes. The two things only zooming does today, adding the first card inside a group and moving a card out of one, need homes of their own (theme H). → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
+- **One axis choice per property.** Folding sets the depth, with Fold all and Unfold all controls, and a click on a folded lane unfolds it. → [Q43](questions.md#q43-one-axis-choice-per-property)
+- **Expand and fold are separate actions**, so an expanded group's children can be expanded in turn. This fixes the bug. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
+- **Select every card that matches**, so a bulk expand is: select every initiative, then Expand. → [Q47](questions.md#q47-selecting-every-card-that-matches)
+
+**Lands:** direction agreed 2026-10-02 (Q42, Q43); not yet planned. The bug goes into the next sprint either way (D).
+
+### H. Arranging and moving cards
+
+Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.
+
+**Feedback** (PM testing, 2026-10-02):
+
+- *Order within a cell.* "When sequence isn't an active dimension, could it be used to sort cards within a cell, and to allow them to be re-arranged within a cell? (Instead of sorting alphabetically?)"
+- *Dragging a selection.* "It'd be useful to be able to multi-select and then drag-and-drop."
+- *Moving between groups.* "The inspect panel simplifies a variety of editing operations, but moving items out of a group or between two groups is still a little cumbersome."
+
+**Generalization:**
+
+- **A card's place within a cell** is an order the plan keeps, one for the whole plan rather than one per view, which stays out of scope. The catch is that sequence is already a layout: its keys define the sequence view's columns. → [Q46](questions.md#q46-order-within-a-cell)
+- **Dragging a selection** moves every selected card, with the same drop rules as one card. → [Q48](questions.md#q48-dragging-several-cards)
+- **A card's group is a property you can edit.** A Group picker in the inspector moves cards into a group, between groups, or out to the top. With zoom gone (Q42), it's also the main way to move cards between groups. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
+
+**Lands:** not yet planned.
+
 ### D. Small fixes
 
 No decision needed. Each one goes into the next sprint. The first two shipped in sprint 3.
@@ -67,12 +132,16 @@ No decision needed. Each one goes into the next sprint. The first two shipped in
 | Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
 | Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Sprint 3, slice 1 |
 | Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
+| Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Next sprint |
 
 ## Planned next
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36). Its tester session (`docs/demos/sprint-3-session.md`) feeds sprint 4.
 - **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35). Its tester session (`docs/demos/sprint-4-session.md`) feeds sprint 5.
-- **Sprint 5 candidate:** component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).
+- **Sprint 5: not yet planned** (PM, 2026-10-02: record the sprint 3 and 4 feedback first, then plan in a separate session). The candidates:
+  - themes E–H: copies on hover, "related to" links, expand and fold instead of zoom, and arranging and moving cards;
+  - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41);
+  - the plan file compatibility tests (Housekeeping).
 
 ## Deferred, from earlier sprints
 
@@ -80,5 +149,9 @@ Already out of scope, listed here so they're in one place: scenarios (22–24); 
 
 ## Housekeeping
 
+- **Plan file compatibility, as a CI gate.** "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.)
+  - Today: unit tests round-trip the current format, and Level is filled in for older files (ADR 0005). There's no fixture saved by an earlier build.
+  - Plan: commit a plan file from each released version, starting with sample plans from sprints 0 to 4 out of git history, and test that every one opens and saves cleanly. Boards kept in browser storage get the same check through the store.
+  - It runs in `npm run check`, so it blocks CI. Engineering decision, scheduled first in the next sprint.
 - Check the app in Firefox and Safari. It's been open since sprint 1, and it matters more now that the app is public.
 - Fold in the sprint 1 and 2 session notes, and any tester reactions to the open questions, as they arrive.
