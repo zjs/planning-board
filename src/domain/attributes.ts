@@ -30,7 +30,7 @@ export function badgeProperties(plan: Plan): SelectProperty[] {
 
 /** A value on a nested axis that's in a collapsed parent's lane, so the board doesn't show it. */
 const folded = (property: SelectProperty, axis: AxisSpec, value: string) =>
-  axis.level > 0 && !axis.within && laneKeyOf(property, value, axis) !== value;
+  axis.level > 0 && laneKeyOf(property, value, axis) !== value;
 
 /**
  * Badges for one card. A property on an axis gets a badge only for values

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   addDependency,
   createChild,
@@ -39,32 +39,27 @@ import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import { cardsOnBoard, laneCards, matchingCards } from '../domain/selecting.ts';
 import { ancestry, canNest, childCounts, childrenOf } from '../domain/tree.ts';
-import { inZoomedScope, layoutView, shownInside, type AxisSpec, type CardRef, type Lane, type ViewSpec } from '../domain/view.ts';
+import { layoutView, shownInside, type AxisSpec, type CardRef } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import { AxisPicker } from './AxisPicker.tsx';
 import {
-  chooseAxis,
-  loadCompactHolding,
-  optionId,
-  loadViewChoice,
-  loadZoomPath,
   axisNames,
-  canZoomLane,
-  validChoice,
-  zoomLane,
-  saveCompactHolding,
-  saveViewChoice,
-  saveZoomPath,
-  toViewSpec,
+  chooseAxis,
+  foldableBands,
   inSentence,
-  loadCollapsed,
+  loadCompactHolding,
   loadExpanded,
-  loadZoomAlso,
+  loadFoldings,
+  loadViewChoice,
+  saveCompactHolding,
   saveExpanded,
-  saveZoomAlso,
-  saveCollapsed,
-  toggleCollapsed,
-  withCollapsed,
+  saveFoldings,
+  saveViewChoice,
+  setAllFolded,
+  toggleFold,
+  toViewSpec,
+  validChoice,
+  withFolding,
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
 import { Dialog } from './Dialog.tsx';
@@ -78,7 +73,6 @@ import { Inspector } from './Inspector.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
 import { keyNames } from './platform.ts';
 import { isCellTarget, isIntoTarget, isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
-import { ZoomBar } from './ZoomBar.tsx';
 
 /** The name of the level an axis shows, in a sentence: "component", "release". */
 function levelName(plan: Plan, axis: AxisSpec): string {
@@ -134,61 +128,36 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const { plan, empty, canUndo, canRedo } = useSyncExternalStore(source.subscribe, source.getSnapshot);
   const [choice, setChoice] = useState(loadViewChoice);
   useEffect(() => saveViewChoice(choice), [choice]);
-  // Zoom (requirement 12, ADR 0008): the path of cards zoomed into. If one is
-  // deleted, the view falls back to the deepest one that still exists.
-  const [zoomPath, setZoomPath] = useState<ItemId[]>(loadZoomPath);
-  useEffect(() => saveZoomPath(zoomPath), [zoomPath]);
-  const root = useMemo(() => [...zoomPath].reverse().find((id) => plan.items[id]) ?? null, [zoomPath, plan]);
-  // Multi-zoom (Q33): cards zoomed into alongside the root, at the same level. Viewer state, remembered.
-  const [zoomAlso, setZoomAlso] = useState<ItemId[]>(loadZoomAlso);
-  useEffect(() => saveZoomAlso(zoomAlso), [zoomAlso]);
-  const roots = useMemo(
-    () => (root === null ? [] : [root, ...zoomAlso.filter((id) => id !== root && plan.items[id])]),
-    [root, zoomAlso, plan],
-  );
-  // Groups expanded in place (Q33). Viewer state, remembered per browser.
+  // Groups expanded in place (Q33, ADR 0013). Viewer state, remembered per browser.
   const [expanded, setExpanded] = useState<ItemId[]>(loadExpanded);
   useEffect(() => saveExpanded(expanded), [expanded]);
-  // A lane zoom whose value was deleted is dropped, rather than showing an empty board.
+  // An axis whose property was deleted falls back, rather than showing an empty board.
   const shown = useMemo(() => validChoice(plan, choice), [plan, choice]);
-  // Collapsed bands on nested axes (ADR 0012): viewer state per property, remembered like the view.
-  const [collapsed, setCollapsed] = useState(loadCollapsed);
-  useEffect(() => saveCollapsed(collapsed), [collapsed]);
+  // Folded bands on nested axes (ADR 0013): viewer state per property, folded by default, remembered like the view.
+  const [foldings, setFoldings] = useState(loadFoldings);
+  useEffect(() => saveFoldings(foldings), [foldings]);
   const view = useMemo(
     () => ({
-      ...withCollapsed(toViewSpec(plan, shown), collapsed),
-      root,
-      ...(roots.length > 1 ? { roots } : {}),
+      ...withFolding(plan, toViewSpec(plan, shown), foldings),
       ...(expanded.length > 0 ? { expanded } : {}),
     }),
-    [plan, shown, collapsed, root, roots, expanded],
+    [plan, shown, foldings, expanded],
   );
   const names = { x: axisNames(plan, shown, 'x'), y: axisNames(plan, shown, 'y') };
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
-  // A parent's own lane and a collapsed lane aren't zoomed from their headers: their band is (ADR 0012).
-  const zoomableLanes = useMemo(() => {
-    const lanes = (which: 'x' | 'y', keys: string[]) =>
-      new Set(keys.filter((key) => canZoomLane(plan, shown, which, key)));
-    const own = (lanes: Lane[]) => lanes.filter((l) => !l.kind).map((l) => l.key);
-    return {
-      x: lanes('x', [...own(layout.columns), ...layout.bands.x.map((b) => b.key)]),
-      y: lanes('y', [...own(layout.rows), ...layout.bands.y.map((b) => b.key)]),
-    };
-  }, [plan, shown, layout]);
   const onBandToggle = useCallback(
-    (which: 'x' | 'y', key: string) => setCollapsed((c) => toggleCollapsed(c, view[which].property, key)),
+    (which: 'x' | 'y', key: string) => setFoldings((f) => toggleFold(f, view[which].property, key)),
     [view],
   );
+  /** Fold all, or unfold all, beside each axis picker; shown only for an axis with bands. */
+  const foldAll = (which: 'x' | 'y') =>
+    foldableBands(plan, view[which]).length === 0
+      ? undefined
+      : (folded: boolean) => setFoldings((f) => setAllFolded(f, view[which].property, folded));
   const levelNames = {
     x: levelName(plan, view.x),
     y: levelName(plan, view.y),
   };
-  const laneChips = (['x', 'y'] as const).flatMap((which) => {
-    const within = which === 'x' ? shown.xWithin : shown.yWithin;
-    const property = plan.properties[view[which].property];
-    if (!within || property?.kind !== 'select') return [];
-    return [{ which, label: `${property.name}: ${property.values[within]?.label ?? within}` }];
-  });
   const counts = useMemo(() => childCounts(plan), [plan]);
   // Flagged links (requirements 16 and 18, Q37): out of order in this view, or on a loop. A collapsed
   // group's ⚠ count includes the flagged links inside it.
@@ -205,7 +174,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const [panel, setPanel] = useState<'properties' | 'inspector' | null>(null);
   const togglePanel = useCallback((which: 'properties' | 'inspector') => setPanel((open) => (open === which ? null : which)), []);
   // The add modifier only means something on an axis that holds several values.
-  const isMulti = (axis: ViewSpec['x']) => {
+  const isMulti = (axis: AxisSpec) => {
     const property = plan.properties[axis.property];
     return property?.kind === 'select' && property.multi;
   };
@@ -326,61 +295,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setSelection(new Set());
     setSelectedLinks(new Set());
   }, []);
-  // Changing a lane zoom hides or shows cards, so the selection is cleared,
-  // as it is for group zoom: Delete must never reach a card you can't see.
-  // Starts from the axes as shown, which may be a fallback for a deleted property.
-  const setLaneZoom = useCallback(
-    (which: 'x' | 'y' | 'both', key: string | null) => {
-      setChoice(which === 'both' ? zoomLane(zoomLane(shown, 'x', null), 'y', null) : zoomLane(shown, which, key));
-      setSelection(new Set());
-    },
-    [shown],
-  );
-  const onLaneZoom = useCallback((which: 'x' | 'y', key: string) => setLaneZoom(which, key), [setLaneZoom]);
-
-  // Scroll positions per zoom level, so zooming back out returns you to where you were.
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scrolls = useRef(new Map<string, { left: number; top: number }>());
-  const zoomTo = useCallback(
-    (id: ItemId | null) => {
-      const el = scrollRef.current;
-      if (el) scrolls.current.set(root ?? '', { left: el.scrollLeft, top: el.scrollTop });
-      setZoomPath(id === null ? [] : ancestry(plan, id));
-      setZoomAlso([]);
-      setEditing(null);
-      // Selection outside the new level would be invisible, and Delete would still reach it.
-      setSelection(new Set());
-    },
-    [plan, root],
-  );
-  useLayoutEffect(() => {
-    const el = scrollRef.current;
-    const saved = scrolls.current.get(root ?? '');
-    el?.scrollTo(saved?.left ?? 0, saved?.top ?? 0);
-  }, [root]);
-  const zoomOut = useCallback(() => {
-    if (root === null) return;
-    zoomTo(ancestry(plan, root).at(-2) ?? null);
-    // Land on the card you came out of.
-    setSelection(new Set([root]));
-    setJustMoved(root);
-  }, [plan, root, zoomTo]);
-
-  // Several cards selected: zoom into all of them at once (Q33), as long as they're on the same level.
-  const zoomInto = useCallback(
-    (ids: ItemId[]) => {
-      const [first, ...rest] = ids.filter((id) => plan.items[id]);
-      if (first === undefined) return;
-      const level = plan.items[first]!.parent;
-      const same = rest.filter((id) => plan.items[id]!.parent === level);
-      zoomTo(first);
-      setZoomAlso(same);
-      if (same.length < rest.length) {
-        setNotice({ text: 'Zoomed into the cards on the same level as the first one selected.' });
-      }
-    },
-    [plan, zoomTo],
-  );
   /** Every copy on the board, for finding which group a selected card is shown for. */
   const shownCopies = useMemo(
     () => layout.cells.flat(2).concat(layout.holding.rows.flat(), layout.holding.columns.flat(), layout.holding.corner),
@@ -445,22 +360,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [store, view],
   );
 
-  // Show a card from the inspector: zoom to the level it's on, clear a lane zoom that hides it, select it, and
-  // scroll it into view once it's drawn.
+  // Show a card from the inspector: expand the groups around it (ADR 0013), select it, and scroll it into view
+  // once it's drawn.
   const revealing = useRef<ItemId | null>(null);
   const revealCard = useCallback(
     (id: ItemId) => {
-      const item = plan.items[id];
-      if (!item) return;
-      zoomTo(item.parent);
-      if (!inZoomedScope(plan, item, view.x) || !inZoomedScope(plan, item, view.y)) {
-        setChoice(zoomLane(zoomLane(shown, 'x', null), 'y', null));
-      }
+      if (!plan.items[id]) return;
+      const around = ancestry(plan, id).slice(0, -1);
+      if (around.length > 0) setExpanded((current) => [...current, ...around.filter((g) => !current.includes(g))]);
       setSelection(new Set([id]));
       setJustMoved(id);
       revealing.current = id;
     },
-    [plan, view, shown, zoomTo],
+    [plan],
   );
   useEffect(() => {
     const id = revealing.current;
@@ -492,14 +404,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       setEditing(null);
       if (editing?.kind === 'rename') renameItem(store, editing.card.itemId, title);
       if (editing?.kind === 'new') {
-        const id = createItem(store, view, editing.spot, title, root);
+        const id = createItem(store, view, editing.spot, title);
         if (id) {
           setSelection(new Set([id]));
           setJustMoved(id);
         }
       }
     },
-    [store, view, editing, root],
+    [store, view, editing],
   );
   const deleteSelection = useCallback(() => {
     if (selected.size === 0) return;
@@ -526,7 +438,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
 
   // Dependency links (requirement 15, Q24, Q39). Selection order decides direction: the first card
   // selected comes before the second. With one card selected, L starts a pending link that survives
-  // zooming, so cards at different group levels can be linked; it's viewer state, never saved.
+  // expanding and folding, so cards at different group levels can be linked; it's viewer state, never saved.
   const [pendingLink, setPendingLink] = useState<ItemId | null>(null);
   const pendingFrom = pendingLink !== null && plan.items[pendingLink] ? pendingLink : null;
   const titleOf = useCallback((id: ItemId) => `“${plan.items[id]?.title ?? 'card'}”`, [plan]);
@@ -678,22 +590,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         else if (key === 'g' && e.shiftKey) ungroupSelection();
         else if (key === 'g') groupSelection();
         else if (key === 'a' && !e.shiftKey) selectAll();
-        // Any card can be zoomed into, making it a group once it has children (Q20).
-        // Several cards at once is multi-zoom (Q33).
-        else if (key === 'arrowdown' && selected.size > 0) zoomInto([...selected]);
-        else if (key === 'arrowup' && root !== null) zoomOut();
         else return;
         e.preventDefault();
         return;
       }
       if (e.key === 'Escape') {
-        // Esc cancels a pending link, then clears the selection, then zooms out a level. Buttons don't use Esc,
-        // so this works with one focused.
+        // Esc cancels a pending link, then clears the selection. Buttons don't use Esc, so this works with one focused.
         if (pendingFrom !== null) setPendingLink(null);
         else if (selectedLinks.size > 0) setSelectedLinks(new Set());
         else if (selected.size > 0) clearSelection();
-        else if (root !== null) zoomOut();
-        else if (shown.xWithin || shown.yWithin) setLaneZoom('both', null);
         return;
       }
       if (e.key.toLowerCase() === 'l' && !e.altKey && !e.shiftKey) {
@@ -739,11 +644,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     editing,
     selected,
     anchor,
-    root,
     renamable,
-    shown.xWithin,
-    shown.yWithin,
-    setLaneZoom,
     deleteSelection,
     clearSelection,
     pendingFrom,
@@ -752,11 +653,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     deleteSelectedLinks,
     groupSelection,
     ungroupSelection,
-    zoomTo,
-    zoomOut,
     togglePanel,
     empty,
-    zoomInto,
     expandSelection,
     foldSelection,
     selectAll,
@@ -833,7 +731,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     <div className="app">
       <header className="toolbar">
         <h1>Planning Board</h1>
-        <AxisPicker plan={plan} choice={shown} onChange={setChoice} />
+        <AxisPicker plan={plan} choice={shown} onChange={setChoice} foldAll={{ x: foldAll('x'), y: foldAll('y') }} />
         <div className="actions">
           <button
             type="button"
@@ -871,14 +769,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             title={`Ungroup the selected groups (${keys.ungroup})`}
           >
             Ungroup
-          </button>
-          <button
-            type="button"
-            onClick={() => zoomInto([...selected])}
-            disabled={selected.size === 0}
-            title={`Zoom into the selected cards to see or add what's inside (${keys.zoomIn})`}
-          >
-            Zoom in
           </button>
           <button
             type="button"
@@ -944,19 +834,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           known to work.
         </div>
       )}
-      {!empty && (
-        <ZoomBar
-          plan={plan}
-          root={root}
-          also={roots.slice(1)}
-          lanes={laneChips}
-          onClearLane={(which) => setLaneZoom(which, null)}
-          target={drag && isParentTarget(drag.target) ? drag.target.parent : undefined}
-          dragging={drag !== null}
-          empty={root !== null && childrenOf(plan, root).length === 0}
-          onZoomTo={zoomTo}
-        />
-      )}
       {pendingFrom !== null && !empty && (
         <div className="link-bar" role="status" data-testid="link-bar">
           Linking from {titleOf(pendingFrom)}: select the card it comes before, then press <kbd>{keys.link}</kbd>.
@@ -1001,6 +878,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           yLabel={names.y.label}
           xNone={names.x.none}
           yNone={names.y.none}
+          xParentNone={names.x.parentNone}
+          yParentNone={names.y.parentNone}
           compact={compact}
           onCompactChange={setCompact}
           lifted={drag?.card ?? null}
@@ -1019,9 +898,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCommitEdit={onCommitEdit}
           onCancelEdit={onCancelEdit}
           onBackgroundPointerDown={clearSelection}
-          zoomableLanes={zoomableLanes}
           mismatches={mismatches}
-          onLaneZoom={onLaneZoom}
           onBandToggle={onBandToggle}
           onSelectLanes={onSelectLanes}
           onSelectMatching={onSelectMatching}
@@ -1045,7 +922,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             store={store}
             plan={plan}
             onClose={() => setPanel(null)}
-            onShowAsRows={(property) => setChoice(chooseAxis(plan, shown, 'y', optionId(property, 0)))}
+            onShowAsRows={(property) => setChoice(chooseAxis(shown, 'y', property))}
             onNotice={noticeLatest}
           />
         )}
@@ -1104,7 +981,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             // Imported cards have no sequence position, so a sequence view would hold them all in
             // one lane. Time × System shows them where the export put them (questions.md Q30).
             setChoice({ x: TIME, y: SYSTEM });
-            setZoomPath([]);
             setSelection(new Set());
             setEditing(null);
             const n = result.counts.cards;

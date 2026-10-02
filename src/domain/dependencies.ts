@@ -2,11 +2,11 @@
 // which links can be made, which a card's focus shows, and where a link is
 // drawn when one of its cards is hidden inside a collapsed group.
 
-import { timeSpans } from './conflicts.ts';
-import type { Dependency, ItemId, Plan } from './model.ts';
-import { compareOrderKeys, SEQUENCE, TIME } from './model.ts';
+import { isWithin } from './hierarchy.ts';
+import type { Dependency, Item, ItemId, Plan } from './model.ts';
+import { compareOrderKeys, itemValues, SEQUENCE, TIME } from './model.ts';
 import { ancestry } from './tree.ts';
-import type { ViewSpec } from './view.ts';
+import { laneKeyOf, laneOrder, type AxisSpec, type ViewSpec } from './view.ts';
 
 export const linkKey = (d: Dependency) => `${d.from}->${d.to}`;
 
@@ -91,7 +91,7 @@ export interface VisibleLink {
  * Where links are drawn (questions.md Q38). Each end is the card itself if
  * it's on screen, or else the nearest group around it that is. A link whose
  * ends both land on the same card (it stays inside one collapsed group),
- * or whose card isn't on screen at all (outside the zoom), isn't drawn.
+ * or whose card isn't on screen at all, isn't drawn.
  * Links that land on the same pair of cards share one line.
  */
 export function visibleLinks(plan: Plan, links: readonly Dependency[], onScreen: ReadonlySet<ItemId>): VisibleLink[] {
@@ -190,19 +190,38 @@ export function dependencyLoops(plan: Plan): Dependency[] {
 }
 
 /**
+ * The lanes a card's date could put it in on a time axis, as indexes into
+ * the axis's lanes: one lane for a release, or a folded quarter (ADR
+ * 0013); every lane in an unfolded quarter for a card dated only to it.
+ */
+function laneSpans(plan: Plan, axis: AxisSpec): (item: Item) => { first: number; last: number } | null {
+  const time = plan.properties[TIME];
+  if (time?.kind !== 'select') return () => null;
+  const lanes = laneOrder(plan, axis);
+  return (item) => {
+    const value = itemValues(item, TIME)[0];
+    const key = value === undefined ? null : laneKeyOf(time, value, axis);
+    if (key === null) return null;
+    const inside = lanes.flatMap((lane, i) => (isWithin(time, lane, key) ? [i] : []));
+    return inside.length > 0 ? { first: inside[0]!, last: inside[inside.length - 1]! } : null;
+  };
+}
+
+/**
  * Links whose prerequisite comes after its dependent on an axis the view
  * orders by (requirement 16): to its right (or below) on a sequence axis,
- * or in a later bucket on a time axis, judged at the level the axis shows
- * (Q12). A time order counts only when it's certain, so a quarter-only
- * card isn't flagged against a release inside that quarter. Each card's
- * own values are judged, even when its line is drawn to a group (Q38).
+ * or in a later lane on a time axis. Time is judged by the lanes on the
+ * board, so a folded quarter is one bucket and an unfolded one a bucket per
+ * release (Q12, ADR 0013). A time order counts only when it's certain, so a
+ * quarter-only card isn't flagged against a release inside that quarter.
+ * Each card's own values are judged, even when its line is drawn to a
+ * group (Q38).
  */
 export function outOfOrder(plan: Plan, view: ViewSpec): Map<string, LinkFlag> {
   const out = new Map<string, LinkFlag>();
   const axes = [view.x, view.y];
   const sequence = axes.some((a) => a.property === SEQUENCE);
-  const timeLevels = axes.filter((a) => a.property === TIME).map((a) => a.level);
-  const spans = timeLevels.map((level) => timeSpans(plan, level));
+  const spans = axes.filter((a) => a.property === TIME).map((a) => laneSpans(plan, a));
   for (const d of plan.dependencies) {
     const a = plan.items[d.from];
     const b = plan.items[d.to];

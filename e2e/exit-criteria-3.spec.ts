@@ -1,15 +1,20 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { card, doubleClickEmpty, dragTo, openApp, openGroup, pickAxes, reveal } from './app.ts';
+import { card, doubleClickEmpty, dragTo, expandGroup, foldAll, openApp, pickAxes, reveal } from './app.ts';
 
 // Sprint 3's exit criteria (docs/sprint-3.md) 1–10, end to end, on the
-// sample plan. If this passes, the walkthrough in docs/demos/sprint-3.md
-// works. An import replaces the board, so criterion 8 runs last.
+// sample plan. An import replaces the board, so criterion 8 runs last. Zoom
+// is gone since sprint 5 (ADR 0013): groups expand and fold, and time folds
+// from releases to quarters.
 
 const SAMPLE = new URL('../docs/samples/jira-export.csv', import.meta.url);
 const line = (page: Page, from: string, to: string) => page.locator(`.dep-line[data-from="${from}"][data-to="${to}"]`);
 const notice = (page: Page) => page.getByTestId('notice');
 const cellOf = (c: Locator) => c.locator('xpath=ancestor::*[contains(@class, "cell")][1]');
-const toPlan = (page: Page) => page.getByTestId('zoom-bar').getByRole('button', { name: 'Plan', exact: true }).click();
+/** Fold EU data residency back, from one of its cards. */
+async function foldEU(page: Page) {
+  await card(page, 'region-pinned-directory-sync').first().locator('.card-title').click();
+  await page.keyboard.press('Shift+E');
+}
 
 async function select(page: Page, ...ids: string[]) {
   for (const [i, id] of ids.entries()) {
@@ -40,15 +45,15 @@ test('sprint 3 exit criteria', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+z');
   await expect(line(page, 'credit-notes', 'vat-oss-reporting')).toHaveCount(0);
 
-  // 2. Link a card to one inside a group, with a pending link across zoom levels.
+  // 2. Link a card to one inside a group, with a pending link that survives expanding.
   await select(page, 'custom-roles');
   await page.keyboard.press('l');
   await expect(page.getByTestId('link-bar')).toContainText('Linking from “Custom roles”');
-  await openGroup(card(page, 'eu-data-residency').first());
+  await expandGroup(card(page, 'eu-data-residency').first());
   await select(page, 'region-pinned-directory-sync');
   await page.keyboard.press('l');
   await expect(notice(page)).toContainText('Linked “Custom roles” → “Region-pinned directory sync”');
-  await toPlan(page);
+  await foldEU(page);
   await select(page, 'custom-roles');
   // Drawn to the group the card is in (Q38).
   await expect(line(page, 'custom-roles', 'eu-data-residency')).toHaveClass(/focus/);
@@ -67,21 +72,22 @@ test('sprint 3 exit criteria', async ({ page }) => {
   await expect(line(page, 'custom-roles', 'least-privilege-default-role')).toHaveCount(0);
 
   // 4. In a time view, highlights follow the level shown: 27.4 is after 27.3, but both are in Q2.
-  await pickAxes(page, 'time:1', 'system');
+  await pickAxes(page, 'time', 'system');
+  await foldAll(page, 'Time', false);
   await select(page, 'sso-session-timeout-policy', 'totp-enrollment-rework');
   await page.keyboard.press('l');
   await unfocus(page);
   await expect(line(page, 'sso-session-timeout-policy', 'totp-enrollment-rework')).toHaveClass(/problem/);
-  await pickAxes(page, 'time', 'system');
-  await expect(page.locator('.column-header', { hasText: 'Q2 2027' })).toHaveCount(1);
+  await foldAll(page, 'Time', true);
+  await expect(page.locator('.band-x', { hasText: 'Q2 2027' })).toHaveCount(1);
   await expect(line(page, 'sso-session-timeout-policy', 'totp-enrollment-rework')).toHaveCount(0);
   await pickAxes(page, 'sequence', 'system');
 
   // 5 and 6. Close a loop through the group: both links are flagged, and the collapsed group counts them.
-  await openGroup(card(page, 'eu-data-residency').first());
+  await expandGroup(card(page, 'eu-data-residency').first());
   await select(page, 'region-pinned-directory-sync');
   await page.keyboard.press('l');
-  await toPlan(page);
+  await page.keyboard.press('Shift+E');
   await select(page, 'custom-roles');
   await page.keyboard.press('l');
   await expect(notice(page)).toContainText('Linked “Region-pinned directory sync” → “Custom roles”');
@@ -90,10 +96,10 @@ test('sprint 3 exit criteria', async ({ page }) => {
   await expect(line(page, 'eu-data-residency', 'custom-roles')).toHaveClass(/problem/);
   await expect(groupMarker).toHaveText(`⚠ ${markedBefore + 2}`);
   await expect(groupMarker).toHaveAttribute('title', /“Region-pinned directory sync” → “Custom roles” is part of a loop/);
-  // Zoom in to find it.
-  await openGroup(card(page, 'eu-data-residency').first());
+  // Expand it to find it.
+  await expandGroup(card(page, 'eu-data-residency').first());
   await expect(card(page, 'region-pinned-directory-sync')).toBeVisible();
-  await toPlan(page);
+  await foldEU(page);
   await unfocus(page);
 
   // 7. Click a line and press Delete to remove it; undo brings it back.
@@ -106,16 +112,16 @@ test('sprint 3 exit criteria', async ({ page }) => {
   await notice(page).getByRole('button', { name: 'Undo' }).click();
   await expect(line(page, 'eu-data-residency', 'custom-roles')).toHaveClass(/problem/);
 
-  // 9. Double-click renames a group, its count opens it, a gap makes a new column, and Rows is on the left.
+  // 9. Double-click renames a group, its count expands it, a gap makes a new column, and Rows is on the left.
   const group = card(page, 'eu-data-residency').first();
   await reveal(group);
   await group.locator('.card-title').dblclick();
   await group.getByRole('textbox', { name: 'Card title' }).fill('EU data residency (GA)');
   await page.keyboard.press('Enter');
   await expect(group.locator('.card-title')).toHaveText('EU data residency (GA)');
-  await openGroup(group);
-  await expect(page.getByTestId('zoom-bar')).toContainText('EU data residency (GA)');
-  await toPlan(page);
+  await group.locator('.zoom-into').click();
+  await expect(card(page, 'region-pinned-directory-sync').locator('.parent-chip')).toHaveText('EU data residency (GA)');
+  await foldEU(page);
   const columns = await page.locator('.column-header:not(.gap)').count();
   await doubleClickEmpty(page, page.locator('.cell.gap[data-row="identity"]').nth(2));
   await page.keyboard.type('Brand-new step');

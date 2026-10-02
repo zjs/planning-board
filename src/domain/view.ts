@@ -1,4 +1,4 @@
-import { ancestorAtLevel, isWithin, pathTo, valuesAtLevel } from './hierarchy.ts';
+import { ancestorAtLevel, pathTo, valuesAtLevel } from './hierarchy.ts';
 import type { Item, ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from './model.ts';
 import { compareOrderKeys, itemValues } from './model.ts';
 import { gapKeys } from './sequence.ts';
@@ -10,13 +10,6 @@ export interface AxisSpec {
   /** Hierarchy level, 0 = top. Ignored for sequence. */
   level: number;
   /**
-   * Lane zoom (requirement 7, ADR 0008): only this value's descendants at
-   * `level` become lanes, and cards with no value inside it are hidden
-   * (questions.md Q18). Cards with exactly this value, but nothing more
-   * precise, wait in the holding lane.
-   */
-  within?: ValueId | null;
-  /**
    * On a nested axis (ADR 0012), parent values collapsed into one lane
    * each. Viewer state, like the axes themselves.
    */
@@ -27,19 +20,9 @@ export interface ViewSpec {
   x: AxisSpec;
   y: AxisSpec;
   /**
-   * The card zoomed into (requirement 12, ADR 0008): the view shows only
-   * its children. Null or absent for the top level.
-   */
-  root?: ItemId | null;
-  /**
-   * Multi-zoom (Q33): several cards zoomed into at once. When set, the view
-   * shows the children of all of them, and `root` is ignored.
-   */
-  roots?: readonly ItemId[];
-  /**
-   * Groups expanded in place (Q33): each one at the view's level is replaced
-   * by its children, marked with it as their parent. Applies at any depth,
-   * so an expanded child group shows its own children too.
+   * Groups expanded in place (Q33, ADR 0013): each one on the board is
+   * replaced by its children, marked with it as their parent. Applies at
+   * any depth, so an expanded child group shows its own children too.
    */
   expanded?: readonly ItemId[];
 }
@@ -93,8 +76,8 @@ export interface CardRef {
    */
   inner?: CardRef[];
   /**
-   * The group this card is shown for, when the view shows the children of
-   * several groups: expanded in place, or several zoomed into (Q33).
+   * The group this card is shown for, when it's on the board because that
+   * group is expanded in place (Q33).
    */
   parent?: ItemId;
 }
@@ -128,9 +111,9 @@ export interface ViewLayout {
   bands: { x: Band[]; y: Band[] };
 }
 
-/** An axis below its top level with no lane zoom on it shows its parents as bands (ADR 0012). */
+/** An axis below its top level shows its parents as bands (ADR 0012). */
 export function isNested(plan: Plan, axis: AxisSpec): boolean {
-  return plan.properties[axis.property]?.kind === 'select' && axis.level > 0 && !axis.within;
+  return plan.properties[axis.property]?.kind === 'select' && axis.level > 0;
 }
 
 /**
@@ -141,7 +124,7 @@ export function isNested(plan: Plan, axis: AxisSpec): boolean {
  * drops both use this, so they always agree on where a card is.
  */
 export function laneKeyOf(property: SelectProperty, value: ValueId, axis: AxisSpec): ValueId | null {
-  if (axis.level === 0 || axis.within) return ancestorAtLevel(property, value, axis.level);
+  if (axis.level === 0) return ancestorAtLevel(property, value, axis.level);
   const path = pathTo(property, value);
   if (path.length === 0) return null;
   const collapsed = axis.collapsed ?? [];
@@ -157,7 +140,7 @@ export function axisKeys(plan: Plan, item: Item, axis: AxisSpec): string[] {
   const keys = new Set<string>();
   for (const value of itemValues(item, property.id)) {
     const key = laneKeyOf(property, value, axis);
-    if (key !== null && (!axis.within || isWithin(property, key, axis.within))) keys.add(key);
+    if (key !== null) keys.add(key);
   }
   return [...keys];
 }
@@ -206,11 +189,13 @@ function axisLanes(plan: Plan, axis: AxisSpec, items: Item[]): { lanes: Lane[]; 
   }
   if (isNested(plan, axis)) return nestedLanes(property, axis);
   // Every value at the level gets a lane, so empty lanes stay droppable.
-  const within = axis.within;
-  const lanes = valuesAtLevel(property, axis.level)
-    .filter((node) => !within || isWithin(property, node.id, within))
-    .map((node) => ({ key: node.id, label: node.label }));
-  return { lanes, bands: [] };
+  return { lanes: valuesAtLevel(property, axis.level).map((node) => ({ key: node.id, label: node.label })), bands: [] };
+}
+
+/** The lane keys an axis shows, in board order. Sequence axes have none to list. */
+export function laneOrder(plan: Plan, axis: AxisSpec): string[] {
+  const property = plan.properties[axis.property];
+  return property?.kind === 'select' ? axisLanes(plan, axis, []).lanes.map((lane) => lane.key) : [];
 }
 
 /** Stable order within a cell: sequence, then title, then ID. Unsequenced items go last. */
@@ -245,13 +230,11 @@ function rolledUpCells(
   kids: Map<ItemId, Item[]>,
   xsOf: (item: Item) => string[],
   ysOf: (item: Item) => string[],
-  /** Whether the group has solid copies here at all (it doesn't outside a lane zoom's scope). */
-  solid: boolean,
 ): { x: string; y: string; inner: CardRef[] }[] {
   if (!kids.has(group.id)) return [];
   const ownXs = xsOf(group);
   const ownYs = ysOf(group);
-  const own = new Set(solid ? ownYs.flatMap((y) => ownXs.map((x) => `${x}|${y}`)) : []);
+  const own = new Set(ownYs.flatMap((y) => ownXs.map((x) => `${x}|${y}`)));
   const found = new Map<string, { x: string; y: string; inner: CardRef[] }>();
   // A card is in a cell's frame when it puts the group there and its own parent doesn't already (Q33).
   const walk = (parent: Item, xs: string[], ys: string[], above: Set<string>, seen: Set<ItemId>) => {
@@ -282,26 +265,12 @@ function rolledUpCells(
   return [...found.values()];
 }
 
-/** Whether an item has any value inside a lane-zoomed axis's value (Q18: the rest are hidden). */
-export function inZoomedScope(plan: Plan, item: Item, axis: AxisSpec): boolean {
-  const property = plan.properties[axis.property];
-  const within: ValueId | null | undefined = axis.within;
-  if (!within || property?.kind !== 'select') return true;
-  return itemValues(item, property.id).some((v) => isWithin(property, v, within));
-}
-
-/**
- * Lay out one level of the plan for a view: the top-level items, or the
- * children of the card zoomed into, within any lane zoom. Deeper cards stay inside their group.
- */
 /**
  * The cards a view shows, with the group each is shown for when that needs
- * saying (Q33): the children of the card or cards zoomed into, with every
- * expanded group among them replaced by its children, at any depth.
+ * saying (Q33): the top-level cards, with every expanded group among them
+ * replaced by its children, at any depth. Deeper cards stay inside their group.
  */
 function viewItems(plan: Plan, view: ViewSpec): { items: Item[]; parentOf: Map<ItemId, ItemId> } {
-  const roots: (ItemId | null)[] = view.roots && view.roots.length > 0 ? [...view.roots] : [view.root ?? null];
-  const multi = roots.length > 1;
   const expanded = new Set(view.expanded ?? []);
   const items: Item[] = [];
   const parentOf = new Map<ItemId, ItemId>();
@@ -317,26 +286,22 @@ function viewItems(plan: Plan, view: ViewSpec): { items: Item[]; parentOf: Map<I
     items.push(plan.items[id]!);
     if (parent !== null) parentOf.set(id, parent);
   };
-  for (const root of roots) {
-    if (root !== null && !plan.items[root]) continue;
-    for (const id of childrenOf(plan, root)) add(id, multi ? root : null);
-  }
+  for (const id of childrenOf(plan, null)) add(id, null);
   return { items: items.sort(compareItems), parentOf };
 }
 
 /**
  * Whether a card inside `parent` (null for the top level) is on this view:
- * its group is the level shown, or is expanded and itself on the view. For
- * deciding, after moving a card, whether it can stay selected.
+ * it's at the top level, or its group is expanded and itself on the view.
+ * For deciding, after moving a card, whether it can stay selected.
  */
 export function shownInside(plan: Plan, view: ViewSpec, parent: ItemId | null): boolean {
-  const roots: (ItemId | null)[] = view.roots && view.roots.length > 0 ? [...view.roots] : [view.root ?? null];
   const expanded = new Set(view.expanded ?? []);
   const seen = new Set<ItemId>();
   let current = parent;
   for (;;) {
-    if (roots.includes(current)) return true;
-    if (current === null || seen.has(current) || !expanded.has(current)) return false;
+    if (current === null) return true;
+    if (seen.has(current) || !expanded.has(current)) return false;
     seen.add(current);
     current = plan.items[current]?.parent ?? null;
   }
@@ -348,18 +313,14 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
     const parent = parentOf.get(ref.itemId);
     return parent === undefined ? ref : { ...ref, parent };
   };
-  const inScope = (item: Item) => inZoomedScope(plan, item, view.x) && inZoomedScope(plan, item, view.y);
-  const scoped = items.filter(inScope);
-  const { lanes: columns, bands: xBands } = axisLanes(plan, view.x, scoped);
-  const { lanes: rows, bands: yBands } = axisLanes(plan, view.y, scoped);
+  const { lanes: columns, bands: xBands } = axisLanes(plan, view.x, items);
+  const { lanes: rows, bands: yBands } = axisLanes(plan, view.y, items);
   const columnIndex = new Map(columns.map((lane, i) => [lane.key, i]));
   const rowIndex = new Map(rows.map((lane, i) => [lane.key, i]));
   const cells: CardRef[][][] = rows.map(() => columns.map(() => []));
   const holding: Holding = { rows: rows.map(() => []), columns: columns.map(() => []), corner: [] };
 
   for (const item of items) {
-    // Out of a lane zoom's scope, a card shows only through its children's faded copies.
-    if (!inScope(item)) continue;
     const xs = axisKeys(plan, item, view.x).filter((key) => columnIndex.has(key));
     const ys = axisKeys(plan, item, view.y).filter((key) => rowIndex.has(key));
     if (xs.length === 0 && ys.length === 0) {
@@ -382,7 +343,7 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
     axisKeys(plan, item, axis).filter((key) => index.has(key));
   const kids = childrenIndex(plan);
   for (const item of items) {
-    const reached = rolledUpCells(item, kids, inCells(view.x, columnIndex), inCells(view.y, rowIndex), inScope(item));
+    const reached = rolledUpCells(item, kids, inCells(view.x, columnIndex), inCells(view.y, rowIndex));
     for (const { x, y, inner } of reached) {
       cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push(marked({ itemId: item.id, x, y, via: 'children', inner }));
     }

@@ -169,6 +169,20 @@ describe('outOfOrder (requirement 16)', () => {
     const unsure = withLinks(plan(item('a', { values: { [TIME]: ['q1'] } }), item('b', { values: { [TIME]: ['q1/r1'] } })), ['a', 'b']);
     expect(outOfOrder(unsure, releaseView).size).toBe(0);
   });
+
+  it('judges a folded quarter as one lane, as the board shows it (ADR 0013)', () => {
+    const p = withLinks(
+      plan(item('a', { values: { [TIME]: ['q1/r2'] } }), item('b', { values: { [TIME]: ['q1/r1'] } }), item('c', { values: { [TIME]: ['q2/r1'] } })),
+      ['a', 'b'],
+      ['c', 'a'],
+    );
+    const folded: ViewSpec = { ...releaseView, x: { ...releaseView.x, collapsed: ['q1', 'q2'] } };
+    // Both in folded Q1: no order to see. Q2 before Q1 is still flagged.
+    expect([...outOfOrder(p, folded).keys()]).toEqual(['c->a']);
+    // Unfold Q1, and its releases are judged.
+    const unfolded: ViewSpec = { ...releaseView, x: { ...releaseView.x, collapsed: ['q2'] } };
+    expect([...outOfOrder(p, unfolded).keys()].sort()).toEqual(['a->b', 'c->a']);
+  });
 });
 
 describe('linkProblems and group counts (requirement 18)', () => {

@@ -39,15 +39,15 @@ Scope: single user, browser only, no server.
 
 ### 3. Zoom goes; one axis choice per property (Q42, Q43)
 
-- [ ] **Removed:**
+- [x] **Removed:**
   - zooming into a group, and into several groups at once;
   - the zoom bar and its breadcrumb;
   - lane zoom;
   - the separate "(area)" and "(component)" axis choices.
-- [ ] A hierarchical property is one axis choice ("System", "Time"). It shows its deepest level, with each parent as a band, folded by default, so a fresh view looks like today's area or quarter view.
-- [ ] **Fold all** and **Unfold all** sit beside each axis picker. Clicking a folded lane's header ("4 components ▸") unfolds it.
-- [ ] Views saved in a browser carry over: "System (component)" opens as System with every band unfolded.
-- [ ] What zoom used to provide has a new home:
+- [x] A hierarchical property is one axis choice ("System", "Time"). It shows its deepest level, with each parent as a band, folded by default, so a fresh view looks like today's area or quarter view.
+- [x] **Fold all** and **Unfold all** sit beside each axis picker. Clicking a folded lane's header ("4 components ▸") unfolds it.
+- [x] Views saved in a browser carry over: "System (component)" opens as System with every band unfolded.
+- [x] What zoom used to provide has a new home:
   - "Show it on the board" in the inspector expands the groups around a card instead of zooming.
   - A pending link can be finished on any card.
   - A group's own values show in the inspector (Q19).

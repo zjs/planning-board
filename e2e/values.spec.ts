@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, openApp, pickAxes } from './app.ts';
+import { card, cell, foldAll, openApp, pickAxes } from './app.ts';
 
 // Editing values (requirement 27, Q4): rename, move, add, reorder, delete,
 // each one undo step.
@@ -41,7 +41,8 @@ test('rename a component and move it to another area; its cards come with it', a
 
 test('add and reorder a release, then delete one: its cards move to the quarter (Q4)', async ({ page }) => {
   await openApp(page);
-  await pickAxes(page, 'time:1', 'system');
+  await pickAxes(page, 'time', 'system');
+  await foldAll(page, 'Time', false);
   const time = await openSection(page, 'Time');
   const q1 = time.locator('li[data-value="q1"]');
 
@@ -54,12 +55,12 @@ test('add and reorder a release, then delete one: its cards move to the quarter 
   await time.getByRole('button', { name: 'Delete 27.2', exact: true }).click();
   await expect(page.getByTestId('notice')).toContainText('Deleted “27.2” · 2 cards moved to Q1 2027');
   await expect(page.locator('.column-header', { hasText: /^27\.2$/ })).toHaveCount(0);
-  // Seen by quarter, they're still in Q1.
-  await pickAxes(page, 'time', 'system');
+  // Folded to quarters, they're still in Q1.
+  await foldAll(page, 'Time', true);
   await expect(page.locator('.cell[data-column="q1"] .card').first()).toBeVisible();
 
   await page.getByTestId('notice').getByRole('button', { name: 'Undo' }).click();
-  await pickAxes(page, 'time:1', 'system');
+  await foldAll(page, 'Time', false);
   await expect(page.locator('.column-header', { hasText: /^27\.2$/ })).toHaveCount(1);
 });
 
@@ -80,5 +81,7 @@ test('rename a level', async ({ page }) => {
   await system.getByRole('button', { name: 'Rename level Component' }).click();
   await system.getByRole('textbox', { name: 'Rename level Component' }).fill('Service');
   await system.getByRole('textbox', { name: 'Rename level Component' }).press('Enter');
-  await expect(page.getByTestId('axis-y').locator('option[value="system:1"]')).toHaveText('System (service)');
+  // An unfolded area's own lane is named for the level below it.
+  await foldAll(page, 'System', false);
+  await expect(page.locator('.row-header.lane-parent').first()).toHaveText('No service');
 });

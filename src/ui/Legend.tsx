@@ -88,22 +88,14 @@ export function Legend({ onClose }: { onClose: () => void }) {
       </dl>
       </section>
       <section>
-        <h3>Zooming</h3>
+        <h3>Folding</h3>
       <dl>
-        <dt>
-          Select a group, press <kbd>{keys.zoomIn}</kbd>
-        </dt>
+        <dt>System or Time as an axis</dt>
         <dd>
-          Shows only what's inside; new cards go inside. Select several groups to see all of them. Drag a card onto
-          the breadcrumb to move it out. <kbd>Esc</kbd> or <kbd>{keys.zoomOut}</kbd> zooms out.
+          Areas or quarters are bands, each folded into one lane to start. Click a band, or a folded lane's "4
+          components ▸", to unfold it; <b>Fold all</b> and <b>Unfold all</b> sit beside the axis. An unfolded area has
+          a "No component" lane for cards with just the area.
         </dd>
-        <dt>Components or releases as an axis</dt>
-        <dd>
-          Their areas or quarters show as bands, each with a "No component" lane for cards with just the area. ▾ folds
-          a band into one lane; its name zooms in.
-        </dd>
-        <dt>Click a row or column header</dt>
-        <dd>Identity shows its components, Q2 its releases.</dd>
       </dl>
       </section>
       <section>

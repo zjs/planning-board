@@ -1,6 +1,6 @@
 # 0008: View scope and zoom
 
-Status: Accepted (sprint 1, slices 3 and 4). Amended in sprint 4, slice 4: several roots, expanding groups in place, and frames (Q33).
+Status: Accepted (sprint 1, slices 3 and 4). Amended in sprint 4, slice 4: several roots, expanding groups in place, and frames (Q33). Zoom superseded in sprint 5 by [0013](0013-expand-and-fold-replace-zoom.md): views have no root, and expanding and frames are what remains of this record.
 
 ## Context
 

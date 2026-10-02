@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, dragTo, holding, openApp, pickAxes } from './app.ts';
+import { card, cell, dragTo, foldAll, holding, openApp, pickAxes } from './app.ts';
 
 // Custom properties (requirements 1 and 26): made in the Properties panel,
 // shown as an axis straight away, and filled in by dragging.
@@ -93,6 +93,7 @@ test('built-in properties can be renamed but not deleted', async ({ page }) => {
   await identity.getByLabel('Add component to Identity & Access').fill('Passkeys');
   await identity.getByLabel('Add component to Identity & Access').press('Enter');
   await expect(identity.locator('.value-label')).toContainText(['Passkeys']);
-  await pickAxes(page, 'time', 'system:1');
+  await pickAxes(page, 'time', 'system');
+  await foldAll(page, 'System', false);
   await expect(page.locator('.row-header', { hasText: 'Passkeys' })).toBeVisible();
 });

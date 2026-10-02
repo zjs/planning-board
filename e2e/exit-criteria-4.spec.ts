@@ -1,14 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, dragTo, openApp, openGroup, pickAxes, reveal } from './app.ts';
+import { card, cell, dragTo, expandGroup, foldAll, openApp, pickAxes, reveal } from './app.ts';
 
-// Sprint 4's exit criteria (docs/sprint-4.md) 1–10, end to end, on the sample plan. If this passes, the
-// walkthrough in docs/demos/sprint-4.md works. An import replaces the board, so criterion 4 runs last.
+// Sprint 4's exit criteria (docs/sprint-4.md) 1–10, end to end, on the sample plan. An import replaces the
+// board, so criterion 4 runs last. Zoom is gone since sprint 5 (ADR 0013): zooming into a band is
+// unfolding it, and zooming into several groups is expanding them.
 
 const SAMPLE = new URL('../docs/samples/jira-export.csv', import.meta.url);
 const inspector = (page: Page) => page.getByTestId('inspector');
 const notice = (page: Page) => page.getByTestId('notice');
 const rowOf = (page: Page, id: string) => card(page, id).first().locator('xpath=ancestor::*[contains(@class, "cell")][1]');
-const toPlan = (page: Page) => page.getByTestId('zoom-bar').getByRole('button', { name: 'Plan', exact: true }).click();
 
 async function select(page: Page, ...ids: string[]) {
   for (const [i, id] of ids.entries()) {
@@ -54,15 +54,15 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await expect(eu).toHaveAttribute('data-weight', '2');
   await select(page, 'passwordless-login');
   await inspector(page).getByLabel('Level', { exact: true }).selectOption('story');
-  await openGroup(card(page, 'passwordless-login').first());
+  await expandGroup(card(page, 'passwordless-login').first());
   await select(page, 'webauthn-enrollment');
   await inspector(page).getByLabel('Level', { exact: true }).selectOption('epic');
   await expect(card(page, 'webauthn-enrollment').locator('.mismatch')).toHaveAttribute('title', /Epic, at or above its group's Story/);
-  await toPlan(page);
+  await page.keyboard.press('Shift+E');
   await page.keyboard.press('i');
 
   // 5. Components as rows: area bands, Identity's own lane, and the bottom lane only for cards with no system.
-  await pickAxes(page, 'sequence', 'system:1');
+  await foldAll(page, 'System', false);
   await expect(page.locator('.band-y[data-band="identity"]')).toBeVisible();
   await expect(rowOf(page, 'contractor-and-guest-identities')).toHaveAttribute('data-row', 'identity');
   const column = (await rowOf(page, 'custom-roles').getAttribute('data-column'))!;
@@ -70,19 +70,20 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await expect(rowOf(page, 'custom-roles')).toHaveAttribute('data-row', 'identity');
   await expect(page.locator('.holding-bottom .card[data-item="contractor-and-guest-identities"]')).toHaveCount(0);
 
-  // 6. Collapse and expand a band, and zoom from one; then quarters over releases.
-  await page.getByRole('button', { name: 'Collapse Identity & Access' }).click();
-  await expect(page.locator('.row-header.lane-collapsed')).toHaveText('4 components');
-  await page.getByRole('button', { name: 'Expand Identity & Access' }).click();
-  const billing = page.locator('.band-y[data-band="billing"]');
+  // 6. Fold and unfold a band, and unfold one from its folded lane (zoom's replacement); then quarters.
+  await page.getByRole('button', { name: 'Fold Identity & Access' }).click();
+  await expect(page.locator('.row-header.lane-collapsed')).toHaveText('4 components ▸');
+  await page.getByRole('button', { name: 'Unfold Identity & Access' }).click();
+  await foldAll(page, 'System', true);
+  const billing = page.locator('.row-header[data-row="billing"]');
   await reveal(billing);
-  await billing.locator('.lane-zoom').click();
-  await expect(page.locator('.row-header').first()).toHaveText('Invoicing');
-  await page.keyboard.press('Escape');
+  await billing.getByRole('button').click();
+  await expect(page.locator('.row-header[data-row^="billing/"]').first()).toHaveText('Invoicing');
   await expect(page.locator('.band-y')).toHaveCount(4);
-  await pickAxes(page, 'time:1', 'system');
-  await page.getByRole('button', { name: 'Collapse Q1 2027' }).click();
-  await expect(page.locator('.column-header.lane-collapsed')).toHaveText('2 releases');
+  await pickAxes(page, 'time', 'system');
+  await foldAll(page, 'Time', false);
+  await page.getByRole('button', { name: 'Fold Q1 2027' }).click();
+  await expect(page.locator('.column-header.lane-collapsed')).toHaveText('2 releases ▸');
 
   // 7. Expand two groups in place, then fold one back.
   await pickAxes(page, 'sequence', 'system');
@@ -94,30 +95,30 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await page.keyboard.press('Shift+E');
   await expect(card(page, 'usage-based-pricing').first()).toBeVisible();
 
-  // 8. Zoom into two groups at once.
+  // 8. See two groups' children at once: expand both, each child marked with its parent.
   await select(page, 'usage-based-pricing', 'public-api-v2');
-  await page.keyboard.press('ControlOrMeta+ArrowDown');
-  await expect(page.getByTestId('zoom-bar').locator('.crumb-current')).toHaveText('Usage-based pricing + 1');
+  await page.keyboard.press('e');
   await expect(card(page, 'usage-dashboard').locator('.parent-chip')).toHaveText('Usage-based pricing');
   await expect(card(page, 'rate-limiting-v2').locator('.parent-chip')).toHaveText('Public API v2');
-  await toPlan(page);
+  await select(page, 'usage-dashboard', 'rate-limiting-v2');
+  await page.keyboard.press('Shift+E');
   // Fold EU back, so its frames show.
   await select(page, 'eu-invoice-storage');
   await page.keyboard.press('Shift+E');
 
   // 9. A faded copy is a frame around the cards that put it there; dragging one changes that card.
   await pickAxes(page, 'time', 'system');
+  await page.getByRole('button', { name: 'Fold Q3 2027' }).click();
   const child = cell(page, 'identity', 'q3').locator('.frame[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]');
   await expect(child).toBeVisible();
   await dragTo(page, child, cell(page, 'billing', 'q3'));
   await expect(cell(page, 'billing', 'q3').locator('.frame[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]')).toBeVisible();
 
-  // 10. Reload without losing anything: the plan, collapsed bands, and expanded groups.
+  // 10. Reload without losing anything: the plan, folded bands, and expanded groups.
   await page.reload();
   await page.getByTestId('board').waitFor();
   await expect(cell(page, 'billing', 'q3').locator('.frame[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]')).toBeVisible();
-  await pickAxes(page, 'time:1', 'system');
-  await expect(page.locator('.column-header.lane-collapsed')).toHaveText('2 releases');
+  await expect(page.locator('.column-header.lane-collapsed[data-column="q1"]')).toHaveText('2 releases ▸');
   await select(page, 'credit-notes');
   await page.keyboard.press('i');
   await expect(inspector(page).getByLabel('Description')).toHaveValue('Needed before the Q2 audit.');

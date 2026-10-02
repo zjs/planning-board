@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { card, cell, openApp, openGroup, pickAxes, reveal } from './app.ts';
+import { card, cell, openApp, expandGroup, pickAxes, reveal } from './app.ts';
 
 const EU = 'eu-data-residency'; // Data Platform, Q2; one card inside is in Billing, Q2
 
@@ -38,24 +38,28 @@ test('mismatch markers: a count on the collapsed group, and the reason on the ca
   await expect(marker).toHaveText('⚠ 4');
   await expect(marker).toHaveAttribute('title', /Region-pinned directory sync: Dated Q3 2027 › 27\.6, outside its group's Q2 2027 › 27\.3/);
 
-  await openGroup(card(page, EU).first());
+  await expandGroup(card(page, EU).first());
   const child = card(page, 'region-pinned-directory-sync').first().locator('.mismatch');
   await expect(child).toHaveText('⚠');
   await expect(child).toHaveAttribute('title', /Dated Q3 2027 › 27\.6, outside its group's Q2 2027 › 27\.3/);
   await expect(child).toHaveAttribute('title', /In Identity & Access › Directory Sync, outside its group's Data Platform/);
 });
 
-test('Enter on a group seen only as a faded copy does nothing, and shortcuts keep working', async ({ page }) => {
+test('Enter on a faded copy renames the group where its own copy is; Esc cancels, and shortcuts keep working', async ({
+  page,
+}) => {
   await openApp(page);
   await pickAxes(page, 'time', 'system');
-  // Zoomed into Identity, EU data residency (Data Platform) shows only through a card inside it.
-  await page.locator('.row-header[data-row="identity"]').getByRole('button').click();
-  const faded = page.locator(`.card.via-children[data-item="${EU}"]`).first();
+  // In the Identity row, EU data residency (Data Platform) shows only through a card inside it. With no
+  // zoom, the group always has its own copy somewhere on the board.
+  const faded = page.locator(`.cell[data-row="identity"] .card.via-children[data-item="${EU}"]`).first();
+  await reveal(faded);
   await expect(faded).toBeVisible();
-  await expect(card(page, EU)).toHaveCount(0);
 
   await faded.click();
   await page.keyboard.press('Enter');
+  await expect(card(page, EU).getByRole('textbox', { name: 'Card title' })).toBeFocused();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('textbox')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.locator('.card.selected')).toHaveCount(0);

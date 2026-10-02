@@ -62,7 +62,7 @@ export function childrenOf(plan: Plan, parent: ItemId | null): ItemId[] {
 
 /**
  * The chain of groups from the top level down to `id`, inclusive: the
- * breadcrumb for zooming into it. Empty for an unknown item. Cycle-safe:
+ * groups to expand to show it. Empty for an unknown item. Cycle-safe:
  * the chain stops where topLevelItems would surface the item.
  */
 export function ancestry(plan: Plan, id: ItemId): ItemId[] {

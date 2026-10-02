@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, openApp, openGroup, reveal } from './app.ts';
+import { card, openApp, expandGroup, reveal } from './app.ts';
 
 // Drawing and showing dependency links (requirement 15, Q24, Q38, Q39).
 
@@ -61,21 +61,20 @@ test('focus: hovering shows direct links, selecting shows the whole chain, and n
   await expect(page.locator('.dep-line.focus')).toHaveCount(0);
 });
 
-test('a pending link survives zooming, so a card can be linked to one inside a group (Q38)', async ({ page }) => {
+test('a pending link survives expanding, so a card can be linked to one inside a group (Q38)', async ({ page }) => {
   await openApp(page);
   await select(page, 'custom-roles');
   await page.keyboard.press('l');
   await expect(page.getByTestId('link-bar')).toContainText('Linking from “Custom roles”');
 
-  await openGroup(card(page, 'eu-data-residency').first());
+  await expandGroup(card(page, 'eu-data-residency').first());
   await select(page, 'region-pinned-directory-sync');
   await page.keyboard.press('l');
   await expect(notice(page)).toContainText('Linked “Custom roles” → “Region-pinned directory sync”');
   await expect(page.getByTestId('link-bar')).toHaveCount(0);
 
-  // Back at the top level, the link is drawn to the group the card is in.
-  await page.keyboard.press('Escape');
-  await page.keyboard.press('Escape');
+  // Folded again, the link is drawn to the group the card is in.
+  await page.keyboard.press('Shift+E');
   await select(page, 'custom-roles');
   await expect(line(page, 'custom-roles', 'eu-data-residency')).toHaveCount(1);
 });

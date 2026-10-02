@@ -100,11 +100,11 @@ export async function dragTo(page: Page, from: Locator, to: Locator, opts: { alt
   if (opts.alt) await page.keyboard.up('Alt');
 }
 
-/** Zoom into a group: select it, then ⌘↓ (its count expands it in place instead, Q42). */
-export async function openGroup(group: Locator) {
+/** Expand a group in place (ADR 0013): select it, then E. Its children take its place, marked with it. */
+export async function expandGroup(group: Locator) {
   await reveal(group);
   await group.locator('.card-title').click();
-  await group.page().keyboard.press('Control+ArrowDown');
+  await group.page().keyboard.press('e');
 }
 
 /**
@@ -121,4 +121,12 @@ export async function holdOver(page: Page, from: Locator, to: Locator, ms = 800)
   const b = (await to.boundingBox())!;
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 });
   await page.waitForTimeout(ms);
+}
+
+/** Unfold, or fold, every band of an axis's property, such as System (ADR 0013). */
+export async function foldAll(page: Page, property: string, folded: boolean) {
+  await page
+    .getByRole('group', { name: `Fold ${property}` })
+    .getByRole('button', { name: folded ? 'Fold all' : 'Unfold all', exact: true })
+    .click();
 }

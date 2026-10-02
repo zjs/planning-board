@@ -52,7 +52,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **Board and views**
 
-1. Users can pick any two properties, at any hierarchy level, as the X and Y axes of a view.
+1. Users can pick any two properties as the X and Y axes of a view, and fold a hierarchical one to the level they want (requirement 7).
 2. Dragging a card into a cell sets that card's values for both axis properties.
 3. A card with several values on an axis appears in each matching lane. Dragging one copy replaces only that lane's value. Dropping with a modifier key adds a value instead. Dragging a copy to a holding lane removes only that copy's value on the lane's missing axis.
 4. Cards show non-axis properties as compact attributes, such as a size badge in the sequence view.
@@ -105,7 +105,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 ## Milestones
 
-**M1: prove the core bet.** One person drives while others watch on a shared screen. Covers requirements 1–29: pivots and zoom, groups, dependencies, contention, scenarios, custom properties, CSV import, and plan files. Built on the CRDT data model from day one, so M2 needs no rewrite _(priors)_.
+**M1: prove the core bet.** One person drives while others watch on a shared screen. Covers requirements 1–29: pivots and folding, groups, dependencies, contention, scenarios, custom properties, CSV import, and plan files. Built on the CRDT data model from day one, so M2 needs no rewrite _(priors)_.
 
 **M2: collaboration.** Requirements 30–32: encrypted share links with stored snapshots, live multi-user editing, and presence. The relay is written in Go.
 

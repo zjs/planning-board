@@ -20,6 +20,9 @@ interface Props {
   /** Header of each axis's holding lane, such as "No quarter". */
   xNone: string;
   yNone: string;
+  /** Header of a parent's own lane on a nested axis, such as "No component". */
+  xParentNone: string;
+  yParentNone: string;
   /** Show holding-lane cards as one-line chips. */
   compact: boolean;
   onCompactChange: (compact: boolean) => void;
@@ -45,10 +48,7 @@ interface Props {
   onBackgroundPointerDown: () => void;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
-  /** Lanes, and bands on a nested axis, whose header zooms one level down into them (requirement 7). */
-  zoomableLanes: { x: ReadonlySet<string>; y: ReadonlySet<string> };
-  onLaneZoom: (which: 'x' | 'y', key: string) => void;
-  /** Collapse or expand a band on a nested axis (ADR 0012). */
+  /** Fold or unfold a band on a nested axis (ADR 0013). */
   onBandToggle: (which: 'x' | 'y', key: string) => void;
   /** ⇧-click on a lane or band header: select every card in lanes `start` up to `end` (Q47). */
   onSelectLanes: (which: 'x' | 'y', start: number, end: number) => void;
@@ -150,6 +150,8 @@ export const Board = memo(function Board({
   yLabel,
   xNone,
   yNone,
+  xParentNone,
+  yParentNone,
   compact,
   onCompactChange,
   lifted,
@@ -168,8 +170,6 @@ export const Board = memo(function Board({
   onCommitEdit,
   onCancelEdit,
   onBackgroundPointerDown,
-  zoomableLanes,
-  onLaneZoom,
   onBandToggle,
   onSelectLanes,
   onSelectMatching,
@@ -177,52 +177,41 @@ export const Board = memo(function Board({
   mismatches,
 }: Props) {
   /**
-   * A lane header: a button that zooms into the lane when there's a level
-   * below it. On a nested axis, a parent's own lane reads "No component",
-   * and a collapsed one says how much it holds (ADR 0012).
+   * A lane header. On a nested axis, a parent's own lane reads "No
+   * component", and a folded one says how much it holds; clicking that
+   * unfolds it, a bigger target than the band's ▸ (ADR 0013).
    */
   const laneHeader = (which: 'x' | 'y', lane: Lane) => {
-    if (lane.kind === 'parent') return <span className="lane-note">{which === 'x' ? xNone : yNone}</span>;
+    if (lane.kind === 'parent') return <span className="lane-note">{which === 'x' ? xParentNone : yParentNone}</span>;
     if (lane.kind === 'collapsed') {
       const n = lane.inner ?? 0;
-      return <span className="lane-note">{`${n} ${levelNames[which]}${n === 1 ? '' : 's'}`}</span>;
-    }
-    return zoomableLanes[which].has(lane.key) ? (
-      <button
-        type="button"
-        className="lane-zoom"
-        onClick={() => onLaneZoom(which, lane.key)}
-        title={`Zoom into ${lane.label ?? ''}`}
-      >
-        {lane.label}
-      </button>
-    ) : (
-      lane.label
-    );
-  };
-  /** A band's header: collapse or expand it, and zoom into it by its name. */
-  const bandHeader = (which: 'x' | 'y', band: Band) => (
-    <span className="band-head">
-      <button
-        type="button"
-        className="band-toggle"
-        aria-expanded={!band.collapsed}
-        aria-label={`${band.collapsed ? 'Expand' : 'Collapse'} ${band.label}`}
-        title={band.collapsed ? `Show each of ${band.label}'s lanes` : `Fold ${band.label} into one lane`}
-        onClick={() => onBandToggle(which, band.key)}
-      >
-        {band.collapsed ? '▸' : '▾'}
-      </button>
-      {zoomableLanes[which].has(band.key) ? (
-        <button type="button" className="lane-zoom" onClick={() => onLaneZoom(which, band.key)} title={`Zoom into ${band.label}`}>
-          {band.label}
+      return (
+        <button
+          type="button"
+          className="lane-unfold"
+          onClick={() => onBandToggle(which, lane.key)}
+          title={`Unfold ${lane.label ?? ''}: show each of its lanes`}
+        >
+          {`${n} ${levelNames[which]}${n === 1 ? '' : 's'}`} ▸
         </button>
-      ) : (
-        <span>{band.label}</span>
-      )}
-    </span>
+      );
+    }
+    return lane.label;
+  };
+  /** A band's header: its name and a ▾ that folds it, or a ▸ that unfolds it. */
+  const bandHeader = (which: 'x' | 'y', band: Band) => (
+    <button
+      type="button"
+      className="band-head band-toggle"
+      aria-expanded={!band.collapsed}
+      aria-label={`${band.collapsed ? 'Unfold' : 'Fold'} ${band.label}`}
+      title={band.collapsed ? `Show each of ${band.label}'s lanes` : `Fold ${band.label} into one lane`}
+      onClick={() => onBandToggle(which, band.key)}
+    >
+      <span aria-hidden="true">{band.collapsed ? '▸' : '▾'}</span> <span>{band.label}</span>
+    </button>
   );
-  /** ⇧-click anywhere on a header selects its lanes' cards, before the click can zoom or fold. */
+  /** ⇧-click anywhere on a header selects its lanes' cards, before the click can fold or unfold. */
   const selectOnShift = (which: 'x' | 'y', start: number, end: number) => (e: MouseEvent<HTMLElement>) => {
     if (!e.shiftKey) return;
     e.preventDefault();

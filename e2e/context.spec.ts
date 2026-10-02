@@ -78,16 +78,3 @@ test('an epic inside an expanded initiative expands too, and ⇧E folds one leve
   await expect(chip(page, 'eu-invoice-storage')).toHaveText('EU data residency');
 });
 
-test('zooming into several groups shows only their children, each marked with its group', async ({ page }) => {
-  await openApp(page);
-  await select(page, 'eu-data-residency', 'usage-based-pricing');
-  await page.keyboard.press('ControlOrMeta+ArrowDown');
-  await expect(page.getByTestId('zoom-bar').locator('.crumb-current')).toHaveText('EU data residency + 1');
-  await expect(chip(page, 'eu-invoice-storage')).toHaveText('EU data residency');
-  await expect(chip(page, 'usage-dashboard')).toHaveText('Usage-based pricing');
-  await expect(card(page, 'custom-roles')).toHaveCount(0);
-
-  await page.getByTestId('zoom-bar').getByRole('button', { name: 'Plan', exact: true }).click();
-  await expect(card(page, 'custom-roles')).toHaveCount(1);
-  await expect(page.locator('.parent-chip')).toHaveCount(0);
-});

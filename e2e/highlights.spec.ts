@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { card, dragTo, openApp, openGroup, reveal } from './app.ts';
+import { card, dragTo, openApp, expandGroup, reveal } from './app.ts';
 
 // Order highlights, loops, removing a line, and group counts (requirements 16 and 18, Q37).
 
@@ -85,12 +85,12 @@ test('a collapsed group counts the flagged links inside it (requirement 18)', as
   // Custom roles → Region-pinned directory sync (inside EU data residency), and back: a loop.
   await select(page, 'custom-roles');
   await page.keyboard.press('l');
-  await openGroup(card(page, 'eu-data-residency').first());
+  await expandGroup(card(page, 'eu-data-residency').first());
   await select(page, 'region-pinned-directory-sync');
   await page.keyboard.press('l');
-  // L again starts a link from it; zoom back out to finish it at the top level.
+  // L again starts a link from it; fold the group back to finish it with the group folded.
   await page.keyboard.press('l');
-  await page.getByTestId('zoom-bar').getByRole('button', { name: 'Plan', exact: true }).click();
+  await page.keyboard.press('Shift+E');
   await select(page, 'custom-roles');
   await page.keyboard.press('l');
   await expect(notice(page)).toContainText('Linked “Region-pinned directory sync” → “Custom roles”');
