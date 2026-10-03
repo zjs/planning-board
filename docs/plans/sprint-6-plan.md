@@ -1,6 +1,6 @@
 # Sprint 6: engineering plan
 
-Status: **approved 2026-10-03.** Slices 1 and 2 are built together in one PR. Scope is in `docs/sprint-6.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-10-03.** **Complete 2026-10-03.** Slices 1 and 2 were built together (#41), and slice 3 followed. Scope is in `docs/sprint-6.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## What this sprint has to prove
 

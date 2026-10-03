@@ -38,9 +38,9 @@ Scope: single user, browser only, no server.
 ### 5. Tester-ready
 
 - [x] The legend lists **/**.
-- [ ] A demo note (`docs/demos/sprint-6.md`).
-- [ ] A row in the combined session script, which now covers sprints 3–6: "Find every card about SSO, then expand them." It watches whether people press **/** or ⌘F.
-- [ ] The release pass (`docs/housekeeping.md`).
+- [x] A demo note (`docs/demos/sprint-6.md`).
+- [x] A row in the combined session script, which now covers sprints 3–6: "Find every card about SSO, then expand them." It watches whether people press **/** or ⌘F.
+- [x] The release pass (`docs/housekeeping.md`). Compatibility fixtures for sprint 6's last commit follow in the next PR, as `housekeeping.md` says; sprint 6 changes no stored format.
 
 ## Deferred (don't build)
 

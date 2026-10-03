@@ -15,18 +15,6 @@ Each feedback item says where and when it came from. Themes are generalized from
 
 Themes with work still to do. Each says where it lands.
 
-### I. Finding cards
-
-On a board the size of a real import (about 150 cards), finding one card means scanning lanes, or remembering its values and ⇧-clicking a badge.
-
-**Feedback** (a demo viewer, relayed by the PM, 2026-10-03):
-
-- *Slash to filter.* "Being able to use slash and type text to do a filter." It's a convention in Gmail, GitHub, Linear and Jira, and Trello's board filter is similar.
-
-**Generalization:** find, not filter. Matching cards stay bright, the rest dim, and nothing moves, so the board keeps its shape and links. The matches can then be selected and acted on like any selection (Q47). Hiding non-matches is requirement 9's filter, still deferred. → [Q50](questions.md#q50-typing--to-find-cards)
-
-**Lands:** sprint 6 ([`docs/sprint-6.md`](sprint-6.md)), before the combined tester session.
-
 ### F. Links other than "comes before"
 
 Dependencies have one type: A comes before B (requirement 15). Plans also have looser relationships that people want to see without implying any order.
@@ -71,6 +59,18 @@ No decision needed: each one goes into the next sprint. None is waiting right no
 ## Shipped themes
 
 Kept for the record: the feedback behind each, and how it was generalized.
+
+### I. Finding cards
+
+On a board the size of a real import (about 150 cards), finding one card means scanning lanes, or remembering its values and ⇧-clicking a badge.
+
+**Feedback** (a demo viewer, relayed by the PM, 2026-10-03):
+
+- *Slash to filter.* "Being able to use slash and type text to do a filter." It's a convention in Gmail, GitHub, Linear and Jira, and Trello's board filter is similar.
+
+**Generalization:** find, not filter. Matching cards stay bright, the rest dim, and nothing moves, so the board keeps its shape and links. The matches can then be selected and acted on like any selection (Q47). Hiding non-matches is requirement 9's filter, still deferred. → [Q50](questions.md#q50-typing--to-find-cards)
+
+**Lands:** shipped in sprint 6 ([`docs/sprint-6.md`](sprint-6.md)), before the combined tester session.
 
 ### A. The card hierarchy is invisible on the board
 
@@ -154,13 +154,13 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 
 ## Sprints
 
-Sprints 3, 4 and 5 await the PM's acceptance and one combined tester session. Sprint 6 (find) is in progress and ships before that session.
+Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
 
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
 - **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35).
 - **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–6 (`docs/demos/sprint-5-session.md`).
-- **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)), in progress: / to find cards, dimming the rest (theme I, Q50).
+- **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)) shipped on 2026-10-03: / to find cards, dimming the rest (theme I, Q50). It ships before the combined session, which now covers sprints 3–6.
 - **Sprint 7 candidates:**
   - "related to" links (theme F, Q44);
   - order within a cell (Q46), and dragging several cards (Q48);
@@ -179,7 +179,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
 - **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02).
 - **Node 24 in CI.** CI and the docs use Node 22, which is supported until April 2027 _(recalled)_. Move to Node 24, the current LTS, in a maintenance pass well before then, and check the build and tests on it.
-- **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–5 session, as they arrive.
+- **Compatibility fixtures for sprint 6.** Add sprint 6's last commit to `VERSIONS` once it's merged, in the next PR (`housekeeping.md`, release pass). Sprint 6 changed no stored format, so it's a formality.
+- **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
 
