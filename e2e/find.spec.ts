@@ -62,13 +62,13 @@ test('/ finds cards by the start of their words, and dims the rest without movin
   await expect(bar(page)).toHaveCount(0);
 });
 
-test('a match folded inside a group shows on the group; Enter expands it and selects every match', async ({ page }) => {
+test('a match inside a collapsed group shows on the group; Enter expands it and selects every match', async ({ page }) => {
   await openApp(page);
   // In Time × System, WebAuthn enrollment (no quarter yet) is folded inside Passwordless login, with no frame of its own.
   await page.getByTestId('axis-x').selectOption('time');
   await page.keyboard.press('/');
   await page.keyboard.type('webauthn');
-  await expect(count(page)).toHaveText('1 card · 1 inside a folded group');
+  await expect(count(page)).toHaveText('1 card · 1 inside a collapsed group');
   const group = card(page, 'passwordless-login').first();
   await reveal(group);
   await expect(group).not.toHaveClass(/dimmed/);
@@ -80,7 +80,7 @@ test('a match folded inside a group shows on the group; Enter expands it and sel
   await expect(webauthn).toHaveAttribute('aria-selected', 'true');
   await expect(webauthn).not.toHaveClass(/dimmed/);
   await expect(webauthn.locator('.parent-chip')).toHaveText('Passwordless login');
-  // Focus is back on the board, so its shortcuts act on the matches: ⇧E folds the group again.
+  // Focus is back on the board, so its shortcuts act on the matches: ⇧E collapses the group again.
   await expect(find(page)).not.toBeFocused();
   await page.keyboard.press('Shift+E');
   await expect(card(page, 'passwordless-login').first().locator('.found-inside')).toHaveText('1 inside');

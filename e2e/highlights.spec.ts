@@ -88,7 +88,7 @@ test('a collapsed group counts the flagged links inside it (requirement 18)', as
   await expandGroup(card(page, 'eu-data-residency').first());
   await select(page, 'region-pinned-directory-sync');
   await page.keyboard.press('l');
-  // L again starts a link from it; fold the group back to finish it with the group folded.
+  // L again starts a link from it; collapse the group to finish it with the group collapsed.
   await page.keyboard.press('l');
   await page.keyboard.press('Shift+E');
   await select(page, 'custom-roles');

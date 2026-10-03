@@ -13,8 +13,8 @@ Requirement 9 (filters) is still deferred. A filter hides cards, which changes t
 **Find is a viewer-state overlay on the layout, never a change to it.** `layoutView` is untouched. `findOnBoard(plan, layout, words)` in `src/domain/finding.ts` reads the finished layout and returns three things:
 
 - `shown`: the matches with a copy on the board, including cards framed by a group's faded copy.
-- `inside`: the matches folded into a group, keyed by the card on the board they're folded into.
-- `matches`: every match in board order, each folded match right after the card it's in. This is the order ↓ and ↑ step through.
+- `inside`: the matches inside a collapsed group, keyed by the card on the board they're inside.
+- `matches`: every match in board order, each match inside a collapsed group right after the card it's in. This is the order ↓ and ↑ step through.
 
 An expanded group isn't on the board, because its children take its place, so it can't match there.
 
@@ -22,7 +22,7 @@ An expanded group isn't on the board, because its children take its place, so it
 
 **On the board.**
 
-- A card dims when it isn't in `shown` and has nothing in `inside`. A card with folded matches stays bright, with an "N inside" pill.
+- A card dims when it isn't in `shown` and has nothing in `inside`. A card with matches inside it stays bright, with an "N inside" pill.
 - Red lines dim when neither end is bright.
 - Focus lines and copy lines don't dim, because they only appear for the card you're pointing at or have selected.
 - Hovering a dimmed card brings it forward.
@@ -33,7 +33,7 @@ An expanded group isn't on the board, because its children take its place, so it
 - **Enter** expands every group that hides a match, the way "Show it on the board" does, selects the matches, and gives the keyboard back to the board, so E, L and I act on them.
 - **↓/↑** call the same reveal (`revealCard`): expand, select, flash, and scroll into view.
 
-**Where it lives.** **/** opens a bar under the toolbar, like the pending-link bar. A magnifier button beside **?** does the same for anyone who doesn't know **/**. A field in the toolbar didn't fit: at 1440px the default view's toolbar had 58px to spare. The query survives pivots, folds and expands, and isn't saved. A press on a card takes the keyboard out of the field: the drag stops the browser moving focus, and E or L would otherwise be typed into the field.
+**Where it lives.** **/** opens a bar under the toolbar, like the pending-link bar. A magnifier button beside **?** does the same for anyone who doesn't know **/**. A field in the toolbar didn't fit: at 1440px the default view's toolbar had 58px to spare. The query survives pivots, folding, expanding and collapsing, and isn't saved. A press on a card takes the keyboard out of the field: the drag stops the browser moving focus, and E or L would otherwise be typed into the field.
 
 ## Alternatives
 

@@ -85,7 +85,7 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await page.getByRole('button', { name: 'Fold Q1 2027' }).click();
   await expect(page.locator('.column-header.lane-collapsed')).toHaveText('2 releases ▸');
 
-  // 7. Expand two groups in place, then fold one back.
+  // 7. Expand two groups in place, then collapse one.
   await pickAxes(page, 'sequence', 'system');
   await select(page, 'eu-data-residency', 'usage-based-pricing');
   await page.keyboard.press('e');

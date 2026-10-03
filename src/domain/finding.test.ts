@@ -44,7 +44,7 @@ describe('finding cards (Q50)', () => {
     expect(found.shown.size).toBe(0);
   });
 
-  it('a match inside a folded group is counted on the card it is folded into', () => {
+  it('a match inside a collapsed group is counted on the card it is inside', () => {
     const layout = layoutView(p, timeBySystem);
     const found = findOnBoard(p, layout, queryWords('sso'));
     // The story is inside the folded epic, in the epic's own cell, so it isn't on the board. The
@@ -68,7 +68,7 @@ describe('finding cards (Q50)', () => {
     expect(found.inside.size).toBe(0);
   });
 
-  it('expanding shows what was folded; an expanded group is not a match on the board', () => {
+  it('expanding shows what was collapsed; an expanded group is not a match on the board', () => {
     const layout = layoutView(p, { ...seqBySize, expanded: ['epic'] });
     const found = findOnBoard(p, layout, queryWords('residency'));
     // The epic matches, but it's expanded: its story stands in for it.

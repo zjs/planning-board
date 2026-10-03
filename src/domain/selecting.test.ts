@@ -32,7 +32,7 @@ describe('selecting matches (Q47)', () => {
     expect(matchingCards(p, layout, 'nope', 'x')).toEqual([]);
   });
 
-  it('only cards on the board match: a folded group hides its children', () => {
+  it('only cards on the board match: a collapsed group hides its children', () => {
     const layout = layoutView(p, seqBySize);
     expect(matchingCards(p, layout, SIZE, 'l').sort()).toEqual(['ledger', 'login']);
     const expanded = layoutView(p, { ...seqBySize, expanded: ['epic'] });

@@ -28,7 +28,7 @@ test("a selected group's count expands it in place; the inspector shows the grou
   await expect(card(page, 'custom-roles')).toHaveCount(1);
   await expect(page.getByTestId('zoom-bar')).toHaveCount(0);
 
-  // Expanding survives a reload; ⇧E folds it back.
+  // Expanding survives a reload; ⇧E collapses it.
   await page.reload();
   await page.getByTestId('board').waitFor();
   await select(page, 'eu-invoice-storage');

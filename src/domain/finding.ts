@@ -1,6 +1,6 @@
 // Finding cards by typing (questions.md Q50, ADR 0014). Pure queries: which
 // cards a query matches, which of them are on the board, and which are hidden
-// inside folded groups. Finding dims the rest; it never hides or moves a card.
+// inside collapsed groups. Finding dims the rest; it never hides or moves a card.
 
 import type { Item, ItemId, Plan } from './model.ts';
 import type { CardRef, ViewLayout } from './view.ts';
@@ -32,13 +32,13 @@ export function itemMatches(item: Item, words: readonly string[]): boolean {
 
 export interface Found {
   /**
-   * Every match, in board order, each once. A match inside a folded group
+   * Every match, in board order, each once. A match inside a collapsed group
    * follows the card it's folded into.
    */
   matches: ItemId[];
   /** The matches with a copy on the board. */
   shown: ReadonlySet<ItemId>;
-  /** Matches inside folded groups, by the card on the board they're folded into. */
+  /** Matches inside collapsed groups, by the card on the board they're inside. */
   inside: ReadonlyMap<ItemId, ItemId[]>;
 }
 

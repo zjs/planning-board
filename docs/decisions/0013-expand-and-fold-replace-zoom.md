@@ -1,6 +1,6 @@
 # 0013: Expand and fold replace zoom
 
-Status: Accepted (sprint 5, slice 3). Supersedes the zoom parts of [0008](0008-view-scope-and-zoom.md) (a view's root and roots, the zoom bar) and lane zoom in [0012](0012-nested-axes.md).
+Status: Accepted (sprint 5, slice 3). Supersedes the zoom parts of [0008](0008-view-scope-and-zoom.md) (a view's root and roots, the zoom bar) and lane zoom in [0012](0012-nested-axes.md). Amended 2026-10-03: groups collapse, and only bands fold (Q52).
 
 ## Context
 
@@ -42,3 +42,7 @@ Sprint 4 left five ways to see detail: zooming into a group, zooming into severa
 - A new card is always made at the top level. "Add a card inside" makes children.
 - A folded axis spends two header columns or rows: the band, then a lane header that says what's folded ("4 components ▸"). That's the price of one control; the session will show whether it reads well.
 - Older end-to-end specs that zoomed now expand, fold, or unfold; the exit criteria of sprints 1–4 still run, step for step, with the replacement gestures.
+
+## Amendment: groups collapse, bands fold (2026-10-03, Q52)
+
+Testers mixed up the two pairs: groups went "expand" and "fold", and bands went "fold" and "unfold". Now each word means one thing. Groups **expand** and **collapse** (E, ⇧E, the toolbar's Collapse, and "inside collapsed groups" in the find bar), and bands **fold** and **unfold**. No gesture or shortcut changed. Internally, a folded band is still `collapsed` in the axis spec and the layout; only the group side was renamed in code (`collapseSelection`, `keys.collapse`).

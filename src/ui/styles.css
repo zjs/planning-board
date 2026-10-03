@@ -529,7 +529,7 @@ button.primary {
   opacity: 0.25;
 }
 
-/* A folded group with matches inside it. */
+/* A collapsed group with matches inside it. */
 .found-inside {
   flex: none;
   padding: 0 6px;

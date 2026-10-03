@@ -29,7 +29,7 @@ test('a faded group frames the cards that put it there, and dragging one changes
   await expect(child).toBeVisible();
 });
 
-test('E expands groups in place, each child marked with its group; ⇧E on a child folds its group back', async ({ page }) => {
+test('E expands groups in place, each child marked with its group; ⇧E on a child collapses its group', async ({ page }) => {
   await openApp(page);
   await select(page, 'eu-data-residency', 'passwordless-login');
   await page.keyboard.press('e');
@@ -47,7 +47,7 @@ test('E expands groups in place, each child marked with its group; ⇧E on a chi
 
   await page.keyboard.press('Shift+E');
   await expect(card(page, 'eu-data-residency').first()).toBeVisible();
-  // Folded back, the child shows only in the group's frame again, with no chip.
+  // Collapsed, the child shows only in the group's frame again, with no chip.
   await expect(page.locator('.parent-chip', { hasText: 'EU data residency' })).toHaveCount(0);
   await expect(page.locator('.frame[data-frame="eu-data-residency"] .card[data-item="eu-invoice-storage"]').first()).toBeAttached();
 

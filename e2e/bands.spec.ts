@@ -94,7 +94,7 @@ test('a view saved by an earlier build carries over: "System (component)" opens 
   await page.goto(APP_URL);
   await page.getByTestId('board').waitFor();
   await expect(page.getByTestId('axis-y')).toHaveValue('system');
-  // Unfolded, except the band it had collapsed; the lane zoom and group zoom are dropped.
+  // Unfolded, except the band it had folded; the lane zoom and group zoom are dropped.
   await expect(page.locator('.row-header.lane-collapsed')).toHaveCount(1);
   await expect(page.locator('.band-y.collapsed')).toHaveAttribute('data-band', 'data');
   await expect(card(page, 'eu-data-residency')).toHaveCount(1);

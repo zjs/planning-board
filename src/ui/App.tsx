@@ -307,7 +307,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     () => layout.cells.flat(2).concat(layout.holding.rows.flat(), layout.holding.columns.flat(), layout.holding.corner),
     [layout],
   );
-  // E: expand the selected groups in place, at any depth (Q33, Q42). Expanding never folds anything.
+  // E: expand the selected groups in place, at any depth (Q33, Q42). Expanding never collapses anything.
   const expandGroups = useCallback(
     (ids: ItemId[]) => {
       if (ids.length === 0) {
@@ -328,19 +328,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [expanded, counts, plan],
   );
   const expandSelection = useCallback(() => expandGroups([...selected]), [expandGroups, selected]);
-  // ⇧E: fold the groups the selected cards are shown for, one level up.
-  const foldSelection = useCallback(() => {
-    const fold = new Set<ItemId>();
+  // ⇧E: collapse the groups the selected cards are shown for, one level up. Bands fold; groups collapse (Q52).
+  const collapseSelection = useCallback(() => {
+    const collapse = new Set<ItemId>();
     for (const id of selected) {
       const parent = shownCopies.find((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent))?.parent;
-      if (parent !== undefined) fold.add(parent);
+      if (parent !== undefined) collapse.add(parent);
     }
-    if (fold.size === 0) {
-      setNotice({ text: 'Select a card inside an expanded group, then press ⇧E to fold the group back up.' });
+    if (collapse.size === 0) {
+      setNotice({ text: 'Select a card inside an expanded group, then press ⇧E to collapse the group.' });
       return;
     }
-    setExpanded((current) => current.filter((id) => !fold.has(id)));
-    setSelection(fold);
+    setExpanded((current) => current.filter((id) => !collapse.has(id)));
+    setSelection(collapse);
   }, [selected, shownCopies, expanded]);
 
   // The inspector's Group field.
@@ -389,7 +389,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   });
 
   // Finding (Q50, ADR 0014): / and a few words dim every card that doesn't match. Viewer state, kept across
-  // pivots, folds and expands, but not saved.
+  // pivots, folds, expands and collapses, but not saved.
   const [query, setQuery] = useState('');
   const [findOpen, setFindOpen] = useState(false);
   const findRef = useRef<HTMLInputElement>(null);
@@ -502,7 +502,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
 
   // Dependency links (requirement 15, Q24, Q39). Selection order decides direction: the first card
   // selected comes before the second. With one card selected, L starts a pending link that survives
-  // expanding and folding, so cards at different group levels can be linked; it's viewer state, never saved.
+  // expanding and collapsing, so cards at different group levels can be linked; it's viewer state, never saved.
   const [pendingLink, setPendingLink] = useState<ItemId | null>(null);
   const pendingFrom = pendingLink !== null && plan.items[pendingLink] ? pendingLink : null;
   const titleOf = useCallback((id: ItemId) => `“${plan.items[id]?.title ?? 'card'}”`, [plan]);
@@ -708,7 +708,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       }
       if (e.key.toLowerCase() === 'e' && !e.altKey && !empty) {
         e.preventDefault();
-        if (e.shiftKey) foldSelection();
+        if (e.shiftKey) collapseSelection();
         else expandSelection();
         return;
       }
@@ -756,7 +756,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     togglePanel,
     empty,
     expandSelection,
-    foldSelection,
+    collapseSelection,
     selectAll,
     findOpen,
     openFind,
@@ -901,11 +901,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
           <button
             type="button"
-            onClick={foldSelection}
+            onClick={collapseSelection}
             disabled={![...selected].some((id) => shownCopies.some((ref) => ref.itemId === id && ref.parent !== undefined))}
-            title={`Fold the groups the selected cards are in back up (${keys.fold})`}
+            title={`Collapse the groups the selected cards are in (${keys.collapse})`}
           >
-            Fold
+            Collapse
           </button>
           <button
             type="button"

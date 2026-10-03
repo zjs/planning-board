@@ -2,7 +2,7 @@
 
 Sprint 4 left five overlapping ways to look deeper into a plan. Moving a card between groups took a zoom and a breadcrumb, and a card in several lanes was easy to lose. Sprint 5 cleans that up before anything new is added:
 
-- **Looking deeper** is now expand and fold: groups expand in place, and bands fold. Zoom is gone.
+- **Looking deeper** is now expanding and folding: groups expand and collapse in place, and bands fold and unfold. Zoom is gone.
 - **Moving cards between groups** is a drag: hold a card over a group to put it inside, or drop it on the strip at the top to take it out.
 - **A card's copies** are joined by dashed lines when you point at one.
 - **Saved plans:** every plan file and browser board from sprints 0–4 is opened on every build, so nothing you saved can quietly stop opening.
@@ -21,8 +21,8 @@ Your board is saved in the browser you open it in. **File › Reset board**, the
 | Do this | You should see |
 |---|---|
 | **1.** **File › Open plan file…** with a plan you saved from an earlier build, then **File › Save plan to file**. | It opens with every card, group and link, and the saved file has them all. CI opens a file and a browser board from every past sprint on every build (ADR 0005). Then load the sample plan again. |
-| **2.** Select *EU data residency* and press **E**. Then select *Regional pipeline shards*, now on the board with an "EU data residency" chip, and press **E** again. | Both stay expanded: the epic's stories show with a "Regional pipeline shards" chip, and the rest of EU's cards keep theirs. Before this sprint, the second E folded the initiative. |
-| Select *EU kafka cluster* and press **⇧E** (or **Fold**). | Only *Regional pipeline shards* folds back. Fold the rest the same way. |
+| **2.** Select *EU data residency* and press **E**. Then select *Regional pipeline shards*, now on the board with an "EU data residency" chip, and press **E** again. | Both stay expanded: the epic's stories show with a "Regional pipeline shards" chip, and the rest of EU's cards keep theirs. Before this sprint, the second E collapsed the initiative. |
+| Select *EU kafka cluster* and press **⇧E** (or **Collapse**). | Only *Regional pipeline shards* collapses. Collapse the rest the same way. |
 | **3.** ⇧-click the **Initiative** badge on any card. | "Selected 3 cards with Initiative". It works in any pivot, because the badge is there whenever Level isn't an axis; with Level as rows, ⇧-click the row header instead. |
 | Press **E**. | All three initiatives expand at once. |
 | **4.** Drag *Custom roles* over *Passwordless login* and hold still. | After half a second the epic gets a dashed outline, and the dragged card says "Put inside "Passwordless login"". Drop it: it goes inside, and its size and area are unchanged. **Undo** in the notice puts it back. |
@@ -55,7 +55,7 @@ An automated test runs all nine criteria on every build (`e2e/exit-criteria-5.sp
 
 Each has a working default in this build (see [`docs/questions.md`](../questions.md)):
 
-- **Q42 and Q43 (answered):** expand and fold replace zoom. The session checks whether anyone misses zoom.
+- **Q42 and Q43 (answered):** expanding groups and folding bands replace zoom. The session checks whether anyone misses zoom.
 - **Hold to nest:** is half a second right? Too short nests by accident; too long feels unresponsive.
 - **Q45 (answered):** copies show on hover. Watch whether people find a card's other copies and links.
 - **Q23:** watch whether ⚠ markers add noise. It matters more now that a whole plan expands at once.

@@ -35,7 +35,7 @@ test('sprint 1 exit criteria', async ({ page }) => {
   await dragTo(page, card(page, 'least-privilege-default-role'), page.getByTestId('move-out'));
   await expect(card(page, 'least-privilege-default-role').locator('.parent-chip')).toHaveCount(0);
 
-  // 3. Fold the group back, and ungroup it.
+  // 3. Collapse the group, and ungroup it.
   await card(page, 'custom-roles').locator('.card-title').click();
   await page.keyboard.press('Shift+E');
   await expect(groupCard(page, 'Role management').locator('.child-count')).toHaveText('3');

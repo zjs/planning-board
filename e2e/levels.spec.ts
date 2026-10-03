@@ -39,7 +39,7 @@ test('a child at or above its group’s level is flagged, and the group counts i
   await inspector(page).getByLabel('Level', { exact: true }).selectOption('epic');
   await expect(child.locator('.mismatch')).toHaveAttribute('title', /Epic, at or above its group's Epic/);
 
-  // Folded back, the group counts it.
+  // Collapsed, the group counts it.
   await page.keyboard.press('Shift+E');
   await expect(marker).toHaveText(`⚠ ${before + 1}`);
   await page.keyboard.press('ControlOrMeta+z');

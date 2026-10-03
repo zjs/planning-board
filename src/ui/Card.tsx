@@ -35,7 +35,7 @@ interface Props {
   mismatchesInside?: readonly string[];
   /** Doesn't match what's being found (Q50). */
   dimmed?: boolean;
-  /** Titles of the cards folded inside this one that match what's being found (Q50). */
+  /** Titles of the cards collapsed inside this one that match what's being found (Q50). */
   foundInside?: readonly string[] | undefined;
   onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void;
   onDoubleClick?: (e: MouseEvent<HTMLDivElement>) => void;

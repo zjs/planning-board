@@ -27,6 +27,18 @@ Dependencies have one type: A comes before B (requirement 15). Plans also have l
 
 **Lands:** sprint 7 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), and again when find took sprint 6 (PM, 2026-10-03).
 
+### K. Focusing on part of the plan
+
+Expanding, folding and find keep the whole board in view. That keeps spatial memory, but on a real plan people sometimes want everything else out of the way.
+
+**Feedback** (combined sprint 3–6 session, 2026-10-03, from the PM's memory):
+
+- *Focus, but not on a group.* "It'd be good to be able to focus on one thing, but it might be more of a request for search … and filter. Being able to see just the items in a group seems less useful than being able to, for example, filter down to a tangled mess of dependencies or select-and-filter to slice by a third dimension (other than the two currently in the pivot)."
+
+**Generalization:** hiding what you didn't pick, without changing any values or moving any cards. Both examples are selections that already exist or nearly do: a card's dependency chain, and every card with a value (⇧-click a badge, Q47). So one "Show only the selection" control may cover them, ahead of requirement 9's property filters. → [Q53](questions.md#q53-focusing-on-part-of-the-plan)
+
+**Lands:** sprint 7 candidate.
+
 ### H. Arranging and moving cards
 
 Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.
@@ -43,11 +55,15 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 - **Dragging a selection** moves every selected card, with the same drop rules as one card. → [Q48](questions.md#q48-dragging-several-cards)
 - **Moving a card into a group is a drag:** hold it over the group to put it inside, or drop it on a "Move out" strip. A Group field in the inspector is the fallback for targets that aren't on screen. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
 
+**Feedback** (combined sprint 3–6 session, 2026-10-03, from the PM's memory):
+
+- *Hold to nest* mostly worked. It was confusing when a drag to nest ended with the group expanded. Nesting never expands a group, but a card dropped into a group that was already expanded (an epic inside an expanded initiative, say) stays on the board inside it, which can look like the drop expanded something. The cause isn't confirmed. Watch for it in the next session before changing anything.
+
 **Lands:** moving between groups shipped in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are open, and sprint 7 candidates.
 
 ### D. Small fixes
 
-No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
+No decision needed: each one goes into the next sprint. The table keeps the ones that shipped, too.
 
 | Item | Source | Lands |
 |---|---|---|
@@ -55,6 +71,8 @@ No decision needed: each one goes into the next sprint. None is waiting right no
 | Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
 | Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
 | Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
+| "Fold" meant two things: groups went expand/fold and bands fold/unfold. Groups now expand and collapse (theme G, Q52). | Combined session, 2026-10-03 | Shipped 2026-10-03, before accepting sprints 3–6 |
+| A group's faded frames aren't joined to its other copies by the dashed copy lines, so they don't read as the same card (theme E). | Combined session, 2026-10-03 | Sprint 7 |
 
 ## Shipped themes
 
@@ -143,7 +161,11 @@ A card in several lanes has a copy in each (requirement 3). On a board the size 
 
 **Generalization:** a card is one thing however many copies it has. Hovering any copy shows every copy, joined by a dashed line without arrows, along with the links from all of them. → [Q45](questions.md#q45-showing-a-cards-copies)
 
-**Lands:** shipped in sprint 5 ([`docs/sprint-5.md`](sprint-5.md), slice 4).
+**Feedback** (combined sprint 3–6 session, 2026-10-03, from the PM's memory):
+
+- *Faded group frames.* "It was a little confusing that shadow copies of a group didn't have the same dashed lines as multi-value copies of cards." A frame is one of the group's copies, so the same rule should apply. It's a small fix in D.
+
+**Lands:** shipped in sprint 5 ([`docs/sprint-5.md`](sprint-5.md), slice 4). Joining frames to the group's other copies is a small fix (D) for sprint 7.
 
 ### G. One way to look deeper: expand and fold, not zoom
 
@@ -165,7 +187,11 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 - **Expand and fold are separate actions**, so an expanded group's children can be expanded in turn. This fixes the bug. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
 - **Select every card that matches**, so a bulk expand is: select every initiative, then Expand. → [Q47](questions.md#q47-selecting-every-card-that-matches)
 
-**Lands:** shipped in sprint 5 (slices 2 and 3), including the bug fix and selecting every match (Q47).
+**Feedback** (combined sprint 3–6 session, 2026-10-03):
+
+- *Two meanings of "fold".* Groups expanded and folded, and bands folded and unfolded. "Fold should mean one thing, and we should give the other action a different name." → [Q52](questions.md#q52-fold-meant-two-things)
+
+**Lands:** shipped in sprint 5 (slices 2 and 3), including the bug fix and selecting every match (Q47). Groups expand and collapse since 2026-10-03 (Q52).
 
 ## Sprints
 
@@ -180,7 +206,9 @@ Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
 - **Sprint 7 candidates:**
   - "related to" links (theme F, Q44);
   - order within a cell (Q46), and dragging several cards (Q48);
-  - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).
+  - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41);
+  - focusing on part of the plan (theme K, Q53);
+  - the small fix in D: joining a group's faded frames to its other copies.
 
 ## Deferred, from earlier sprints
 
@@ -195,7 +223,7 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
 - **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02).
 - **Node 24 in CI.** CI and the docs use Node 22, which is supported until April 2027 _(recalled)_. Move to Node 24, the current LTS, in a maintenance pass well before then, and check the build and tests on it.
-- **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
+- **Session notes.** Fold in notes from the sprint 1 and 2 sessions as they arrive. The combined sprint 3–6 session ran informally on 2026-10-03, with no notes taken; what the PM remembered is in themes E, G, H and K, and in Q23, Q42, Q50 and Q51.
 
 **Done**
 

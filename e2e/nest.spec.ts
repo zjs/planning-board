@@ -19,7 +19,7 @@ test('hold a card over another to put it inside, without changing its values; a 
   await page.mouse.up();
 
   await expect(notice(page)).toContainText('Put “Custom roles” inside “Passwordless login”');
-  // It's inside a folded group now, so it's off the board, and its group is selected instead.
+  // It's inside a collapsed group now, so it's off the board, and its group is selected instead.
   await expect(roles).toHaveCount(0);
   await expect(card(page, 'passwordless-login')).toHaveClass(/selected/);
   await page.keyboard.press('e');

@@ -37,24 +37,12 @@ Entry format:
 - Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 7 candidate).
   - Sprint 5 (ADR 0013): with one Time axis that folds, "the level it shows" became the lanes it shows. A folded quarter is one bucket, and an unfolded one a bucket per release.
 
-### Q21: What happens to a group's dependencies when it's ungrouped?
-- Context: Requirements 11 and 15. Ungrouping removes the group card, but other cards may depend on it, or it on them. Dependencies aren't visible until sprint 2, but ungrouping already has to do something with them.
-- Options: (a) re-point each link at every child ("X before the epic" becomes "X before each of its parts"); (b) drop the links; (c) keep them on a hidden, deleted group.
-- Recommendation: (a). It keeps every ordering constraint the plan had, and it's what decomposing an epic means (the "Group" definition in `requirements.md`). The catch is that one link can become many; the dependency UI will show whether that's noisy.
-- Status: open. Built (a) in slice 2; one undo restores the original links.
-
 ### Q23: Are group mismatch markers too noisy on real plans?
 - Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
 - Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
 - Recommendation: (a), and watch the tester session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds the conflicts panel.
 - Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 7 candidate. The session now covers sprints 3–6.
-
-### Q27: Where do flat Jira values go in our two-level hierarchies?
-- Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
-- Options: (a) a value table in the import dialog that asks for a parent for each value, with defaults; (b) import components as areas and versions as quarters, and let people restructure afterwards with value editing; (c) infer parents from names or release dates.
-- Recommendation: (a). Each component defaults to a new area named after its Jira project, and each version defaults to "not imported", so those cards get no time until you pick a quarter. Nothing is guessed silently, and value editing (slice 3) fixes anything chosen wrong. (c) could come later as a suggestion in the same table, using the versions' release dates.
-- Status: open. Built (a).
-  - Slices 4–5: the import dialog's Values step lists each component with an area field (defaulting to the project's name) and each version with a quarter menu (defaulting to "Not dated").
+  - Combined session, 2026-10-03 (informal, from the PM's memory): the red out-of-order lines mostly pointed at real problems. The main noise was the ⚠ count on a group's faded frames, the copies in lanes only its children reach, which repeat the group's count in every lane those children touch. That suggests (d): show ⚠ only on a group's own card, and leave it off its frames, since each child inside a frame shows its own marker.
 
 ### Q46: Order within a cell
 - Context: The backlog's theme H. Cards in a cell sort by sequence, then title. In PM testing, people wanted to put cards in order within a cell, in views without a sequence axis. Sequence is already a layout, though: its keys are the sequence view's columns (Q8), so changing a card's key to reorder it in a time view would also move it to another column in the sequence view. Remembering positions per view is out of scope for v1.
@@ -75,6 +63,12 @@ Entry format:
   - **Automation.** (c) Dependabot for npm and GitHub Actions, monthly, with minor and patch updates grouped into one PR. (d) A scheduled routine that runs the maintenance pass and opens a PR. (e) Neither, for now.
 - Recommendation: (a), because each kind of rot is cheapest to fix when it's caused. Also (c): it catches security fixes between sprints, and its PRs go through the same CI and merge-on-green as engineering's. Skip (d) while sprints follow each other closely.
 - Status: open. The 2026-10-02 pass followed (a)'s checklists, and `CLAUDE.md` points to them as a proposal.
+
+### Q53: Focusing on part of the plan
+- Context: Requirement 9 (filters, deferred), Q42 and Q50, and the backlog's theme K. In the combined session (2026-10-03), people wanted to focus on one thing. Seeing just one group's contents, which zoom used to do, mattered less than two other cases: narrowing the board to a tangle of dependencies, and slicing it by a third property that isn't on either axis. Find (Q50) dims cards by their text, and ⇧-clicking a badge (Q47) already selects by any property's value.
+- Options: (a) property filters, as requirement 9 has them: pick values to keep, and hide every other card; (b) "Show only the selection": hide every card that isn't selected, with ways to build the selection that already exist (find and Enter, ⇧-click a badge, ⌘A) plus one new one, selecting a card's whole dependency chain; (c) (b) first, then (a) on top of it.
+- Recommendation: (c). (b) covers both session cases with one control, because the selection tools already slice by any property, and it composes with find. Property filters that you can save with a view come later, with saved views (requirement 8). Hiding still never changes a card's values or its place in the layout.
+- Status: open. Sprint 7 candidate.
 
 ## Answered
 
@@ -186,6 +180,12 @@ Entry format:
 - Status: answered 2026-09-26: (a), as recommended. Built in slice 3: select any card and press ⌘↓ (or Zoom in); an empty card shows "Nothing inside yet", and its first child makes it a group.
   - Sprint 5 (Q42): without zoom, the inspector's "Add a card inside" gives any card its first child, and holding a dragged card over a plain card puts it inside.
 
+### Q21: What happens to a group's dependencies when it's ungrouped?
+- Context: Requirements 11 and 15. Ungrouping removes the group card, but other cards may depend on it, or it on them. Dependencies aren't visible until sprint 2, but ungrouping already has to do something with them.
+- Options: (a) re-point each link at every child ("X before the epic" becomes "X before each of its parts"); (b) drop the links; (c) keep them on a hidden, deleted group.
+- Recommendation: (a). It keeps every ordering constraint the plan had, and it's what decomposing an epic means (the "Group" definition in `requirements.md`). The catch is that one link can become many; the dependency UI will show whether that's noisy.
+- Status: answered 2026-10-03: (a), as built. Built (a) in slice 2; one undo restores the original links.
+
 ### Q22: In a zoomed lane, what does dropping a card on "No component" do?
 - Context: Requirements 3, 5, and 7, and Q18. Outside a zoom, a holding lane removes the dragged copy's value on that axis. Inside a zoom on Identity, the rows are Identity's components and the "No component" lane holds cards tagged Identity with no component yet. Removing the value would take the card out of Identity altogether, so it would vanish from the view you just dropped it into.
 - Options: (a) inside a zoom, "No component" means "Identity, nothing more precise": the copy loses its component and goes back to plain Identity, so it stays in view; (b) the same as outside a zoom: the value is removed, and the card leaves the view.
@@ -210,6 +210,13 @@ Entry format:
 - Options: (a) replace the board, undoably, and keep each card's Jira key; (b) add the imported cards to the board; (c) merge by Jira key.
 - Recommendation: (a). It's simple to reason about and one undo reverses it. Keeping the key leaves room for (c) later, as "update from a fresh export".
 - Status: answered 2026-09-30: (a). The build targets Jira's CSV format, tested with a synthetic export in the repo. The PM checks their own export locally.
+
+### Q27: Where do flat Jira values go in our two-level hierarchies?
+- Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
+- Options: (a) a value table in the import dialog that asks for a parent for each value, with defaults; (b) import components as areas and versions as quarters, and let people restructure afterwards with value editing; (c) infer parents from names or release dates.
+- Recommendation: (a). Each component defaults to a new area named after its Jira project, and each version defaults to "not imported", so those cards get no time until you pick a quarter. Nothing is guessed silently, and value editing (slice 3) fixes anything chosen wrong. (c) could come later as a suggestion in the same table, using the versions' release dates.
+- Status: answered 2026-10-03: (a), as built.
+  - Slices 4–5: the import dialog's Values step lists each component with an area field (defaulting to the project's name) and each version with a quarter menu (defaulting to "Not dated").
 
 ### Q28: How do story points become sizes?
 - Context: Requirement 28 and the Size property (ordered XS–XL, no roll-up). Jira exports story points as numbers, and teams use different scales.
@@ -317,6 +324,7 @@ Entry format:
   - **Zoom goes:** group zoom, multi-zoom, lane zoom (Q43), the zoom bar's breadcrumb, and its drop-to-move-out. The group's own values, which the zoom bar showed (Q19), are in the inspector.
   - Built in sprint 5, slice 2, all but zoom's removal (slice 3). The hold delay is 0.5 s; the target gets a dashed outline, and the dragged card says "Put inside …". A card can't go inside itself, anything inside it, or the group it's already in. After a nest, the card leaves the board if its new group is folded, and the group is selected instead, so Delete can't reach a card you can't see. Double-clicking a frame's group expands it. The Group field searches every card by title, and each match says which groups it's in, so two cards with one title can be told apart. "Add a card inside" names the new card "New card" with its title ready to type over, and it takes the parent's values on the two axes shown.
   - Zoom removed in slice 3 (ADR 0013), along with lane zoom (Q43). "Show it on the board" in the inspector expands the groups around a card. A new card made by double-clicking is always at the top level; "Add a card inside" makes children.
+  - Combined session, 2026-10-03: nobody missed zooming into a group. What people wanted instead was to focus on a tangle of dependencies, or on a slice by a third property (Q53). Hold to nest mostly worked; one confusing case is logged in the backlog's theme H.
 
 ### Q43: One axis choice per property
 - Context: Requirements 1 and 7, Q34, and the backlog's theme G. With bands (ADR 0012), "System (area)" and "System (component)" show the same thing at two depths, and folding moves between them.
@@ -365,6 +373,7 @@ Entry format:
     - Enter expands the groups that hide matches, and selects every match. Expanding stays outside undo, as it does with E.
     - ⌘F stays with the browser.
     - The words typed survive pivots, but not a reload.
+  - Combined session, 2026-10-03: people pressed /, and dimming the rest was enough.
 
 ### Q51: Starting a blank plan
 - Context: Requirement 10, and the backlog's theme J. The empty board offered the sample plan, a plan file, or a Jira CSV. Someone with a new idea and nothing to import had to load the sample and delete it, or import a dummy file. Brain dumping was also slow: every card needed its own double-click, and after naming one, typing on fired shortcuts.
@@ -379,3 +388,10 @@ Entry format:
   - Engineering's defaults:
     - First-visit help stays closed on a blank start, because it would cover the card being named. It isn't remembered as closed, so it still opens on the next visit.
     - With no rows (no areas yet), the bottom holding lane grows with its cards and scrolls with the board, rather than staying a short strip pinned to the edge. The right lane does the same with no columns.
+  - Combined session, 2026-10-03: a blank plan with Enter to continue worked well.
+
+### Q52: "Fold" meant two things
+- Context: Requirements 7 and 12, Q42 and Q43. In the combined session (2026-10-03), testers mixed up the two pairs of words: groups went "Expand" and "Fold" (E and ⇧E), and bands went "Fold" and "Unfold". So "fold" was the opposite of two different words.
+- Options: (a) groups expand and collapse, and bands keep fold and unfold; (b) bands expand and collapse, and groups get another opposite; (c) groups open and close.
+- Recommendation: (a). Expand and collapse are the usual pair for trees, and only the group side changes, since "unfold" only ever meant bands.
+- Status: answered 2026-10-03: (a), shipped before accepting sprints 3–6. ⇧E and the toolbar button say Collapse, and the find bar says "inside collapsed groups". No shortcut changed (ADR 0013, amended).

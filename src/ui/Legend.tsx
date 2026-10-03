@@ -84,8 +84,8 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Press <kbd>/</kbd> and type
         </dt>
         <dd>
-          Finds cards by title, Jira key or description. The rest fade back and nothing moves; a folded group with
-          matches inside says how many. <kbd>Enter</kbd> selects them all, expanding groups as needed, and{' '}
+          Finds cards by title, Jira key or description. The rest fade back and nothing moves; a collapsed group
+          with matches inside says how many. <kbd>Enter</kbd> selects them all, expanding groups as needed, and{' '}
           <kbd>↓</kbd> <kbd>↑</kbd> go from one to the next. <kbd>Esc</kbd> stops finding.
         </dd>
         <dt>Double-click empty space</dt>
@@ -109,9 +109,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
           too.
         </dd>
         <dt>
-          <kbd>{keys.fold}</kbd> on a card inside
+          <kbd>{keys.collapse}</kbd> on a card inside
         </dt>
-        <dd>Folds its group back into one card.</dd>
+        <dd>Collapses its group back into one card.</dd>
       </dl>
       </section>
       <section>

@@ -99,7 +99,7 @@ describe('Board', () => {
     expect(html).toMatch(/holding-corner" data-drop="cell" aria-label="No Y, No X">.*data-item="untagged"/);
   });
 
-  it('while finding, dims cards that don\'t match and counts matches folded inside a group (Q50)', () => {
+  it('while finding, dims cards that don\'t match and counts matches inside a collapsed group (Q50)', () => {
     const p = plan(
       item('login', { title: 'Passwordless login', values: { [SYSTEM]: ['id'] } }),
       item('epic', { title: 'EU data residency', values: { [SYSTEM]: ['id'] } }),

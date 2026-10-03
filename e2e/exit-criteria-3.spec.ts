@@ -3,15 +3,15 @@ import { card, doubleClickEmpty, dragTo, expandGroup, foldAll, openApp, pickAxes
 
 // Sprint 3's exit criteria (docs/sprint-3.md) 1–10, end to end, on the
 // sample plan. An import replaces the board, so criterion 8 runs last. Zoom
-// is gone since sprint 5 (ADR 0013): groups expand and fold, and time folds
+// is gone since sprint 5 (ADR 0013): groups expand and collapse, and time folds
 // from releases to quarters.
 
 const SAMPLE = new URL('../docs/samples/jira-export.csv', import.meta.url);
 const line = (page: Page, from: string, to: string) => page.locator(`.dep-line[data-from="${from}"][data-to="${to}"]`);
 const notice = (page: Page) => page.getByTestId('notice');
 const cellOf = (c: Locator) => c.locator('xpath=ancestor::*[contains(@class, "cell")][1]');
-/** Fold EU data residency back, from one of its cards. */
-async function foldEU(page: Page) {
+/** Collapse EU data residency, from one of its cards. */
+async function collapseEU(page: Page) {
   await card(page, 'region-pinned-directory-sync').first().locator('.card-title').click();
   await page.keyboard.press('Shift+E');
 }
@@ -53,7 +53,7 @@ test('sprint 3 exit criteria', async ({ page }) => {
   await select(page, 'region-pinned-directory-sync');
   await page.keyboard.press('l');
   await expect(notice(page)).toContainText('Linked “Custom roles” → “Region-pinned directory sync”');
-  await foldEU(page);
+  await collapseEU(page);
   await select(page, 'custom-roles');
   // Drawn to the group the card is in (Q38).
   await expect(line(page, 'custom-roles', 'eu-data-residency')).toHaveClass(/focus/);
@@ -99,7 +99,7 @@ test('sprint 3 exit criteria', async ({ page }) => {
   // Expand it to find it.
   await expandGroup(card(page, 'eu-data-residency').first());
   await expect(card(page, 'region-pinned-directory-sync')).toBeVisible();
-  await foldEU(page);
+  await collapseEU(page);
   await unfocus(page);
 
   // 7. Click a line and press Delete to remove it; undo brings it back.
@@ -121,7 +121,7 @@ test('sprint 3 exit criteria', async ({ page }) => {
   await expect(group.locator('.card-title')).toHaveText('EU data residency (GA)');
   await group.locator('.zoom-into').click();
   await expect(card(page, 'region-pinned-directory-sync').locator('.parent-chip')).toHaveText('EU data residency (GA)');
-  await foldEU(page);
+  await collapseEU(page);
   const columns = await page.locator('.column-header:not(.gap)').count();
   await doubleClickEmpty(page, page.locator('.cell.gap[data-row="identity"]').nth(2));
   await page.keyboard.type('Brand-new step');

@@ -50,7 +50,7 @@ test('sprint 5 exit criteria', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Load sample plan' }).click();
   await expect(card(page, 'eu-data-residency').locator('.attr[data-property="level"]')).toHaveText('Initiative');
 
-  // 2. Expand an initiative, then one of its epics: both stay expanded. ⇧E on a story folds only its epic.
+  // 2. Expand an initiative, then one of its epics: both stay expanded. ⇧E on a story collapses only its epic.
   await select(page, 'eu-data-residency');
   await page.keyboard.press('e');
   await select(page, 'regional-pipeline-shards');
@@ -71,7 +71,7 @@ test('sprint 5 exit criteria', async ({ page }) => {
   for (const id of ['eu-data-residency', 'usage-based-pricing', 'public-api-v2']) await expect(card(page, id)).toHaveCount(0);
   await expect(chip(page, 'usage-dashboard')).toHaveText('Usage-based pricing');
   await expect(chip(page, 'rate-limiting-v2')).toHaveText('Public API v2');
-  // Fold them again for the next steps.
+  // Collapse them again for the next steps.
   await select(page, 'usage-dashboard', 'rate-limiting-v2', 'eu-invoice-storage');
   await page.keyboard.press('Shift+E');
   await expect(card(page, 'public-api-v2')).toHaveCount(1);

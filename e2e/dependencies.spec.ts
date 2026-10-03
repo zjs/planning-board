@@ -73,7 +73,7 @@ test('a pending link survives expanding, so a card can be linked to one inside a
   await expect(notice(page)).toContainText('Linked “Custom roles” → “Region-pinned directory sync”');
   await expect(page.getByTestId('link-bar')).toHaveCount(0);
 
-  // Folded again, the link is drawn to the group the card is in.
+  // Collapsed again, the link is drawn to the group the card is in.
   await page.keyboard.press('Shift+E');
   await select(page, 'custom-roles');
   await expect(line(page, 'custom-roles', 'eu-data-residency')).toHaveCount(1);

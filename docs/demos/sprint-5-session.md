@@ -1,12 +1,12 @@
 # Sprints 3–6 tester session: script (30 minutes)
 
-One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), expand, fold and nesting (sprint 5), find (sprint 6), and starting a blank plan (Q51). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
+One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), expanding, folding and nesting (sprint 5), find (sprint 6), and starting a blank plan (Q51). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
 
 Run it with one or two PMs or EMs, ideally on an export of their own with Epic and Story issue types and real Blocks links. There are six things to learn:
 
 1. **Dependencies:** do the red lines point at problems they'd raise in a planning meeting, or at noise?
 2. **Structure:** do levels, bands and expanded groups make the plan's shape readable?
-3. **Looking deeper:** do expand and fold cover what they need, or does anyone go looking for zoom?
+3. **Looking deeper:** do expanding groups and unfolding bands cover what they need, or does anyone go looking for zoom?
 4. **Restructuring:** when they reorganize groups, do they drag (hold to nest, the strip), or use the inspector?
 5. **Finding:** on their own import, do they reach for **/**, **⌘F**, or scan the board? Is fading the other cards enough, or do they want them gone?
 6. **Starting from scratch:** is a blank plan and Enter-to-continue fast enough to get a brain dump onto the board?
@@ -59,4 +59,4 @@ Hand over control on their own import. Give one task at a time, and don't hint f
 
 ## After
 
-For each observation, update an open question in `docs/questions.md`, or add a new one with what you saw. Start with Q23 (marker noise), Q33, Q35, Q39 and Q50, and note the hold delay. Add feedback to `docs/backlog.md` under a theme. If anyone looks for zoom, write down what they wanted to see: it says what expand and fold are missing.
+For each observation, update an open question in `docs/questions.md`, or add a new one with what you saw. Start with Q23 (marker noise), Q33, Q35, Q39 and Q50, and note the hold delay. Add feedback to `docs/backlog.md` under a theme. If anyone looks for zoom, write down what they wanted to see: it says what expanding and unfolding are missing.
