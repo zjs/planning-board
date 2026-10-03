@@ -8,6 +8,8 @@ export interface DrawnLine extends VisibleLink {
   label: string;
   /** Clicked, ready for Delete. */
   selected?: boolean;
+  /** Between two cards that don't match what's being found (Q50). */
+  dimmed?: boolean;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -97,7 +99,7 @@ export function DependencyLines({
         const d = curve(a, b);
         const path = document.createElementNS(SVG, 'path');
         path.setAttribute('d', d);
-        path.setAttribute('class', `dep-line ${line.tone}${line.selected ? ' selected' : ''}`);
+        path.setAttribute('class', `dep-line ${line.tone}${line.selected ? ' selected' : ''}${line.dimmed ? ' dimmed' : ''}`);
         path.setAttribute('marker-end', `url(#dep-arrow-${line.tone})`);
         path.dataset.from = line.from;
         path.dataset.to = line.to;

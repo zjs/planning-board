@@ -34,7 +34,7 @@ Entry format:
   - **Time bucket.** Contention and time-order checks default to quarters. The requirements table says contention is "measured here" on Time → Release, which may mean releases. The function takes either.
   - **Uncertain order.** A dependency is flagged only when the order is certain. A prerequisite in Q2 against a dependent in Q1/R1 is flagged; one in Q1 against Q1/R1 isn't.
 - Recommendation: keep these for sprint 1 and revisit with real data. The time bucket is the one most likely to matter, since it changes which conflicts show at all.
-- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 6 candidate).
+- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 7 candidate).
   - Sprint 5 (ADR 0013): with one Time axis that folds, "the level it shows" became the lanes it shows. A folded quarter is one bucket, and an unfolded one a bucket per release.
 
 ### Q21: What happens to a group's dependencies when it's ungrouped?
@@ -47,7 +47,7 @@ Entry format:
 - Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
 - Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
 - Recommendation: (a), and watch the tester session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds the conflicts panel.
-- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 6 candidate.
+- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 7 candidate. The session now covers sprints 3–6.
 
 ### Q27: Where do flat Jira values go in our two-level hierarchies?
 - Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
@@ -297,13 +297,13 @@ Entry format:
 - Context: Requirements 16, 17 and 20, and Q12. Time-based checks are judged at the level the view shows, and a view by size or team doesn't judge order at all. So "every active conflict" depends on the view.
 - Options: (a) the panel follows the view: it lists what the board in front of you highlights, and in a view with no time axis it says to pivot to a time view to check order and contention; loops and group mismatches show in every view; (b) the panel always checks the whole plan at one plan-wide level, whatever the view.
 - Recommendation: (a), so the panel never names a conflict the board doesn't show.
-- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 6 candidate.
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 7 candidate.
 
 ### Q41: What brings a reviewed conflict back?
 - Context: Requirement 19: a reviewed conflict "stays suppressed until an involved item moves".
 - Options: (a) any relevant change: an involved card's values that the check uses change (its time or components, for contention), or a card joins or leaves the conflict; (b) only a change to the cards it was reviewed with; (c) never, until someone un-reviews it.
 - Recommendation: (a). A fourth card on a component reviewed at three is a new situation. The note stays attached, so the earlier reasoning is still visible.
-- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 6 candidate.
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 7 candidate.
 
 ### Q42: Replace zooming with expand and fold
 - Context: Requirements 7, 10, 11 and 12, Q20, Q33, Q34 and Q36, and the backlog's theme G. Sprint 4 left four ways to see detail: zooming into a group, zooming into a lane, expanding in place, and folding bands. In PM testing, expanding and folding did what zooming did, kept the rest of the board and its links in view, and were easier to find than zooming out with Esc. Zooming is also how you add the first card inside a group and move a card out of one, so those need new homes.
@@ -329,7 +329,7 @@ Entry format:
 - Context: Requirement 15 and the backlog's theme F. Dependencies have one type, "comes before". Plans also have looser relationships worth seeing that don't imply an order. The "typed dependencies" out of scope for v1 are ordering types, such as finish-to-start; this one carries no order at all.
 - Options: (a) a second, undirected kind of link, drawn dotted with no arrow, never judged for order or counted in ⚠, shown by the same focus rules as dependencies (Q14, Q39); (b) leave it to descriptions or a custom tag.
 - Recommendation: (a).
-- Status: answered 2026-10-02: (a). First agreed for the next sprint, then moved to sprint 6 when sprint 5 became a cleanup sprint. Details for planning, engineering's defaults:
+- Status: answered 2026-10-02: (a). First agreed for the next sprint, then moved to sprint 6 when sprint 5 became a cleanup sprint, and to sprint 7 when find took sprint 6 (2026-10-03). Details for planning, engineering's defaults:
   - **Making one:** select two cards and press ⌥L. Order doesn't matter, and ⌥L again removes it.
   - **On the board:** dotted, with no arrow, drawn on hover and selection, and never red.
   - **In the inspector:** a "Related" list beside Comes after and Comes before.
@@ -349,3 +349,19 @@ Entry format:
 - Recommendation: (a) and (a′), plus ⌘A for every card on the board. They reuse what's on screen, and they work for any property, not just levels.
 - Status: answered 2026-10-02: ⇧-click a badge on any card to select every card on the board with that value, in any pivot, so "every initiative" works without pivoting to Level. ⇧-click a row or column header to select its lane, and ⌘A to select everything on the board. Sprint 5, slice 2.
   - Built in slice 2. A badge showing several values ("Identity +1") selects by the first. A header's ⇧-click selects every card in the lane, its holding cell included, and a band's selects every lane under it. Only cards on the board are selected: the cards inside a folded group aren't, but those framed in a cell are. A notice says how many were selected.
+
+### Q50: Typing / to find cards
+- Context: Requirement 9 (filters, deferred), and the backlog's theme I. During a demo on 2026-10-03, a viewer asked to press / and type to narrow the board. Engineering's survey of the pattern (`docs/plans/sprint-6-plan.md`):
+  - / focuses search in Gmail, GitHub, Linear and Jira.
+  - Trello separates filtering cards in place (F) from searching across boards (/).
+  - Miro's find dims everything that doesn't match.
+  - Notion's and Slack's / opens a command menu, not search.
+- Options: for cards that don't match, (a) dim them, (b) hide them, or (c) dim while typing and hide on Enter. For what's matched, (d) card text (title, Jira key, description), (e) text plus value names suggested as you type, or (f) `key:value` syntax. For timing, (g) after the sprint 3–5 tester session, or (h) before it.
+- Recommendation: (a), (d) and (g). Dimming keeps the layout and links, which keeps spatial memory, and composes with selection: Enter selects the matches, and then E, L and the inspector act on them.
+- Status: answered 2026-10-03: (a) and (d), as recommended, and (h): it ships before the session, as sprint 6. Hiding stays with requirement 9's filters.
+  - Built in sprint 6, slices 1–2 (ADR 0014). Engineering's defaults:
+    - / opens a bar under the toolbar, since a field in the toolbar didn't fit at 1440px; a magnifier button opens it too.
+    - Every word typed must start a word on the card. Matching anywhere let "sso" find "processor".
+    - Enter expands the groups that hide matches, and selects every match. Expanding stays outside undo, as it does with E.
+    - ⌘F stays with the browser.
+    - The words typed survive pivots, but not a reload.

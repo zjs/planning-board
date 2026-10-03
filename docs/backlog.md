@@ -15,6 +15,18 @@ Each feedback item says where and when it came from. Themes are generalized from
 
 Themes with work still to do. Each says where it lands.
 
+### I. Finding cards
+
+On a board the size of a real import (about 150 cards), finding one card means scanning lanes, or remembering its values and ⇧-clicking a badge.
+
+**Feedback** (a demo viewer, relayed by the PM, 2026-10-03):
+
+- *Slash to filter.* "Being able to use slash and type text to do a filter." It's a convention in Gmail, GitHub, Linear and Jira, and Trello's board filter is similar.
+
+**Generalization:** find, not filter. Matching cards stay bright, the rest dim, and nothing moves, so the board keeps its shape and links. The matches can then be selected and acted on like any selection (Q47). Hiding non-matches is requirement 9's filter, still deferred. → [Q50](questions.md#q50-typing--to-find-cards)
+
+**Lands:** sprint 6 ([`docs/sprint-6.md`](sprint-6.md)), before the combined tester session.
+
 ### F. Links other than "comes before"
 
 Dependencies have one type: A comes before B (requirement 15). Plans also have looser relationships that people want to see without implying any order.
@@ -25,7 +37,7 @@ Dependencies have one type: A comes before B (requirement 15). Plans also have l
 
 **Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
 
-**Lands:** sprint 6 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02).
+**Lands:** sprint 7 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), and again when find took sprint 6 (PM, 2026-10-03).
 
 ### H. Arranging and moving cards
 
@@ -43,7 +55,7 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 - **Dragging a selection** moves every selected card, with the same drop rules as one card. → [Q48](questions.md#q48-dragging-several-cards)
 - **Moving a card into a group is a drag:** hold it over the group to put it inside, or drop it on a "Move out" strip. A Group field in the inspector is the fallback for targets that aren't on screen. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
 
-**Lands:** moving between groups shipped in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are open, and sprint 6 candidates.
+**Lands:** moving between groups shipped in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are open, and sprint 7 candidates.
 
 ### D. Small fixes
 
@@ -142,13 +154,14 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 
 ## Sprints
 
-Sprints 3, 4 and 5 await the PM's acceptance and one combined tester session.
+Sprints 3, 4 and 5 await the PM's acceptance and one combined tester session. Sprint 6 (find) is in progress and ships before that session.
 
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
 - **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35).
-- **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–5 (`docs/demos/sprint-5-session.md`), and feeds sprint 6.
-- **Sprint 6 candidates:**
+- **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–6 (`docs/demos/sprint-5-session.md`).
+- **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)), in progress: / to find cards, dimming the rest (theme I, Q50).
+- **Sprint 7 candidates:**
   - "related to" links (theme F, Q44);
   - order within a cell (Q46), and dragging several cards (Q48);
   - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).

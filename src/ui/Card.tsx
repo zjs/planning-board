@@ -33,6 +33,10 @@ interface Props {
   mismatches?: readonly string[];
   /** Everything that doesn't fit inside this group, at any depth (requirement 18). */
   mismatchesInside?: readonly string[];
+  /** Doesn't match what's being found (Q50). */
+  dimmed?: boolean;
+  /** Titles of the cards folded inside this one that match what's being found (Q50). */
+  foundInside?: readonly string[] | undefined;
   onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void;
   onDoubleClick?: (e: MouseEvent<HTMLDivElement>) => void;
   /** Expand this group in place: the child count on group cards (Q36, Q42). */
@@ -60,6 +64,8 @@ export function Card({
   viaChildren,
   mismatches = [],
   mismatchesInside = [],
+  dimmed,
+  foundInside,
   onPointerDown,
   onDoubleClick,
   onExpand,
@@ -78,6 +84,7 @@ export function Card({
     nestTarget && 'nest-target',
     copyFocus && 'copy-focus',
     justMoved && 'just-moved',
+    dimmed && 'dimmed',
   ].filter(Boolean);
   return (
     <div
@@ -101,6 +108,15 @@ export function Card({
           />
         ) : (
           <span className="card-title">{item.title}</span>
+        )}
+        {foundInside && foundInside.length > 0 && (
+          <span
+            className="found-inside"
+            title={`Inside, matching:\n${foundInside.map((t) => `• ${t}`).join('\n')}`}
+            aria-label={`${foundInside.length} inside ${foundInside.length === 1 ? 'matches' : 'match'}: ${foundInside.join('; ')}`}
+          >
+            {foundInside.length} inside
+          </span>
         )}
         {(mismatches.length > 0 || mismatchesInside.length > 0) && (
           <MismatchMarker own={mismatches} inside={mismatchesInside} />

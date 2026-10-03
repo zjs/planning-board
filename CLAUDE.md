@@ -15,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 5 (shore up what we have) is complete and awaiting the PM's acceptance, as are sprints 3 and 4. One combined tester session covers all three (`docs/demos/sprint-5-session.md`). Sprint 6 isn't planned yet; its candidates are in `docs/backlog.md` ("related to" links, order within a cell, dragging several cards, and contention with the conflicts panel), so start it in plan mode. Sprint 5's scope is in `docs/sprint-5.md`, the slice plan in `docs/plans/sprint-5-plan.md`, and the review process in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
+Sprint 6 (find: / to find cards, dimming the rest) is in progress, and ships before the combined tester session. Its scope is in `docs/sprint-6.md`, the slice plan in `docs/plans/sprint-6-plan.md`, and the review process in `docs/plans/sprint-0-plan.md`. Sprints 3, 4 and 5 are complete and awaiting the PM's acceptance. One combined tester session covers sprints 3–6 (`docs/demos/sprint-5-session.md`). Sprint 7 isn't planned yet; its candidates are in `docs/backlog.md` ("related to" links, order within a cell, dragging several cards, and contention with the conflicts panel), so start it in plan mode. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
 
 ## Architecture rules
 

@@ -508,6 +508,41 @@ button.primary {
   color: var(--muted);
 }
 
+/* Finding (Q50, ADR 0014): cards that don't match fade back; pointing at one brings it forward. */
+.card.dimmed {
+  opacity: 0.28;
+}
+
+.card.via-children.dimmed {
+  opacity: 0.2;
+}
+
+.card.dimmed:hover {
+  opacity: 1;
+}
+
+.card.via-children.dimmed:hover {
+  opacity: 0.55;
+}
+
+.dep-line.dimmed {
+  opacity: 0.25;
+}
+
+/* A folded group with matches inside it. */
+.found-inside {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
 /* Doesn't fit its group, or has cards inside that don't (requirements 13, 18). Hover to see why. */
 .mismatch {
   flex: none;
@@ -1606,6 +1641,44 @@ button.link:hover {
 .card.copy-focus {
   outline: 2px dashed var(--muted);
   outline-offset: 2px;
+}
+
+/* Finding (Q50): a bar under the toolbar, like the pending-link bar. */
+.find-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.find-bar input {
+  width: 340px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.find-bar input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.find-count {
+  min-width: 70px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.find-hints {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 /* A pending link, waiting for its second card. */
