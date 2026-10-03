@@ -73,6 +73,7 @@ No decision needed: each one goes into the next sprint. The table keeps the ones
 | Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
 | "Fold" meant two things: groups went expand/fold and bands fold/unfold. Groups now expand and collapse (theme G, Q52). | Combined session, 2026-10-03 | Shipped 2026-10-03, before accepting sprints 3–6 |
 | A group's faded frames aren't joined to its other copies by the dashed copy lines, so they don't read as the same card (theme E). | Combined session, 2026-10-03 | Sprint 7 |
+| A group's ⚠ count repeats on each of its faded frames, which was the main marker noise in the session. Show it only on the group's own card (Q23). | Combined session, 2026-10-03 | Sprint 7 |
 
 ## Shipped themes
 
@@ -208,7 +209,7 @@ Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
   - order within a cell (Q46), and dragging several cards (Q48);
   - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41);
   - focusing on part of the plan (theme K, Q53);
-  - the small fix in D: joining a group's faded frames to its other copies.
+  - the small fixes in D: joining a group's faded frames to its other copies, and no ⚠ on frames (Q23).
 
 ## Deferred, from earlier sprints
 

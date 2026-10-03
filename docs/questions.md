@@ -37,13 +37,6 @@ Entry format:
 - Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 7 candidate).
   - Sprint 5 (ADR 0013): with one Time axis that folds, "the level it shows" became the lanes it shows. A folded quarter is one bucket, and an unfolded one a bucket per release.
 
-### Q23: Are group mismatch markers too noisy on real plans?
-- Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
-- Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
-- Recommendation: (a), and watch the tester session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds the conflicts panel.
-- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 7 candidate. The session now covers sprints 3–6.
-  - Combined session, 2026-10-03 (informal, from the PM's memory): the red out-of-order lines mostly pointed at real problems. The main noise was the ⚠ count on a group's faded frames, the copies in lanes only its children reach, which repeat the group's count in every lane those children touch. That suggests (d): show ⚠ only on a group's own card, and leave it off its frames, since each child inside a frame shows its own marker.
-
 ### Q46: Order within a cell
 - Context: The backlog's theme H. Cards in a cell sort by sequence, then title. In PM testing, people wanted to put cards in order within a cell, in views without a sequence axis. Sequence is already a layout, though: its keys are the sequence view's columns (Q8), so changing a card's key to reorder it in a time view would also move it to another column in the sequence view. Remembering positions per view is out of scope for v1.
 - Options: (a) cells keep sorting by sequence, and can't be reordered by hand; (b) dragging within a cell changes the card's sequence key, accepting that it moves in the sequence view too; (c) a separate plan-wide rank, like Jira's: cells sort by it in every view, dragging within a cell changes it, and imports can fill it from Jira's rank or row order (Q30); sequence stays the sequence view's columns.
@@ -63,6 +56,7 @@ Entry format:
   - **Automation.** (c) Dependabot for npm and GitHub Actions, monthly, with minor and patch updates grouped into one PR. (d) A scheduled routine that runs the maintenance pass and opens a PR. (e) Neither, for now.
 - Recommendation: (a), because each kind of rot is cheapest to fix when it's caused. Also (c): it catches security fixes between sprints, and its PRs go through the same CI and merge-on-green as engineering's. Skip (d) while sprints follow each other closely.
 - Status: open. The 2026-10-02 pass followed (a)'s checklists, and `CLAUDE.md` points to them as a proposal.
+  - PM, 2026-10-03: keep it open, and revisit at sprint 7 planning, after one more maintenance pass under the proposal.
 
 ### Q53: Focusing on part of the plan
 - Context: Requirement 9 (filters, deferred), Q42 and Q50, and the backlog's theme K. In the combined session (2026-10-03), people wanted to focus on one thing. Seeing just one group's contents, which zoom used to do, mattered less than two other cases: narrowing the board to a tangle of dependencies, and slicing it by a third property that isn't on either axis. Find (Q50) dims cards by their text, and ⇧-clicking a badge (Q47) already selects by any property's value.
@@ -192,6 +186,13 @@ Entry format:
 - Recommendation: (a). It matches what the lane shows, and it's the inverse of refining (dropping an Identity-only card on SSO makes it Identity/SSO). The same goes for time: a release dropped on "No release" inside a Q2 zoom goes back to plain Q2.
 - Status: answered 2026-10-02: keep (a) until there's a reason to switch. Built (a) in sprint 1, slice 4.
   - Since sprint 5 there's no lane zoom, so the rule lives on a nested axis: dropping a card in an unfolded area's own "No component" lane gives it the plain area (ADR 0012, ADR 0013).
+
+### Q23: Are group mismatch markers too noisy on real plans?
+- Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
+- Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
+- Recommendation: (a), and watch the tester session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds the conflicts panel.
+- Status: answered 2026-10-03: (d), no ⚠ on a group's faded frames, only on its own card. A small fix for sprint 7 (backlog D). Per-type hiding still comes with the conflicts panel. Earlier: sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 7 candidate. The session now covers sprints 3–6.
+  - Combined session, 2026-10-03 (informal, from the PM's memory): the red out-of-order lines mostly pointed at real problems. The main noise was the ⚠ count on a group's faded frames, the copies in lanes only its children reach, which repeat the group's count in every lane those children touch. That suggests (d): show ⚠ only on a group's own card, and leave it off its frames, since each child inside a frame shows its own marker.
 
 ### Q24: How are dependency links drawn?
 - Context: Requirements 15 and 16, and Q14 (how they're displayed). Sprint 2 planning, for building in sprint 3.
