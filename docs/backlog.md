@@ -195,10 +195,10 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
 - **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02).
 - **Node 24 in CI.** CI and the docs use Node 22, which is supported until April 2027 _(recalled)_. Move to Node 24, the current LTS, in a maintenance pass well before then, and check the build and tests on it.
-- **Compatibility fixtures for sprint 6.** Add sprint 6's last commit to `VERSIONS` once it's merged, in the next PR (`housekeeping.md`, release pass). Sprint 6 changed no stored format, so it's a formality.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
 
+- **Compatibility fixtures for sprint 6** (2026-10-03), added with the blank-plan slice: its plan file and browser board open in every later build.
 - **Plan file compatibility, as a CI gate** (sprint 5, slice 1). "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.) Plan files and browser boards from every released build are fixtures that `npm run check` opens, so a break fails CI. Each release adds its own (ADR 0005); sprint 5's were added in the 2026-10-02 housekeeping pass.
 - **Housekeeping pass, 2026-10-02:** dependencies updated within their ranges, CI actions moved to their current majors (checkout and setup-node v6, upload-artifact v7, upload-pages-artifact v5), and CI builds now download as a single `.html` file with no zip. The README, the help panel, `questions.md` and this backlog were brought up to date.

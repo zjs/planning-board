@@ -23,6 +23,7 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-3', commit: '64b422d' },
   { name: 'sprint-4', commit: '5827e07' },
   { name: 'sprint-5', commit: 'f330dfe' },
+  { name: 'sprint-6', commit: '2895eb5' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;
