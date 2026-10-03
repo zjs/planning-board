@@ -19,6 +19,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - **Pivot** any two properties as rows and columns, and drag cards to set both values. Areas and quarters fold into one lane each, or unfold into components and releases. Undo everything.
 - **Dependencies:** select two cards and press L. Links show when you point at a card, and links whose order contradicts the board are always drawn in red, along with loops.
 - **Groups and levels:** cards nest to any depth, as initiatives, epics, and stories. Expand a group in place to see what's inside, and hold a dragged card over another to put it inside. Markers flag cards that don't fit their group: dated outside it, larger than it, in another area, or at or above its level.
+- **Find:** press / and type. Cards that match stay bright and the rest fade, without anything moving; Enter selects them all.
 - **An inspector** for editing any card's properties, description, group, and links without pivoting, for one card or many.
 - **Your own properties,** such as Team, and editing any property's values (rename, move, reorder, delete).
 - **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, and "Blocks" links become dependencies.
@@ -28,7 +29,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 
 - Component contention (too much work landing on one component at once), and a panel listing every conflict. They're next.
 - "Related to" links, ordering cards within a cell, and dragging several cards at once.
-- Scenarios, filters, and saved views.
+- Scenarios, saved views, and filters that hide cards (find fades them instead).
 - An import replaces the board. Updating a board from a fresh export isn't built.
 - One person at a time. Live collaboration comes later, through a relay that only ever sees encrypted data.
 

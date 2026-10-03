@@ -1,6 +1,6 @@
-# Sprints 3–5 tester session: script (30 minutes)
+# Sprints 3–6 tester session: script (30 minutes)
 
-One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), and expand, fold and nesting (sprint 5). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
+One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), expand, fold and nesting (sprint 5), and find (sprint 6). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
 
 Run it with one or two PMs or EMs, ideally on an export of their own with Epic and Story issue types and real Blocks links. There are four things to learn:
 
@@ -8,6 +8,7 @@ Run it with one or two PMs or EMs, ideally on an export of their own with Epic a
 2. **Structure:** do levels, bands and expanded groups make the plan's shape readable?
 3. **Looking deeper:** do expand and fold cover what they need, or does anyone go looking for zoom?
 4. **Restructuring:** when they reorganize groups, do they drag (hold to nest, the strip), or use the inspector?
+5. **Finding:** on their own import, do they reach for **/**, **⌘F**, or scan the board? Is fading the other cards enough, or do they want them gone?
 
 Stay quiet while they drive, and note what they try first.
 
@@ -27,7 +28,7 @@ Share your screen on the sample plan. Do four things, with one sentence each:
 3. Click "4 components ▸" in a row: "one area, broken down."
 4. Press **I** with a card selected: "every property of a card, editable without pivoting."
 
-Don't show hold to nest, the move-out strip, ⇧-click to select matches, or copies.
+Don't show hold to nest, the move-out strip, ⇧-click to select matches, copies, or **/** to find.
 
 ## 2. They drive (17 minutes)
 
@@ -43,6 +44,7 @@ Hand over control on their own import. Give one task at a time, and don't hint f
 | "Take this story out of its epic." | The move-out strip | Do they notice the strip when the drag starts? |
 | "This card is in two areas. Show me everything about it." | Copies (Q45) | Do they find the other copy from the dashed line? Do they see all its links? |
 | "This one is mis-sized. Fix it and keep going." | The inspector vs. dragging (Q35) | Do they press I, or pivot and drag? |
+| "Find every card about _(a topic from their export)_, then show me what's inside them." | Find (Q50), Enter, then E | Do they press **/**, ⌘F, the magnifier, or scan? Do they find Enter, and use E on the result? Does anyone want the faded cards hidden? Does "sso" not matching "processor" ever surprise them? |
 
 ## 3. Debrief (5 minutes)
 
@@ -50,8 +52,9 @@ Hand over control on their own import. Give one task at a time, and don't hint f
 2. Could you tell the shape of the plan at a glance: what's an initiative, what's a story, what belongs to what?
 3. When you wanted to look inside something, was expanding and unfolding enough? Did you miss being able to zoom into one thing and hide the rest?
 4. When you moved cards between groups, which way felt natural: holding over a group, the strip, or the inspector?
-5. What would you need before you'd use this to lay out a real release with your team?
+5. When you looked for a card, did fading the others help, or would you rather they disappeared?
+6. What would you need before you'd use this to lay out a real release with your team?
 
 ## After
 
-For each observation, update an open question in `docs/questions.md`, or add a new one with what you saw. Start with Q23 (marker noise), Q33, Q35 and Q39, and note the hold delay. Add feedback to `docs/backlog.md` under a theme. If anyone looks for zoom, write down what they wanted to see: it says what expand and fold are missing.
+For each observation, update an open question in `docs/questions.md`, or add a new one with what you saw. Start with Q23 (marker noise), Q33, Q35, Q39 and Q50, and note the hold delay. Add feedback to `docs/backlog.md` under a theme. If anyone looks for zoom, write down what they wanted to see: it says what expand and fold are missing.
