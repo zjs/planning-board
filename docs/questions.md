@@ -365,3 +365,17 @@ Entry format:
     - Enter expands the groups that hide matches, and selects every match. Expanding stays outside undo, as it does with E.
     - ⌘F stays with the browser.
     - The words typed survive pivots, but not a reload.
+
+### Q51: Starting a blank plan
+- Context: Requirement 10, and the backlog's theme J. The empty board offered the sample plan, a plan file, or a Jira CSV. Someone with a new idea and nothing to import had to load the sample and delete it, or import a dummy file. Brain dumping was also slow: every card needed its own double-click, and after naming one, typing on fired shortcuts.
+- Options:
+  - **Fast entry.** (a) Enter, after naming a new card, starts the next one in the same cell, on any board; (b) only in a new blank plan; (c) no change, and only the button for now.
+  - **What a blank plan holds.** (d) the generic values only: Size and Level as usual, with no areas or quarters; (e) also the next four quarters; (f) example areas and quarters to rename.
+  - **Reset board.** (g) replace it with New blank plan; (h) keep both.
+- Recommendation: (a), (d) and (g).
+- Status: answered 2026-10-03: (a), (d) and (h). Reset board stays beside New blank plan.
+  - Built 2026-10-03, as a slice before sprint 7. **Start a blank plan** is on the empty board, and **File › New blank plan** replaces a board after asking, in one undo step. The plan opens in Sequence × System with the first card's title ready to type.
+  - Enter after a new card's title starts the next one. In a gap between sequence columns, the next card goes in the column the first one started. Esc, Enter on an empty title, or clicking away stops. Each card is its own undo step. Renaming doesn't chain.
+  - Engineering's defaults:
+    - First-visit help stays closed on a blank start, because it would cover the card being named. It isn't remembered as closed, so it still opens on the next visit.
+    - With no rows (no areas yet), the bottom holding lane grows with its cards and scrolls with the board, rather than staying a short strip pinned to the edge. The right lane does the same with no columns.

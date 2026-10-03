@@ -60,6 +60,21 @@ No decision needed: each one goes into the next sprint. None is waiting right no
 
 Kept for the record: the feedback behind each, and how it was generalized.
 
+### J. Starting from scratch
+
+The board opened onto the sample plan, a plan file, or a Jira import. Nothing served someone with a new idea and no data yet, which is the brainstorming phase the board is meant for.
+
+**Feedback** (the PM, 2026-10-03):
+
+- *A blank plan.* "Add a button to create a blank/empty plan (in addition to the demo and import), for someone who wants to start brain dumping a new idea."
+
+**Generalization:**
+
+- **A blank plan:** every built-in property and no cards. Areas and quarters belong to the plan, so they start empty.
+- **Typing cards one after another:** a brain dump is many short titles in a row. Enter after a new card's title starts the next one, on any board. → [Q51](questions.md#q51-starting-a-blank-plan)
+
+**Lands:** built 2026-10-03, as a slice before sprint 7. It awaits the PM's acceptance along with sprints 3–6.
+
 ### I. Finding cards
 
 On a board the size of a real import (about 150 cards), finding one card means scanning lanes, or remembering its values and ⇧-clicking a badge.
@@ -161,6 +176,7 @@ Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
 - **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35).
 - **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–6 (`docs/demos/sprint-5-session.md`).
 - **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)) shipped on 2026-10-03: / to find cards, dimming the rest (theme I, Q50). It ships before the combined session, which now covers sprints 3–6.
+- **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
 - **Sprint 7 candidates:**
   - "related to" links (theme F, Q44);
   - order within a cell (Q46), and dragging several cards (Q48);

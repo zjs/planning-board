@@ -3,7 +3,7 @@
 
 import { valuesAtLevel } from './hierarchy.ts';
 import type { Item, Plan, SelectProperty } from './model.ts';
-import { itemValues, LEVEL } from './model.ts';
+import { itemValues, LEVEL, SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
 
 /** Card levels, top down (Q32). Renamable and reorderable like Size; these are the defaults. */
 export const LEVELS = [
@@ -14,15 +14,53 @@ export const LEVELS = [
 
 export type LevelId = (typeof LEVELS)[number]['id'];
 
-/** The Level property as a new plan gets it. */
-export function levelProperty(): SelectProperty {
+/** Sizes, smallest first. Renamable and reorderable; these are the defaults. */
+export const SIZES = [
+  { id: 'xs', label: 'XS' },
+  { id: 's', label: 'S' },
+  { id: 'm', label: 'M' },
+  { id: 'l', label: 'L' },
+  { id: 'xl', label: 'XL' },
+] as const;
+
+export type SizeId = (typeof SIZES)[number]['id'];
+
+/** The levels of the two built-in hierarchies, as a new plan or an import names them. */
+export const SYSTEM_LEVELS = ['Area', 'Component'];
+export const TIME_LEVELS = ['Quarter', 'Release'];
+
+function flatProperty(id: string, name: string, values: readonly { id: string; label: string }[]): SelectProperty {
   return {
     kind: 'select',
-    id: LEVEL,
-    name: 'Level',
-    levels: ['Level'],
+    id,
+    name,
+    levels: [name],
     multi: false,
-    values: Object.fromEntries(LEVELS.map((l, i) => [l.id, { id: l.id, label: l.label, parent: null, order: `a${i}` }])),
+    values: Object.fromEntries(values.map((v, i) => [v.id, { id: v.id, label: v.label, parent: null, order: `a${i}` }])),
+  };
+}
+
+/** The Level property as a new plan gets it. */
+export function levelProperty(): SelectProperty {
+  return flatProperty(LEVEL, 'Level', LEVELS);
+}
+
+/**
+ * A plan to start from scratch (questions.md Q51): every built-in property,
+ * and no cards. Size and Level have their usual values. System and Time have
+ * none, because areas and quarters belong to the plan, not to the tool.
+ */
+export function blankPlan(): Plan {
+  return {
+    properties: {
+      [SEQUENCE]: { kind: 'sequence', id: SEQUENCE, name: 'Sequence' },
+      [SYSTEM]: { kind: 'select', id: SYSTEM, name: 'System', levels: [...SYSTEM_LEVELS], multi: true, values: {} },
+      [LEVEL]: levelProperty(),
+      [SIZE]: flatProperty(SIZE, 'Size', SIZES),
+      [TIME]: { kind: 'select', id: TIME, name: 'Time', levels: [...TIME_LEVELS], multi: false, values: {} },
+    },
+    items: {},
+    dependencies: [],
   };
 }
 

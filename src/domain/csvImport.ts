@@ -12,7 +12,7 @@
 // before anything touches the board.
 
 import { generateNKeysBetween } from 'fractional-indexing';
-import { LEVELS, levelForIssueType, type LevelId } from './builtins.ts';
+import { LEVELS, levelForIssueType, SIZES, SYSTEM_LEVELS, TIME_LEVELS, type LevelId, type SizeId } from './builtins.ts';
 import type { CsvTable } from './csv.ts';
 import type { Dependency, Item, Plan, Property, SelectProperty, ValueNode } from './model.ts';
 import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
@@ -216,15 +216,7 @@ function propertyNames(columns: readonly string[]): string[] {
 // ---------------------------------------------------------------------------
 // The value table
 
-export const SIZES = [
-  { id: 'xs', label: 'XS' },
-  { id: 's', label: 'S' },
-  { id: 'm', label: 'M' },
-  { id: 'l', label: 'L' },
-  { id: 'xl', label: 'XL' },
-] as const;
-
-export type SizeId = (typeof SIZES)[number]['id'];
+export { SIZES, type SizeId };
 
 /** Story points to a size (Q28): 1 → XS, 2–3 → S, 5 → M, 8 → L, 13 and up → XL. Null for text that isn't a number. */
 export function sizeForPoints(points: string): SizeId | null {
@@ -338,7 +330,7 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
   const system = buildProperty(
     SYSTEM,
     'System',
-    ['Area', 'Component'],
+    [...SYSTEM_LEVELS],
     true,
     areaNames.map((area) => ({ label: area, children: components.filter((c) => areaOf(c) === area).map((label) => ({ label })) })),
     newId,
@@ -356,7 +348,7 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
   const time = buildProperty(
     TIME,
     'Time',
-    ['Quarter', 'Release'],
+    [...TIME_LEVELS],
     false,
     quarterNames.map((q) => ({ label: q, children: versions.filter((v) => quarterOf(v) === q).map((label) => ({ label })) })),
     newId,

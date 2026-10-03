@@ -815,6 +815,22 @@ body.dragging * {
   max-height: var(--holding-bottom-max);
 }
 
+/*
+ * With no rows (a new plan has no areas yet), the bottom lane is all there is:
+ * it grows with its cards and scrolls with the board, rather than pinning a
+ * short strip to the bottom edge. The same for the right lane with no columns.
+ */
+.board.no-rows .holding-bottom,
+.board.no-rows .holding-row-header,
+.board.no-rows .holding-corner {
+  bottom: auto;
+}
+
+.board.no-rows .holding-bottom .holding-cards,
+.board.no-columns .holding-right .holding-cards {
+  max-height: none;
+}
+
 .holding-corner {
   right: 0;
   z-index: 4;

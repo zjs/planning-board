@@ -41,7 +41,7 @@ interface Props {
   onDoubleClick?: (e: MouseEvent<HTMLDivElement>) => void;
   /** Expand this group in place: the child count on group cards (Q36, Q42). */
   onExpand?: (() => void) | undefined;
-  onRename?: (title: string) => void;
+  onRename?: (title: string, how: CommitHow) => void;
   onCancelEdit?: () => void;
   /** ⇧-click on a badge: select every card on the board with its value (Q47). */
   onSelectMatching?: (property: string, value: string) => void;
@@ -103,7 +103,7 @@ export function Card({
           <TitleInput
             initial={item.title}
             label="Card title"
-            onCommit={(title) => onRename?.(title)}
+            onCommit={(title, how) => onRename?.(title, how)}
             onCancel={() => onCancelEdit?.()}
           />
         ) : (
@@ -209,7 +209,10 @@ function MismatchMarker({ own, inside }: { own: readonly string[]; inside: reado
 }
 
 /** A card waiting for its first title. Nothing is created until it has one. */
-export function DraftCard({ onCommit, onCancel }: { onCommit: (title: string) => void; onCancel: () => void }) {
+/** How a title field was finished: Enter, or by leaving it. */
+export type CommitHow = 'enter' | 'blur';
+
+export function DraftCard({ onCommit, onCancel }: { onCommit: (title: string, how: CommitHow) => void; onCancel: () => void }) {
   return (
     <div className="card draft" data-testid="draft-card">
       <div className="card-main">
@@ -233,7 +236,7 @@ function TitleInput({
   initial: string;
   label: string;
   placeholder?: string;
-  onCommit: (title: string) => void;
+  onCommit: (title: string, how: CommitHow) => void;
   onCancel: () => void;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -242,20 +245,20 @@ function TitleInput({
     ref.current?.focus();
     ref.current?.select();
   }, []);
-  const finish = (commit: boolean) => {
+  const finish = (how: CommitHow | null) => {
     if (done.current) return;
     done.current = true;
-    if (commit) onCommit(ref.current?.value ?? '');
+    if (how) onCommit(ref.current?.value ?? '', how);
     else onCancel();
   };
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      finish(true);
+      finish('enter');
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      finish(false);
+      finish(null);
     }
   };
   return (
@@ -269,7 +272,7 @@ function TitleInput({
       onKeyDown={onKeyDown}
       onPointerDown={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
-      onBlur={() => finish(true)}
+      onBlur={() => finish('blur')}
     />
   );
 }

@@ -1,14 +1,14 @@
-import { memo, useMemo, useRef, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { badgeProperties, cardAttributes, type CardAttribute } from '../domain/attributes.ts';
 import { levelWeight } from '../domain/builtins.ts';
 import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
-import type { Band, CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
+import { allCopies, type Band, type CardRef, type Lane, type ViewLayout, type ViewSpec } from '../domain/view.ts';
 import type { Found } from '../domain/finding.ts';
 import type { Mismatches } from '../domain/mismatches.ts';
-import { Card, DraftCard } from './Card.tsx';
+import { Card, DraftCard, type CommitHow } from './Card.tsx';
 import { DependencyLines, type DrawnLine } from './DependencyLines.tsx';
 import { isCellTarget, isIntoTarget, type BoardTarget } from './useCardDrag.ts';
 
@@ -43,7 +43,7 @@ interface Props {
   onCardExpand: (card: CardRef) => void;
   /** Double-click on empty space in a cell or holding lane. */
   onSpotDoubleClick: (spot: DropTarget) => void;
-  onCommitEdit: (title: string) => void;
+  onCommitEdit: (title: string, how: CommitHow) => void;
   onCancelEdit: () => void;
   /** A press on the board outside any card, which clears the selection. */
   onBackgroundPointerDown: () => void;
@@ -87,17 +87,11 @@ const NONE: readonly string[] = [];
 
 const sameCopy = (a: CardRef, b: CardRef) => a.itemId === b.itemId && a.x === b.x && a.y === b.y;
 
-export type Editing = { kind: 'new'; spot: DropTarget } | { kind: 'rename'; card: CardRef };
-
-/** Every rendered copy, in board order. */
-function allCopies(layout: ViewLayout): CardRef[] {
-  return [
-    ...layout.cells.flat(2),
-    ...layout.holding.rows.flat(),
-    ...layout.holding.columns.flat(),
-    ...layout.holding.corner,
-  ];
-}
+/**
+ * A title being typed: a new card at a spot, or a rename. `chain` counts the
+ * new cards typed one after another (Q51), so each gets a fresh field.
+ */
+export type Editing = { kind: 'new'; spot: DropTarget; chain?: number } | { kind: 'rename'; card: CardRef };
 
 /**
  * Which copy shows the rename field: the one asked for, or, if a pivot
@@ -226,10 +220,17 @@ export const Board = memo(function Board({
     onSelectLanes(which, start, end);
   };
   const boardRef = useRef<HTMLDivElement>(null);
+  // A new card's field stays in view as the cards typed before it arrive and push it down (Q51).
+  const typingNew = editing?.kind === 'new';
+  useLayoutEffect(() => {
+    if (typingNew) boardRef.current?.querySelector('.card.draft')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [typingNew, layout]);
   const renaming = renameCopy(layout, editing);
   const isDraftSpot = (row: string | null, column: string | null) =>
     editing?.kind === 'new' && editing.spot.x === column && editing.spot.y === row;
-  const draft = <DraftCard key="draft" onCommit={onCommitEdit} onCancel={onCancelEdit} />;
+  const draft = (
+    <DraftCard key={`draft-${editing?.kind === 'new' ? (editing.chain ?? 0) : 0}`} onCommit={onCommitEdit} onCancel={onCancelEdit} />
+  );
   const counts = useMemo(() => childCounts(plan), [plan]);
   const areas = useMemo(() => areaIndexes(plan), [plan]);
   const weights = useMemo(
@@ -468,7 +469,14 @@ export const Board = memo(function Board({
         onPointerOver={(e) => onHover((e.target as Element).closest<HTMLElement>('.card')?.dataset.item ?? null)}
         onPointerLeave={() => onHover(null)}
       >
-        <div className="board" ref={boardRef} style={{ gridTemplateColumns }} data-testid="board">
+        <div
+          className={['board', layout.rows.length === 0 && 'no-rows', layout.columns.length === 0 && 'no-columns']
+            .filter(Boolean)
+            .join(' ')}
+          ref={boardRef}
+          style={{ gridTemplateColumns }}
+          data-testid="board"
+        >
           {(lines.length > 0 || copyFocus.length > 0) && <DependencyLines
               lines={lines}
               copies={copyFocus}
@@ -517,8 +525,14 @@ export const Board = memo(function Board({
           {xDepth === 0 && <div className="holding-head">{holdingHead}</div>}
           {empty && (
             <div className="empty-note">
-              No cards have a {(noLanes(layout.columns, layout.gaps.x) ? xLabel : yLabel).toLowerCase()} value yet.
-              They're all in the holding lanes.
+              {Object.keys(plan.items).length === 0 ? (
+                <>No cards yet. Double-click anywhere to add one, and press Enter to add the next.</>
+              ) : (
+                <>
+                  No cards have a {(noLanes(layout.columns, layout.gaps.x) ? xLabel : yLabel).toLowerCase()} value yet.
+                  They're all in the holding lanes.
+                </>
+              )}
             </div>
           )}
           {/* Rows render even with no columns, so their holding lanes (and cards) still show. */}

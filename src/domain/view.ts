@@ -366,3 +366,24 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
     bands: { x: xBands, y: yBands },
   };
 }
+
+/** Every copy on the board, in board order: cells first, then the holding lanes. */
+export function allCopies(layout: ViewLayout): CardRef[] {
+  return [
+    ...layout.cells.flat(2),
+    ...layout.holding.rows.flat(),
+    ...layout.holding.columns.flat(),
+    ...layout.holding.corner,
+  ];
+}
+
+/**
+ * Where a card's first solid copy sits, as a spot to drop or create in, or
+ * null if it isn't on the board. Typing cards one after another (Q51) uses
+ * it: a card made in a gap between sequence columns starts a column, and
+ * the next card goes in that column, not in another new one.
+ */
+export function cellOf(layout: ViewLayout, id: ItemId): { x: string | null; y: string | null } | null {
+  const copy = allCopies(layout).find((ref) => ref.itemId === id && !ref.via);
+  return copy ? { x: copy.x, y: copy.y } : null;
+}

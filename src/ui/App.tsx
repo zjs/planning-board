@@ -39,6 +39,8 @@ import { findOnBoard, queryWords, stepMatch } from '../domain/finding.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import { cardsOnBoard, laneCards, matchingCards } from '../domain/selecting.ts';
+import { blankPlan } from '../domain/builtins.ts';
+import { newItemSpot } from '../domain/items.ts';
 import { ancestry, canNest, childCounts, childrenOf } from '../domain/tree.ts';
 import { layoutView, shownInside, type AxisSpec, type CardRef } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
@@ -46,6 +48,7 @@ import { AxisPicker } from './AxisPicker.tsx';
 import {
   axisNames,
   chooseAxis,
+  DEFAULT_VIEW,
   foldableBands,
   inSentence,
   loadCompactHolding,
@@ -63,6 +66,7 @@ import {
   withFolding,
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
+import type { CommitHow } from './Card.tsx';
 import { Dialog } from './Dialog.tsx';
 import type { DrawnLine } from './DependencyLines.tsx';
 import { DragGhost } from './DragGhost.tsx';
@@ -457,18 +461,21 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const onSpotDoubleClick = useCallback((spot: DropTarget) => setEditing({ kind: 'new', spot }), []);
   const onCancelEdit = useCallback(() => setEditing(null), []);
   const onCommitEdit = useCallback(
-    (title: string) => {
+    (title: string, how: CommitHow) => {
       setEditing(null);
       if (editing?.kind === 'rename') renameItem(store, editing.card.itemId, title);
       if (editing?.kind === 'new') {
+        // Enter on a new card opens the next one beside it (Q51), so ideas can be typed one after another.
+        const next = how === 'enter' ? newItemSpot(plan, view, editing.spot) : null;
         const id = createItem(store, view, editing.spot, title);
         if (id) {
           setSelection(new Set([id]));
           setJustMoved(id);
+          if (next) setEditing({ kind: 'new', spot: next, chain: (editing.chain ?? 0) + 1 });
         }
       }
     },
-    [store, view, editing],
+    [store, plan, view, editing],
   );
   const deleteSelection = useCallback(() => {
     if (selected.size === 0) return;
@@ -759,6 +766,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const loadSample = () => {
     if (empty || window.confirm('Replace the board with the sample plan? You can undo this.')) loadPlan(store, samplePlan());
   };
+  // Starting from scratch (Q51): the built-in properties, no cards, and the first card's title ready to type.
+  const startBlank = () => {
+    if (!empty && !window.confirm('Replace the board with a blank plan? You can undo this.')) return;
+    const blank = blankPlan();
+    loadPlan(store, blank);
+    setChoice(DEFAULT_VIEW);
+    setSelection(new Set());
+    clearFind(); // otherwise every new idea would be faded for not matching
+    // First-visit help would cover the card being named. It isn't remembered as closed, so it opens next visit.
+    if (legendChoice === null) setLegendOpen(false);
+    const first = layoutView(blank, toViewSpec(blank, DEFAULT_VIEW)).gaps.x?.[0];
+    setEditing(first === undefined ? null : { kind: 'new', spot: { x: first, y: null } });
+  };
   const reset = () => {
     if (window.confirm('Clear the whole board? You can undo this.')) resetPlan(store);
   };
@@ -817,6 +837,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           title: 'Download the plan as a file you can open again, here or in another browser',
         },
         'divider',
+        {
+          label: 'New blank plan',
+          onSelect: startBlank,
+          title: 'Replace the board with an empty plan, ready to type ideas into',
+        },
         { label: 'Load sample plan', onSelect: loadSample },
         { label: 'Reset board', onSelect: reset, disabled: empty },
       ]}
@@ -956,10 +981,16 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       {empty ? (
         <div className="empty-state">
           <h2>No plan yet</h2>
-          <p>Load the sample plan: about 150 roadmap items for a fictional product line. Or open a plan file you saved earlier, or import a Jira export.</p>
+          <p>
+            Load the sample plan: about 150 roadmap items for a fictional product line. Or start from scratch, open a
+            plan file you saved earlier, or import a Jira export.
+          </p>
           <div className="empty-actions">
             <button type="button" className="primary" onClick={loadSample}>
               Load sample plan
+            </button>
+            <button type="button" onClick={startBlank}>
+              Start a blank plan
             </button>
             <button type="button" onClick={() => openInput.current?.click()}>
               Open plan file…

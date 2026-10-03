@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
-import { cleanTitle, deletionOf, valuesForChild, valuesForNewItem } from './items.ts';
+import { cleanTitle, deletionOf, newItemSpot, valuesForChild, valuesForNewItem } from './items.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
-import type { ViewSpec } from './view.ts';
+import { layoutView, type ViewSpec } from './view.ts';
 
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
 const seqBySize: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SIZE, level: 0 } };
@@ -38,6 +38,33 @@ describe('valuesForNewItem', () => {
       values: { [SIZE]: ['s'] },
     });
     expect(valuesForNewItem(p, seqBySize, { x: 'a1', y: null }).sequence).toBe('a1');
+  });
+});
+
+describe('newItemSpot (Q51)', () => {
+  const seqBySystem: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
+
+  it('keeps a cell or holding lane as it is, so the next card goes beside the last', () => {
+    const p = plan(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
+    expect(newItemSpot(p, seqBySystem, { x: 'a0', y: 'id' })).toEqual({ x: 'a0', y: 'id' });
+    expect(newItemSpot(p, seqBySystem, { x: null, y: 'pay' })).toEqual({ x: null, y: 'pay' });
+    expect(newItemSpot(p, timeBySystem, { x: 'q2', y: null })).toEqual({ x: 'q2', y: null });
+  });
+
+  it('turns a gap between sequence columns into the column the card starts', () => {
+    const p = plan(item('a', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }));
+    const after = layoutView(p, seqBySystem).gaps.x!.at(-1)!;
+    const spot = newItemSpot(p, seqBySystem, { x: after, y: 'id' });
+    expect(spot).toEqual({ x: valuesForNewItem(p, seqBySystem, { x: after, y: 'id' }).sequence, y: 'id' });
+    expect(spot!.x! > 'a0').toBe(true);
+  });
+
+  it('starts the first column on a board with no cards', () => {
+    const empty = plan();
+    const [gap] = layoutView(empty, seqBySystem).gaps.x!;
+    const spot = newItemSpot(empty, seqBySystem, { x: gap!, y: null });
+    expect(spot?.y).toBeNull();
+    expect(layoutView(plan(item('n', { sequence: spot!.x })), seqBySystem).columns.map((c) => c.key)).toEqual([spot!.x]);
   });
 });
 

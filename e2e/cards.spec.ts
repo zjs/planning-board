@@ -34,6 +34,9 @@ test('double-clicking empty space creates a card with that cell’s values', asy
   await expect(draft).toBeVisible();
   await page.keyboard.type('Usage alerts for admins');
   await page.keyboard.press('Enter');
+  // Enter opens the next card's field (Q51); Esc stops.
+  await expect(target.getByTestId('draft-card')).toBeVisible();
+  await page.keyboard.press('Escape');
 
   await expect(target.locator('.card')).toHaveCount(before + 1);
   const created = target.locator('.card', { hasText: 'Usage alerts for admins' });
