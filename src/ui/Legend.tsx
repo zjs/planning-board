@@ -90,8 +90,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
         </dd>
         <dt>Double-click empty space</dt>
         <dd>
-          Makes a card there with that cell's values; in a gap between sequence columns, it's a new column. Double-click
-          a card, or press Enter, to rename it.
+          Makes a card there with that cell's values; in a gap between sequence columns, it's a new column. After
+          naming it, <kbd>Enter</kbd> starts the next card beside it, and <kbd>Esc</kbd> stops. Double-click a card, or
+          press Enter, to rename it.
         </dd>
         <dt>
           <kbd>{keys.group}</kbd> groups the selection

@@ -3,7 +3,7 @@
 
 import { SEQUENCE, type Dependency, type Item, type ItemId, type OrderKey, type Plan, type PropertyId, type ValueId } from './model.ts';
 import { planDrop, type DropTarget } from './move.ts';
-import type { ViewSpec } from './view.ts';
+import { cellOf, layoutView, type ViewSpec } from './view.ts';
 
 /** The values a new card gets. */
 export interface NewItemValues {
@@ -29,6 +29,22 @@ export function valuesForNewItem(plan: Plan, view: ViewSpec, target: DropTarget)
   const values: Record<PropertyId, ValueId[]> = {};
   for (const [property, ids] of Object.entries(change?.values ?? {})) if (ids.length > 0) values[property] = ids;
   return { sequence: change?.sequence ?? null, values };
+}
+
+/**
+ * Where a card made at `target` will sit, so the next card typed after it
+ * (Q51) goes beside it. Usually `target` itself; for a gap between
+ * sequence columns, the new column the card starts. Null if the card
+ * wouldn't be on the board.
+ */
+export function newItemSpot(plan: Plan, view: ViewSpec, target: DropTarget): DropTarget | null {
+  const probe = '\u0000new';
+  const { sequence, values } = valuesForNewItem(plan, view, target);
+  const withProbe: Plan = {
+    ...plan,
+    items: { ...plan.items, [probe]: { id: probe, title: '', description: '', parent: null, sequence, values } },
+  };
+  return cellOf(layoutView(withProbe, view), probe);
 }
 
 /**

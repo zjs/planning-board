@@ -1,14 +1,15 @@
 # Sprints 3–6 tester session: script (30 minutes)
 
-One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), expand, fold and nesting (sprint 5), and find (sprint 6). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
+One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), expand, fold and nesting (sprint 5), find (sprint 6), and starting a blank plan (Q51). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
 
-Run it with one or two PMs or EMs, ideally on an export of their own with Epic and Story issue types and real Blocks links. There are four things to learn:
+Run it with one or two PMs or EMs, ideally on an export of their own with Epic and Story issue types and real Blocks links. There are six things to learn:
 
 1. **Dependencies:** do the red lines point at problems they'd raise in a planning meeting, or at noise?
 2. **Structure:** do levels, bands and expanded groups make the plan's shape readable?
 3. **Looking deeper:** do expand and fold cover what they need, or does anyone go looking for zoom?
 4. **Restructuring:** when they reorganize groups, do they drag (hold to nest, the strip), or use the inspector?
 5. **Finding:** on their own import, do they reach for **/**, **⌘F**, or scan the board? Is fading the other cards enough, or do they want them gone?
+6. **Starting from scratch:** is a blank plan and Enter-to-continue fast enough to get a brain dump onto the board?
 
 Stay quiet while they drive, and note what they try first.
 
@@ -45,6 +46,7 @@ Hand over control on their own import. Give one task at a time, and don't hint f
 | "This card is in two areas. Show me everything about it." | Copies (Q45) | Do they find the other copy from the dashed line? Do they see all its links? |
 | "This one is mis-sized. Fix it and keep going." | The inspector vs. dragging (Q35) | Do they press I, or pivot and drag? |
 | "Find every card about _(a topic from their export)_, then show me what's inside them." | Find (Q50), Enter, then E | Do they press **/**, ⌘F, the magnifier, or scan? Do they find Enter, and use E on the result? Does anyone want the faded cards hidden? Does "sso" not matching "processor" ever surprise them? |
+| "Start a new plan for something you're thinking about, and get five ideas onto it." Undo brings their import back afterwards. | A blank plan, Enter to continue (Q51) | Do they find File › New blank plan? Do they keep typing after the first card, or reach for the mouse? Do they miss areas or quarters to sort into? |
 
 ## 3. Debrief (5 minutes)
 

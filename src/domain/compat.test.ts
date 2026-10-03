@@ -27,6 +27,7 @@ describe('plan files saved by earlier versions', () => {
       'sprint-3.plan.json',
       'sprint-4.plan.json',
       'sprint-5.plan.json',
+      'sprint-6.plan.json',
     ]);
   });
 

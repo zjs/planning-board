@@ -60,6 +60,21 @@ No decision needed: each one goes into the next sprint. None is waiting right no
 
 Kept for the record: the feedback behind each, and how it was generalized.
 
+### J. Starting from scratch
+
+The board opened onto the sample plan, a plan file, or a Jira import. Nothing served someone with a new idea and no data yet, which is the brainstorming phase the board is meant for.
+
+**Feedback** (the PM, 2026-10-03):
+
+- *A blank plan.* "Add a button to create a blank/empty plan (in addition to the demo and import), for someone who wants to start brain dumping a new idea."
+
+**Generalization:**
+
+- **A blank plan:** every built-in property and no cards. Areas and quarters belong to the plan, so they start empty.
+- **Typing cards one after another:** a brain dump is many short titles in a row. Enter after a new card's title starts the next one, on any board. → [Q51](questions.md#q51-starting-a-blank-plan)
+
+**Lands:** built 2026-10-03, as a slice before sprint 7. It awaits the PM's acceptance along with sprints 3–6.
+
 ### I. Finding cards
 
 On a board the size of a real import (about 150 cards), finding one card means scanning lanes, or remembering its values and ⇧-clicking a badge.
@@ -161,6 +176,7 @@ Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
 - **Sprint 4: hierarchy and editing** ([`docs/sprint-4.md`](sprint-4.md)) shipped on 2026-10-01: themes A, B, and C's inspector (Q32–Q35).
 - **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–6 (`docs/demos/sprint-5-session.md`).
 - **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)) shipped on 2026-10-03: / to find cards, dimming the rest (theme I, Q50). It ships before the combined session, which now covers sprints 3–6.
+- **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
 - **Sprint 7 candidates:**
   - "related to" links (theme F, Q44);
   - order within a cell (Q46), and dragging several cards (Q48);
@@ -179,10 +195,10 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
 - **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02).
 - **Node 24 in CI.** CI and the docs use Node 22, which is supported until April 2027 _(recalled)_. Move to Node 24, the current LTS, in a maintenance pass well before then, and check the build and tests on it.
-- **Compatibility fixtures for sprint 6.** Add sprint 6's last commit to `VERSIONS` once it's merged, in the next PR (`housekeeping.md`, release pass). Sprint 6 changed no stored format, so it's a formality.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
 
+- **Compatibility fixtures for sprint 6** (2026-10-03), added with the blank-plan slice: its plan file and browser board open in every later build.
 - **Plan file compatibility, as a CI gate** (sprint 5, slice 1). "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.) Plan files and browser boards from every released build are fixtures that `npm run check` opens, so a break fails CI. Each release adds its own (ADR 0005); sprint 5's were added in the 2026-10-02 housekeeping pass.
 - **Housekeeping pass, 2026-10-02:** dependencies updated within their ranges, CI actions moved to their current majors (checkout and setup-node v6, upload-artifact v7, upload-pages-artifact v5), and CI builds now download as a single `.html` file with no zip. The README, the help panel, `questions.md` and this backlog were brought up to date.

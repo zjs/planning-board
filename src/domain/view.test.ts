@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
-import { laneKeyOf, layoutView, shownInside, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
+import { valuesForNewItem } from './items.ts';
+import { cellOf, laneKeyOf, layoutView, shownInside, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
 
 const seqBySystem: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -288,5 +289,35 @@ describe('shownInside', () => {
     // An expanded epic inside a folded initiative isn't on the board.
     expect(shownInside(p, { ...timeBySystem, expanded: ['epic'] }, 'epic')).toBe(false);
     expect(shownInside(p, { ...timeBySystem, expanded: ['init', 'epic'] }, 'epic')).toBe(true);
+  });
+});
+
+describe('cellOf', () => {
+  it('finds the cell a card sits in, as a spot to make the next card in', () => {
+    const layout = layoutView(plan(item('login', { sequence: 'a0', values: { [SYSTEM]: ['id/sso'] } })), seqBySystem);
+    expect(cellOf(layout, 'login')).toEqual({ x: 'a0', y: 'id' });
+    expect(cellOf(layout, 'missing')).toBeNull();
+  });
+
+  it('gives a card made in a sequence gap the column it started, not another gap', () => {
+    const empty = plan();
+    const gap = layoutView(empty, seqBySystem).gaps.x![0]!;
+    const { sequence, values } = valuesForNewItem(empty, seqBySystem, { x: gap, y: null });
+    const layout = layoutView(plan(item('idea', { sequence, values })), seqBySystem);
+    expect(cellOf(layout, 'idea')).toEqual({ x: sequence, y: null });
+    expect(layout.gaps.x).not.toContain(sequence);
+  });
+
+  it('finds cards in the holding lanes, and skips faded group copies', () => {
+    const layout = layoutView(
+      plan(
+        item('loose'),
+        item('epic', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }),
+        item('story', { parent: 'epic', sequence: 'a0', values: { [SYSTEM]: ['pay'] } }),
+      ),
+      seqBySystem,
+    );
+    expect(cellOf(layout, 'loose')).toEqual({ x: null, y: null });
+    expect(cellOf(layout, 'epic')).toEqual({ x: 'a0', y: 'id' });
   });
 });

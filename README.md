@@ -16,6 +16,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 
 **Works today**
 
+- **Start from scratch** with a blank plan, and type ideas one after another: Enter after each title starts the next card. Or explore the sample plan, or import your own.
 - **Pivot** any two properties as rows and columns, and drag cards to set both values. Areas and quarters fold into one lane each, or unfold into components and releases. Undo everything.
 - **Dependencies:** select two cards and press L. Links show when you point at a card, and links whose order contradicts the board are always drawn in red, along with loops.
 - **Groups and levels:** cards nest to any depth, as initiatives, epics, and stories. Expand a group in place to see what's inside, and hold a dragged card over another to put it inside. Markers flag cards that don't fit their group: dated outside it, larger than it, in another area, or at or above its level.

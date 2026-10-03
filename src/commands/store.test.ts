@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { JIRA_EXPORT } from '../domain/__fixtures__/jira-export.ts';
+import { blankPlan } from '../domain/builtins.ts';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
 import { parseCsv } from '../domain/csv.ts';
 import { columnGroups, defaultChoices, detectMapping, draftFromCsv } from '../domain/csvImport.ts';
@@ -8,7 +9,7 @@ import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME } from '../domain/model.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import type { ViewSpec } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
-import { readPlan } from '../store/schema.ts';
+import { isEmpty, readPlan } from '../store/schema.ts';
 import {
   addDependency,
   addValue,
@@ -116,6 +117,19 @@ describe('plan store', () => {
     const store = storeWith(item('a'));
     resetPlan(store);
     expect(readPlan(store.doc).items).toEqual({});
+    undo(store);
+    expect(Object.keys(readPlan(store.doc).items)).toEqual(['a']);
+  });
+
+  it('starts a blank plan (Q51): a board with properties and no cards, and one undo brings the old board back', () => {
+    const store = storeWith(item('a'));
+    loadPlan(store, blankPlan());
+    expect(readPlan(store.doc)).toEqual(blankPlan());
+    expect(isEmpty(store.doc)).toBe(false);
+    expect(ensureBuiltIns(store)).toBe(false);
+    const id = createItem(store, seqBySystem, { x: null, y: null }, 'First idea');
+    expect(readPlan(store.doc).items[id!]!.title).toBe('First idea');
+    undo(store);
     undo(store);
     expect(Object.keys(readPlan(store.doc).items)).toEqual(['a']);
   });
