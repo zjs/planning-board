@@ -35,6 +35,7 @@ import {
 } from '../domain/dependencies.ts';
 import { SYSTEM, TIME, type Dependency, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropMode, DropTarget } from '../domain/move.ts';
+import { findOnBoard, queryWords, stepMatch } from '../domain/finding.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
 import { cardsOnBoard, laneCards, matchingCards } from '../domain/selecting.ts';
@@ -65,6 +66,7 @@ import { Board, type Editing } from './Board.tsx';
 import { Dialog } from './Dialog.tsx';
 import type { DrawnLine } from './DependencyLines.tsx';
 import { DragGhost } from './DragGhost.tsx';
+import { FindBar, FindButton } from './FindBar.tsx';
 import { ImportDialog } from './ImportDialog.tsx';
 import { datedFileName, downloadText } from './files.ts';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
@@ -382,6 +384,61 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     el?.scrollIntoView({ block: 'center', inline: 'center' });
   });
 
+  // Finding (Q50, ADR 0014): / and a few words dim every card that doesn't match. Viewer state, kept across
+  // pivots, folds and expands, but not saved.
+  const [query, setQuery] = useState('');
+  const [findOpen, setFindOpen] = useState(false);
+  const findRef = useRef<HTMLInputElement>(null);
+  // Opens the bar, whose field takes focus as it appears; if it's already open, focuses it and selects what's typed.
+  const openFind = useCallback(() => {
+    if (findRef.current) {
+      findRef.current.focus();
+      findRef.current.select();
+    } else setFindOpen(true);
+  }, []);
+  const words = useMemo(() => queryWords(query), [query]);
+  const found = useMemo(() => (words.length === 0 ? null : findOnBoard(plan, layout, words)), [plan, layout, words]);
+  // The match ↓ and ↑ last showed.
+  const [findAt, setFindAt] = useState<ItemId | null>(null);
+  const clearFind = useCallback(() => {
+    setQuery('');
+    setFindAt(null);
+    setFindOpen(false);
+  }, []);
+  const stepFound = useCallback(
+    (by: 1 | -1) => {
+      const next = found ? stepMatch(found.matches, findAt, by) : null;
+      if (next === null) return;
+      setFindAt(next);
+      revealCard(next);
+    },
+    [found, findAt, revealCard],
+  );
+  // Enter: select every match, expanding the groups that hide some of them, like "Show it on the board".
+  // Focus goes back to the board, so E, L and I act on the matches straight away.
+  const selectFound = useCallback(() => {
+    if (!found) return;
+    const open = new Set<ItemId>();
+    for (const ids of found.inside.values()) {
+      for (const id of ids) for (const group of ancestry(plan, id).slice(0, -1)) if (!expanded.includes(group)) open.add(group);
+    }
+    if (open.size > 0) setExpanded((current) => [...current, ...[...open].filter((g) => !current.includes(g))]);
+    // An expanded group leaves the board (its cards take its place), so it can't stay selected.
+    const ids = found.matches.filter((id) => !open.has(id));
+    setSelection(new Set(ids));
+    setSelectedLinks(new Set());
+    setAnchor(null);
+    const n = ids.length;
+    const groups = open.size === 1 ? '1 group' : `${open.size} groups`;
+    setNotice({
+      text:
+        n === 0
+          ? `No cards match “${query.trim()}”`
+          : `Selected ${n} ${n === 1 ? 'card' : 'cards'} matching “${query.trim()}”${open.size > 0 ? `, and expanded ${groups} to show them` : ''}`,
+    });
+    findRef.current?.blur();
+  }, [found, plan, expanded, query]);
+
   // Double-click renames, groups included (Q36). A faded copy can't be renamed, so it expands its group;
   // a group card expands with its child count or E.
   const onCardDoubleClick = useCallback(
@@ -511,6 +568,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const canNestCard = useCallback((id: ItemId, into: ItemId) => canNest(plan, id, into), [plan]);
   const { drag, startDrag } = useCardDrag(onDrop, scrollRef, onCardClick, canNestCard);
   const dragging = drag !== null;
+  // A press on a card would otherwise leave the keyboard in the find field (the drag stops the browser moving
+  // focus), and E or L would be typed there instead of acting on the card.
+  const onCardPointerDown = useCallback(
+    (...args: Parameters<typeof startDrag>) => {
+      if (document.activeElement === findRef.current) findRef.current?.blur();
+      startDrag(...args);
+    },
+    [startDrag],
+  );
   // While a card in a group is dragged, a strip moves it up one level.
   const draggedParent = drag ? (plan.items[drag.card.itemId]?.parent ?? null) : null;
   const moveOut =
@@ -546,14 +612,19 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       label: line.links.map(label).join('\n'),
       selected: line.links.some((d) => selectedLinks.has(linkKey(d))),
     });
-    const problemLines = visibleLinks(plan, flagged, renamable).map(drawn('problem'));
+    // While finding, a red line between two cards that don't match dims with them. Focus lines don't: they
+    // only show for the card you're pointing at or have selected.
+    const bright = (id: ItemId) => found === null || found.shown.has(id) || found.inside.has(id);
+    const problemLines = visibleLinks(plan, flagged, renamable)
+      .map(drawn('problem'))
+      .map((line) => (bright(line.from) || bright(line.to) ? line : { ...line, dimmed: true }));
     // A pair of cards with both kinds of link gets one red line.
     const taken = new Set(problemLines.map((l) => `${l.from}->${l.to}`));
     const focusLines = visibleLinks(plan, [...focus.values()], renamable)
       .filter((l) => !taken.has(`${l.from}->${l.to}`))
       .map(drawn('focus'));
     return [...focusLines, ...problemLines];
-  }, [plan, problems, selected, hovered, selectedLinks, renamable, dragging]);
+  }, [plan, problems, selected, hovered, selectedLinks, renamable, dragging, found]);
 
   // A card's copies (Q45): the hovered card's and the selected cards', when there's more than one on the board.
   const copyCounts = useMemo(() => {
@@ -615,6 +686,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         if (pendingFrom !== null) setPendingLink(null);
         else if (selectedLinks.size > 0) setSelectedLinks(new Set());
         else if (selected.size > 0) clearSelection();
+        else if (findOpen) clearFind();
+        return;
+      }
+      if (e.key === '/' && !e.altKey && !empty) {
+        e.preventDefault();
+        openFind();
         return;
       }
       if (e.key.toLowerCase() === 'l' && !e.altKey && !e.shiftKey) {
@@ -674,6 +751,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     expandSelection,
     foldSelection,
     selectAll,
+    findOpen,
+    openFind,
+    clearFind,
   ]);
 
   const loadSample = () => {
@@ -832,6 +912,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             Properties
           </button>
           <span className="divider" />
+          {!empty && <FindButton open={findOpen} onClick={() => (findOpen ? clearFind() : openFind())} />}
           <button
             type="button"
             className="icon"
@@ -857,6 +938,20 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             Cancel
           </button>
         </div>
+      )}
+      {findOpen && !empty && (
+        <FindBar
+          query={query}
+          onChange={(text) => {
+            setQuery(text);
+            setFindAt(null);
+          }}
+          found={found}
+          onSelect={selectFound}
+          onStep={stepFound}
+          onClose={clearFind}
+          inputRef={findRef}
+        />
       )}
       {empty ? (
         <div className="empty-state">
@@ -900,7 +995,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCompactChange={setCompact}
           lifted={drag?.card ?? null}
           target={drag?.target ?? null}
-          onCardPointerDown={startDrag}
+          onCardPointerDown={onCardPointerDown}
           justMoved={justMoved}
           scrollRef={scrollRef}
           lines={lines}
@@ -920,6 +1015,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onSelectLanes={onSelectLanes}
           onSelectMatching={onSelectMatching}
           levelNames={levelNames}
+          found={found}
         />
         {panel === 'inspector' && (
           <Inspector

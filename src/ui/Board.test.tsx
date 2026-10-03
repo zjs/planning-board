@@ -3,15 +3,18 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { item, plan, size } from '../domain/__fixtures__/tiny-plan.ts';
 import { SEQUENCE, SIZE, SYSTEM, type Plan } from '../domain/model.ts';
+import { findOnBoard, queryWords } from '../domain/finding.ts';
 import { layoutView, type ViewSpec } from '../domain/view.ts';
 import { Board } from './Board.tsx';
 
-function render(p: Plan, view: ViewSpec, compact = false): string {
+function render(p: Plan, view: ViewSpec, compact = false, find = ''): string {
+  const layout = layoutView(p, view);
+  const words = queryWords(find);
   return renderToStaticMarkup(
     <Board
       plan={p}
       view={view}
-      layout={layoutView(p, view)}
+      layout={layout}
       xLabel="X"
       yLabel="Y"
       xNone="No X"
@@ -42,6 +45,7 @@ function render(p: Plan, view: ViewSpec, compact = false): string {
       onBandToggle={() => undefined}
       levelNames={{ x: 'value', y: 'value' }}
       mismatches={{ onCard: new Map(), inside: new Map() }}
+      found={words.length === 0 ? null : findOnBoard(p, layout, words)}
     />,
   );
 }
@@ -93,5 +97,22 @@ describe('Board', () => {
     expect(html).toContain('No cards have a x value yet');
     expect(html).toMatch(/data-row="id" aria-label="ID, No X">.*data-item="tagged"/);
     expect(html).toMatch(/holding-corner" data-drop="cell" aria-label="No Y, No X">.*data-item="untagged"/);
+  });
+
+  it('while finding, dims cards that don\'t match and counts matches folded inside a group (Q50)', () => {
+    const p = plan(
+      item('login', { title: 'Passwordless login', values: { [SYSTEM]: ['id'] } }),
+      item('epic', { title: 'EU data residency', values: { [SYSTEM]: ['id'] } }),
+      item('story', { title: 'Login audit trail', parent: 'epic', values: { [SYSTEM]: ['id'] } }),
+      item('other', { title: 'Invoices', values: { [SYSTEM]: ['pay'] } }),
+    );
+    const view = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
+    expect(render(p, view)).not.toContain('dimmed');
+    const html = render(p, view, false, 'login');
+    expect(html).toMatch(/class="card"[^>]*data-item="login"/);
+    expect(html).toMatch(/class="card dimmed"[^>]*data-item="other"/);
+    // The epic doesn't match, but the story folded inside it does: it stays bright and says so.
+    expect(html).toMatch(/class="card group"[^>]*data-item="epic"/);
+    expect(html).toContain('>1 inside</span>');
   });
 });

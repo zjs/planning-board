@@ -80,6 +80,14 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Selects every card that matches, in any pivot: every Initiative, or everything in a row.{' '}
           <kbd>{keys.selectAll}</kbd> selects every card on the board.
         </dd>
+        <dt>
+          Press <kbd>/</kbd> and type
+        </dt>
+        <dd>
+          Finds cards by title, Jira key or description. The rest fade back and nothing moves; a folded group with
+          matches inside says how many. <kbd>Enter</kbd> selects them all, expanding groups as needed, and{' '}
+          <kbd>↓</kbd> <kbd>↑</kbd> go from one to the next. <kbd>Esc</kbd> stops finding.
+        </dd>
         <dt>Double-click empty space</dt>
         <dd>
           Makes a card there with that cell's values; in a gap between sequence columns, it's a new column. Double-click

@@ -6,6 +6,7 @@ import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
 import type { Band, CardRef, Lane, ViewLayout, ViewSpec } from '../domain/view.ts';
+import type { Found } from '../domain/finding.ts';
 import type { Mismatches } from '../domain/mismatches.ts';
 import { Card, DraftCard } from './Card.tsx';
 import { DependencyLines, type DrawnLine } from './DependencyLines.tsx';
@@ -64,6 +65,8 @@ interface Props {
   /** The card under the pointer, for its focus lines (Q39). */
   onHover: (id: ItemId | null) => void;
   onLineClick: (line: DrawnLine) => void;
+  /** What's being found (Q50): cards that don't match dim. Null when nothing is typed. */
+  found: Found | null;
 }
 
 /** Palette index by first top-level system area, so cards keep their color across pivots. */
@@ -178,6 +181,7 @@ export const Board = memo(function Board({
   onSelectMatching,
   levelNames,
   mismatches,
+  found,
 }: Props) {
   /**
    * A lane header. On a nested axis, a parent's own lane reads "No
@@ -247,6 +251,7 @@ export const Board = memo(function Board({
   const renderCard = (ref: CardRef, chip = false, frame?: CardRef) => {
     const item = plan.items[ref.itemId]!;
     const tone = ref.parent === undefined ? undefined : tones.get(ref.parent);
+    const foldedMatches = found?.inside.get(ref.itemId);
     return (
       <Card
         key={`${frame ? `${frame.itemId}>` : ''}${ref.itemId}|${ref.x}|${ref.y}|${ref.via ?? ''}`}
@@ -266,6 +271,8 @@ export const Board = memo(function Board({
         viaChildren={ref.via === 'children'}
         mismatches={mismatches.onCard.get(ref.itemId) ?? NONE}
         mismatchesInside={mismatches.inside.get(ref.itemId) ?? NONE}
+        dimmed={found !== null && !found.shown.has(ref.itemId) && foldedMatches === undefined}
+        foundInside={foldedMatches?.map((id) => plan.items[id]?.title ?? '')}
         // A faded copy isn't the group's own value, so it can be clicked but not dragged (Q16).
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title, ref.via !== 'children')}
         // A card in a frame isn't on the board's level: double-click expands its group, like the frame's header.
