@@ -83,10 +83,23 @@ export interface Dependency {
   to: ItemId;
 }
 
+/**
+ * Two items related with no order between them (Q44): never judged or
+ * flagged. `a` sorts before `b`, so each pair is kept once.
+ */
+export interface Related {
+  a: ItemId;
+  b: ItemId;
+}
+
+/** The related link between two items, in its one stored order. */
+export const relatedPair = (x: ItemId, y: ItemId): Related => (x < y ? { a: x, b: y } : { a: y, b: x });
+
 export interface Plan {
   properties: Record<PropertyId, Property>;
   items: Record<ItemId, Item>;
   dependencies: Dependency[];
+  related: Related[];
 }
 
 /** Byte-order comparison, which is what fractional order keys are designed for. */

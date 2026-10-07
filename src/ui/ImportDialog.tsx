@@ -211,7 +211,7 @@ export function ImportDialog({ fileName, table, onCancel, onImport }: Props) {
         {hasTitle ? (
           <p>
             Imports <strong>{n} {n === 1 ? 'card' : 'cards'}</strong>
-            {structure(preview.counts.groups, preview.counts.dependencies)}. It replaces the board; you can undo it.
+            {structure(preview.counts.groups, preview.counts.dependencies, preview.counts.related)}. It replaces the board; you can undo it.
           </p>
         ) : (
           <p className="field-error">Choose which column holds the card titles (in Jira, Summary).</p>
@@ -260,13 +260,15 @@ function sizeLabel(points: string): string {
   return size ? `${SIZES.find((s) => s.id === size)!.label} (${points})` : points;
 }
 
-/** ", including 2 groups with cards inside, and 5 dependencies", or nothing. */
-function structure(groups: number, dependencies: number): string {
+/** ", including 2 groups with cards inside, 5 dependencies, and 3 related links", or nothing. */
+function structure(groups: number, dependencies: number, related: number): string {
   const parts = [
     groups > 0 && `${groups} ${groups === 1 ? 'group' : 'groups'} with cards inside`,
     dependencies > 0 && `${dependencies} ${dependencies === 1 ? 'dependency' : 'dependencies'}`,
-  ].filter(Boolean);
-  return parts.length > 0 ? `, including ${parts.join(', and ')}` : '';
+    related > 0 && `${related} related ${related === 1 ? 'link' : 'links'}`,
+  ].filter((part): part is string => typeof part === 'string');
+  if (parts.length === 0) return '';
+  return `, including ${parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`}`;
 }
 
 /**

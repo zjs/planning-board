@@ -68,12 +68,20 @@ export function planValueEdit(
   return out;
 }
 
-/** A card's own links: what it waits on, and what waits on it. A group's children's links aren't included. */
-export function ownLinks(plan: Plan, id: ItemId): { after: Dependency[]; before: Dependency[] } {
-  const byTitle = (pick: (d: Dependency) => ItemId) => (a: Dependency, b: Dependency) =>
-    (plan.items[pick(a)]?.title ?? '').localeCompare(plan.items[pick(b)]?.title ?? '');
+/**
+ * A card's own links: what it waits on, what waits on it, and the cards
+ * it's related to (Q44), each sorted by title. A group's children's links
+ * aren't included.
+ */
+export function ownLinks(plan: Plan, id: ItemId): { after: Dependency[]; before: Dependency[]; related: ItemId[] } {
+  const titleOf = (other: ItemId) => plan.items[other]?.title ?? '';
+  const byTitle = (pick: (d: Dependency) => ItemId) => (a: Dependency, b: Dependency) => titleOf(pick(a)).localeCompare(titleOf(pick(b)));
   return {
     after: plan.dependencies.filter((d) => d.to === id && plan.items[d.from]).sort(byTitle((d) => d.from)),
     before: plan.dependencies.filter((d) => d.from === id && plan.items[d.to]).sort(byTitle((d) => d.to)),
+    related: plan.related
+      .flatMap((l) => (l.a === id ? [l.b] : l.b === id ? [l.a] : []))
+      .filter((other) => plan.items[other])
+      .sort((a, b) => titleOf(a).localeCompare(titleOf(b))),
   };
 }

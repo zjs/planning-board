@@ -193,6 +193,13 @@ const PROJECTS: Project[] = [
 ];
 
 /** Links out of the export, as a real filter export has. */
+// "Relates" links (Q44): Jira writes each one twice, outward on one issue and inward on the other.
+const RELATES: [string, string][] = [
+  ['Tamper-evident audit log', 'SIEM streaming'],
+  ['Certificate expiry warnings', 'Enforce SSO per workspace'],
+  ['Audit events for billing changes', 'Second payment processor'],
+];
+
 const OUTSIDE_LINKS: Record<string, string> = {
   'Enforce SSO per workspace': 'SEC-118',
   'Second payment processor': 'LEGAL-42',
@@ -247,6 +254,7 @@ const HEADER = [
   'Component/s', 'Component/s', 'Component/s', 'Fix Version/s', 'Labels', 'Labels', 'Sprint', 'Sprint',
   'Custom field (Story Points)', 'Custom field (Team)', 'Parent', 'Parent summary', 'Description',
   'Outward issue link (Blocks)', 'Outward issue link (Blocks)', 'Inward issue link (Blocks)',
+  'Outward issue link (Relates)', 'Inward issue link (Relates)',
 ];
 
 const pad = (values: readonly string[], n: number) => [...values, ...Array<string>(n).fill('')].slice(0, n);
@@ -281,6 +289,8 @@ for (const row of rows) {
     row.description ?? '',
     ...pad(outward, 2),
     ...pad(blockedBy.get(row.summary) ?? [], 1),
+    ...pad(RELATES.filter(([from]) => from === row.summary).map(([, to]) => keyOf.get(to)!), 1),
+    ...pad(RELATES.filter(([, to]) => to === row.summary).map(([from]) => keyOf.get(from)!), 1),
   ];
   if (outward.length > 2 || (blockedBy.get(row.summary)?.length ?? 0) > 1 || (row.components?.length ?? 0) > 3) {
     throw new Error(`Row ${row.key} has more values than the header has columns for`);

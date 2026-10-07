@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   addDependency,
+  addRelated,
   addValue,
   createChild,
   createItem,
@@ -15,6 +16,8 @@ import {
   redo,
   removeDependencies,
   removeDependency,
+  removeRelated,
+  removeRelatedLinks,
   renameItem,
   renameValue,
   resetPlan,
@@ -29,7 +32,9 @@ import {
   chain,
   describeLinkProblem,
   directLinks,
+  directRelated,
   hasLink,
+  hasRelated,
   linkKey,
   linkProblems,
   linkProblemsInside,
@@ -125,6 +130,9 @@ export function App() {
 
 const JUST_MOVED_MS = 1400;
 const EXPAND_HINT_KEY = 'planning-board:hint-expand';
+/** A related link's key among selected lines: unlike a dependency's `a->b`, it has no direction (Q44). */
+const relatedLineKey = (d: Dependency) => `${d.from}~${d.to}`;
+
 const NOTICE_MS = 8000;
 
 /** A short message after a delete, with its own Undo. `step` is the delete's own undo step. */
@@ -621,7 +629,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   // Dependency links (requirement 15, Q24, Q39). Selection order decides direction: the first card
   // selected comes before the second. With one card selected, L starts a pending link that survives
   // expanding and folding, so cards at different group levels can be linked; it's viewer state, never saved.
+  // ⌥L does the same for related links (Q44), which have no direction.
   const [pendingLink, setPendingLink] = useState<ItemId | null>(null);
+  const [pendingKind, setPendingKind] = useState<'depends' | 'related'>('depends');
   const pendingFrom = pendingLink !== null && plan.items[pendingLink] ? pendingLink : null;
   const titleOf = useCallback((id: ItemId) => `“${plan.items[id]?.title ?? 'card'}”`, [plan]);
   const toggleLink = useCallback(
@@ -637,8 +647,47 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     },
     [plan, store, titleOf],
   );
+  const toggleRelated = useCallback(
+    (x: ItemId, y: ItemId) => {
+      if (hasRelated(plan, x, y)) {
+        removeRelated(store, x, y);
+        setNotice({ text: `${titleOf(x)} and ${titleOf(y)} are no longer related`, step: store.undoManager.undoStack.at(-1) });
+        return;
+      }
+      const problem = addRelated(store, x, y);
+      if (problem !== null) setNotice({ text: problem });
+      else setNotice({ text: `Related ${titleOf(x)} and ${titleOf(y)}`, step: store.undoManager.undoStack.at(-1) });
+    },
+    [plan, store, titleOf],
+  );
+  // ⌥L: relate the two selected cards, or start a related link from the one selected (Q44).
+  const relateSelection = useCallback(() => {
+    const ids = [...selected];
+    if (pendingFrom !== null && pendingKind === 'related') {
+      if (ids.length !== 1 || ids[0] === pendingFrom) {
+        setNotice({ text: `Select one other card to relate to ${titleOf(pendingFrom)}. Esc cancels.` });
+        return;
+      }
+      toggleRelated(pendingFrom, ids[0]!);
+      setPendingLink(null);
+      return;
+    }
+    if (ids.length === 1) {
+      setPendingLink(ids[0]!);
+      setPendingKind('related');
+    } else if (ids.length === 2) toggleRelated(ids[0]!, ids[1]!);
+    else {
+      setNotice({
+        text: ids.length === 0 ? `Select two cards, then press ${keyNames().relate} to relate them.` : 'Select just two cards to relate.',
+      });
+    }
+  }, [selected, pendingFrom, pendingKind, titleOf, toggleRelated]);
   const linkSelection = useCallback(() => {
     const ids = [...selected];
+    if (pendingFrom !== null && pendingKind === 'related') {
+      relateSelection();
+      return;
+    }
     if (pendingFrom !== null) {
       if (ids.length !== 1 || ids[0] === pendingFrom) {
         setNotice({ text: `Select one other card: the one ${titleOf(pendingFrom)} comes before. Esc cancels.` });
@@ -648,8 +697,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       setPendingLink(null);
       return;
     }
-    if (ids.length === 1) setPendingLink(ids[0]!);
-    else if (ids.length === 2) toggleLink(ids[0]!, ids[1]!);
+    if (ids.length === 1) {
+      setPendingLink(ids[0]!);
+      setPendingKind('depends');
+    } else if (ids.length === 2) toggleLink(ids[0]!, ids[1]!);
     else {
       setNotice({
         text:
@@ -658,7 +709,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             : 'Select just two cards: the one that comes first, then the one it comes before.',
       });
     }
-  }, [selected, pendingFrom, titleOf, toggleLink]);
+  }, [selected, pendingFrom, pendingKind, titleOf, toggleLink, relateSelection]);
 
   useEffect(() => {
     if (!notice) return;
@@ -750,7 +801,21 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     const focusLines = visibleLinks(plan, [...focus.values()], renamable)
       .filter((l) => !taken.has(`${l.from}->${l.to}`))
       .map(drawn('focus'));
-    return [...focusLines, ...problemLines];
+    // Related links (Q44): dotted, for the hovered card and each selected card, direct ones only. Never flagged.
+    const relatedFocus = new Map<string, Dependency>();
+    const relate = (d: Dependency) => relatedFocus.set(relatedLineKey(d), d);
+    for (const id of selected) directRelated(plan, id).forEach(relate);
+    if (hovered !== null && plan.items[hovered]) directRelated(plan, hovered).forEach(relate);
+    for (const l of plan.related) if (selectedLinks.has(relatedLineKey({ from: l.a, to: l.b }))) relate({ from: l.a, to: l.b });
+    const relatedLines = visibleLinks(plan, [...relatedFocus.values()], renamable).map(
+      (line): DrawnLine => ({
+        ...line,
+        tone: 'related',
+        label: line.links.map((d) => `${plan.items[d.from]?.title ?? ''} and ${plan.items[d.to]?.title ?? ''} are related`).join('\n'),
+        selected: line.links.some((d) => selectedLinks.has(relatedLineKey(d))),
+      }),
+    );
+    return [...relatedLines, ...focusLines, ...problemLines];
   }, [plan, problems, selected, hovered, selectedLinks, renamable, dragging, found]);
 
   // A card's copies (Q45): the hovered card's and the selected cards', when there's more than one on the board.
@@ -770,10 +835,22 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   );
 
   const onLineClick = useCallback((line: DrawnLine) => {
-    setSelectedLinks(new Set(line.links.map(linkKey)));
+    setSelectedLinks(new Set(line.links.map(line.tone === 'related' ? relatedLineKey : linkKey)));
     setSelection(new Set());
   }, []);
   const deleteSelectedLinks = useCallback(() => {
+    const doomedRelated = plan.related.filter((l) => selectedLinks.has(relatedLineKey({ from: l.a, to: l.b })));
+    if (doomedRelated.length > 0) {
+      const removed = removeRelatedLinks(store, doomedRelated);
+      setSelectedLinks(new Set());
+      if (removed === 0) return;
+      const first = doomedRelated[0]!;
+      setNotice({
+        text: removed === 1 ? `${titleOf(first.a)} and ${titleOf(first.b)} are no longer related` : `Removed ${removed} related links`,
+        step: store.undoManager.undoStack.at(-1),
+      });
+      return;
+    }
     const doomed = plan.dependencies.filter((d) => selectedLinks.has(linkKey(d)));
     const removed = removeDependencies(store, doomed);
     setSelectedLinks(new Set());
@@ -826,6 +903,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         linkSelection();
         return;
       }
+      // ⌥L types "¬" on a Mac, so the key's position is what counts (Q44).
+      if (e.code === 'KeyL' && e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        relateSelection();
+        return;
+      }
       if (e.key.toLowerCase() === 'e' && !e.altKey && !empty) {
         e.preventDefault();
         if (e.shiftKey) collapseSelection();
@@ -869,6 +952,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     clearSelection,
     pendingFrom,
     linkSelection,
+    relateSelection,
     selectedLinks,
     deleteSelectedLinks,
     groupSelection,
@@ -923,6 +1007,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         shortcut: keys.link,
         disabled: ids.length > 2,
         onSelect: linkSelection,
+      },
+      {
+        label: ids.length === 2 ? 'Relate these two' : 'Relate to…',
+        shortcut: keys.relate,
+        disabled: ids.length > 2,
+        onSelect: relateSelection,
       },
       'divider',
       { label: ids.length > 1 ? `Delete ${ids.length} cards` : 'Delete', shortcut: keys.delete, onSelect: deleteSelection },
@@ -1127,7 +1217,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       )}
       {pendingFrom !== null && !empty && (
         <div className="link-bar" role="status" data-testid="link-bar">
-          Linking from {titleOf(pendingFrom)}: select the card it comes before, then press <kbd>{keys.link}</kbd>.
+          {pendingKind === 'related' ? (
+            <>
+              Relating {titleOf(pendingFrom)}: select the other card, then press <kbd>{keys.relate}</kbd>.
+            </>
+          ) : (
+            <>
+              Linking from {titleOf(pendingFrom)}: select the card it comes before, then press <kbd>{keys.link}</kbd>.
+            </>
+          )}
           <button type="button" onClick={() => setPendingLink(null)}>
             Cancel
           </button>

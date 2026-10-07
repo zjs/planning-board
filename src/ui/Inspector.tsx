@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { editCardValues, removeDependency, renameItem, setDescription, type PlanStore } from '../commands/store.ts';
+import { editCardValues, removeDependency, removeRelated, renameItem, setDescription, type PlanStore } from '../commands/store.ts';
 import { compareTreeOrder, depthOf, pathTo } from '../domain/hierarchy.ts';
 import { ownLinks, selectionValues, type FieldValue, type ValueEdit } from '../domain/inspector.ts';
 import type { Dependency, ItemId, Plan, SelectProperty, ValueId } from '../domain/model.ts';
 import { propertiesInOrder } from '../domain/properties.ts';
 import { ancestry, canNest } from '../domain/tree.ts';
+import { keyNames } from './platform.ts';
 
 interface Props {
   store: PlanStore;
@@ -361,7 +362,7 @@ function Links({
   onReveal: (id: ItemId) => void;
   onNotice: (text: string) => void;
 }) {
-  const { after, before } = ownLinks(plan, id);
+  const { after, before, related } = ownLinks(plan, id);
   const title = (other: ItemId) => plan.items[other]?.title ?? '';
   const row = (d: Dependency, other: ItemId) => (
     <li key={`${d.from}->${d.to}`}>
@@ -381,11 +382,35 @@ function Links({
     </li>
   );
   return (
-    <section className="inspector-links" aria-label="Dependencies">
+    <section className="inspector-links" aria-label="Links">
       <h3>Comes after</h3>
       {after.length === 0 ? <p className="panel-hint">Nothing. Select a card, then this one, and press L.</p> : <ul>{after.map((d) => row(d, d.from))}</ul>}
       <h3>Comes before</h3>
       {before.length === 0 ? <p className="panel-hint">Nothing. Select this card, then another, and press L.</p> : <ul>{before.map((d) => row(d, d.to))}</ul>}
+      <h3>Related</h3>
+      {related.length === 0 ? (
+        <p className="panel-hint">Nothing. Select this card and another, and press {keyNames().relate}. It sets no order.</p>
+      ) : (
+        <ul aria-label="Related">
+          {related.map((other) => (
+            <li key={`~${other}`}>
+              <button type="button" className="link" onClick={() => onReveal(other)} title="Show it on the board">
+                {title(other)}
+              </button>
+              <button
+                type="button"
+                className="remove"
+                aria-label={`Remove the related link to ${title(other)}`}
+                onClick={() => {
+                  if (removeRelated(store, id, other)) onNotice(`“${title(id)}” and “${title(other)}” are no longer related`);
+                }}
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

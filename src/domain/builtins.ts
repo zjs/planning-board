@@ -61,6 +61,7 @@ export function blankPlan(): Plan {
     },
     items: {},
     dependencies: [],
+    related: [],
   };
 }
 

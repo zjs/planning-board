@@ -20,7 +20,7 @@ describe('withBuiltIns', () => {
   });
 
   it('leaves an empty board empty, and a plan that already has Level alone', () => {
-    const empty: Plan = { properties: {}, items: {}, dependencies: [] };
+    const empty: Plan = { properties: {}, items: {}, dependencies: [], related: [] };
     expect(withBuiltIns(empty)).toBe(empty);
     const renamed = withLevels(item('a'));
     (renamed.properties[LEVEL] as { name: string }).name = 'Tier';

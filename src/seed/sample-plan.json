@@ -2013,5 +2013,27 @@
       "product-analytics-events",
       "usage-overview-page"
     ]
+  ],
+  "related": [
+    [
+      "audit-log-export-api",
+      "permission-audit-report"
+    ],
+    [
+      "audit-retention-settings",
+      "tamper-evident-audit-log"
+    ],
+    [
+      "session-management-overhaul",
+      "sso-session-timeout-policy"
+    ],
+    [
+      "admin-action-audit-coverage",
+      "audit-events-for-billing-changes"
+    ],
+    [
+      "webhook-secret-rotation",
+      "webhooks-v2"
+    ]
   ]
 }

@@ -4,11 +4,12 @@
 import * as Y from 'yjs';
 import { withBuiltIns } from '../domain/builtins.ts';
 import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from '../domain/csvImport.ts';
-import { hasLink, linkProblem } from '../domain/dependencies.ts';
+import { hasLink, hasRelated, linkProblem, relatedProblem } from '../domain/dependencies.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { planValueEdit, type ValueEdit } from '../domain/inspector.ts';
 import { cleanTitle, deletionOf, nextRank, valuesForChild, valuesForNewItem } from '../domain/items.ts';
-import type { Dependency, ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
+import type { Dependency, ItemId, Plan, PropertyId, Related, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
+import { relatedPair } from '../domain/model.ts';
 import { planDrop, planDrops, type DropMode, type DropTarget } from '../domain/move.ts';
 import {
   cardsWithProperty,
@@ -27,7 +28,7 @@ import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 
 export type { PersistenceStatus };
-import { dependencyKey, isEmpty, itemToY, propertyToY, readPlan, root, valueSet, writePlan } from '../store/schema.ts';
+import { dependencyKey, isEmpty, itemToY, propertyToY, readPlan, relatedKey, root, valueSet, writePlan } from '../store/schema.ts';
 
 /** Marks edits made through commands, so undo tracks them and not loads from storage. */
 const LOCAL_ORIGIN = { source: 'local-command' };
@@ -39,7 +40,7 @@ export interface PlanStore {
 
 export function createPlanStore(doc: Y.Doc = new Y.Doc()): PlanStore {
   const r = root(doc);
-  const undoManager = new Y.UndoManager([r.properties, r.items, r.dependencies], {
+  const undoManager = new Y.UndoManager([r.properties, r.items, r.dependencies, r.related], {
     trackedOrigins: new Set([LOCAL_ORIGIN]),
     // Every command is its own undo step, however quickly they follow each other.
     captureTimeout: 0,
@@ -100,7 +101,7 @@ export function importPlan(
 
 /** Empty the board completely. Undoable. */
 export function resetPlan(store: PlanStore): void {
-  edit(store, () => writePlan(store.doc, { properties: {}, items: {}, dependencies: [] }));
+  edit(store, () => writePlan(store.doc, { properties: {}, items: {}, dependencies: [], related: [] }));
 }
 
 /**
@@ -271,6 +272,7 @@ export function deleteItems(store: PlanStore, ids: Iterable<ItemId>): number {
   const r = root(store.doc);
   edit(store, () => {
     for (const dep of doomed.dependencies) r.dependencies.delete(dependencyKey(dep));
+    for (const link of doomed.related) r.related.delete(relatedKey(link));
     for (const id of doomed.items) r.items.delete(id);
   });
   return doomed.items.length;
@@ -318,6 +320,8 @@ export function ungroupItems(store: PlanStore, ids: Iterable<ItemId>): ItemId[] 
     for (const { item, parent } of ungroup.moves) r.items.get(item)?.set('parent', parent);
     for (const dep of ungroup.removed) r.dependencies.delete(dependencyKey(dep));
     for (const dep of ungroup.added) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });
+    for (const link of ungroup.relatedRemoved) r.related.delete(relatedKey(link));
+    for (const link of ungroup.relatedAdded) r.related.set(relatedKey(link), { a: link.a, b: link.b });
     for (const group of ungroup.groups) r.items.delete(group);
   });
   return ungroup.moves.map((m) => m.item);
@@ -523,6 +527,34 @@ export function removeDependencies(store: PlanStore, links: readonly Dependency[
   if (existing.length === 0) return 0;
   edit(store, () => {
     for (const d of existing) root(store.doc).dependencies.delete(dependencyKey(d));
+  });
+  return existing.length;
+}
+
+/**
+ * Relate two cards, with no order between them (Q44). Returns why it can't
+ * be made, or null once it is. One undo step.
+ */
+export function addRelated(store: PlanStore, x: ItemId, y: ItemId): string | null {
+  const problem = relatedProblem(readPlan(store.doc), x, y);
+  if (problem !== null) return problem;
+  const link = relatedPair(x, y);
+  edit(store, () => root(store.doc).related.set(relatedKey(link), link));
+  return null;
+}
+
+/** Remove a related link, in either order. Returns false (no undo step) if there was none. */
+export function removeRelated(store: PlanStore, x: ItemId, y: ItemId): boolean {
+  return removeRelatedLinks(store, [relatedPair(x, y)]) > 0;
+}
+
+/** Remove several related links in one undo step: everything a clicked line stands for. Returns how many. */
+export function removeRelatedLinks(store: PlanStore, links: readonly Related[]): number {
+  const plan = readPlan(store.doc);
+  const existing = links.filter((l) => hasRelated(plan, l.a, l.b));
+  if (existing.length === 0) return 0;
+  edit(store, () => {
+    for (const l of existing) root(store.doc).related.delete(relatedKey(relatedPair(l.a, l.b)));
   });
   return existing.length;
 }

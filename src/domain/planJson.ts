@@ -1,14 +1,24 @@
 // Reads and writes the human-editable plan JSON format (version 1). The
 // format is described in docs/decisions/0005-plan-file-format.md.
 
-import { generateNKeysBetween } from 'fractional-indexing';
-import { withBuiltIns } from './builtins.ts';
-import type { Dependency, Item, ItemId, OrderKey, Plan, Property, SelectProperty, ValueNode } from './model.ts';
-import { compareOrderKeys, SEQUENCE } from './model.ts';
-import { isOrderKey } from './sequence.ts';
-import { wouldCreateCycle } from './tree.ts';
+import { generateNKeysBetween } from "fractional-indexing";
+import { withBuiltIns } from "./builtins.ts";
+import type {
+  Dependency,
+  Item,
+  ItemId,
+  OrderKey,
+  Plan,
+  Property,
+  Related,
+  SelectProperty,
+  ValueNode,
+} from "./model.ts";
+import { compareOrderKeys, relatedPair, SEQUENCE } from "./model.ts";
+import { isOrderKey } from "./sequence.ts";
+import { wouldCreateCycle } from "./tree.ts";
 
-export const PLAN_FORMAT = 'planning-board';
+export const PLAN_FORMAT = "planning-board";
 export const PLAN_VERSION = 1;
 
 export interface ValueJson {
@@ -46,13 +56,17 @@ export interface PlanJson {
   items: ItemJson[];
   /** [prerequisite, dependent] pairs: the first must come before the second. */
   dependencies?: [string, string][];
+  /** Related pairs (Q44), with no order between them. Each pair's ids are sorted. Older readers ignore it. */
+  related?: [string, string][];
 }
 
-export type ParseResult = { ok: true; plan: Plan } | { ok: false; errors: string[] };
+export type ParseResult =
+  | { ok: true; plan: Plan }
+  | { ok: false; errors: string[] };
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const isString = (v: unknown): v is string => typeof v === 'string';
+  typeof v === "object" && v !== null && !Array.isArray(v);
+const isString = (v: unknown): v is string => typeof v === "string";
 
 /**
  * Parse and validate plan JSON. Collects every problem it finds rather than
@@ -60,27 +74,43 @@ const isString = (v: unknown): v is string => typeof v === 'string';
  */
 export function parsePlanJson(input: unknown): ParseResult {
   const errors: string[] = [];
-  if (!isRecord(input)) return { ok: false, errors: ['plan must be a JSON object'] };
-  if (input.format !== PLAN_FORMAT) errors.push(`format must be "${PLAN_FORMAT}"`);
+  if (!isRecord(input))
+    return { ok: false, errors: ["plan must be a JSON object"] };
+  if (input.format !== PLAN_FORMAT)
+    errors.push(`format must be "${PLAN_FORMAT}"`);
   if (input.version !== PLAN_VERSION) {
-    return { ok: false, errors: [...errors, `unsupported version ${String(input.version)}; expected ${PLAN_VERSION}`] };
+    return {
+      ok: false,
+      errors: [
+        ...errors,
+        `unsupported version ${String(input.version)}; expected ${PLAN_VERSION}`,
+      ],
+    };
   }
 
   const properties: Record<string, Property> = {
-    [SEQUENCE]: { kind: 'sequence', id: SEQUENCE, name: 'Sequence' },
+    [SEQUENCE]: { kind: "sequence", id: SEQUENCE, name: "Sequence" },
   };
-  if (!Array.isArray(input.properties)) errors.push('properties must be an array');
-  for (const [i, raw] of (Array.isArray(input.properties) ? input.properties : []).entries()) {
+  if (!Array.isArray(input.properties))
+    errors.push("properties must be an array");
+  for (const [i, raw] of (Array.isArray(input.properties)
+    ? input.properties
+    : []
+  ).entries()) {
     const property = parseProperty(raw, `properties[${i}]`, errors);
     if (!property) continue;
-    if (properties[property.id]) errors.push(`properties[${i}]: duplicate property id "${property.id}"`);
+    if (properties[property.id])
+      errors.push(`properties[${i}]: duplicate property id "${property.id}"`);
     else properties[property.id] = property;
   }
 
   const items: Record<string, Item> = {};
   const rawSequence = new Map<string, string | number>();
-  if (!Array.isArray(input.items)) errors.push('items must be an array');
-  for (const [i, raw] of (Array.isArray(input.items) ? input.items : []).entries()) {
+  if (!Array.isArray(input.items)) errors.push("items must be an array");
+  for (const [i, raw] of (Array.isArray(input.items)
+    ? input.items
+    : []
+  ).entries()) {
     const path = `items[${i}]`;
     if (!isRecord(raw) || !isString(raw.id) || !isString(raw.title)) {
       errors.push(`${path}: needs string "id" and "title"`);
@@ -90,13 +120,16 @@ export function parsePlanJson(input: unknown): ParseResult {
       errors.push(`${path}: duplicate item id "${raw.id}"`);
       continue;
     }
-    if (raw.description !== undefined && !isString(raw.description)) errors.push(`${path}.description: must be a string`);
-    if (raw.parent != null && !isString(raw.parent)) errors.push(`${path}.parent: must be an item id or null`);
-    if (raw.externalKey !== undefined && !isString(raw.externalKey)) errors.push(`${path}.externalKey: must be a string`);
+    if (raw.description !== undefined && !isString(raw.description))
+      errors.push(`${path}.description: must be a string`);
+    if (raw.parent != null && !isString(raw.parent))
+      errors.push(`${path}.parent: must be an item id or null`);
+    if (raw.externalKey !== undefined && !isString(raw.externalKey))
+      errors.push(`${path}.externalKey: must be a string`);
     const item: Item = {
       id: raw.id,
       title: raw.title,
-      description: isString(raw.description) ? raw.description : '',
+      description: isString(raw.description) ? raw.description : "",
       parent: isString(raw.parent) ? raw.parent : null,
       sequence: null,
       values: {},
@@ -106,21 +139,39 @@ export function parsePlanJson(input: unknown): ParseResult {
       if (isString(raw.rank) && isOrderKey(raw.rank)) item.rank = raw.rank;
       else errors.push(`${path}.rank: must be an order key`);
     }
-    if (typeof raw.sequence === 'number' && Number.isFinite(raw.sequence)) rawSequence.set(item.id, raw.sequence);
-    else if (typeof raw.sequence === 'string') {
+    if (typeof raw.sequence === "number" && Number.isFinite(raw.sequence))
+      rawSequence.set(item.id, raw.sequence);
+    else if (typeof raw.sequence === "string") {
       if (isOrderKey(raw.sequence)) rawSequence.set(item.id, raw.sequence);
-      else errors.push(`${path}.sequence: "${raw.sequence}" is not a valid order key`);
-    } else if (raw.sequence != null) errors.push(`${path}.sequence: must be a string, number, or null`);
-    if (raw.values !== undefined && !isRecord(raw.values)) errors.push(`${path}.values: must be an object`);
-    for (const [propertyId, value] of Object.entries(isRecord(raw.values) ? raw.values : {})) {
+      else
+        errors.push(
+          `${path}.sequence: "${raw.sequence}" is not a valid order key`,
+        );
+    } else if (raw.sequence != null)
+      errors.push(`${path}.sequence: must be a string, number, or null`);
+    if (raw.values !== undefined && !isRecord(raw.values))
+      errors.push(`${path}.values: must be an object`);
+    for (const [propertyId, value] of Object.entries(
+      isRecord(raw.values) ? raw.values : {},
+    )) {
       const property = properties[propertyId];
-      const ids = isString(value) ? [value] : Array.isArray(value) && value.every(isString) ? [...new Set(value)] : null;
-      if (!property || property.kind !== 'select') errors.push(`${path}.values: unknown property "${propertyId}"`);
-      else if (!ids) errors.push(`${path}.values.${propertyId}: must be a value id or an array of them`);
-      else if (ids.length > 1 && !property.multi) errors.push(`${path}.values.${propertyId}: property holds one value`);
+      const ids = isString(value)
+        ? [value]
+        : Array.isArray(value) && value.every(isString)
+          ? [...new Set(value)]
+          : null;
+      if (!property || property.kind !== "select")
+        errors.push(`${path}.values: unknown property "${propertyId}"`);
+      else if (!ids)
+        errors.push(
+          `${path}.values.${propertyId}: must be a value id or an array of them`,
+        );
+      else if (ids.length > 1 && !property.multi)
+        errors.push(`${path}.values.${propertyId}: property holds one value`);
       else {
         for (const id of ids) {
-          if (!property.values[id]) errors.push(`${path}.values.${propertyId}: unknown value "${id}"`);
+          if (!property.values[id])
+            errors.push(`${path}.values.${propertyId}: unknown value "${id}"`);
         }
         item.values[propertyId] = ids;
       }
@@ -129,7 +180,10 @@ export function parsePlanJson(input: unknown): ParseResult {
   }
 
   const kinds = new Set([...rawSequence.values()].map((v) => typeof v));
-  if (kinds.size > 1) errors.push('sequence: use either numbers or order keys throughout, not both');
+  if (kinds.size > 1)
+    errors.push(
+      "sequence: use either numbers or order keys throughout, not both",
+    );
   assignSequenceKeys(items, rawSequence);
 
   for (const item of Object.values(items)) {
@@ -137,31 +191,71 @@ export function parsePlanJson(input: unknown): ParseResult {
       errors.push(`item "${item.id}": unknown parent "${item.parent}"`);
     }
   }
-  const asPlan = { properties, items, dependencies: [] };
+  const asPlan = { properties, items, dependencies: [], related: [] };
   for (const item of Object.values(items)) {
-    if (item.parent !== null && wouldCreateCycle(asPlan, item.id, item.parent)) {
+    if (
+      item.parent !== null &&
+      wouldCreateCycle(asPlan, item.id, item.parent)
+    ) {
       errors.push(`item "${item.id}": parent chain loops back to itself`);
     }
   }
 
   const dependencies: Dependency[] = [];
   const rawDeps = input.dependencies ?? [];
-  if (!Array.isArray(rawDeps)) errors.push('dependencies must be an array');
+  if (!Array.isArray(rawDeps)) errors.push("dependencies must be an array");
   for (const [i, pair] of (Array.isArray(rawDeps) ? rawDeps : []).entries()) {
-    const [from, to] = Array.isArray(pair) && pair.length === 2 ? (pair as unknown[]) : [];
+    const [from, to] =
+      Array.isArray(pair) && pair.length === 2 ? (pair as unknown[]) : [];
     if (!isString(from) || !isString(to)) {
-      errors.push(`dependencies[${i}]: must be a [prerequisite, dependent] pair of item ids`);
+      errors.push(
+        `dependencies[${i}]: must be a [prerequisite, dependent] pair of item ids`,
+      );
       continue;
     }
-    if (!items[from] || !items[to]) errors.push(`dependencies[${i}]: unknown item in ["${from}", "${to}"]`);
-    else if (from === to) errors.push(`dependencies[${i}]: an item can't depend on itself`);
+    if (!items[from] || !items[to])
+      errors.push(`dependencies[${i}]: unknown item in ["${from}", "${to}"]`);
+    else if (from === to)
+      errors.push(`dependencies[${i}]: an item can't depend on itself`);
     else dependencies.push({ from, to });
   }
 
-  return errors.length ? { ok: false, errors } : { ok: true, plan: { properties, items, dependencies } };
+  // Related links (Q44): a pair repeated, in either order, is kept once.
+  const related: Related[] = [];
+  const relatedKeys = new Set<string>();
+  const rawRelated = input.related ?? [];
+  if (!Array.isArray(rawRelated)) errors.push("related must be an array");
+  for (const [i, pair] of (Array.isArray(rawRelated)
+    ? rawRelated
+    : []
+  ).entries()) {
+    const [x, y] =
+      Array.isArray(pair) && pair.length === 2 ? (pair as unknown[]) : [];
+    if (!isString(x) || !isString(y)) {
+      errors.push(`related[${i}]: must be a pair of item ids`);
+      continue;
+    }
+    if (!items[x] || !items[y])
+      errors.push(`related[${i}]: unknown item in ["${x}", "${y}"]`);
+    else if (x === y)
+      errors.push(`related[${i}]: an item can't be related to itself`);
+    else {
+      const link = relatedPair(x, y);
+      if (!relatedKeys.has(`${link.a} ${link.b}`)) related.push(link);
+      relatedKeys.add(`${link.a} ${link.b}`);
+    }
+  }
+
+  return errors.length
+    ? { ok: false, errors }
+    : { ok: true, plan: { properties, items, dependencies, related } };
 }
 
-function parseProperty(raw: unknown, path: string, errors: string[]): SelectProperty | null {
+function parseProperty(
+  raw: unknown,
+  path: string,
+  errors: string[],
+): SelectProperty | null {
   if (!isRecord(raw) || !isString(raw.id) || !isString(raw.name)) {
     errors.push(`${path}: needs string "id" and "name"`);
     return null;
@@ -171,13 +265,23 @@ function parseProperty(raw: unknown, path: string, errors: string[]): SelectProp
     return null;
   }
   const levels: unknown = raw.levels;
-  if (!Array.isArray(levels) || levels.length === 0 || !levels.every(isString)) {
+  if (
+    !Array.isArray(levels) ||
+    levels.length === 0 ||
+    !levels.every(isString)
+  ) {
     errors.push(`${path}.levels: must be a non-empty array of names`);
     return null;
   }
-  if (raw.multi !== undefined && typeof raw.multi !== 'boolean') errors.push(`${path}.multi: must be true or false`);
+  if (raw.multi !== undefined && typeof raw.multi !== "boolean")
+    errors.push(`${path}.multi: must be true or false`);
   const values: Record<string, ValueNode> = {};
-  const walk = (list: unknown, parent: string | null, depth: number, at: string) => {
+  const walk = (
+    list: unknown,
+    parent: string | null,
+    depth: number,
+    at: string,
+  ) => {
     if (!Array.isArray(list)) {
       errors.push(`${at}: must be an array`);
       return;
@@ -189,15 +293,25 @@ function parseProperty(raw: unknown, path: string, errors: string[]): SelectProp
         errors.push(`${nodePath}: needs string "id" and "label"`);
         return;
       }
-      if (values[node.id]) errors.push(`${nodePath}: duplicate value id "${node.id}"`);
-      if (depth >= levels.length) errors.push(`${nodePath}: deeper than the ${levels.length} declared levels`);
-      values[node.id] = { id: node.id, label: node.label, parent, order: keys[i]! };
-      if (node.children !== undefined) walk(node.children, node.id, depth + 1, `${nodePath}.children`);
+      if (values[node.id])
+        errors.push(`${nodePath}: duplicate value id "${node.id}"`);
+      if (depth >= levels.length)
+        errors.push(
+          `${nodePath}: deeper than the ${levels.length} declared levels`,
+        );
+      values[node.id] = {
+        id: node.id,
+        label: node.label,
+        parent,
+        order: keys[i]!,
+      };
+      if (node.children !== undefined)
+        walk(node.children, node.id, depth + 1, `${nodePath}.children`);
     });
   };
   walk(raw.values, null, 0, `${path}.values`);
   return {
-    kind: 'select',
+    kind: "select",
     id: raw.id,
     name: raw.name,
     levels,
@@ -210,15 +324,23 @@ function parseProperty(raw: unknown, path: string, errors: string[]): SelectProp
  * String sequences are kept as-is. Numbers are ranked and turned into
  * fractional keys, so equal numbers share a column and gaps close up.
  */
-function assignSequenceKeys(items: Record<string, Item>, raw: Map<string, string | number>) {
-  const numbers = [...new Set([...raw.values()].filter((v): v is number => typeof v === 'number'))].sort(
-    (a, b) => a - b,
-  );
+function assignSequenceKeys(
+  items: Record<string, Item>,
+  raw: Map<string, string | number>,
+) {
+  const numbers = [
+    ...new Set(
+      [...raw.values()].filter((v): v is number => typeof v === "number"),
+    ),
+  ].sort((a, b) => a - b);
   const keys = generateNKeysBetween(null, null, numbers.length);
-  const keyFor = new Map<number, OrderKey>(numbers.map((n, i) => [n, keys[i]!]));
+  const keyFor = new Map<number, OrderKey>(
+    numbers.map((n, i) => [n, keys[i]!]),
+  );
   for (const [id, value] of raw) {
     const item = items[id];
-    if (item) item.sequence = typeof value === 'number' ? keyFor.get(value)! : value;
+    if (item)
+      item.sequence = typeof value === "number" ? keyFor.get(value)! : value;
   }
 }
 
@@ -233,19 +355,29 @@ function assignSequenceKeys(items: Record<string, Item>, raw: Map<string, string
  * to missing items (those items are written at the top level).
  */
 export function planToJson(plan: Plan): PlanJson {
-  const selects = Object.values(plan.properties).filter((p): p is SelectProperty => p.kind === 'select');
+  const selects = Object.values(plan.properties).filter(
+    (p): p is SelectProperty => p.kind === "select",
+  );
   const properties: PropertyJson[] = selects.map((property) => {
     const children = new Map<string | null, ValueNode[]>();
     for (const node of Object.values(property.values)) {
-      const parent = node.parent !== null && property.values[node.parent] ? node.parent : null;
+      const parent =
+        node.parent !== null && property.values[node.parent]
+          ? node.parent
+          : null;
       children.set(parent, [...(children.get(parent) ?? []), node]);
     }
     const walk = (parent: string | null): ValueJson[] =>
       (children.get(parent) ?? [])
-        .sort((a, b) => compareOrderKeys(a.order, b.order) || compareOrderKeys(a.id, b.id))
+        .sort(
+          (a, b) =>
+            compareOrderKeys(a.order, b.order) || compareOrderKeys(a.id, b.id),
+        )
         .map((node) => {
           const below = walk(node.id);
-          return below.length > 0 ? { id: node.id, label: node.label, children: below } : { id: node.id, label: node.label };
+          return below.length > 0
+            ? { id: node.id, label: node.label, children: below }
+            : { id: node.id, label: node.label };
         });
     return {
       id: property.id,
@@ -258,14 +390,15 @@ export function planToJson(plan: Plan): PlanJson {
 
   const byParent = new Map<ItemId | null, Item[]>();
   for (const item of Object.values(plan.items)) {
-    const parent = item.parent !== null && plan.items[item.parent] ? item.parent : null;
+    const parent =
+      item.parent !== null && plan.items[item.parent] ? item.parent : null;
     byParent.set(parent, [...(byParent.get(parent) ?? []), item]);
   }
   const siblingOrder = (a: Item, b: Item) =>
     (a.sequence === null ? 1 : 0) - (b.sequence === null ? 1 : 0) ||
-    compareOrderKeys(a.sequence ?? '', b.sequence ?? '') ||
+    compareOrderKeys(a.sequence ?? "", b.sequence ?? "") ||
     (a.rank === undefined ? 0 : 1) - (b.rank === undefined ? 0 : 1) ||
-    compareOrderKeys(a.rank ?? '', b.rank ?? '') ||
+    compareOrderKeys(a.rank ?? "", b.rank ?? "") ||
     a.title.localeCompare(b.title) ||
     compareOrderKeys(a.id, b.id);
   const items: ItemJson[] = [];
@@ -290,7 +423,19 @@ export function planToJson(plan: Plan): PlanJson {
   const dependencies = plan.dependencies
     .filter((d) => plan.items[d.from] && plan.items[d.to] && d.from !== d.to)
     .map((d): [string, string] => [d.from, d.to])
-    .sort((a, b) => compareOrderKeys(a[0], b[0]) || compareOrderKeys(a[1], b[1]));
+    .sort(
+      (a, b) => compareOrderKeys(a[0], b[0]) || compareOrderKeys(a[1], b[1]),
+    );
+  const related = [
+    ...new Map(
+      plan.related
+        .filter((l) => plan.items[l.a] && plan.items[l.b] && l.a !== l.b)
+        .map((l) => relatedPair(l.a, l.b))
+        .map((l): [string, [string, string]] => [`${l.a} ${l.b}`, [l.a, l.b]]),
+    ).values(),
+  ].sort(
+    (a, b) => compareOrderKeys(a[0], b[0]) || compareOrderKeys(a[1], b[1]),
+  );
 
   return {
     format: PLAN_FORMAT,
@@ -298,6 +443,7 @@ export function planToJson(plan: Plan): PlanJson {
     properties,
     items,
     ...(dependencies.length > 0 ? { dependencies } : {}),
+    ...(related.length > 0 ? { related } : {}),
   };
 }
 
@@ -305,7 +451,7 @@ function itemToJson(plan: Plan, item: Item, parent: ItemId | null): ItemJson {
   const values: Record<string, string | string[]> = {};
   for (const [propertyId, ids] of Object.entries(item.values)) {
     const property = plan.properties[propertyId];
-    if (property?.kind !== 'select') continue;
+    if (property?.kind !== "select") continue;
     const known = [...new Set(ids)].filter((id) => property.values[id]);
     if (known.length === 0) continue;
     values[propertyId] = property.multi ? known : known[0]!;
@@ -314,7 +460,9 @@ function itemToJson(plan: Plan, item: Item, parent: ItemId | null): ItemJson {
     id: item.id,
     title: item.title,
     ...(item.description ? { description: item.description } : {}),
-    ...(item.externalKey !== undefined ? { externalKey: item.externalKey } : {}),
+    ...(item.externalKey !== undefined
+      ? { externalKey: item.externalKey }
+      : {}),
     ...(parent !== null ? { parent } : {}),
     ...(item.sequence !== null ? { sequence: item.sequence } : {}),
     ...(item.rank !== undefined ? { rank: item.rank } : {}),
@@ -324,7 +472,7 @@ function itemToJson(plan: Plan, item: Item, parent: ItemId | null): ItemJson {
 
 /** The text of a saved plan file. */
 export function planFileText(plan: Plan): string {
-  return JSON.stringify(planToJson(plan), null, 2) + '\n';
+  return JSON.stringify(planToJson(plan), null, 2) + "\n";
 }
 
 export type PlanFileResult =
@@ -350,9 +498,13 @@ export function readPlanFile(text: string): PlanFileResult {
     };
   }
   if (!isRecord(json) || json.format !== PLAN_FORMAT) {
-    return { ok: false, summary: "This isn't a Planning Board plan file.", details: [] };
+    return {
+      ok: false,
+      summary: "This isn't a Planning Board plan file.",
+      details: [],
+    };
   }
-  if (typeof json.version === 'number' && json.version > PLAN_VERSION) {
+  if (typeof json.version === "number" && json.version > PLAN_VERSION) {
     return {
       ok: false,
       summary: `This file was saved by a newer version of Planning Board (file version ${json.version}). This build reads version ${PLAN_VERSION}.`,
@@ -365,7 +517,7 @@ export function readPlanFile(text: string): PlanFileResult {
   const n = result.errors.length;
   return {
     ok: false,
-    summary: `This plan file has ${n === 1 ? 'a problem' : `${n} problems`}, so it wasn't opened. The board is unchanged.`,
+    summary: `This plan file has ${n === 1 ? "a problem" : `${n} problems`}, so it wasn't opened. The board is unchanged.`,
     details: result.errors,
   };
 }

@@ -357,6 +357,7 @@ Entry format:
   - **On import:** Jira's "Relates" link columns become related links.
   - **Plan files:** related links are stored beside dependencies. Older readers ignore them, so the file version stays at 1 (ADR 0005).
   - Moved again when first-visit work took sprint 7 (2026-10-07), and scheduled in sprint 8, slice 2 (PM, 2026-10-07).
+  - Built in sprint 8, slice 2 (ADR 0005, amended). ⌥L relates the two selected cards, or with one selected starts a link finished on another, as L does. Lines are dotted in the accent color, with no arrow. They show the direct related links of the hovered card and of each selected card, never a chain, and a clicked one is removed with Delete. The inspector's links section, now called Links, lists them under Related. An import reads Jira's "Outward/Inward issue link (Relates)" columns, keeping each pair once. Ungrouping re-points them at each child, as with dependencies (Q21). The sample plan has five.
 
 ### Q45: Showing a card's copies
 - Context: Requirements 3 and 15, and the backlog's theme E. A card in several lanes has a copy in each, often off screen. A card's dependency lines leave from whichever copy is closest, so its links can be split across copies.

@@ -59,6 +59,26 @@ describe('parsePlanJson', () => {
     expect(result.plan.dependencies).toEqual([{ from: 'a', to: 'b' }]);
   });
 
+  it('reads related links (Q44) once each, in either order, and writes each pair sorted', () => {
+    const result = parsePlanJson(
+      base({
+        items: [
+          { id: 'a', title: 'A' },
+          { id: 'b', title: 'B' },
+        ],
+        related: [
+          ['b', 'a'],
+          ['a', 'b'],
+        ],
+      }),
+    );
+    if (!result.ok) throw new Error(result.errors.join('\n'));
+    expect(result.plan.related).toEqual([{ a: 'a', b: 'b' }]);
+    expect(planToJson(result.plan).related).toEqual([['a', 'b']]);
+    const bad = parsePlanJson(base({ items: [{ id: 'a', title: 'A' }], related: [['a', 'a'], ['a', 'zzz']] }));
+    expect(bad.ok ? [] : bad.errors).toEqual(["related[0]: an item can't be related to itself", 'related[1]: unknown item in ["a", "zzz"]']);
+  });
+
   it('turns numeric sequences into ordered keys, sharing a key for equal numbers', () => {
     const result = parsePlanJson(
       base({
@@ -195,11 +215,14 @@ describe('planToJson', () => {
     const plan = sample();
     const again = parsePlanJson(JSON.parse(planFileText(plan)));
     if (!again.ok) throw new Error(again.errors.join('\n'));
-    // Dependencies are a set; the file lists them sorted.
+    // Dependencies and related links are sets; the file lists them sorted.
     const sorted = (deps: Plan['dependencies']) => [...deps].sort((a, b) => (a.from + a.to < b.from + b.to ? -1 : 1));
-    expect({ ...again.plan, dependencies: sorted(again.plan.dependencies) }).toEqual({
+    const sortedRelated = (links: Plan['related']) => [...links].sort((a, b) => (a.a + a.b < b.a + b.b ? -1 : 1));
+    expect(plan.related.length).toBeGreaterThan(0);
+    expect({ ...again.plan, dependencies: sorted(again.plan.dependencies), related: sortedRelated(again.plan.related) }).toEqual({
       ...plan,
       dependencies: sorted(plan.dependencies),
+      related: sortedRelated(plan.related),
     });
     expect(planFileText(again.plan)).toBe(planFileText(plan));
   });

@@ -102,6 +102,8 @@ describe('planUngroup', () => {
         { from: 'a', to: 'x' },
         { from: 'b', to: 'x' },
       ],
+      relatedRemoved: [],
+      relatedAdded: [],
     });
   });
 

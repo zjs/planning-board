@@ -86,7 +86,7 @@ test("a card's links are listed; ✕ removes one, and clicking one shows that ca
   await expect(notice(page)).toContainText('Linked “Custom roles” → “Region-pinned directory sync”');
 
   await page.keyboard.press('i');
-  const after = inspector(page).getByRole('region', { name: 'Dependencies' });
+  const after = inspector(page).getByRole('region', { name: 'Links' });
   await expect(after).toContainText('Custom roles');
   await expect(inspector(page)).toContainText('In EU data residency');
   // Clicking it shows Custom roles on the board and selects it.
@@ -96,7 +96,7 @@ test("a card's links are listed; ✕ removes one, and clicking one shows that ca
 
   await inspector(page).getByRole('button', { name: 'Remove the link Custom roles → Region-pinned directory sync' }).click();
   await expect(notice(page)).toContainText('Removed the link');
-  await expect(inspector(page).getByRole('region', { name: 'Dependencies' })).not.toContainText('Region-pinned');
+  await expect(inspector(page).getByRole('region', { name: 'Links' })).not.toContainText('Region-pinned');
   await notice(page).getByRole('button', { name: 'Undo' }).click();
-  await expect(inspector(page).getByRole('region', { name: 'Dependencies' })).toContainText('Region-pinned');
+  await expect(inspector(page).getByRole('region', { name: 'Links' })).toContainText('Region-pinned');
 });

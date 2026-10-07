@@ -29,11 +29,11 @@ Scope: single user, browser only, no server.
 
 ### 2. "Related to" links (Q44)
 
-- [ ] Select two cards and press ⌥L to relate them, and ⌥L again to remove it. With one card selected, ⌥L starts a link to finish on another, as L does.
-- [ ] Related links are dotted lines with no arrow. They show on hover and on selection, direct links only, and are never red or counted in ⚠.
-- [ ] The inspector lists them under **Related**, beside Comes after and Comes before.
-- [ ] A Jira CSV's "Relates" link columns import as related links.
-- [ ] Plan files keep them. Older builds ignore them, and the file version stays 1 (ADR 0005).
+- [x] Select two cards and press ⌥L to relate them, and ⌥L again to remove it. With one card selected, ⌥L starts a link to finish on another, as L does.
+- [x] Related links are dotted lines with no arrow. They show on hover and on selection, direct links only, and are never red or counted in ⚠.
+- [x] The inspector lists them under **Related**, beside Comes after and Comes before.
+- [x] A Jira CSV's "Relates" link columns import as related links.
+- [x] Plan files keep them. Older builds ignore them, and the file version stays 1 (ADR 0005).
 
 ### 3. Calm
 

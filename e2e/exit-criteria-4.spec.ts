@@ -42,7 +42,7 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await page.keyboard.press('l');
   await select(page, 'credit-notes');
   await inspector(page).getByLabel('Description').fill('Needed before the Q2 audit.');
-  const links = inspector(page).getByRole('region', { name: 'Dependencies' });
+  const links = inspector(page).getByRole('region', { name: 'Links' });
   await expect(links).toContainText('VAT OSS reporting');
   await links.getByRole('button', { name: 'Remove the link Credit notes → VAT OSS reporting' }).click();
   await expect(notice(page)).toContainText('Removed the link');

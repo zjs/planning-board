@@ -64,7 +64,7 @@ describe('planValueEdit', () => {
 });
 
 describe('ownLinks', () => {
-  it("lists a card's prerequisites and dependents, by title", () => {
+  it("lists a card's prerequisites, dependents and related cards (Q44), by title", () => {
     const p = {
       ...plan(item('a', { title: 'A' }), item('b', { title: 'B' }), item('c', { title: 'C' }), item('kid', { parent: 'a' })),
       dependencies: [
@@ -73,6 +73,11 @@ describe('ownLinks', () => {
         { from: 'a', to: 'c' },
         { from: 'kid', to: 'b' },
       ],
+      related: [
+        { a: 'a', b: 'c' },
+        { a: 'a', b: 'b' },
+        { a: 'b', b: 'kid' },
+      ],
     };
     expect(ownLinks(p, 'a')).toEqual({
       after: [
@@ -80,6 +85,7 @@ describe('ownLinks', () => {
         { from: 'c', to: 'a' },
       ],
       before: [{ from: 'a', to: 'c' }],
+      related: ['b', 'c'],
     });
   });
 });

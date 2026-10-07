@@ -314,6 +314,22 @@ function setLevel(spec: Spec) {
 GROUPS.forEach(setLevel);
 for (const title of EPICS_WITHOUT_CHILDREN) (byTitle.get(title)!.values ??= {}).level = 'epic';
 
+// Related links (Q44): pairs that touch the same thing with no order between them. One crosses areas,
+// and one joins a card to another in a different group, so hovering shows both kinds of reach.
+const RELATED: [string, string][] = [
+  ['Audit log export API', 'Permission audit report'],
+  ['Tamper-evident audit log', 'Audit retention settings'],
+  ['SSO session timeout policy', 'Session management overhaul'],
+  ['Audit events for billing changes', 'Admin action audit coverage'],
+  ['Webhook secret rotation', 'Webhooks v2'],
+];
+const related = RELATED.map(([x, y]) => {
+  const a = byTitle.get(x);
+  const b = byTitle.get(y);
+  if (!a || !b) throw new Error(`unknown related link: ${x} ~ ${y}`);
+  return (a.id < b.id ? [a.id, b.id] : [b.id, a.id]);
+});
+
 const plan = {
   format: 'planning-board',
   version: 1,
@@ -358,6 +374,7 @@ const plan = {
   ],
   items,
   dependencies: deps,
+  related,
 };
 
 const out = new URL('../src/seed/sample-plan.json', import.meta.url);
@@ -376,5 +393,6 @@ const stats = {
   withLevel: items.filter((i) => i.values?.level).length,
   withSequence: items.filter((i) => i.sequence !== undefined).length,
   dependencies: deps.length,
+  related: related.length,
 };
 console.log(`wrote ${out.pathname}`, stats);

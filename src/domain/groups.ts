@@ -2,8 +2,8 @@
 // plan snapshots. The commands in src/commands/ apply the results.
 
 import { pathTo } from './hierarchy.ts';
-import type { Dependency, ItemId, OrderKey, Plan, PropertyId, ValueId } from './model.ts';
-import { compareOrderKeys, itemValues } from './model.ts';
+import type { Dependency, ItemId, OrderKey, Plan, PropertyId, Related, ValueId } from './model.ts';
+import { compareOrderKeys, itemValues, relatedPair } from './model.ts';
 import { childCounts, wouldCreateCycle } from './tree.ts';
 
 /**
@@ -82,6 +82,9 @@ export interface Ungroup {
   removed: Dependency[];
   /** ...and come back pointing at the cards inside it instead, so no ordering is lost (questions.md Q21). */
   added: Dependency[];
+  /** Related links (Q44) are re-pointed the same way. */
+  relatedRemoved: Related[];
+  relatedAdded: Related[];
 }
 
 /**
@@ -137,5 +140,20 @@ export function planUngroup(plan: Plan, selection: Iterable<ItemId>): Ungroup | 
       }
     }
   }
-  return { groups, moves, removed, added };
+  const pairKey = (l: Related) => `${l.a} ${l.b}`;
+  const existingPairs = new Set(plan.related.map(pairKey));
+  const relatedRemoved = plan.related.filter((l) => dissolved.has(l.a) || dissolved.has(l.b));
+  const relatedAdded: Related[] = [];
+  for (const link of relatedRemoved) {
+    for (const x of expand(link.a)) {
+      for (const y of expand(link.b)) {
+        if (x === y) continue;
+        const next = relatedPair(x, y);
+        if (existingPairs.has(pairKey(next))) continue;
+        existingPairs.add(pairKey(next));
+        relatedAdded.push(next);
+      }
+    }
+  }
+  return { groups, moves, removed, added, relatedRemoved, relatedAdded };
 }
