@@ -53,6 +53,8 @@ interface Props {
   pivoting?: boolean;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
+  /** Open a card's actions at a point on screen (Q54): right-click, or its "⋯". */
+  onCardMenu: (id: ItemId, x: number, y: number) => void;
   /** Rename a value from its header (Q55). Returns why the name can't be used, or null once it's saved. */
   onRenameValue: (which: 'x' | 'y', value: string, name: string) => string | null;
   /** Add a value from a header: at the top level, or under `parent`. Returns why not, or null once added. */
@@ -179,6 +181,7 @@ export const Board = memo(function Board({
   onCancelEdit,
   onBackgroundPointerDown,
   onBandToggle,
+  onCardMenu,
   onRenameValue,
   onAddValue,
   onSelectLanes,
@@ -373,6 +376,7 @@ export const Board = memo(function Board({
         mismatchesInside={mismatches.inside.get(ref.itemId) ?? NONE}
         dimmed={found !== null && !found.shown.has(ref.itemId) && foldedMatches === undefined}
         foundInside={foldedMatches?.map((id) => plan.items[id]?.title ?? '')}
+        onMenu={ref.via ? undefined : (x, y) => onCardMenu(ref.itemId, x, y)}
         // A faded copy isn't the group's own value, so it can be clicked but not dragged (Q16).
         onPointerDown={(e) => onCardPointerDown(e, ref, item.title, ref.via !== 'children')}
         // A card in a frame isn't on the board's level: double-click expands its group, like the frame's header.
@@ -570,6 +574,13 @@ export const Board = memo(function Board({
         onDoubleClick={spotDoubleClick}
         onPointerOver={(e) => onHover((e.target as Element).closest<HTMLElement>('.card')?.dataset.item ?? null)}
         onPointerLeave={() => onHover(null)}
+        onContextMenu={(e) => {
+          // Right-click a card for its actions (Q54); anywhere else, the browser's own menu.
+          const el = (e.target as Element).closest<HTMLElement>('.card[data-item]:not(.via-children)');
+          if (!el || (e.target as Element).closest('input, textarea')) return;
+          e.preventDefault();
+          onCardMenu(el.dataset.item!, e.clientX, e.clientY);
+        }}
       >
         <div
           className={['board', layout.rows.length === 0 && 'no-rows', layout.columns.length === 0 && 'no-columns']

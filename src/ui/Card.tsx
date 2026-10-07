@@ -45,6 +45,8 @@ interface Props {
   onCancelEdit?: () => void;
   /** ⇧-click on a badge: select every card on the board with its value (Q47). */
   onSelectMatching?: (property: string, value: string) => void;
+  /** Open this card's actions at a point on screen (Q54): its "⋯" button. */
+  onMenu?: ((x: number, y: number) => void) | undefined;
 }
 
 export function Card({
@@ -72,6 +74,7 @@ export function Card({
   onRename,
   onCancelEdit,
   onSelectMatching,
+  onMenu,
 }: Props) {
   const isGroup = childCount > 0;
   const classes = [
@@ -152,6 +155,24 @@ export function Card({
               {childCount}
             </span>
           ))}
+        {onMenu && !editing && (
+          // Every action on the card, with its key (Q54). Shows on hover and selection; right-click does the same.
+          <button
+            type="button"
+            className="card-menu"
+            aria-label={`Actions for ${item.title}`}
+            title="Actions (or right-click the card)"
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const r = e.currentTarget.getBoundingClientRect();
+              onMenu(r.left, r.bottom + 2);
+            }}
+          >
+            ⋯
+          </button>
+        )}
       </div>
       {!compact && (attributes.length > 0 || item.externalKey || parentChip) && (
         <div className="card-attrs">

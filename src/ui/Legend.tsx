@@ -70,6 +70,8 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <section>
         <h3>Cards and groups</h3>
       <dl>
+        <dt>Right-click a card, or its ⋯</dt>
+        <dd>Every action on it, with its key, for the card or for everything selected.</dd>
         <dt>Click to select</dt>
         <dd>
           <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>Delete</kbd> removes the
