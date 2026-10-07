@@ -51,3 +51,9 @@ This adds no runtime dependency.
 - The toolbar fits on one row at 1280px. The view bar adds about 40px of height.
 - Tests that start from the sample and expect Sequence now choose it explicitly. The shared `openApp` helper does this.
 - If a pivot happens while a previous one is still moving, the new one starts from where the cards are drawn at that moment, which looks continuous.
+
+## Amendment (sprint 8): the area color, and holding rails
+
+- **The colored edge stays, and the board explains it.** A card's edge is its first area's color, which is what keeps a card recognizable across pivots. Each area's band, or its lane where the axis has no bands, carries the same color. With System on neither axis, the view bar shows a key ("Edge = area"). The edge's tooltip names the area, with "and 1 more" for a card in several, since only the first colors it. There are eight colors (`--area-0` to `--area-7`), and areas after the eighth reuse them in turn. The helpers are in `src/ui/areas.ts`.
+- **Holding lanes collapse to a rail.** The right lane becomes a 34px rail, and the bottom lane a strip. Each still shows its count per lane and keeps its drop targets, so a drop and the drag ghost work as before. Its cards aren't rendered, so box select skips them. It's viewer state like the Cards/Chips choice: `planning-board:holding-collapsed`, both open by default. A board with no rows or no columns has no toggle for that lane, since the lane is the board (Q51).
+

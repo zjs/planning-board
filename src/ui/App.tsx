@@ -61,10 +61,12 @@ import {
   foldableBands,
   inSentence,
   loadCompactHolding,
+  loadHoldingCollapsed,
   loadExpanded,
   loadFoldings,
   loadViewChoice,
   saveCompactHolding,
+  saveHoldingCollapsed,
   saveExpanded,
   saveFoldings,
   saveViewChoice,
@@ -241,6 +243,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   };
   const [compact, setCompact] = useState(loadCompactHolding);
   useEffect(() => saveCompactHolding(compact), [compact]);
+  const [holdingCollapsed, setHoldingCollapsed] = useState(loadHoldingCollapsed);
+  useEffect(() => saveHoldingCollapsed(holdingCollapsed), [holdingCollapsed]);
 
   const [justMoved, setJustMoved] = useState<ItemId | null>(null);
   useEffect(() => {
@@ -1290,6 +1294,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           xParentNone={names.x.parentNone}
           yParentNone={names.y.parentNone}
           compact={compact}
+          holdingCollapsed={holdingCollapsed}
+          onHoldingCollapsedChange={setHoldingCollapsed}
           onCompactChange={setCompact}
           lifted={drag?.card ?? null}
           target={drag?.target ?? null}

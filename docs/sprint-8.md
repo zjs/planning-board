@@ -37,9 +37,9 @@ Scope: single user, browser only, no server.
 
 ### 3. Calm
 
-- [ ] Each area's header shows its color, and a key in the view bar shows it in views without System. The cheat sheet explains the colored edge, and its tooltip names the area.
-- [ ] Eight area colors, up from four, so a fifth area isn't gray.
-- [ ] Each holding lane collapses to a thin rail that still shows its count and still takes drops. Each lane is remembered per browser, and both start open.
+- [x] Each area's header shows its color, and a key in the view bar shows it in views without System. The cheat sheet explains the colored edge, and its tooltip names the area.
+- [x] Eight area colors, up from four, so a fifth area isn't gray.
+- [x] Each holding lane collapses to a thin rail that still shows its count and still takes drops. Each lane is remembered per browser, and both start open.
 
 ### 4. Tester-ready
 

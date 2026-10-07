@@ -154,6 +154,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <section>
           <h3>What the board tells you</h3>
           <dl>
+            <dt>The colored edge</dt>
+            <dd>
+              The card’s area, so you can tell it in any view. Its header shows the same color; point at the edge to see
+              its name.
+            </dd>
             <dt>Heavier borders</dt>
             <dd>Initiatives and epics. A card with no level hasn’t been decided yet.</dd>
             <dt>Dashed lines and outlines</dt>
