@@ -18,7 +18,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
@@ -45,7 +45,15 @@ jobs:
           VITE_BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install Chromium for end-to-end tests
-        run: npx playwright install --with-deps chromium
+        # An install takes under a minute, but an Ubuntu mirror that stops answering hangs apt until the job
+        # times out (2026-10-07). Each attempt gets three minutes, and a stalled one is retried.
+        timeout-minutes: 10
+        run: |
+          for attempt in 1 2 3; do
+            timeout 180 npx playwright install --with-deps chromium && exit 0
+            echo "Install attempt $attempt failed or stalled; retrying."
+          done
+          exit 1
 
       - name: End-to-end tests (against dist/index.html over file://)
         run: npm run e2e
