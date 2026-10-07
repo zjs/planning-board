@@ -42,3 +42,7 @@ Sprint 4 left five ways to see detail: zooming into a group, zooming into severa
 - A new card is always made at the top level. "Add a card inside" makes children.
 - A folded axis spends two header columns or rows: the band, then a lane header that says what's folded ("4 components ▸"). That's the price of one control; the session will show whether it reads well.
 - Older end-to-end specs that zoomed now expand, fold, or unfold; the exit criteria of sprints 1–4 still run, step for step, with the replacement gestures.
+
+## Amendment (sprint 7, Q54)
+
+Groups **expand** and **collapse**; bands **fold** and **unfold**. ⇧E and its toolbar button were "Fold" until sprint 7. The PM chose to keep separate words for laying out the board (folding an area's components) and for showing more of the cards (expanding a group), with no word shared. Code that handles bands still says "fold"; the code for groups says "collapse".

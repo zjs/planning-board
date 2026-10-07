@@ -1,7 +1,8 @@
 import { depthOf } from '../domain/hierarchy.ts';
 import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME, type Plan, type PropertyId, type ValueId } from '../domain/model.ts';
 import { propertiesInOrder } from '../domain/properties.ts';
-import type { AxisSpec, ViewSpec } from '../domain/view.ts';
+import type { DropTarget } from '../domain/move.ts';
+import type { AxisSpec, ViewLayout, ViewSpec } from '../domain/view.ts';
 
 export interface AxisOption {
   id: string;
@@ -310,3 +311,26 @@ function saveIds(key: string, ids: readonly string[]): void {
 export const loadExpanded = () => loadIds(EXPANDED_KEY);
 export const saveExpanded = (ids: readonly string[]) => saveIds(EXPANDED_KEY, ids);
 
+
+/**
+ * What a drop on a cell or holding lane gives the card, in words, for the
+ * dragged card to show (Q54): "Q2 2027 · Billing", "No quarter · Billing",
+ * "Identity, no component". Columns first, then rows, like the board reads.
+ * A sequence column has no name (requirement 6), so it says nothing, except
+ * a gap, which opens a new position.
+ */
+export function dropText(
+  layout: ViewLayout,
+  target: DropTarget,
+  names: { x: { none: string; parentNone: string }; y: { none: string; parentNone: string } },
+): string {
+  const part = (which: Which): string | null => {
+    const key = target[which];
+    if (key === null) return names[which].none;
+    const lane = (which === 'x' ? layout.columns : layout.rows).find((l) => l.key === key);
+    if (!lane) return layout.gaps[which]?.includes(key) ? 'a new position' : null;
+    if (lane.label === null) return null;
+    return lane.kind === 'parent' ? `${lane.label}, ${inSentence(names[which].parentNone)}` : lane.label;
+  };
+  return [part('x'), part('y')].filter((p): p is string => p !== null).join(' · ');
+}

@@ -5,11 +5,17 @@ export function DragGhost({
   drag,
   addAxes,
   titleOf,
+  where = null,
+  hint = null,
 }: {
   drag: DragState;
   addAxes: { x: boolean; y: boolean };
   /** A card's title, for "Put inside …". */
   titleOf: (id: string) => string;
+  /** What dropping on the cell under the pointer gives the card: "Q2 2027 · Billing" (Q54). */
+  where?: string | null;
+  /** A hint for a drop that replaces a value on an axis that holds several: "Alt adds instead". */
+  hint?: string | null;
 }) {
   // Adding needs a multi-valued axis whose target is a lane; a holding lane always removes.
   const { target } = drag;
@@ -25,7 +31,16 @@ export function DragGhost({
     >
       <span className="card-title">{drag.title}</span>
       {adding && <span className="add-badge">+ add</span>}
-      {isIntoTarget(target) && <span className="nest-badge">Put inside “{titleOf(target.into)}”</span>}
+      {isIntoTarget(target) ? (
+        <span className="nest-badge">Put inside “{titleOf(target.into)}”</span>
+      ) : (
+        where && (
+          <span className="ghost-notes" data-testid="drop-where">
+            <span className="drop-where">→ {where}</span>
+            {hint && !adding && <span className="drop-hint">{hint}</span>}
+          </span>
+        )
+      )}
     </div>
   );
 }

@@ -68,7 +68,7 @@ test('a match folded inside a group shows on the group; Enter expands it and sel
   await page.getByTestId('axis-x').selectOption('time');
   await page.keyboard.press('/');
   await page.keyboard.type('webauthn');
-  await expect(count(page)).toHaveText('1 card · 1 inside a folded group');
+  await expect(count(page)).toHaveText('1 card · 1 inside a collapsed group');
   const group = card(page, 'passwordless-login').first();
   await reveal(group);
   await expect(group).not.toHaveClass(/dimmed/);

@@ -51,6 +51,7 @@ import {
   axisNames,
   chooseAxis,
   DEFAULT_VIEW,
+  dropText,
   foldableBands,
   inSentence,
   loadCompactHolding,
@@ -217,6 +218,14 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return property?.kind === 'select' && property.multi;
   };
   const addAxes = { x: isMulti(view.x), y: isMulti(view.y) };
+  /** A drop that would swap one of the card's values for another, on an axis that could hold both (Q53's hint). */
+  const replacesAValue = (d: { card: CardRef; target: BoardTarget | null; mode: DropMode }) => {
+    const target = d.target;
+    if (d.mode !== 'replace' || !isCellTarget(target)) return false;
+    const swaps = (which: 'x' | 'y') =>
+      addAxes[which] && target[which] !== null && d.card[which] !== null && d.card[which] !== target[which];
+    return swaps('x') || swaps('y');
+  };
   const [compact, setCompact] = useState(loadCompactHolding);
   useEffect(() => saveCompactHolding(compact), [compact]);
 
@@ -386,19 +395,20 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [expanded, counts, plan],
   );
   const expandSelection = useCallback(() => expandGroups([...selected]), [expandGroups, selected]);
-  // ⇧E: fold the groups the selected cards are shown for, one level up.
-  const foldSelection = useCallback(() => {
-    const fold = new Set<ItemId>();
+  // ⇧E: collapse the groups the selected cards are shown for, one level up. Groups expand and collapse; bands
+  // fold and unfold (Q54), so the two never share a word.
+  const collapseSelection = useCallback(() => {
+    const collapse = new Set<ItemId>();
     for (const id of selected) {
       const parent = shownCopies.find((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent))?.parent;
-      if (parent !== undefined) fold.add(parent);
+      if (parent !== undefined) collapse.add(parent);
     }
-    if (fold.size === 0) {
-      setNotice({ text: 'Select a card inside an expanded group, then press ⇧E to fold the group back up.' });
+    if (collapse.size === 0) {
+      setNotice({ text: 'Select a card inside an expanded group, then press ⇧E to collapse the group.' });
       return;
     }
-    setExpanded((current) => current.filter((id) => !fold.has(id)));
-    setSelection(fold);
+    setExpanded((current) => current.filter((id) => !collapse.has(id)));
+    setSelection(collapse);
   }, [selected, shownCopies, expanded]);
 
   // The inspector's Group field.
@@ -766,7 +776,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       }
       if (e.key.toLowerCase() === 'e' && !e.altKey && !empty) {
         e.preventDefault();
-        if (e.shiftKey) foldSelection();
+        if (e.shiftKey) collapseSelection();
         else expandSelection();
         return;
       }
@@ -814,7 +824,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     togglePanel,
     empty,
     expandSelection,
-    foldSelection,
+    collapseSelection,
     selectAll,
     findOpen,
     openFind,
@@ -961,11 +971,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
           <button
             type="button"
-            onClick={foldSelection}
+            onClick={collapseSelection}
             disabled={![...selected].some((id) => shownCopies.some((ref) => ref.itemId === id && ref.parent !== undefined))}
-            title={`Fold the groups the selected cards are in back up (${keys.fold})`}
+            title={`Collapse the groups the selected cards are in (${keys.collapse})`}
           >
-            Fold
+            Collapse
           </button>
           <button
             type="button"
@@ -1216,7 +1226,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </div>
         </Dialog>
       )}
-      {drag && <DragGhost drag={drag} addAxes={addAxes} titleOf={(id) => plan.items[id]?.title ?? ''} />}
+      {drag && (
+        <DragGhost
+          drag={drag}
+          addAxes={addAxes}
+          titleOf={(id) => plan.items[id]?.title ?? ''}
+          where={isCellTarget(drag.target) ? dropText(layout, drag.target, names) : null}
+          hint={replacesAValue(drag) ? `${keys.add} adds instead` : null}
+        />
+      )}
     </div>
   );
 }

@@ -599,7 +599,7 @@ button.primary {
   opacity: 0.25;
 }
 
-/* A folded group with matches inside it. */
+/* A collapsed group with matches inside it. */
 .found-inside {
   flex: none;
   padding: 0 6px;
@@ -795,6 +795,39 @@ body.dragging * {
   color: #fff;
   font-size: 11px;
   font-weight: 600;
+}
+
+/* Under the dragged card: what the drop gives it (Q54), and how to add instead. */
+.ghost-notes {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.drop-where,
+.drop-hint {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.drop-where {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.drop-hint {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-weight: normal;
 }
 
 .nest-badge {

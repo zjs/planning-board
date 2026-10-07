@@ -35,9 +35,9 @@ Scope: single user, browser only, no server.
 
 ### 3. Drags that say what they do; Expand and Collapse (Q54)
 
-- [ ] A dragged card says what the drop will set: "→ Q2 2027 · Billing".
-- [ ] On a multi-value axis, the dragged card says "Alt adds instead".
-- [ ] Groups **Expand** and **Collapse**, and bands **Fold** and **Unfold**. No word is shared.
+- [x] A dragged card says what the drop will set: "→ Q2 2027 · Billing".
+- [x] On a multi-value axis, the dragged card says "Alt adds instead".
+- [x] Groups **Expand** and **Collapse**, and bands **Fold** and **Unfold**. No word is shared.
 
 ### 4. Card menu (Q54)
 

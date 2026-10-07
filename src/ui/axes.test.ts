@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
 import { withBuiltIns } from '../domain/builtins.ts';
 import { SEQUENCE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
+import type { ViewLayout } from '../domain/view.ts';
 import {
   activePreset,
   axisNames,
   axisOptions,
   chooseAxis,
+  dropText,
   foldableBands,
   loadFoldings,
   loadViewChoice,
@@ -161,5 +163,30 @@ describe('unfoldBand (Q55)', () => {
   it('unfolds a band folded by hand while the rest are unfolded', () => {
     const f = { [SYSTEM]: { all: 'unfolded' as const, except: ['identity'] } };
     expect(unfoldBand(f, SYSTEM, 'identity')[SYSTEM]).toEqual({ all: 'unfolded', except: [] });
+  });
+});
+
+describe('dropText (Q54)', () => {
+  const names = { x: { none: 'No quarter', parentNone: 'No release' }, y: { none: 'No area', parentNone: 'No component' } };
+  const layout = {
+    columns: [{ key: 'q1', label: 'Q1 2027', kind: 'collapsed' }, { key: 'r1', label: '27.1' }, { key: 'q2', label: 'Q2 2027', kind: 'parent' }],
+    rows: [{ key: 'billing', label: 'Billing' }],
+    gaps: { x: null, y: null },
+  } as unknown as ViewLayout;
+
+  it('names the column, then the row', () => {
+    expect(dropText(layout, { x: 'r1', y: 'billing' }, names)).toBe('27.1 · Billing');
+    expect(dropText(layout, { x: 'q1', y: 'billing' }, names)).toBe('Q1 2027 · Billing');
+  });
+
+  it('names a holding lane by what it lacks, and a parent lane by its parent', () => {
+    expect(dropText(layout, { x: null, y: 'billing' }, names)).toBe('No quarter · Billing');
+    expect(dropText(layout, { x: 'q2', y: null }, names)).toBe('Q2 2027, no release · No area');
+  });
+
+  it('says nothing for a sequence column, and "a new position" for a gap', () => {
+    const seq = { columns: [{ key: 'a0', label: null }], rows: layout.rows, gaps: { x: ['Zz', 'a1'], y: null } } as unknown as ViewLayout;
+    expect(dropText(seq, { x: 'a0', y: 'billing' }, names)).toBe('Billing');
+    expect(dropText(seq, { x: 'a1', y: 'billing' }, names)).toBe('a new position · Billing');
   });
 });
