@@ -7,6 +7,8 @@ interface Props {
   childCount: number;
   /** Index into the area palette, or null for untagged items. */
   areaIndex: number | null;
+  /** The edge's tooltip, naming the card's area. */
+  areaTitle?: string | undefined;
   /** Levels above the lowest: a heavier border, so initiatives and epics stand out (Q32). */
   levelWeight?: number;
   /** The group this card is shown for, when several groups' children share the board (Q33). */
@@ -54,6 +56,7 @@ export function Card({
   item,
   childCount,
   areaIndex,
+  areaTitle,
   levelWeight = 0,
   attributes,
   compact,
@@ -101,6 +104,7 @@ export function Card({
       onPointerDown={editing ? undefined : onPointerDown}
       onDoubleClick={editing ? undefined : onDoubleClick}
     >
+      {areaTitle !== undefined && <span className="area-edge" title={areaTitle} aria-hidden="true" />}
       <div className="card-main">
         {editing ? (
           <TitleInput

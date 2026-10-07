@@ -1,4 +1,5 @@
-import type { Plan } from '../domain/model.ts';
+import { SYSTEM, type Plan } from '../domain/model.ts';
+import { areaKey } from './areas.ts';
 import { AxisPicker } from './AxisPicker.tsx';
 import { activePreset, presetsFor, type ViewChoice } from './axes.ts';
 
@@ -16,6 +17,8 @@ interface Props {
  */
 export function ViewBar({ plan, choice, onChange, foldAll }: Props) {
   const active = activePreset(choice);
+  // With System on neither axis, nothing on the board says what the colored edges mean, so the bar does.
+  const key = choice.x === SYSTEM || choice.y === SYSTEM ? [] : areaKey(plan);
   return (
     <div className="view-bar" data-testid="view-bar">
       <div className="presets" role="group" aria-label="Views">
@@ -35,6 +38,17 @@ export function ViewBar({ plan, choice, onChange, foldAll }: Props) {
       </div>
       <span className="divider" />
       <AxisPicker plan={plan} choice={choice} onChange={onChange} foldAll={foldAll} />
+      {key.length > 0 && (
+        <span className="area-key" data-testid="area-key" title="The colored edge on each card is its area">
+          Edge = area:
+          {key.map((area) => (
+            <span key={area.id} data-area={area.index}>
+              <span className="swatch" />
+              {area.label}
+            </span>
+          ))}
+        </span>
+      )}
     </div>
   );
 }

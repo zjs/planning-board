@@ -10,6 +10,10 @@
   --area-1: #e8590c;
   --area-2: #3b5bdb;
   --area-3: #ae3ec9;
+  --area-4: #0c8599;
+  --area-5: #c2255c;
+  --area-6: #74b816;
+  --area-7: #f59f00;
   --area-none: #adb5bd;
   --drop: rgb(59 91 219 / 14%);
   --warn-bg: #fff3bf;
@@ -46,6 +50,10 @@
     --area-1: #ff922b;
     --area-2: #748ffc;
     --area-3: #da77f2;
+    --area-4: #3bc9db;
+    --area-5: #f06595;
+    --area-6: #a9e34b;
+    --area-7: #ffd43b;
     --area-none: #6c6c72;
     --drop: rgb(116 143 252 / 20%);
     --holding-bg: #17171a;
@@ -487,17 +495,62 @@ button.primary {
   font-size: 13px;
 }
 
-.card[data-area='0'] {
-  border-left-color: var(--area-0);
+/* A card's area (its first top-level System value) colors its edge, so it's recognizable in any view. The same
+   color marks the area's header, and the view bar's key when System isn't an axis. */
+[data-area='0'] { --area-color: var(--area-0); }
+[data-area='1'] { --area-color: var(--area-1); }
+[data-area='2'] { --area-color: var(--area-2); }
+[data-area='3'] { --area-color: var(--area-3); }
+[data-area='4'] { --area-color: var(--area-4); }
+[data-area='5'] { --area-color: var(--area-5); }
+[data-area='6'] { --area-color: var(--area-6); }
+[data-area='7'] { --area-color: var(--area-7); }
+
+.card[data-area] {
+  border-left-color: var(--area-color, var(--area-none));
 }
-.card[data-area='1'] {
-  border-left-color: var(--area-1);
+
+.row-header[data-area],
+.band-y[data-area] {
+  box-shadow: inset 4px 0 0 var(--area-color);
 }
-.card[data-area='2'] {
-  border-left-color: var(--area-2);
+
+.column-header[data-area],
+.band-x[data-area] {
+  box-shadow: inset 0 3px 0 var(--area-color);
 }
-.card[data-area='3'] {
-  border-left-color: var(--area-3);
+
+/* The edge, as a target for its tooltip. */
+.area-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  width: 6px;
+}
+
+/* The key in the view bar, when System isn't on an axis. */
+.area-key {
+  display: inline-flex;
+  flex: 1 1 0;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.area-key .swatch {
+  display: inline-block;
+  width: 4px;
+  height: 14px;
+  margin-right: 4px;
+  border-radius: 2px;
+  background: var(--area-color);
+  vertical-align: middle;
 }
 
 .card.group {
@@ -1017,6 +1070,73 @@ body.dragging * {
 .board.no-rows .holding-bottom .holding-cards,
 .board.no-columns .holding-right .holding-cards {
   max-height: none;
+}
+
+/* A holding lane collapsed to a rail (sprint 8): its count, still a drop target, with its cards out of the way. */
+.board.right-rail {
+  --holding-width: 34px;
+}
+
+.holding-cards.rail {
+  align-items: center;
+  padding: 6px 0;
+  overflow: hidden;
+}
+
+.board.bottom-rail .holding-cards.rail {
+  flex-direction: row;
+  padding: 4px 8px;
+}
+
+.board.bottom-rail .holding-bottom,
+.board.right-rail .holding-right {
+  min-height: 0;
+  padding: 0;
+}
+
+.board.bottom-rail .holding-row-header {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.holding-rail-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.board.right-rail .holding-head {
+  padding: 6px 0;
+}
+
+/* The bottom lane's toggle sits at its header's top right, beside its name. */
+.holding-collapse-bottom {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+}
+
+.holding-collapse {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.holding-collapse:hover,
+.holding-collapse:focus-visible {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .holding-corner {

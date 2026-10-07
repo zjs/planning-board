@@ -184,6 +184,31 @@ export function saveCompactHolding(compact: boolean): void {
   }
 }
 
+const HOLDING_COLLAPSED_KEY = 'planning-board:holding-collapsed';
+
+/** Which holding lanes are collapsed to a thin rail: the right one, the bottom one. Remembered per browser; both open by default. */
+export interface HoldingCollapsed {
+  right: boolean;
+  bottom: boolean;
+}
+
+export function loadHoldingCollapsed(): HoldingCollapsed {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HOLDING_COLLAPSED_KEY) ?? '{}') as Partial<HoldingCollapsed> | null;
+    return { right: raw?.right === true, bottom: raw?.bottom === true };
+  } catch {
+    return { right: false, bottom: false };
+  }
+}
+
+export function saveHoldingCollapsed(collapsed: HoldingCollapsed): void {
+  try {
+    localStorage.setItem(HOLDING_COLLAPSED_KEY, JSON.stringify(collapsed));
+  } catch {
+    // A convenience only.
+  }
+}
+
 const COLLAPSED_KEY = 'planning-board:collapsed';
 const FOLDING_KEY = 'planning-board:folding';
 

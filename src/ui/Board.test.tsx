@@ -22,6 +22,8 @@ function render(p: Plan, view: ViewSpec, compact = false, find = ''): string {
       xParentNone="No X below"
       yParentNone="No Y below"
       compact={compact}
+      holdingCollapsed={{ right: false, bottom: false }}
+      onHoldingCollapsedChange={() => undefined}
       onCompactChange={() => undefined}
       lifted={null}
       target={null}
