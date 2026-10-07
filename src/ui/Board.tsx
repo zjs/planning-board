@@ -47,6 +47,8 @@ interface Props {
   onCancelEdit: () => void;
   /** A press on the board outside any card, which clears the selection. */
   onBackgroundPointerDown: () => void;
+  /** Cards are gliding to a new view (ADR 0015): lines wait until they arrive. */
+  pivoting?: boolean;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
   /** Fold or unfold a band on a nested axis (ADR 0013). */
@@ -176,6 +178,7 @@ export const Board = memo(function Board({
   levelNames,
   mismatches,
   found,
+  pivoting = false,
 }: Props) {
   /**
    * A lane header. On a nested axis, a parent's own lane reads "No
@@ -462,7 +465,7 @@ export const Board = memo(function Board({
   return (
     <div className="board-wrap">
       <div
-        className="board-scroll"
+        className={pivoting ? 'board-scroll pivoting' : 'board-scroll'}
         ref={scrollRef}
         onPointerDown={backgroundPress}
         onDoubleClick={spotDoubleClick}

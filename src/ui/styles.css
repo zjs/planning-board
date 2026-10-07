@@ -250,6 +250,76 @@ button.primary {
   background: var(--surface-2);
 }
 
+/* Views (Q52): built-in views one click away, then Rows and Columns for any other pair. */
+.view-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.view-bar .divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+}
+
+.presets {
+  display: inline-flex;
+  align-items: center;
+}
+
+.view-bar-label {
+  margin-right: 8px;
+  color: var(--muted);
+}
+
+.presets button {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.presets button + button {
+  border-left: none;
+}
+
+.presets button:first-of-type {
+  border-radius: 6px 0 0 6px;
+}
+
+.presets button:last-of-type {
+  border-radius: 0 6px 6px 0;
+}
+
+.presets button:hover {
+  background: var(--surface);
+}
+
+.presets button[aria-pressed='true'] {
+  color: var(--surface);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Lines are drawn where cards end up, so they wait out a pivot's motion (ADR 0015). */
+.board-scroll.pivoting .dep-lines {
+  opacity: 0;
+  transition: none;
+}
+
+.board-scroll .dep-lines {
+  transition: opacity 120ms ease-out;
+}
+
 .board-wrap {
   flex: 1;
   display: flex;

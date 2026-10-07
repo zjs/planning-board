@@ -1,5 +1,5 @@
 import { depthOf } from '../domain/hierarchy.ts';
-import { SEQUENCE, SYSTEM, TIME, type Plan, type PropertyId, type ValueId } from '../domain/model.ts';
+import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME, type Plan, type PropertyId, type ValueId } from '../domain/model.ts';
 import { propertiesInOrder } from '../domain/properties.ts';
 import type { AxisSpec, ViewSpec } from '../domain/view.ts';
 
@@ -38,6 +38,32 @@ export function axisOptions(plan: Plan): AxisOption[] {
 }
 
 export const DEFAULT_VIEW: ViewChoice = { x: SEQUENCE, y: SYSTEM };
+
+/** A built-in view, one click away (Q52). Viewer state like any choice, not a saved view (requirement 8). */
+export interface Preset {
+  id: string;
+  label: string;
+  /** What the view is for, as its tooltip. */
+  title: string;
+  choice: ViewChoice;
+}
+
+export const PRESETS: readonly Preset[] = [
+  { id: 'sequence', label: 'Sequence', title: 'What comes before what, by area', choice: { x: SEQUENCE, y: SYSTEM } },
+  { id: 'roadmap', label: 'Roadmap', title: 'When each piece lands, by area', choice: { x: TIME, y: SYSTEM } },
+  { id: 'sizing', label: 'Sizing', title: 'How big each piece is, by level', choice: { x: SIZE, y: LEVEL } },
+  { id: 'structure', label: 'Structure', title: 'Initiatives, epics and stories, by area', choice: { x: LEVEL, y: SYSTEM } },
+];
+
+/** The views this plan can show: both of a preset's properties exist. */
+export function presetsFor(plan: Plan): Preset[] {
+  return PRESETS.filter((preset) => optionById(plan, preset.choice.x) && optionById(plan, preset.choice.y));
+}
+
+/** The preset a choice is, if any. A swapped pair is a different view, so it isn't one. */
+export function activePreset(choice: ViewChoice): Preset | null {
+  return PRESETS.find((preset) => preset.choice.x === choice.x && preset.choice.y === choice.y) ?? null;
+}
 
 /** The viewer's axes: a property ID for each. */
 export interface ViewChoice {

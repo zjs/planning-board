@@ -12,7 +12,11 @@ export async function openApp(page: Page, { keepHelp = false } = {}) {
   await page.goto(APP_URL);
   const loadButton = page.locator('.empty-state button.primary');
   await page.getByTestId('board').or(loadButton).waitFor();
-  if (await loadButton.isVisible()) await loadButton.click();
+  if (await loadButton.isVisible()) {
+    await loadButton.click();
+    // The sample opens on Roadmap (Q52); most tests start from the Sequence view.
+    await page.getByTestId('preset-sequence').click();
+  }
   await page.getByTestId('board').waitFor();
   if (!keepHelp && (await page.getByTestId('legend').isVisible())) {
     await page.getByRole('button', { name: 'Close help' }).click();

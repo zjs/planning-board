@@ -40,10 +40,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <section>
         <h3>Moving cards</h3>
       <dl>
-        <dt>Rows and Columns, at the top</dt>
+        <dt>Views, under the toolbar</dt>
         <dd>
-          Pick any two properties, and the same cards rearrange. <b>⇄</b> swaps them. Nothing is lost by pivoting: every
-          card keeps all its values.
+          Sequence, Roadmap, Sizing and Structure are one click each, and the same cards move to their new places. Rows
+          and Columns pick any other pair; <b>⇄</b> swaps them. Nothing is lost by pivoting: every card keeps all its
+          values.
         </dd>
         <dt>Drag a card into a cell</dt>
         <dd>

@@ -48,6 +48,8 @@ test('sprint 5 exit criteria', async ({ page }) => {
   page.once('dialog', (d) => void d.accept());
   await page.getByTestId('file-menu').click();
   await page.getByRole('menuitem', { name: 'Load sample plan' }).click();
+  // The sample opens on Roadmap since sprint 7 (Q52); these steps were written for Sequence.
+  await page.getByTestId('preset-sequence').click();
   await expect(card(page, 'eu-data-residency').locator('.attr[data-property="level"]')).toHaveText('Initiative');
 
   // 2. Expand an initiative, then one of its epics: both stay expanded. ⇧E on a story folds only its epic.

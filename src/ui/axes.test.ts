@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
+import { withBuiltIns } from '../domain/builtins.ts';
 import { SEQUENCE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
 import {
+  activePreset,
   axisNames,
   axisOptions,
   chooseAxis,
   foldableBands,
   loadFoldings,
   loadViewChoice,
+  presetsFor,
   setAllFolded,
   swapAxes,
   toggleFold,
@@ -127,5 +130,22 @@ describe('views saved by earlier builds', () => {
     expect(loadFoldings()).toEqual({});
     localStorage.setItem('planning-board:folding', JSON.stringify({ system: { all: 'unfolded', except: ['id'] } }));
     expect(loadFoldings()).toEqual({ system: { all: 'unfolded', except: ['id'] } });
+  });
+});
+
+describe('presets (Q52)', () => {
+  it('lists the built-in views a plan can show', () => {
+    expect(presetsFor(withBuiltIns(p)).map((preset) => preset.label)).toEqual(['Sequence', 'Roadmap', 'Sizing', 'Structure']);
+  });
+
+  it('leaves out a view whose property is missing', () => {
+    // The tiny plan has no Level, as a plan saved before sprint 4 might not.
+    expect(presetsFor(p).map((preset) => preset.id)).toEqual(['sequence', 'roadmap']);
+  });
+
+  it('names the preset a choice matches, and no preset for a swapped pair', () => {
+    expect(activePreset({ x: TIME, y: SYSTEM })?.id).toBe('roadmap');
+    expect(activePreset({ x: SYSTEM, y: TIME })).toBeNull();
+    expect(activePreset({ x: SEQUENCE, y: SYSTEM })?.id).toBe('sequence');
   });
 });
