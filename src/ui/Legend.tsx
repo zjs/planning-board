@@ -83,8 +83,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
               <kbd>{keys.expand}</kbd> expands, <kbd>{keys.collapse}</kbd> collapses
             </dt>
             <dd>
-              Shows what’s inside the selected groups right here, each card marked with its group. A selected group’s
-              count <span className="legend-chip"><span className="child-count">4</span>›</span> does it too.
+              Shows what’s inside the selected groups right here, framed under each group’s name. A selected group’s
+              count <span className="legend-chip"><span className="child-count">4</span>›</span> does it too, and an
+              expanded group’s <span className="legend-chip"><span className="child-count">4</span>▾</span> collapses it.
             </dd>
             <dt>Move out of a group</dt>
             <dd>Drag a card that’s inside one: drop it on the strip at the top.</dd>
@@ -150,8 +151,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
             <dd>Initiatives and epics. A card with no level hasn’t been decided yet.</dd>
             <dt>Dashed lines and outlines</dt>
             <dd>The copies of a card that’s in more than one lane.</dd>
-            <dt>Dashed frames</dt>
-            <dd>A group, shown around the cards inside it that are in this cell.</dd>
+            <dt>Frames</dt>
+            <dd>
+              A group around its cards in this cell: solid when it’s expanded, dashed when it’s collapsed and only its
+              cards are here.
+            </dd>
             <dt>
               <span className="mismatch">⚠</span> markers
             </dt>

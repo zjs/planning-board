@@ -26,12 +26,6 @@
   --holding-edge-top: 0 -2px 0 0 var(--border-strong);
   --border-strong: #c4bfb4;
   --level-border: #8f897d;
-  --tone-0: #0c8599;
-  --tone-1: #c2255c;
-  --tone-2: #e67700;
-  --tone-3: #5f3dc4;
-  --tone-4: #2b8a3e;
-  --tone-5: #1864ab;
   --gap-size: 14px;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
@@ -57,13 +51,7 @@
     --holding-bg: #17171a;
     --border-strong: #4a4a50;
     --level-border: #7c7c86;
-    --tone-0: #3bc9db;
-    --tone-1: #f06595;
-    --tone-2: #ffa94d;
-    --tone-3: #9775fa;
-    --tone-4: #69db7c;
-    --tone-5: #4dabf7;
-    --warn-bg: #3d3314;
+                --warn-bg: #3d3314;
     --warn-text: #ffe8a3;
   }
 }
@@ -2281,7 +2269,8 @@ button.link:hover {
   text-decoration: underline;
 }
 
-/* Children in context (Q33). A faded group frames the real cards that put it in a cell. */
+/* Children in context (Q33, Q57). A group frames its cards in a cell: dashed when collapsed, around the cards that
+   put it there; solid when expanded, around its cards under a header. */
 .frame {
   display: flex;
   flex-direction: column;
@@ -2299,24 +2288,64 @@ button.link:hover {
   padding: 2px 6px;
 }
 
-/* A card shown for its group, when several groups' children share the board: a chip and an edge in the group's tone. */
-.card[data-tone] {
-  box-shadow: inset -4px 0 0 var(--tone-color), 0 1px 1px rgb(0 0 0 / 6%);
+.frame.frame-open {
+  border-style: solid;
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--border-strong) 6%, transparent);
 }
 
-.attr.parent-chip {
-  max-width: 100%;
+.frame-head {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Outside the group's own lanes, the header is one line: its name. */
+.frame-title {
+  min-height: 22px;
+  padding: 2px 26px 0 6px;
   overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--tone-color);
-  background: color-mix(in srgb, var(--tone-color) 12%, transparent);
-  font-weight: 600;
 }
 
-.card[data-tone='0'] { --tone-color: var(--tone-0); }
-.card[data-tone='1'] { --tone-color: var(--tone-1); }
-.card[data-tone='2'] { --tone-color: var(--tone-2); }
-.card[data-tone='3'] { --tone-color: var(--tone-3); }
-.card[data-tone='4'] { --tone-color: var(--tone-4); }
-.card[data-tone='5'] { --tone-color: var(--tone-5); }
+.frame-trail {
+  padding: 0 26px 0 6px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frame-collapse {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.frame-collapse:hover,
+.frame-collapse:focus-visible {
+  background: var(--hover, rgb(0 0 0 / 6%));
+  color: var(--text);
+}
+
+/* An expanded group's own card: its count reads "3 ▾" and collapses it, even when it isn't selected. */
+.zoom-into.open .zoom-chevron {
+  opacity: 1;
+}

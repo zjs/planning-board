@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, dragTo, foldAll, holdOver, openApp, pickAxes, reveal } from './app.ts';
+import { card, cell, dragTo, foldAll, frameName, holdOver, openApp, pickAxes, reveal } from './app.ts';
 
 // Sprint 5's exit criteria (docs/sprint-5.md) 1–9, end to end, in order. If this passes, the
 // walkthrough in docs/demos/sprint-5.md works.
@@ -8,7 +8,7 @@ import { card, cell, dragTo, foldAll, holdOver, openApp, pickAxes, reveal } from
 const OLD_PLAN = new URL('../src/domain/__fixtures__/compat/sprint-2.plan.json', import.meta.url);
 const notice = (page: Page) => page.getByTestId('notice');
 const inspector = (page: Page) => page.getByTestId('inspector');
-const chip = (page: Page, id: string) => card(page, id).first().locator('.parent-chip');
+const chip = (page: Page, id: string) => frameName(card(page, id).first(), id);
 
 async function select(page: Page, ...ids: string[]) {
   for (const [i, id] of ids.entries()) {
@@ -70,7 +70,7 @@ test('sprint 5 exit criteria', async ({ page }) => {
   await card(page, 'eu-data-residency').locator('.attr[data-property="level"]').click({ modifiers: ['Shift'] });
   await expect(notice(page)).toContainText('Selected 3 cards with Initiative');
   await page.keyboard.press('e');
-  for (const id of ['eu-data-residency', 'usage-based-pricing', 'public-api-v2']) await expect(card(page, id)).toHaveCount(0);
+  for (const id of ['eu-data-residency', 'usage-based-pricing', 'public-api-v2']) await expect(page.locator(`.frame-open[data-frame="${id}"]`).first()).toBeAttached();
   await expect(chip(page, 'usage-dashboard')).toHaveText('Usage-based pricing');
   await expect(chip(page, 'rate-limiting-v2')).toHaveText('Public API v2');
   // Fold them again for the next steps.
@@ -111,7 +111,7 @@ test('sprint 5 exit criteria', async ({ page }) => {
   const field = page.getByRole('textbox', { name: 'Card title' }).first();
   await field.fill('Role templates v2');
   await field.press('Enter');
-  await expect(page.locator('.card', { hasText: 'Role templates v2' }).locator('.parent-chip')).toHaveText('Custom roles');
+  await expect(frameName(page.locator('.card', { hasText: 'Role templates v2' }))).toHaveText('Custom roles');
   await page.keyboard.press('i');
 
   // 7. No zoom anywhere. Rows → System shows areas folded; Unfold all, Fold all, and unfold one area.
@@ -138,7 +138,7 @@ test('sprint 5 exit criteria', async ({ page }) => {
   await page.getByTestId('board').waitFor();
   await expect(page.locator('.row-header.lane-collapsed')).toHaveCount(3);
   await expect(page.locator('.row-header[data-row="identity/rbac"]')).toBeVisible();
-  await expect(page.locator('.card', { hasText: 'Role templates v2' }).locator('.parent-chip')).toHaveText('Custom roles');
+  await expect(frameName(page.locator('.card', { hasText: 'Role templates v2' }))).toHaveText('Custom roles');
   await expect(chip(page, 'webauthn-enrollment')).toHaveText('Passwordless login');
   await pickAxes(page, 'time', 'system');
   await expect(cell(page, 'identity', 'q1')).toBeVisible();

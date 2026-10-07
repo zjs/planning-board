@@ -21,11 +21,11 @@ Scope: single user, browser only, no server.
 
 ### 1. Frames for expanded groups (Q57)
 
-- [ ] An expanded group is a frame in every cell its cards reach, holding lanes included. Each frame has a header with the group's name, and the group's cards in that cell sit under it.
-- [ ] In the group's own lanes, the header is the group's card itself, with its badges. It can be dragged, renamed and opened in the inspector.
-- [ ] The header's ▾ collapses the group.
-- [ ] Frames nest three deep. A group expanded below that shows inside the third frame, with a breadcrumb title ("API auth › Token rotation").
-- [ ] The parent chips and colored edges on expanded cards go away.
+- [x] An expanded group is a frame in every cell its cards reach, holding lanes included. Each frame has a header with the group's name, and the group's cards in that cell sit under it.
+- [x] In the group's own lanes, the header is the group's card itself, with its badges. It can be dragged, renamed and opened in the inspector.
+- [x] The header's ▾ collapses the group.
+- [x] Frames nest three deep. A group expanded below that shows inside the third frame, with a breadcrumb title ("API auth › Token rotation").
+- [x] The parent chips and colored edges on expanded cards go away.
 
 ### 2. "Related to" links (Q44)
 

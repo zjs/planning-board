@@ -34,6 +34,7 @@ function render(p: Plan, view: ViewSpec, compact = false, find = ''): string {
       onSelectLanes={() => undefined}
       onSelectMatching={() => undefined}
       onCardExpand={() => undefined}
+      onCollapseGroup={() => undefined}
       lines={[]}
       copyFocus={[]}
       onHover={() => undefined}

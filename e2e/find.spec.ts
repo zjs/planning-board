@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, openApp, reveal } from './app.ts';
+import { card, frameName, openApp, reveal } from './app.ts';
 
 // Finding cards (questions.md Q50, ADR 0014): / and a few words dim every card that doesn't match.
 
@@ -79,7 +79,7 @@ test('a match folded inside a group shows on the group; Enter expands it and sel
   const webauthn = card(page, 'webauthn-enrollment').first();
   await expect(webauthn).toHaveAttribute('aria-selected', 'true');
   await expect(webauthn).not.toHaveClass(/dimmed/);
-  await expect(webauthn.locator('.parent-chip')).toHaveText('Passwordless login');
+  await expect(frameName(webauthn)).toHaveText('Passwordless login');
   // Focus is back on the board, so its shortcuts act on the matches: ⇧E folds the group again.
   await expect(find(page)).not.toBeFocused();
   await page.keyboard.press('Shift+E');

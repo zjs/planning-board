@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, openApp, reveal } from './app.ts';
+import { card, frameName, openApp, reveal } from './app.ts';
 
 // Sprint 7, slice 4: a card's actions, with their keys (Q54).
 
@@ -59,6 +59,6 @@ test('Expand from the menu shows what is inside a group', async ({ page }) => {
   await openApp(page);
   await rightClick(page, 'passwordless-login');
   await item(page, /^Expand/).click();
-  await expect(card(page, 'passwordless-login')).toHaveCount(0);
-  await expect(card(page, 'webauthn-enrollment').first().locator('.parent-chip')).toHaveText('Passwordless login');
+  await expect(page.locator('.frame-open[data-frame="passwordless-login"]').first()).toBeAttached();
+  await expect(frameName(card(page, 'webauthn-enrollment').first())).toHaveText('Passwordless login');
 });
