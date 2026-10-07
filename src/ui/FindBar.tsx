@@ -15,12 +15,12 @@ interface Props {
   inputRef: RefObject<HTMLInputElement | null>;
 }
 
-/** "7 cards", or "7 cards · 2 inside folded groups": every match, and how many of them are folded away. */
+/** "7 cards", or "7 cards · 2 inside collapsed groups": every match, and how many of them are tucked away. */
 export function foundSummary(found: Found): string {
   const n = found.matches.length;
   if (n === 0) return 'No cards';
   const folded = [...found.inside.values()].reduce((sum, ids) => sum + ids.length, 0);
-  const inside = folded === 0 ? '' : folded === 1 ? ' · 1 inside a folded group' : ` · ${folded} inside folded groups`;
+  const inside = folded === 0 ? '' : folded === 1 ? ' · 1 inside a collapsed group' : ` · ${folded} inside collapsed groups`;
   return `${n} ${n === 1 ? 'card' : 'cards'}${inside}`;
 }
 

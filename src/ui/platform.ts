@@ -8,14 +8,14 @@ export function keyNames(): {
   link: string;
   inspect: string;
   expand: string;
-  fold: string;
+  collapse: string;
   selectAll: string;
 } {
   const nav = typeof navigator === 'undefined' ? undefined : navigator;
   // platform is deprecated and can be empty (fingerprinting protection), so fall back on the user agent.
   const mac = /Mac|iPhone|iPad/.test(nav?.platform || nav?.userAgent || '');
   return mac
-    ? { add: '⌥ Option', undo: '⌘Z', redo: '⇧⌘Z', group: '⌘G', ungroup: '⇧⌘G', link: 'L', inspect: 'I', expand: 'E', fold: '⇧E', selectAll: '⌘A' }
+    ? { add: '⌥ Option', undo: '⌘Z', redo: '⇧⌘Z', group: '⌘G', ungroup: '⇧⌘G', link: 'L', inspect: 'I', expand: 'E', collapse: '⇧E', selectAll: '⌘A' }
     : {
         add: 'Alt',
         undo: 'Ctrl+Z',
@@ -25,7 +25,7 @@ export function keyNames(): {
         link: 'L',
         inspect: 'I',
         expand: 'E',
-        fold: 'Shift+E',
+        collapse: 'Shift+E',
         selectAll: 'Ctrl+A',
       };
 }

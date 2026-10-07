@@ -48,7 +48,8 @@ export function Legend({ onClose }: { onClose: () => void }) {
         </dd>
         <dt>Drag a card into a cell</dt>
         <dd>
-          It takes that row's and column's values. A card in several areas has a copy in each; drag one to move it.
+          It takes that row's and column's values, and says which while you drag. A card in several areas has a copy in
+          each; drag one to move it.
           Hover it to see every copy, joined by dashed lines.
         </dd>
         <dt>
@@ -85,7 +86,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Press <kbd>/</kbd> and type
         </dt>
         <dd>
-          Finds cards by title, Jira key or description. The rest fade back and nothing moves; a folded group with
+          Finds cards by title, Jira key or description. The rest fade back and nothing moves; a collapsed group with
           matches inside says how many. <kbd>Enter</kbd> selects them all, expanding groups as needed, and{' '}
           <kbd>↓</kbd> <kbd>↑</kbd> go from one to the next. <kbd>Esc</kbd> stops finding.
         </dd>
@@ -110,9 +111,9 @@ export function Legend({ onClose }: { onClose: () => void }) {
           too.
         </dd>
         <dt>
-          <kbd>{keys.fold}</kbd> on a card inside
+          <kbd>{keys.collapse}</kbd> on a card inside
         </dt>
-        <dd>Folds its group back into one card.</dd>
+        <dd>Collapses its group back into one card.</dd>
       </dl>
       </section>
       <section>
