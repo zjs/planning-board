@@ -42,6 +42,8 @@ function render(p: Plan, view: ViewSpec, compact = false, find = ''): string {
       onCommitEdit={() => undefined}
       onCancelEdit={() => undefined}
       onBackgroundPointerDown={() => undefined}
+      onRenameValue={() => null}
+      onAddValue={() => null}
       onBandToggle={() => undefined}
       levelNames={{ x: 'value', y: 'value' }}
       mismatches={{ onCard: new Map(), inside: new Map() }}
@@ -94,7 +96,8 @@ describe('Board', () => {
     const p = plan(item('tagged', { values: { [SYSTEM]: ['id'] } }), item('untagged'));
     p.properties[SIZE] = { ...size, values: {} };
     const html = render(p, { x: { property: SIZE, level: 0 }, y: { property: SYSTEM, level: 0 } });
-    expect(html).toContain('No cards have a x value yet');
+    // An axis with no values at all points at where the first one is made (Q55).
+    expect(html).toContain('No sizes yet. Click <b>+ Add size</b> at the top right');
     expect(html).toMatch(/data-row="id" aria-label="ID, No X">.*data-item="tagged"/);
     expect(html).toMatch(/holding-corner" data-drop="cell" aria-label="No Y, No X">.*data-item="untagged"/);
   });

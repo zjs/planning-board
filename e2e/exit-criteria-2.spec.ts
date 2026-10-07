@@ -118,7 +118,7 @@ test('sprint 2 exit criteria', async ({ page }) => {
     await customer.getByLabel('Add customer').press('Enter');
   }
   await customer.getByRole('button', { name: 'Show as rows' }).click();
-  await expect(page.locator('.holding-row-header')).toHaveText('No customer');
+  await expect(page.locator('.holding-row-header > span').first()).toHaveText('No customer');
   const acme = await laneKey(page, 'row', 'Acme Bank');
   const waiting = page.locator('.holding-cell:not([data-row])[data-column] .card:not(.via-children)').first();
   const column = (await waiting.locator('xpath=ancestor::*[contains(@class, "holding-cell")]').getAttribute('data-column'))!;

@@ -251,6 +251,13 @@ export function toggleFold(foldings: Foldings, property: PropertyId, value: Valu
   return { ...foldings, [property]: { all: f.all, except } };
 }
 
+/** Unfold one band, if it's folded: after adding a value inside it, so the new value shows (Q55). */
+export function unfoldBand(foldings: Foldings, property: PropertyId, value: ValueId): Foldings {
+  const f = foldings[property] ?? FOLDED;
+  const folded = (f.all === 'folded') !== f.except.includes(value);
+  return folded ? toggleFold(foldings, property, value) : foldings;
+}
+
 /** Fold all of a property's bands, or unfold them all. */
 export function setAllFolded(foldings: Foldings, property: PropertyId, folded: boolean): Foldings {
   return { ...foldings, [property]: { all: folded ? 'folded' : 'unfolded', except: [] } };

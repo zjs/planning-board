@@ -1,7 +1,7 @@
-import { memo, useLayoutEffect, useMemo, useRef, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { badgeProperties, cardAttributes, type CardAttribute } from '../domain/attributes.ts';
 import { levelWeight } from '../domain/builtins.ts';
-import { ancestorAtLevel, valuesAtLevel } from '../domain/hierarchy.ts';
+import { ancestorAtLevel, depthOf, valuesAtLevel } from '../domain/hierarchy.ts';
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
@@ -9,7 +9,9 @@ import { allCopies, type Band, type CardRef, type Lane, type ViewLayout, type Vi
 import type { Found } from '../domain/finding.ts';
 import type { Mismatches } from '../domain/mismatches.ts';
 import { Card, DraftCard, type CommitHow } from './Card.tsx';
+import { inSentence } from './axes.ts';
 import { DependencyLines, type DrawnLine } from './DependencyLines.tsx';
+import { HeaderField } from './HeaderField.tsx';
 import { isCellTarget, isIntoTarget, type BoardTarget } from './useCardDrag.ts';
 
 interface Props {
@@ -51,6 +53,10 @@ interface Props {
   pivoting?: boolean;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
+  /** Rename a value from its header (Q55). Returns why the name can't be used, or null once it's saved. */
+  onRenameValue: (which: 'x' | 'y', value: string, name: string) => string | null;
+  /** Add a value from a header: at the top level, or under `parent`. Returns why not, or null once added. */
+  onAddValue: (which: 'x' | 'y', parent: string | null, name: string) => string | null;
   /** Fold or unfold a band on a nested axis (ADR 0013). */
   onBandToggle: (which: 'x' | 'y', key: string) => void;
   /** ⇧-click on a lane or band header: select every card in lanes `start` up to `end` (Q47). */
@@ -173,6 +179,8 @@ export const Board = memo(function Board({
   onCancelEdit,
   onBackgroundPointerDown,
   onBandToggle,
+  onRenameValue,
+  onAddValue,
   onSelectLanes,
   onSelectMatching,
   levelNames,
@@ -185,8 +193,68 @@ export const Board = memo(function Board({
    * component", and a folded one says how much it holds; clicking that
    * unfolds it, a bigger target than the band's ▸ (ADR 0013).
    */
+  // A header being typed into (Q55): a value's new name, or a new value under `key` (null: the top level).
+  const [headerEdit, setHeaderEdit] = useState<{ which: 'x' | 'y'; mode: 'rename' | 'add'; key: string | null } | null>(null);
+  const editingHeader = (which: 'x' | 'y', mode: 'rename' | 'add', key: string | null) =>
+    headerEdit !== null && headerEdit.which === which && headerEdit.mode === mode && headerEdit.key === key;
+  const stopHeaderEdit = () => setHeaderEdit(null);
+  /** The level a new value would be at, in a sentence ("area", "component"), or null on an axis with none. */
+  const newLevelName = (which: 'x' | 'y', parent: string | null): string | null => {
+    const property = plan.properties[view[which].property];
+    if (property?.kind !== 'select') return null;
+    const levels = property.levels.length > 0 ? property.levels : [property.name];
+    const name = levels[parent === null ? 0 : depthOf(property, parent) + 1];
+    return name === undefined ? null : inSentence(name);
+  };
+  /** "+ Add area", or the field for naming one. */
+  const addControl = (which: 'x' | 'y', parent: string | null) => {
+    const level = newLevelName(which, parent);
+    if (level === null) return null;
+    if (editingHeader(which, 'add', parent)) {
+      return (
+        <HeaderField
+          label={`New ${level}`}
+          placeholder={`New ${level}`}
+          chain
+          onCommit={(name) => onAddValue(which, parent, name)}
+          onDone={stopHeaderEdit}
+        />
+      );
+    }
+    return (
+      <button
+        type="button"
+        className="header-add"
+        data-testid={`add-${which}${parent === null ? '' : `-${parent}`}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setHeaderEdit({ which, mode: 'add', key: parent });
+        }}
+      >
+        + Add {level}
+      </button>
+    );
+  };
+  /** A value's name in its header, which double-click renames. */
+  const renameField = (which: 'x' | 'y', value: string, label: string) => (
+    <HeaderField
+      initial={label}
+      label={`Rename ${label}`}
+      onCommit={(name) => onRenameValue(which, value, name)}
+      onDone={stopHeaderEdit}
+    />
+  );
+  const renameOnDoubleClick = (which: 'x' | 'y', lane: Lane) =>
+    lane.kind === undefined && lane.label !== null ? () => setHeaderEdit({ which, mode: 'rename', key: lane.key }) : undefined;
   const laneHeader = (which: 'x' | 'y', lane: Lane) => {
-    if (lane.kind === 'parent') return <span className="lane-note">{which === 'x' ? xParentNone : yParentNone}</span>;
+    if (lane.kind === 'parent') {
+      return (
+        <>
+          <span className="lane-note">{which === 'x' ? xParentNone : yParentNone}</span>
+          {addControl(which, lane.key)}
+        </>
+      );
+    }
     if (lane.kind === 'collapsed') {
       const n = lane.inner ?? 0;
       return (
@@ -200,10 +268,14 @@ export const Board = memo(function Board({
         </button>
       );
     }
+    if (lane.label !== null && editingHeader(which, 'rename', lane.key)) return renameField(which, lane.key, lane.label);
     return lane.label;
   };
   /** A band's header: its name and a ▾ that folds it, or a ▸ that unfolds it. */
-  const bandHeader = (which: 'x' | 'y', band: Band) => (
+  const bandHeader = (which: 'x' | 'y', band: Band) =>
+    editingHeader(which, 'rename', band.key) ? (
+      renameField(which, band.key, band.label)
+    ) : (
     <button
       type="button"
       className="band-head band-toggle"
@@ -211,16 +283,40 @@ export const Board = memo(function Board({
       aria-label={`${band.collapsed ? 'Unfold' : 'Fold'} ${band.label}`}
       title={band.collapsed ? `Show each of ${band.label}'s lanes` : `Fold ${band.label} into one lane`}
       onClick={() => onBandToggle(which, band.key)}
+      // A double-click's two clicks fold and unfold again, so it only renames.
+      onDoubleClick={() => setHeaderEdit({ which, mode: 'rename', key: band.key })}
     >
       <span aria-hidden="true">{band.collapsed ? '▸' : '▾'}</span> <span>{band.label}</span>
     </button>
-  );
+    );
   /** ⇧-click anywhere on a header selects its lanes' cards, before the click can fold or unfold. */
   const selectOnShift = (which: 'x' | 'y', start: number, end: number) => (e: MouseEvent<HTMLElement>) => {
     if (!e.shiftKey) return;
     e.preventDefault();
     e.stopPropagation();
     onSelectLanes(which, start, end);
+  };
+  /**
+   * Why no card is in a cell. On a blank plan's System axis there's nothing to sort into yet, so the note points at
+   * where the first area is made (Q55).
+   */
+  const emptyAxisNote = () => {
+    const which = noLanes(layout.columns, layout.gaps.x) ? 'x' : 'y';
+    const property = plan.properties[view[which].property];
+    const level = newLevelName(which, null);
+    if (property?.kind === 'select' && Object.keys(property.values).length === 0 && level !== null) {
+      const where = which === 'y' ? 'at the bottom left' : 'at the top right';
+      return (
+        <>
+          No {level}s yet. Click <b>+ Add {level}</b> {where} to make one, then drag cards into it.
+        </>
+      );
+    }
+    return (
+      <>
+        No cards have a {(which === 'x' ? xLabel : yLabel).toLowerCase()} value yet. They're all in the holding lanes.
+      </>
+    );
   };
   const boardRef = useRef<HTMLDivElement>(null);
   // A new card's field stays in view as the cards typed before it arrive and push it down (Q51).
@@ -417,7 +513,10 @@ export const Board = memo(function Board({
 
   const holdingHead = (
     <>
-      <span>{xNone}</span>
+      <span className="holding-name">
+        <span>{xNone}</span>
+        {addControl('x', null)}
+      </span>
       <span className="holding-toggle" role="group" aria-label="Show holding cards as">
         <button type="button" aria-pressed={!compact} onClick={() => onCompactChange(false)}>
           Cards
@@ -518,6 +617,7 @@ export const Board = memo(function Board({
                 data-column={t.lane.key}
                 style={xDepth > 0 ? { top: `calc(var(--band-height) * ${xDepth})` } : undefined}
                 onClickCapture={selectOnShift('x', t.index, t.index + 1)}
+                onDoubleClick={renameOnDoubleClick('x', t.lane)}
               >
                 {laneHeader('x', t.lane)}
               </div>
@@ -531,10 +631,7 @@ export const Board = memo(function Board({
               {Object.keys(plan.items).length === 0 ? (
                 <>No cards yet. Double-click anywhere to add one, and press Enter to add the next.</>
               ) : (
-                <>
-                  No cards have a {(noLanes(layout.columns, layout.gaps.x) ? xLabel : yLabel).toLowerCase()} value yet.
-                  They're all in the holding lanes.
-                </>
+                emptyAxisNote()
               )}
             </div>
           )}
@@ -548,6 +645,7 @@ export const Board = memo(function Board({
                 data-row={row.lane.key}
                 style={yDepth > 0 ? { left: `calc(var(--band-width) * ${yDepth})` } : undefined}
                 onClickCapture={selectOnShift('y', row.index, row.index + 1)}
+                onDoubleClick={renameOnDoubleClick('y', row.lane)}
               >
                 {laneHeader('y', row.lane)}
               </div>
@@ -560,7 +658,8 @@ export const Board = memo(function Board({
             holdingCell(row, null),
           ])}
           <div className="holding-row-header" style={yDepth > 0 ? { gridColumn: `span ${yDepth + 1}` } : undefined}>
-            {yNone}
+            <span>{yNone}</span>
+            {addControl('y', null)}
           </div>
           {columnTracks.length === 0 ? (
             <div className="cell holding-bottom" />

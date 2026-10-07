@@ -13,7 +13,7 @@ test('unfolded, the axes show components and releases', async ({ page }) => {
   await expect(page.locator('.row-header').first()).toHaveText('SSO');
   // The edges hold only cards with no value at any level.
   await expect(page.locator('.holding-head')).toContainText('No quarter');
-  await expect(page.locator('.holding-row-header')).toHaveText('No area');
+  await expect(page.locator('.holding-row-header > span').first()).toHaveText('No area');
   await expect(cell(page, 'identity/mfa', 'q1/r1').locator('.card[data-item="passwordless-login"]')).toBeVisible();
 });
 
@@ -58,10 +58,10 @@ test('folding survives a reload', async ({ page }) => {
   await openApp(page);
   await pickAxes(page, 'time', 'system');
   await page.locator('.column-header[data-column="q2"]').getByRole('button').click();
-  await expect(page.locator('.column-header[data-column^="q2"]')).toHaveText(['27.3', '27.4', 'No release']);
+  await expect(page.locator('.column-header[data-column^="q2"]')).toHaveText(['27.3', '27.4', /^No release/]);
 
   await page.reload();
   await page.getByTestId('board').waitFor();
-  await expect(page.locator('.column-header[data-column^="q2"]')).toHaveText(['27.3', '27.4', 'No release']);
+  await expect(page.locator('.column-header[data-column^="q2"]')).toHaveText(['27.3', '27.4', /^No release/]);
   await expect(page.locator('.column-header.lane-collapsed')).toHaveCount(3);
 });

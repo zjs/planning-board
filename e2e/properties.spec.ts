@@ -40,7 +40,7 @@ test('a new property is an axis straight away, and dragging fills it in', async 
   await section(page, 'Team').getByRole('button', { name: 'Show as rows' }).click();
   await expect(page.getByTestId('axis-y')).toHaveValue(/^p[0-9a-f]+$/);
   await expect(page.locator('.row-header')).toHaveText(['Platform', 'Growth']);
-  await expect(page.locator('.holding-row-header')).toHaveText('No team');
+  await expect(page.locator('.holding-row-header > span').first()).toHaveText('No team');
 
   // Every card starts in "No team"; drag one to Platform, Q2.
   const moving = holding(page, { column: 'q2' }).locator('.card').first();

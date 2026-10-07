@@ -29,9 +29,9 @@ Scope: single user, browser only, no server.
 
 ### 2. Edit values from the headers (Q55)
 
-- [ ] Double-click a row, column or band header to rename it.
-- [ ] "+ Add area" (or quarter, component, size, team…) after the last header adds a value and opens it for naming.
-- [ ] On a blank plan, "+ Add area" sits where the rows will be, and the empty message points to it.
+- [x] Double-click a row, column or band header to rename it.
+- [x] "+ Add area" (or quarter, component, size, team…) adds a value, named as it's added. It sits under each holding lane's name ("No area", "No quarter"), which stays pinned to the board's edge, and under each area's own "No component" lane. The field stays open for the next one, and adding inside a folded area unfolds it.
+- [x] On a blank plan, "+ Add area" sits where the rows will be, and the empty message points to it.
 
 ### 3. Drags that say what they do; Expand and Collapse (Q54)
 
