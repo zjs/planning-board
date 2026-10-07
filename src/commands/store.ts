@@ -7,9 +7,9 @@ import { planFromDraft, type Draft, type ImportResult, type ValueChoices } from 
 import { hasLink, linkProblem } from '../domain/dependencies.ts';
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { planValueEdit, type ValueEdit } from '../domain/inspector.ts';
-import { cleanTitle, deletionOf, valuesForChild, valuesForNewItem } from '../domain/items.ts';
+import { cleanTitle, deletionOf, nextRank, valuesForChild, valuesForNewItem } from '../domain/items.ts';
 import type { Dependency, ItemId, Plan, PropertyId, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
-import { planDrop, type DropMode, type DropTarget } from '../domain/move.ts';
+import { planDrop, planDrops, type DropMode, type DropTarget } from '../domain/move.ts';
 import {
   cardsWithProperty,
   isBuiltIn,
@@ -124,6 +124,33 @@ export function dropCard(
   return true;
 }
 
+/**
+ * Drop several selected cards together, dragged by one copy (questions.md
+ * Q48): every card gets the drop's values (see planDrops). Returns how many
+ * cards changed. One undo step.
+ */
+export function dropCards(
+  store: PlanStore,
+  view: ViewSpec,
+  dragged: CardRef,
+  ids: Iterable<ItemId>,
+  target: DropTarget,
+  mode: DropMode = 'replace',
+): number {
+  const changes = planDrops(readPlan(store.doc), view, dragged, ids, target, mode);
+  const items = root(store.doc).items;
+  if (changes.length === 0) return 0;
+  edit(store, () => {
+    for (const [id, change] of changes) {
+      const item = items.get(id);
+      if (!item) continue;
+      if (change.sequence !== undefined) item.set('sequence', change.sequence);
+      for (const [property, next] of Object.entries(change.values)) writeValues(item, property, next);
+    }
+  });
+  return changes.length;
+}
+
 /** Set one property's values on an item. Call inside a transaction. */
 function writeValues(item: Y.Map<unknown>, property: PropertyId, next: readonly ValueId[]): void {
   let values = item.get('values') as Y.Map<Y.Map<true>> | undefined;
@@ -176,10 +203,12 @@ export function createItem(
 ): ItemId | null {
   const clean = cleanTitle(title);
   if (clean === null) return null;
-  const { sequence, values } = valuesForNewItem(readPlan(store.doc), view, target);
+  const plan = readPlan(store.doc);
+  const { sequence, values } = valuesForNewItem(plan, view, target);
   const id = newItemId();
+  const rank = nextRank(plan);
   edit(store, () =>
-    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, values })),
+    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, rank, values })),
   );
   return id;
 }
@@ -190,12 +219,14 @@ export function createItem(
  */
 export function createChild(store: PlanStore, view: ViewSpec, parent: ItemId, title: string): ItemId | null {
   const clean = cleanTitle(title);
-  const item = readPlan(store.doc).items[parent];
+  const plan = readPlan(store.doc);
+  const item = plan.items[parent];
   if (clean === null || !item) return null;
   const { sequence, values } = valuesForChild(item, view);
   const id = newItemId();
+  const rank = nextRank(plan);
   edit(store, () =>
-    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, values })),
+    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, rank, values })),
   );
   return id;
 }
@@ -268,7 +299,7 @@ export function groupItems(store: PlanStore, ids: Iterable<ItemId>): { group: It
   const id = newItemId();
   const { sequence, values } = sharedValues(plan, grouping.members);
   edit(store, () => {
-    items.set(id, itemToY({ id, title: NEW_GROUP_TITLE, description: '', parent: grouping.parent, sequence, values }));
+    items.set(id, itemToY({ id, title: NEW_GROUP_TITLE, description: '', parent: grouping.parent, sequence, rank: nextRank(plan), values }));
     for (const member of grouping.members) items.get(member)?.set('parent', id);
   });
   return { group: id, created: true };

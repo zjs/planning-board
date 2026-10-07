@@ -132,6 +132,12 @@ describe('planFromDraft', () => {
   const byKey = (key: string) => Object.values(plan.items).find((i) => i.externalKey === key)!;
   const label = (property: string, id: string) => (plan.properties[property] as SelectProperty).values[id]!.label;
 
+  it('ranks cards in the file’s row order, so a cell keeps the export’s order (Q46)', () => {
+    const ranks = draft.items.map((d) => Object.values(plan.items).find((i) => i.title === d.title)!.rank!);
+    expect([...ranks].sort()).toEqual(ranks);
+    expect(new Set(ranks).size).toBe(ranks.length);
+  });
+
   it('gives cards levels from their issue types, with the built-in Level property (Q32)', () => {
     expect(plan.properties[LEVEL]).toMatchObject({ name: 'Level', multi: false });
     expect(byKey('PAY-1').values[LEVEL]).toEqual(['epic']);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
-import { planDrop } from './move.ts';
+import { planDrop, planDrops } from './move.ts';
 import type { ViewSpec } from './view.ts';
 
 const seqBySystem: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -211,3 +211,46 @@ describe('planDrop on a nested axis (ADR 0012)', () => {
   });
 });
 
+
+describe('planDrops: several cards dropped together (Q48)', () => {
+  it('gives every card the drop\'s values; another card swaps its value in the dragged lane, or adds the target', () => {
+    const p = plan(
+      item('a', { values: { [SYSTEM]: ['id'], [TIME]: ['q1'] } }),
+      item('b', { values: { [SYSTEM]: ['id', 'pay'], [TIME]: ['q2'] } }),
+      item('c', { values: { [SYSTEM]: ['pay'] } }),
+    );
+    // Dragging a's Identity copy into (Q3, Payments).
+    const changes = new Map(planDrops(p, timeBySystem, { itemId: 'a', x: 'q1', y: 'id' }, ['a', 'b', 'c'], { x: 'q3', y: 'pay' }));
+    expect(changes.get('a')).toEqual({ values: { [TIME]: ['q3'], [SYSTEM]: ['pay'] } });
+    // b had Identity: it moves out of Identity (it already has Payments), and its quarter is replaced.
+    expect(changes.get('b')).toEqual({ values: { [TIME]: ['q3'], [SYSTEM]: ['pay'] } });
+    // c had nothing in Identity and is already in Payments: only its quarter changes.
+    expect(changes.get('c')).toEqual({ values: { [TIME]: ['q3'] } });
+  });
+
+  it('adds rather than moves on a card with nothing in the dragged lane', () => {
+    const p = plan(item('a', { values: { [SYSTEM]: ['id'] } }), item('b', { values: { [SYSTEM]: ['pay'] } }));
+    const changes = new Map(planDrops(p, timeBySystem, { itemId: 'a', x: null, y: 'id' }, ['b'], { x: null, y: 'id/sso' }));
+    expect(changes.get('b')).toEqual({ values: { [SYSTEM]: ['pay', 'id/sso'] } });
+  });
+
+  it('clears a single-valued axis for every card on a holding lane, and leaves out cards that wouldn\'t change', () => {
+    const p = plan(
+      item('a', { values: { [SYSTEM]: ['id'], [TIME]: ['q1'] } }),
+      item('b', { values: { [SYSTEM]: ['id'], [TIME]: ['q2'] } }),
+      item('c', { values: { [SYSTEM]: ['id'] } }),
+    );
+    const changes = planDrops(p, timeBySystem, { itemId: 'a', x: 'q1', y: 'id' }, ['b', 'c'], { x: null, y: 'id' });
+    expect(changes).toEqual([
+      ['a', { values: { [TIME]: [] } }],
+      ['b', { values: { [TIME]: [] } }],
+    ]);
+  });
+
+  it('moves every card to the dropped sequence column', () => {
+    const p = plan(item('a', { sequence: 'a0' }), item('b', { sequence: 'a1' }), item('c', { sequence: 'a2' }));
+    const changes = new Map(planDrops(p, seqBySystem, { itemId: 'a', x: 'a0', y: null }, ['b'], { x: 'a2', y: null }));
+    expect(changes.get('a')).toEqual({ sequence: 'a2', values: {} });
+    expect(changes.get('b')).toEqual({ sequence: 'a2', values: {} });
+  });
+});

@@ -49,6 +49,8 @@ interface Props {
   onCancelEdit: () => void;
   /** A press on the board outside any card, which clears the selection. */
   onBackgroundPointerDown: () => void;
+  /** A box dragged across empty space selects the cards it touches (Q48): the whole new selection. */
+  onBoxSelect: (ids: ItemId[]) => void;
   /** Cards are gliding to a new view (ADR 0015): lines wait until they arrive. */
   pivoting?: boolean;
   /** Group mismatch markers (requirements 13, 18). */
@@ -94,6 +96,8 @@ function areaIndexes(plan: Plan): Map<ItemId, number> {
 }
 
 const NONE: readonly string[] = [];
+/** How far a press on empty space moves before it draws a box rather than counting as a click. */
+const BOX_THRESHOLD_PX = 5;
 
 const sameCopy = (a: CardRef, b: CardRef) => a.itemId === b.itemId && a.x === b.x && a.y === b.y;
 
@@ -180,6 +184,7 @@ export const Board = memo(function Board({
   onCommitEdit,
   onCancelEdit,
   onBackgroundPointerDown,
+  onBoxSelect,
   onBandToggle,
   onCardMenu,
   onRenameValue,
@@ -552,8 +557,40 @@ export const Board = memo(function Board({
       );
     }).filter((cell) => cell !== null);
 
+  // Box select (Q48): a drag that starts on empty space in a cell or holding lane draws a box, and the cards it
+  // touches are selected, added to the selection with ⇧. A press that doesn't move still just clears the selection,
+  // and two of them still make a card.
+  const [box, setBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const backgroundPress = (e: PointerEvent<HTMLDivElement>) => {
-    if (!(e.target as Element).closest('.card, button, textarea')) onBackgroundPointerDown();
+    const el = e.target as Element;
+    if (el.closest('.card, button, textarea, input')) return;
+    if (!e.shiftKey) onBackgroundPointerDown();
+    if (e.button !== 0 || !el.closest('.cell')) return;
+    const x0 = e.clientX;
+    const y0 = e.clientY;
+    const base = e.shiftKey ? [...selected] : [];
+    let boxing = false;
+    const move = (ev: globalThis.PointerEvent) => {
+      if (!boxing && Math.hypot(ev.clientX - x0, ev.clientY - y0) < BOX_THRESHOLD_PX) return;
+      boxing = true;
+      const r = { left: Math.min(x0, ev.clientX), top: Math.min(y0, ev.clientY), right: Math.max(x0, ev.clientX), bottom: Math.max(y0, ev.clientY) };
+      setBox({ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top });
+      const ids = new Set(base);
+      for (const card of boardRef.current?.querySelectorAll<HTMLElement>('.card[data-item]:not(.via-children)') ?? []) {
+        const c = card.getBoundingClientRect();
+        if (c.right > r.left && c.left < r.right && c.bottom > r.top && c.top < r.bottom) ids.add(card.dataset.item!);
+      }
+      onBoxSelect([...ids]);
+    };
+    const end = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      setBox(null);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
   };
   // Double-clicking empty space makes a card there. In a gap between
   // sequence columns, that's a card in a new column of its own.
@@ -582,8 +619,9 @@ export const Board = memo(function Board({
           onCardMenu(el.dataset.item!, e.clientX, e.clientY);
         }}
       >
+        {box && <div className="select-box" style={box} data-testid="select-box" />}
         <div
-          className={['board', layout.rows.length === 0 && 'no-rows', layout.columns.length === 0 && 'no-columns']
+          className={['board', layout.rows.length === 0 && 'no-rows', layout.columns.length === 0 && 'no-columns', box && 'boxing']
             .filter(Boolean)
             .join(' ')}
           ref={boardRef}

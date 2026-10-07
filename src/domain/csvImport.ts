@@ -382,7 +382,9 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
   const byRef = new Map<string, string>();
   const idOf = new Map<DraftItem, string>();
   let duplicateKeys = 0;
-  for (const draftItem of draft.items) {
+  // Ranks follow the file's row order, so cards in a cell keep the export's order (Q46).
+  const ranks = generateNKeysBetween(null, null, draft.items.length);
+  for (const [row, draftItem] of draft.items.entries()) {
     const id = newId('i');
     idOf.set(draftItem, id);
     for (const ref of [draftItem.key, draftItem.id]) {
@@ -411,6 +413,7 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
       description: draftItem.description,
       parent: null,
       sequence: null,
+      rank: ranks[row]!,
       values,
       ...(draftItem.key !== '' ? { externalKey: draftItem.key } : {}),
     };

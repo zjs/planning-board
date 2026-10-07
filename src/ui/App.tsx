@@ -6,6 +6,7 @@ import {
   createItem,
   deleteItems,
   dropCard,
+  dropCards,
   groupItems,
   importPlan,
   loadPlan,
@@ -44,7 +45,7 @@ import { valueLabelProblem } from '../domain/properties.ts';
 import { cardsOnBoard, laneCards, matchingCards } from '../domain/selecting.ts';
 import { blankPlan } from '../domain/builtins.ts';
 import { newItemSpot } from '../domain/items.ts';
-import { ancestry, canNest, childCounts, childrenOf } from '../domain/tree.ts';
+import { ancestry, canNest, childCounts } from '../domain/tree.ts';
 import { layoutView, shownInside, type AxisSpec, type CardRef } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import {
@@ -157,7 +158,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     }),
     [plan, shown, foldings, expanded],
   );
-  const names = { x: axisNames(plan, shown, 'x'), y: axisNames(plan, shown, 'y') };
+  const names = useMemo(() => ({ x: axisNames(plan, shown, 'x'), y: axisNames(plan, shown, 'y') }), [plan, shown]);
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
   // Values named from the headers (Q55): rename one, or add one at the top level or under a parent.
   const onRenameValue = useCallback(
@@ -281,23 +282,38 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
 
   const onDrop = useCallback(
     (card: CardRef, target: BoardTarget, mode: DropMode) => {
+      // Dragging a selected card moves the whole selection (Q48).
+      const several = selected.has(card.itemId) && selected.size > 1 ? [...selected] : null;
       if (isCellTarget(target)) {
-        if (dropCard(store, view, card, target, mode)) setJustMoved(card.itemId);
+        if (several) {
+          const n = dropCards(store, view, card, several, target, mode);
+          if (n === 0) return;
+          setJustMoved(card.itemId);
+          setNotice({
+            text: `Moved ${n} ${n === 1 ? 'card' : 'cards'} to ${dropText(layout, target, names)}`,
+            step: store.undoManager.undoStack.at(-1),
+          });
+        } else if (dropCard(store, view, card, target, mode)) setJustMoved(card.itemId);
         return;
       }
       // Held over a card (hold to nest), or dropped on the move-out strip or the breadcrumb.
       const parent = isIntoTarget(target) ? target.into : target.parent;
       const from = plan.items[card.itemId]?.parent ?? null;
       const titleOf = (id: ItemId | null) => (id === null ? 'the plan' : `“${plan.items[id]?.title ?? ''}”`);
-      moveCards([card.itemId], parent, () =>
+      // Several cards: those that can go inside the target, or, for the strip, those in the dragged card's group.
+      const ids = several
+        ? several.filter((id) => (isIntoTarget(target) ? canNest(plan, id, target.into) : (plan.items[id]?.parent ?? null) === from))
+        : [card.itemId];
+      const what = (moved: ItemId[]) => (moved.length === 1 ? titleOf(moved[0]!) : `${moved.length} cards`);
+      moveCards(ids, parent, (moved) =>
         isIntoTarget(target)
-          ? `Put ${titleOf(card.itemId)} inside ${titleOf(parent)}`
+          ? `Put ${what(moved)} inside ${titleOf(parent)}`
           : parent === (from === null ? null : (plan.items[from]?.parent ?? null))
-            ? `Moved ${titleOf(card.itemId)} out of ${titleOf(from)}`
-            : `Moved ${titleOf(card.itemId)} out to ${titleOf(parent)}`,
+            ? `Moved ${what(moved)} out of ${titleOf(from)}`
+            : `Moved ${what(moved)} out to ${titleOf(parent)}`,
       );
     },
-    [store, view, plan, moveCards],
+    [store, view, plan, moveCards, selected, layout, names],
   );
 
   const onCardClick = useCallback(
@@ -338,6 +354,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     },
     [layout, selectMany],
   );
+  // Box select (Q48): the cards a box touches are the selection, without a notice for every move of the pointer.
+  const onBoxSelect = useCallback((ids: ItemId[]) => {
+    setSelection(new Set(ids));
+    setSelectedLinks(new Set());
+    setAnchor(null);
+  }, []);
   const selectAll = useCallback(() => selectMany(cardsOnBoard(layout), 'on the board'), [layout, selectMany]);
   const clearSelection = useCallback(() => {
     setSelection(new Set());
@@ -390,10 +412,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         return;
       }
       setExpanded((current) => [...current, ...open.filter((id) => !current.includes(id))]);
-      // Expanded groups leave the board, and their children take their place: select those.
-      setSelection(new Set(open.flatMap((id) => childrenOf(plan, id))));
+      // Expanded groups leave the board, so they leave the selection. Their cards aren't selected in their place:
+      // dragging a selected card moves the whole selection (Q48), so a card dragged out right after expanding
+      // would take its siblings with it. Each one is marked with its group instead.
+      setSelection((current) => new Set([...current].filter((id) => !open.includes(id))));
     },
-    [expanded, counts, plan],
+    [expanded, counts],
   );
   const expandSelection = useCallback(() => expandGroups([...selected]), [expandGroups, selected]);
   // ⇧E: collapse the groups the selected cards are shown for, one level up. Groups expand and collapse; bands
@@ -1161,6 +1185,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onCommitEdit={onCommitEdit}
           onCancelEdit={onCancelEdit}
           onBackgroundPointerDown={clearSelection}
+          onBoxSelect={onBoxSelect}
           mismatches={mismatches}
           onBandToggle={onBandToggle}
           onCardMenu={openCardMenu}
@@ -1291,6 +1316,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           addAxes={addAxes}
           titleOf={(id) => plan.items[id]?.title ?? ''}
           where={isCellTarget(drag.target) ? dropText(layout, drag.target, names) : null}
+          count={selected.has(drag.card.itemId) ? selected.size : 1}
           hint={replacesAValue(drag) ? `${keys.add} adds instead` : null}
         />
       )}

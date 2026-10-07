@@ -524,6 +524,20 @@ button.primary {
   user-select: none;
 }
 
+/* Box select (Q48): a translucent box over the cards it will select. */
+.select-box {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  border: 1px solid var(--accent);
+  background: var(--drop);
+  border-radius: 2px;
+}
+
+.board.boxing {
+  user-select: none;
+}
+
 .card.lifted {
   opacity: 0.35;
 }
@@ -795,6 +809,19 @@ body.dragging * {
   color: #fff;
   font-size: 11px;
   font-weight: 600;
+}
+
+/* Several cards dragged together (Q48): the stack shows behind the dragged one, with a count. */
+.ghost-count {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Under the dragged card: what the drop gives it (Q54), and how to add instead. */

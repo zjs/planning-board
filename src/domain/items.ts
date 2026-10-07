@@ -2,6 +2,7 @@
 // commands in src/commands/ apply the results to the Yjs document.
 
 import { SEQUENCE, type Dependency, type Item, type ItemId, type OrderKey, type Plan, type PropertyId, type ValueId } from './model.ts';
+import { generateKeyBetween } from 'fractional-indexing';
 import { planDrop, type DropTarget } from './move.ts';
 import { cellOf, layoutView, type ViewSpec } from './view.ts';
 
@@ -37,6 +38,13 @@ export function valuesForNewItem(plan: Plan, view: ViewSpec, target: DropTarget)
  * sequence columns, the new column the card starts. Null if the card
  * wouldn't be on the board.
  */
+/** A rank after every card's, for a card being made now (Q46). */
+export function nextRank(plan: Plan): OrderKey {
+  let last: OrderKey | null = null;
+  for (const item of Object.values(plan.items)) if (item.rank !== undefined && (last === null || item.rank > last)) last = item.rank;
+  return generateKeyBetween(last, null);
+}
+
 export function newItemSpot(plan: Plan, view: ViewSpec, target: DropTarget): DropTarget | null {
   const probe = '\u0000new';
   const { sequence, values } = valuesForNewItem(plan, view, target);

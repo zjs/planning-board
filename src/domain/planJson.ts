@@ -32,6 +32,8 @@ export interface ItemJson {
   parent?: string | null;
   /** An OrderKey string, or a plain number for hand-written files. Items with equal numbers share a column. */
   sequence?: string | number | null;
+  /** The order cards were made in (Q46): an OrderKey. Added in sprint 7; older readers ignore it. */
+  rank?: string;
   values?: Record<string, string | string[]>;
   /** The item's key in another tool, such as a Jira issue key. */
   externalKey?: string;
@@ -100,6 +102,10 @@ export function parsePlanJson(input: unknown): ParseResult {
       values: {},
     };
     if (isString(raw.externalKey)) item.externalKey = raw.externalKey;
+    if (raw.rank !== undefined) {
+      if (isString(raw.rank) && isOrderKey(raw.rank)) item.rank = raw.rank;
+      else errors.push(`${path}.rank: must be an order key`);
+    }
     if (typeof raw.sequence === 'number' && Number.isFinite(raw.sequence)) rawSequence.set(item.id, raw.sequence);
     else if (typeof raw.sequence === 'string') {
       if (isOrderKey(raw.sequence)) rawSequence.set(item.id, raw.sequence);
@@ -258,6 +264,8 @@ export function planToJson(plan: Plan): PlanJson {
   const siblingOrder = (a: Item, b: Item) =>
     (a.sequence === null ? 1 : 0) - (b.sequence === null ? 1 : 0) ||
     compareOrderKeys(a.sequence ?? '', b.sequence ?? '') ||
+    (a.rank === undefined ? 0 : 1) - (b.rank === undefined ? 0 : 1) ||
+    compareOrderKeys(a.rank ?? '', b.rank ?? '') ||
     a.title.localeCompare(b.title) ||
     compareOrderKeys(a.id, b.id);
   const items: ItemJson[] = [];
@@ -309,6 +317,7 @@ function itemToJson(plan: Plan, item: Item, parent: ItemId | null): ItemJson {
     ...(item.externalKey !== undefined ? { externalKey: item.externalKey } : {}),
     ...(parent !== null ? { parent } : {}),
     ...(item.sequence !== null ? { sequence: item.sequence } : {}),
+    ...(item.rank !== undefined ? { rank: item.rank } : {}),
     ...(Object.keys(values).length > 0 ? { values } : {}),
   };
 }

@@ -7,6 +7,7 @@ export function DragGhost({
   titleOf,
   where = null,
   hint = null,
+  count = 1,
 }: {
   drag: DragState;
   addAxes: { x: boolean; y: boolean };
@@ -16,6 +17,8 @@ export function DragGhost({
   where?: string | null;
   /** A hint for a drop that replaces a value on an axis that holds several: "Alt adds instead". */
   hint?: string | null;
+  /** How many cards move together: the selection, when the dragged card is in it (Q48). */
+  count?: number;
 }) {
   // Adding needs a multi-valued axis whose target is a lane; a holding lane always removes.
   const { target } = drag;
@@ -30,6 +33,7 @@ export function DragGhost({
       aria-hidden="true"
     >
       <span className="card-title">{drag.title}</span>
+      {count > 1 && <span className="ghost-count">+{count - 1} more</span>}
       {adding && <span className="add-badge">+ add</span>}
       {isIntoTarget(target) ? (
         <span className="nest-badge">Put inside “{titleOf(target.into)}”</span>

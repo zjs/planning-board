@@ -28,6 +28,7 @@ import {
   createPlanStore,
   deleteItems,
   dropCard,
+  dropCards,
   editCardValues,
   ensureBuiltIns,
   setDescription,
@@ -132,6 +133,36 @@ describe('plan store', () => {
     undo(store);
     undo(store);
     expect(Object.keys(readPlan(store.doc).items)).toEqual(['a']);
+  });
+
+  it('ranks each new card after the last, so ideas typed into one column keep their order (Q46)', () => {
+    const store = storeWith();
+    const spot = { x: null, y: null };
+    const first = createItem(store, seqBySystem, spot, 'Zebra crossing')!;
+    const second = createItem(store, seqBySystem, spot, 'Apple pie')!;
+    const child = createChild(store, seqBySystem, first, 'Inside')!;
+    const items = readPlan(store.doc).items;
+    expect(items[first]!.rank! < items[second]!.rank!).toBe(true);
+    expect(items[second]!.rank! < items[child]!.rank!).toBe(true);
+    // A new group is made now too, so it ranks last. (First has a child, so it would be joined, not wrapped.)
+    const third = createItem(store, seqBySystem, spot, 'Third')!;
+    const { group, created } = groupItems(store, [second, third])!;
+    expect(created).toBe(true);
+    expect(readPlan(store.doc).items[group]!.rank! > readPlan(store.doc).items[third]!.rank!).toBe(true);
+  });
+
+  it('drops several cards in one undo step (Q48)', () => {
+    const store = storeWith(
+      item('a', { values: { [SYSTEM]: ['id'], [TIME]: ['q1'] } }),
+      item('b', { values: { [SYSTEM]: ['pay'] } }),
+    );
+    expect(dropCards(store, timeBySystem, { itemId: 'a', x: 'q1', y: 'id' }, ['a', 'b'], { x: 'q2', y: 'id' })).toBe(2);
+    const items = readPlan(store.doc).items;
+    expect(items['a']!.values).toEqual({ [SYSTEM]: ['id'], [TIME]: ['q2'] });
+    expect(items['b']!.values).toEqual({ [SYSTEM]: ['id', 'pay'], [TIME]: ['q2'] });
+    undo(store);
+    expect(readPlan(store.doc).items['b']!.values).toEqual({ [SYSTEM]: ['pay'] });
+    expect(readPlan(store.doc).items['a']!.values[TIME]).toEqual(['q1']);
   });
 
   it('keeps both concurrent adds to a multi-valued property', () => {
