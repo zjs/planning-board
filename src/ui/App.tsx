@@ -46,7 +46,7 @@ import { cardsOnBoard, laneCards, matchingCards } from '../domain/selecting.ts';
 import { blankPlan } from '../domain/builtins.ts';
 import { newItemSpot } from '../domain/items.ts';
 import { ancestry, canNest, childCounts } from '../domain/tree.ts';
-import { layoutView, shownInside, type AxisSpec, type CardRef } from '../domain/view.ts';
+import { allCopies, layoutView, shownInside, type AxisSpec, type CardRef } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
 import {
   axisNames,
@@ -252,7 +252,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const renamable = useMemo(
     () =>
       new Set(
-        [...layout.cells.flat(2), ...layout.holding.rows.flat(), ...layout.holding.columns.flat(), ...layout.holding.corner]
+        allCopies(layout)
           .filter((ref) => !ref.via)
           .map((ref) => ref.itemId),
       ),
@@ -406,10 +406,20 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     const timer = setTimeout(() => setPivoting(false), ms);
     return () => clearTimeout(timer);
   }, [shown]);
-  /** Every copy on the board, for finding which group a selected card is shown for. */
-  const shownCopies = useMemo(
-    () => layout.cells.flat(2).concat(layout.holding.rows.flat(), layout.holding.columns.flat(), layout.holding.corner),
-    [layout],
+  /** Every copy on the board, with expanded groups' frames opened up. */
+  const shownCopies = useMemo(() => allCopies(layout), [layout]);
+  /**
+   * The group ⇧E collapses for a selected card: the card itself if it's an
+   * expanded group, which is its frame's header (Q57), or else its group, if
+   * that's expanded.
+   */
+  const collapseTarget = useCallback(
+    (id: ItemId): ItemId | null => {
+      if (expanded.includes(id)) return id;
+      const parent = plan.items[id]?.parent ?? null;
+      return parent !== null && expanded.includes(parent) ? parent : null;
+    },
+    [expanded, plan],
   );
   // E: expand the selected groups in place, at any depth (Q33, Q42). Expanding never folds anything.
   const expandGroups = useCallback(
@@ -426,9 +436,9 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         return;
       }
       setExpanded((current) => [...current, ...open.filter((id) => !current.includes(id))]);
-      // Expanded groups leave the board, so they leave the selection. Their cards aren't selected in their place:
-      // dragging a selected card moves the whole selection (Q48), so a card dragged out right after expanding
-      // would take its siblings with it. Each one is marked with its group instead.
+      // Expanded groups leave the selection, and their cards aren't selected in their place: dragging a selected
+      // card moves the whole selection (Q48), so a card dragged out right after expanding would take its siblings
+      // with it. The group's frame shows which cards are its (Q57).
       setSelection((current) => new Set([...current].filter((id) => !open.includes(id))));
     },
     [expanded, counts],
@@ -439,8 +449,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const collapseSelection = useCallback(() => {
     const collapse = new Set<ItemId>();
     for (const id of selected) {
-      const parent = shownCopies.find((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent))?.parent;
-      if (parent !== undefined) collapse.add(parent);
+      const group = collapseTarget(id);
+      if (group !== null) collapse.add(group);
     }
     if (collapse.size === 0) {
       setNotice({ text: 'Select a card inside an expanded group, then press ⇧E to collapse the group.' });
@@ -448,7 +458,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     }
     setExpanded((current) => current.filter((id) => !collapse.has(id)));
     setSelection(collapse);
-  }, [selected, shownCopies, expanded]);
+  }, [selected, collapseTarget]);
 
   // The inspector's Group field.
   const onInspectorMove = useCallback(
@@ -565,6 +575,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [expandGroups],
   );
   const onCardExpand = useCallback((card: CardRef) => expandGroups([card.itemId]), [expandGroups]);
+  const onCollapseGroup = useCallback((id: ItemId) => setExpanded((current) => current.filter((open) => open !== id)), []);
   const onSpotDoubleClick = useCallback((spot: DropTarget) => setEditing({ kind: 'new', spot }), []);
   const onCancelEdit = useCallback(() => setEditing(null), []);
   const onCommitEdit = useCallback(
@@ -885,9 +896,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     const ids = [...selected];
     const one = ids.length === 1 ? ids[0]! : null;
     const groups = ids.filter((id) => counts.has(id));
-    const collapsible = ids.some((id) =>
-      shownCopies.some((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent)),
-    );
+    const collapsible = ids.some((id) => collapseTarget(id) !== null);
     return [
       {
         label: 'Rename',
@@ -1061,7 +1070,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           <button
             type="button"
             onClick={collapseSelection}
-            disabled={![...selected].some((id) => shownCopies.some((ref) => ref.itemId === id && ref.parent !== undefined))}
+            disabled={![...selected].some((id) => collapseTarget(id) !== null)}
             title={`Collapse the groups the selected cards are in (${keys.collapse})`}
           >
             Collapse
@@ -1197,6 +1206,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           editing={editing}
           onCardDoubleClick={onCardDoubleClick}
           onCardExpand={onCardExpand}
+          onCollapseGroup={onCollapseGroup}
           onSpotDoubleClick={onSpotDoubleClick}
           onCommitEdit={onCommitEdit}
           onCancelEdit={onCancelEdit}

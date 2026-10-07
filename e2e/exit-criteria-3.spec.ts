@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { card, doubleClickEmpty, dragTo, expandGroup, foldAll, openApp, pickAxes, reveal } from './app.ts';
+import { card, doubleClickEmpty, dragTo, expandGroup, foldAll, frameName, openApp, pickAxes, reveal } from './app.ts';
 
 // Sprint 3's exit criteria (docs/sprint-3.md) 1–10, end to end, on the
 // sample plan. An import replaces the board, so criterion 8 runs last. Zoom
@@ -120,7 +120,7 @@ test('sprint 3 exit criteria', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(group.locator('.card-title')).toHaveText('EU data residency (GA)');
   await group.locator('.zoom-into').click();
-  await expect(card(page, 'region-pinned-directory-sync').locator('.parent-chip')).toHaveText('EU data residency (GA)');
+  await expect(frameName(card(page, 'region-pinned-directory-sync'))).toHaveText('EU data residency (GA)');
   await foldEU(page);
   const columns = await page.locator('.column-header:not(.gap)').count();
   await doubleClickEmpty(page, page.locator('.cell.gap[data-row="identity"]').nth(2));

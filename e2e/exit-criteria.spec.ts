@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, dragTo, expandGroup, foldAll, openApp, pickAxes } from './app.ts';
+import { card, cell, dragTo, expandGroup, foldAll, frameName, openApp, pickAxes } from './app.ts';
 
 // Sprint 1's exit criteria (docs/sprint-1.md), end to end, in order. Zoom is gone since sprint 5
 // (ADR 0013), so each step uses the gesture that replaced it: expand, the move-out strip, "Add a card
@@ -26,14 +26,14 @@ test('sprint 1 exit criteria', async ({ page }) => {
   await page.keyboard.type('Role audit trail');
   await page.keyboard.press('Enter');
   await page.keyboard.press('i');
-  await expect(page.locator('.card', { hasText: 'Role audit trail' }).locator('.parent-chip')).toHaveText('Role management');
+  await expect(frameName(page.locator('.card', { hasText: 'Role audit trail' }))).toHaveText('Role management');
   await card(page, 'custom-roles').dblclick();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.type('Custom roles v2');
   await page.keyboard.press('Enter');
   await expect(card(page, 'custom-roles').locator('.card-title')).toHaveText('Custom roles v2');
   await dragTo(page, card(page, 'least-privilege-default-role'), page.getByTestId('move-out'));
-  await expect(card(page, 'least-privilege-default-role').locator('.parent-chip')).toHaveCount(0);
+  await expect(frameName(card(page, 'least-privilege-default-role'))).toHaveCount(0);
 
   // 3. Fold the group back, and ungroup it.
   await card(page, 'custom-roles').locator('.card-title').click();

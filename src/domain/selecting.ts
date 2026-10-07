@@ -4,7 +4,7 @@
 
 import { isWithin } from './hierarchy.ts';
 import { itemValues, type ItemId, type Plan, type PropertyId, type ValueId } from './model.ts';
-import type { CardRef, ViewLayout } from './view.ts';
+import { unwrap, type CardRef, type ViewLayout } from './view.ts';
 
 /**
  * The cards a copy stands for: itself, or for a faded group copy, the real
@@ -13,7 +13,7 @@ import type { CardRef, ViewLayout } from './view.ts';
  */
 const real = (ref: CardRef): CardRef[] => (ref.via ? (ref.inner ?? []) : [ref]);
 
-const unique = (refs: CardRef[]): ItemId[] => [...new Set(refs.flatMap(real).map((r) => r.itemId))];
+const unique = (refs: CardRef[]): ItemId[] => [...new Set(unwrap(refs).flatMap(real).map((r) => r.itemId))];
 
 /** Every card on the board, each once, in board order (⌘A). */
 export function cardsOnBoard(layout: ViewLayout): ItemId[] {

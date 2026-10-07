@@ -21,7 +21,7 @@ test('help stays closed until asked for, and opens from the toolbar as a cheat s
   ]);
   await expect(legend).toContainText(/Hold (Alt|⌥ Option) while dropping/);
   await expect(legend).toContainText('File › Import CSV');
-  await expect(legend).toContainText('Dashed frames');
+  await expect(legend).toContainText('Frames');
   await expect(legend).toContainText(/Inspect, I/);
   await expect(legend.getByRole('link', { name: 'Feedback and bug reports' })).toHaveAttribute(
     'href',

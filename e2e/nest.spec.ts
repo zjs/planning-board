@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, dragTo, holdOver, openApp, pickAxes } from './app.ts';
+import { card, cell, dragTo, frameName, holdOver, openApp, pickAxes } from './app.ts';
 
 const notice = (page: Page) => page.getByTestId('notice');
-const chip = (page: Page, id: string) => card(page, id).first().locator('.parent-chip');
+const chip = (page: Page, id: string) => frameName(card(page, id).first(), id);
 
 async function select(page: Page, ...ids: string[]) {
   await card(page, ids[0]!).first().locator('.card-title').click();
@@ -40,7 +40,7 @@ test('hold a card over another to put it inside, without changing its values; a 
 test('a card can never go inside itself, its own group, or anything inside it', async ({ page }) => {
   await openApp(page);
   await pickAxes(page, 'time', 'system');
-  const frame = cell(page, 'identity', 'q3').locator('.frame[data-frame="eu-data-residency"]');
+  const frame = cell(page, 'identity', 'q3').locator('.frame-via[data-frame="eu-data-residency"]');
   const child = frame.locator('.card[data-item="region-pinned-directory-sync"]');
   await expect(child).toBeVisible();
 
@@ -100,7 +100,7 @@ test('the inspector moves cards between groups, and adds a card inside one', asy
   await field.fill('Role templates');
   await field.press('Enter');
   const created = page.locator('.card', { hasText: 'Role templates' });
-  await expect(created.locator('.parent-chip')).toHaveText('Custom roles');
+  await expect(frameName(created)).toHaveText('Custom roles');
   await expect(inspector.locator('.group-current')).toHaveText('Custom roles');
 });
 
@@ -111,7 +111,7 @@ test('⇧-click a badge selects every match in any pivot; ⇧-click a header sel
   await expect(notice(page)).toContainText('Selected 3 cards with Initiative');
   await expect(page.locator('.card.selected:not(.via-children)')).toHaveCount(3);
   await page.keyboard.press('e');
-  for (const id of ['eu-data-residency', 'usage-based-pricing', 'public-api-v2']) await expect(card(page, id)).toHaveCount(0);
+  for (const id of ['eu-data-residency', 'usage-based-pricing', 'public-api-v2']) await expect(page.locator(`.frame-open[data-frame="${id}"]`).first()).toBeAttached();
 
   await page.locator('.row-header[data-row="identity"]').click({ modifiers: ['Shift'] });
   await expect(notice(page)).toContainText(/Selected \d+ cards in Identity/);

@@ -46,3 +46,8 @@ Sprint 4 left five ways to see detail: zooming into a group, zooming into severa
 ## Amendment (sprint 7, Q54)
 
 Groups **expand** and **collapse**; bands **fold** and **unfold**. ⇧E and its toolbar button were "Fold" until sprint 7. The PM chose to keep separate words for laying out the board (folding an area's components) and for showing more of the cards (expanding a group), with no word shared. Code that handles bands still says "fold"; the code for groups says "collapse".
+
+## Amendment (sprint 8, Q57)
+
+An expanded group no longer leaves the board: it frames its cards in every cell they reach, and its own card heads the frame where it's placed ([0008](0008-view-scope-and-zoom.md), last amendment). "Every card on the board has a solid copy somewhere" still holds, now including expanded groups.
+

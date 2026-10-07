@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { item, plan } from './__fixtures__/tiny-plan.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
 import { valuesForNewItem } from './items.ts';
-import { cellOf, laneKeyOf, layoutView, shownInside, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
+import { cellOf, laneKeyOf, layoutView, shownInside, unwrap, type CardRef, type ViewLayout, type ViewSpec } from './view.ts';
 
 const seqBySystem: ViewSpec = { x: { property: SEQUENCE, level: 0 }, y: { property: SYSTEM, level: 0 } };
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -250,8 +250,6 @@ describe('children in context (Q33)', () => {
     item('other', { values: { [TIME]: ['q2'], [SYSTEM]: ['pay'] } }),
     item('lone', { parent: 'other', values: { [TIME]: ['q1'], [SYSTEM]: ['pay'] } }),
   );
-  const refs = (layout: ViewLayout) =>
-    layout.cells.flat(2).concat(allHolding(layout)).filter((r) => !r.via);
 
   it('a frame lists the cards that put the group in that cell, with their own lanes', () => {
     const layout = layoutView(p, timeBySystem);
@@ -263,18 +261,71 @@ describe('children in context (Q33)', () => {
     expect(pay.inner).toEqual([{ itemId: 'task', x: null, y: 'pay' }]);
   });
 
-  it('expanding a group shows its children in its place, marked with it, at any depth', () => {
+  it('expanding a group frames its cards wherever they land, holding lanes included (Q57)', () => {
     const layout = layoutView(p, { ...timeBySystem, expanded: ['epic'] });
-    expect(refs(layout).map((r) => [r.itemId, r.parent ?? null]).sort()).toEqual([
-      ['inherits', 'epic'],
-      ['other', null],
-      ['story', 'epic'],
+    const at = (x: string, y: string) => layout.cells[layout.rows.findIndex((l) => l.key === y)]![layout.columns.findIndex((l) => l.key === x)]!;
+    // Its own cell: the group's own card heads a frame with nothing else in it here.
+    expect(at('q1', 'id')).toEqual([{ itemId: 'epic', x: 'q1', y: 'id', open: true, own: true, inner: [] }]);
+    // Where only its cards are, the frame has a title header and the cards.
+    expect(at('q2', 'id')).toEqual([{ itemId: 'epic', x: 'q2', y: 'id', open: true, inner: [{ itemId: 'story', x: 'q2', y: 'id' }] }]);
+    expect(layout.holding.corner).toEqual([{ itemId: 'epic', x: null, y: null, open: true, inner: [{ itemId: 'inherits', x: null, y: null }] }]);
+    // A collapsed card inside it keeps its faded copy, inside the expanded group's frame.
+    const pay = at('q2', 'pay');
+    expect(pay.map((r) => r.itemId)).toEqual(['other', 'epic']);
+    expect(pay[1]!.inner).toEqual([{ itemId: 'story', x: 'q2', y: 'pay', via: 'children', inner: [{ itemId: 'task', x: null, y: 'pay' }] }]);
+  });
+
+  it('opens frames up for code that wants every card, keeping the group’s own header', () => {
+    const layout = layoutView(p, { ...timeBySystem, expanded: ['epic', 'story'] });
+    expect(
+      unwrap(layout.cells.flat(2).concat(allHolding(layout)))
+        .filter((r) => !r.via)
+        .map((r) => [r.itemId, r.open ?? false])
+        .sort(),
+    ).toEqual([
+      ['epic', true],
+      ['inherits', false],
+      ['other', false],
+      ['story', true],
+      ['task', false],
     ]);
-    const deeper = layoutView(p, { ...timeBySystem, expanded: ['epic', 'story'] });
-    expect(refs(deeper).map((r) => [r.itemId, r.parent ?? null]).sort()).toEqual([
-      ['inherits', 'epic'],
-      ['other', null],
-      ['task', 'story'],
+  });
+
+  it('nests frames three deep, and gives a deeper group a breadcrumb in the third', () => {
+    const deep = plan(
+      item('a', { values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+      item('b', { parent: 'a', values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+      item('c', { parent: 'b', values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+      item('d', { parent: 'c', values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+      item('e', { parent: 'd', values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+      item('c2', { parent: 'c', values: { [TIME]: ['q1'], [SYSTEM]: ['id'] } }),
+    );
+    const layout = layoutView(deep, { ...timeBySystem, expanded: ['a', 'b', 'c', 'd'] });
+    const [a] = layout.cells.flat(2);
+    expect(a).toMatchObject({ itemId: 'a', open: true, own: true });
+    const [b] = a!.inner!;
+    expect(b).toMatchObject({ itemId: 'b', open: true, own: true });
+    // C is the third level. D, a fourth, sits beside it in B rather than inside, named "C › D".
+    const [c, d] = b!.inner!;
+    expect(c).toMatchObject({ itemId: 'c', own: true, inner: [{ itemId: 'c2', x: 'q1', y: 'id' }] });
+    expect(c!.trail).toBeUndefined();
+    expect(d).toMatchObject({ itemId: 'd', own: true, trail: ['c', 'd'], inner: [{ itemId: 'e', x: 'q1', y: 'id' }] });
+    expect(b!.inner).toHaveLength(2);
+  });
+
+  it('puts a frame where its first card goes, so a cell keeps sequence order', () => {
+    const p2 = plan(
+      item('early', { sequence: 'a0', values: { [SYSTEM]: ['id'] } }),
+      item('group', { sequence: 'a0', values: { [SYSTEM]: ['pay'] } }),
+      item('kid', { parent: 'group', sequence: 'a0', values: { [SYSTEM]: ['id'] }, rank: 'a5' }),
+      item('later', { sequence: 'a0', values: { [SYSTEM]: ['id'] }, rank: 'a9' }),
+    );
+    const layout = layoutView(p2, { ...seqBySystem, expanded: ['group'] });
+    const id = layout.cells[layout.rows.findIndex((l) => l.key === 'id')]![0]!;
+    expect(id.map((r) => [r.itemId, r.open ?? false])).toEqual([
+      ['early', false],
+      ['group', true],
+      ['later', false],
     ]);
   });
 });

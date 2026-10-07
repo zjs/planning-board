@@ -10,7 +10,6 @@ interface Props {
   /** Levels above the lowest: a heavier border, so initiatives and epics stand out (Q32). */
   levelWeight?: number;
   /** The group this card is shown for, when several groups' children share the board (Q33). */
-  parentChip?: { title: string; tone: number } | undefined;
   /** Values of properties that aren't on an axis (requirement 4). */
   attributes: CardAttribute[];
   /** A one-line chip: title and child count only (holding lanes, when chosen). */
@@ -41,6 +40,8 @@ interface Props {
   onDoubleClick?: (e: MouseEvent<HTMLDivElement>) => void;
   /** Expand this group in place: the child count on group cards (Q36, Q42). */
   onExpand?: (() => void) | undefined;
+  /** On an expanded group's own card, heading its frame (Q57): the count collapses it instead. */
+  onCollapse?: (() => void) | undefined;
   onRename?: (title: string, how: CommitHow) => void;
   onCancelEdit?: () => void;
   /** ⇧-click on a badge: select every card on the board with its value (Q47). */
@@ -54,7 +55,6 @@ export function Card({
   childCount,
   areaIndex,
   levelWeight = 0,
-  parentChip,
   attributes,
   compact,
   selected,
@@ -71,6 +71,7 @@ export function Card({
   onPointerDown,
   onDoubleClick,
   onExpand,
+  onCollapse,
   onRename,
   onCancelEdit,
   onSelectMatching,
@@ -95,7 +96,6 @@ export function Card({
       data-item={item.id}
       data-area={areaIndex ?? 'none'}
       data-weight={levelWeight > 0 ? Math.min(levelWeight, 2) : undefined}
-      data-tone={parentChip ? parentChip.tone : undefined}
       title={editing ? undefined : viaChildren ? `${item.title} (via cards inside it)` : item.title}
       aria-selected={selected ?? false}
       onPointerDown={editing ? undefined : onPointerDown}
@@ -125,7 +125,26 @@ export function Card({
           <MismatchMarker own={mismatches} inside={mismatchesInside} />
         )}
         {isGroup &&
-          (onExpand && !editing ? (
+          (onCollapse && !editing ? (
+            // Expanded, the count is the way back out (Q57). Collapsing hides nothing for good, so one click does it.
+            <button
+              type="button"
+              className="zoom-into ready open"
+              aria-label={`Collapse ${item.title} (${childCount} inside)`}
+              title="Collapse: put its cards back inside"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                if (e.detail > 1) return;
+                e.stopPropagation();
+                onCollapse();
+              }}
+            >
+              <span className="child-count">{childCount}</span>
+              <span className="zoom-chevron" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+          ) : onExpand && !editing ? (
             // The count is the way in (Q36, Q42): double-click renames, this expands the group. Only on a
             // selected group, so a click meant to select it never expands it by accident.
             <button
@@ -174,13 +193,8 @@ export function Card({
           </button>
         )}
       </div>
-      {!compact && (attributes.length > 0 || item.externalKey || parentChip) && (
+      {!compact && (attributes.length > 0 || item.externalKey) && (
         <div className="card-attrs">
-          {parentChip && (
-            <span className="attr parent-chip" title={`Inside ${parentChip.title}`}>
-              {parentChip.title}
-            </span>
-          )}
           {item.externalKey && (
             <span className="attr key" title={`Key in the imported tool: ${item.externalKey}`}>
               {item.externalKey}

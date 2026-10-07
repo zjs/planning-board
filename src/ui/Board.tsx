@@ -5,13 +5,14 @@ import { ancestorAtLevel, depthOf, valuesAtLevel } from '../domain/hierarchy.ts'
 import { itemValues, SYSTEM, type ItemId, type Plan } from '../domain/model.ts';
 import type { DropTarget } from '../domain/move.ts';
 import { childCounts } from '../domain/tree.ts';
-import { allCopies, type Band, type CardRef, type Lane, type ViewLayout, type ViewSpec } from '../domain/view.ts';
+import { allCopies, unwrap, type Band, type CardRef, type Lane, type ViewLayout, type ViewSpec } from '../domain/view.ts';
 import type { Found } from '../domain/finding.ts';
 import type { Mismatches } from '../domain/mismatches.ts';
 import { Card, DraftCard, type CommitHow } from './Card.tsx';
 import { inSentence } from './axes.ts';
 import { DependencyLines, type DrawnLine } from './DependencyLines.tsx';
 import { HeaderField } from './HeaderField.tsx';
+import { keyNames } from './platform.ts';
 import { isCellTarget, isIntoTarget, type BoardTarget } from './useCardDrag.ts';
 
 interface Props {
@@ -43,6 +44,8 @@ interface Props {
   onCardDoubleClick: (card: CardRef) => void;
   /** The child count on a group card, which expands it. */
   onCardExpand: (card: CardRef) => void;
+  /** The ▾ on an expanded group's frame (Q57). */
+  onCollapseGroup: (id: ItemId) => void;
   /** Double-click on empty space in a cell or holding lane. */
   onSpotDoubleClick: (spot: DropTarget) => void;
   onCommitEdit: (title: string, how: CommitHow) => void;
@@ -180,6 +183,7 @@ export const Board = memo(function Board({
   editing,
   onCardDoubleClick,
   onCardExpand,
+  onCollapseGroup,
   onSpotDoubleClick,
   onCommitEdit,
   onCancelEdit,
@@ -350,20 +354,13 @@ export const Board = memo(function Board({
     for (const item of Object.values(plan.items)) out.set(item.id, cardAttributes(plan, item, view, properties));
     return out;
   }, [plan, view]);
-  // Each group whose children share the board gets its own tone for their chips and edges (Q33).
-  const tones = useMemo(() => {
-    const out = new Map<ItemId, number>();
-    for (const ref of allCopies(layout)) if (ref.parent !== undefined && !out.has(ref.parent)) out.set(ref.parent, out.size % 6);
-    return out;
-  }, [layout]);
-  const renderCard = (ref: CardRef, chip = false, frame?: CardRef) => {
+  const collapseKey = keyNames().collapse;
+  const renderCard = (ref: CardRef, chip = false, frame?: CardRef, onCollapse?: () => void) => {
     const item = plan.items[ref.itemId]!;
-    const tone = ref.parent === undefined ? undefined : tones.get(ref.parent);
     const foldedMatches = found?.inside.get(ref.itemId);
     return (
       <Card
         key={`${frame ? `${frame.itemId}>` : ''}${ref.itemId}|${ref.x}|${ref.y}|${ref.via ?? ''}`}
-        parentChip={tone === undefined ? undefined : { title: plan.items[ref.parent!]?.title ?? '', tone }}
         item={item}
         compact={chip}
         childCount={counts.get(ref.itemId) ?? 0}
@@ -387,6 +384,7 @@ export const Board = memo(function Board({
         // A card in a frame isn't on the board's level: double-click expands its group, like the frame's header.
         onDoubleClick={() => onCardDoubleClick(frame ?? ref)}
         onExpand={(counts.get(ref.itemId) ?? 0) > 0 ? () => onCardExpand(ref) : undefined}
+        onCollapse={onCollapse}
         onSelectMatching={onSelectMatching}
         onRename={onCommitEdit}
         onCancelEdit={onCancelEdit}
@@ -394,17 +392,57 @@ export const Board = memo(function Board({
     );
   };
 
+  /** A card, or a group's frame around its cards. */
+  const renderRef = (ref: CardRef, chip = false): ReactNode =>
+    ref.open || ref.via ? renderFrame(ref, chip) : renderCard(ref, chip);
+
   /**
-   * A collapsed group in a cell only its children reach (Q33): its faded
-   * copy as a header, framing the real cards that put it there. Those can be
-   * dragged, and dragging one changes that card.
+   * A group's frame (Q57). Collapsed, in a cell only its children reach
+   * (Q33): its faded copy as a header, framing the real cards that put it
+   * there, which can be dragged. Expanded: its cards here under a header,
+   * which is the group's own card where it's placed itself and its title
+   * elsewhere, with ▾ to collapse it.
    */
-  const renderFrame = (ref: CardRef) => (
-    <div key={`frame|${ref.itemId}|${ref.x}|${ref.y}`} className="frame" data-frame={ref.itemId}>
-      {renderCard(ref)}
-      {(ref.inner ?? []).map((inner) => renderCard(inner, false, ref))}
-    </div>
-  );
+  const renderFrame = (ref: CardRef, chip = false): ReactNode => {
+    if (!ref.open) {
+      return (
+        <div key={`frame|${ref.itemId}|${ref.x}|${ref.y}`} className="frame frame-via" data-frame={ref.itemId}>
+          {renderCard(ref, chip)}
+          {(ref.inner ?? []).map((inner) => renderCard(inner, chip, ref))}
+        </div>
+      );
+    }
+    const titles = (ref.trail ?? [ref.itemId]).map((id) => plan.items[id]?.title ?? '');
+    const name = titles.join(' › ');
+    return (
+      <div key={`open|${ref.itemId}|${ref.x}|${ref.y}`} className="frame frame-open" data-frame={ref.itemId}>
+        <div className="frame-head">
+          {ref.own ? (
+            <>
+              {titles.length > 1 && <span className="frame-trail">{titles.slice(0, -1).join(' › ')} ›</span>}
+              {renderCard({ itemId: ref.itemId, x: ref.x, y: ref.y }, chip, undefined, () => onCollapseGroup(ref.itemId))}
+            </>
+          ) : (
+            <>
+              <span className="frame-title" title={name}>
+                {name}
+              </span>
+              <button
+                type="button"
+                className="frame-collapse"
+                aria-label={`Collapse ${name}`}
+                title={`Collapse ${name} (${collapseKey})`}
+                onClick={() => onCollapseGroup(ref.itemId)}
+              >
+                ▾
+              </button>
+            </>
+          )}
+        </div>
+        {(ref.inner ?? []).map((inner) => renderRef(inner, chip))}
+      </div>
+    );
+  };
 
   const columnTracks = tracks(layout.columns, layout.gaps.x);
   const rowTracks = tracks(layout.rows, layout.gaps.y);
@@ -463,7 +501,7 @@ export const Board = memo(function Board({
       >
         {row.kind === 'lane' &&
           column.kind === 'lane' &&
-          layout.cells[row.index]![column.index]!.map((ref) => (ref.via ? renderFrame(ref) : renderCard(ref)))}
+          layout.cells[row.index]![column.index]!.map((ref) => renderRef(ref))}
         {isDraftSpot(rowKey, columnKey) && draft}
         {lone && <span className="lone-hint">Drop a card here to start the sequence</span>}
       </div>
@@ -511,8 +549,8 @@ export const Board = memo(function Board({
         {!gapRow && !gapColumn && (
           // The lane fills its grid row; this inner box caps the height and scrolls.
           <div className="holding-cards">
-            {cards.length > 0 && <span className="holding-count">{cards.length}</span>}
-            {cards.map((ref) => renderCard(ref, compact))}
+            {cards.length > 0 && <span className="holding-count">{unwrap(cards).length}</span>}
+            {cards.map((ref) => renderRef(ref, compact))}
             {isDraftSpot(rowKey, columnKey) && draft}
           </div>
         )}

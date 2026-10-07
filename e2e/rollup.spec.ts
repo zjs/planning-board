@@ -24,10 +24,10 @@ test('a group shows faded copies where only its cards reach; they select but nev
   await page.mouse.up();
   await expect(faded).toBeVisible();
 
-  // Double-clicking it expands the group in place (Q42): its cards take its place, marked with it.
+  // Double-clicking it expands the group in place (Q42): its cards show in its frames (Q57).
   await faded.dblclick();
-  await expect(page.locator(`.card[data-item="${EU}"]`)).toHaveCount(0);
-  await expect(page.locator('.parent-chip', { hasText: 'EU data residency' }).first()).toBeVisible();
+  await expect(page.locator(`.card.via-children[data-item="${EU}"]`)).toHaveCount(0);
+  await expect(page.locator(`.frame-open[data-frame="${EU}"]`).first()).toBeVisible();
 });
 
 test('mismatch markers: a count on the collapsed group, and the reason on the card inside (req. 13, 18)', async ({

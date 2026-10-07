@@ -20,9 +20,9 @@ export interface ViewSpec {
   x: AxisSpec;
   y: AxisSpec;
   /**
-   * Groups expanded in place (Q33, ADR 0013): each one on the board is
-   * replaced by its children, marked with it as their parent. Applies at
-   * any depth, so an expanded child group shows its own children too.
+   * Groups expanded in place (Q33, ADR 0013): each one on the board shows
+   * its children, framed with it (Q57). Applies at any depth, so an
+   * expanded child group shows its own children too.
    */
   expanded?: readonly ItemId[];
 }
@@ -70,17 +70,32 @@ export interface CardRef {
    */
   via?: 'children';
   /**
-   * For a faded copy, the cards inside the group that put it in this cell
-   * (Q33): shown in a frame, and draggable. Each one's `x` and `y` are its
-   * own lanes, or null where it only has its group's value.
+   * An expanded group's frame (Q57): the group's cards in this cell or
+   * holding lane, under its header. Frames nest, three deep at most.
+   */
+  open?: true;
+  /**
+   * For an expanded group's frame, whether the group itself is placed here.
+   * Its header is then the group's own card, which can be dragged; elsewhere
+   * it's only a title.
+   */
+  own?: true;
+  /**
+   * For a frame nested deeper than three, the groups from the third level
+   * down to this one, for a breadcrumb title ("API auth › Token rotation").
+   */
+  trail?: ItemId[];
+  /**
+   * The cards in a frame. For a faded copy, the cards inside the group that
+   * put it in this cell (Q33), each draggable, with `x` and `y` its own lanes,
+   * or null where it only has its group's value. For an expanded group's
+   * frame, its cards and frames here, in cell order.
    */
   inner?: CardRef[];
-  /**
-   * The group this card is shown for, when it's on the board because that
-   * group is expanded in place (Q33).
-   */
-  parent?: ItemId;
 }
+
+/** How deep expanded groups' frames nest (Q57). Deeper groups get a breadcrumb title instead. */
+export const FRAME_DEPTH = 3;
 
 export interface Holding {
   rows: CardRef[][];
@@ -275,28 +290,94 @@ function rolledUpCells(
 }
 
 /**
- * The cards a view shows, with the group each is shown for when that needs
- * saying (Q33): the top-level cards, with every expanded group among them
- * replaced by its children, at any depth. Deeper cards stay inside their group.
+ * The cards a view shows: the top-level cards, and inside every expanded
+ * group among them its children, at any depth (Q33). Deeper cards stay
+ * inside their group. `open` lists the expanded groups on the board, which
+ * show as frames (Q57), and `parentOf` the expanded group each card or
+ * frame is shown inside.
  */
-function viewItems(plan: Plan, view: ViewSpec): { items: Item[]; parentOf: Map<ItemId, ItemId> } {
+function viewItems(plan: Plan, view: ViewSpec): { items: Item[]; open: Item[]; parentOf: Map<ItemId, ItemId> } {
   const expanded = new Set(view.expanded ?? []);
   const items: Item[] = [];
+  const open: Item[] = [];
   const parentOf = new Map<ItemId, ItemId>();
   const seen = new Set<ItemId>();
   const add = (id: ItemId, parent: ItemId | null) => {
     if (seen.has(id)) return;
     seen.add(id);
+    if (parent !== null) parentOf.set(id, parent);
     const children = childrenOf(plan, id);
     if (expanded.has(id) && children.length > 0) {
+      open.push(plan.items[id]!);
       for (const child of children) add(child, id);
       return;
     }
     items.push(plan.items[id]!);
-    if (parent !== null) parentOf.set(id, parent);
   };
   for (const id of childrenOf(plan, null)) add(id, null);
-  return { items: items.sort(compareItems), parentOf };
+  return { items: items.sort(compareItems), open, parentOf };
+}
+
+/**
+ * Wraps one cell's or holding lane's cards in their expanded groups' frames
+ * (Q57), nesting three deep; a deeper group's frame sits in the third, with
+ * a breadcrumb trail. A frame goes where its first card would, so the cell
+ * keeps its order. An expanded group's own copy becomes its frame's header.
+ */
+function framed(refs: CardRef[], parentOf: Map<ItemId, ItemId>, x: string | null, y: string | null): CardRef[] {
+  const chainOf = (id: ItemId): ItemId[] => {
+    const chain: ItemId[] = [];
+    const seen = new Set<ItemId>([id]);
+    for (let at = parentOf.get(id); at !== undefined && !seen.has(at); at = parentOf.get(at)) {
+      seen.add(at);
+      chain.unshift(at);
+    }
+    return chain;
+  };
+  const out: CardRef[] = [];
+  const frames = new Map<string, CardRef>();
+  for (const ref of refs) {
+    const chain = ref.open ? [...chainOf(ref.itemId), ref.itemId] : chainOf(ref.itemId);
+    const levels =
+      chain.length <= FRAME_DEPTH
+        ? chain.map((id) => [id])
+        : [...chain.slice(0, FRAME_DEPTH - 1).map((id) => [id]), chain.slice(FRAME_DEPTH - 1)];
+    let list = out;
+    let path = '';
+    let frame: CardRef | undefined;
+    for (const level of levels) {
+      const id = level[level.length - 1]!;
+      path += `/${id}`;
+      frame = frames.get(path);
+      if (frame === undefined) {
+        frame = { itemId: id, x, y, open: true, inner: [], ...(level.length > 1 ? { trail: level } : {}) };
+        frames.set(path, frame);
+        list.push(frame);
+      }
+      list = frame.inner!;
+    }
+    if (ref.open) {
+      frame!.own = true;
+      frame!.x = ref.x;
+      frame!.y = ref.y;
+    } else {
+      list.push(ref);
+    }
+  }
+  return out;
+}
+
+/**
+ * A list of copies with expanded groups' frames opened up (Q57): the cards
+ * inside them, and each group's own header where it's placed itself, marked
+ * `open`. Faded copies stay as they are, with their framed cards.
+ */
+export function unwrap(refs: readonly CardRef[]): CardRef[] {
+  return refs.flatMap((ref) =>
+    ref.open
+      ? [...(ref.own ? [{ itemId: ref.itemId, x: ref.x, y: ref.y, open: true as const, own: true as const }] : []), ...unwrap(ref.inner ?? [])]
+      : [ref],
+  );
 }
 
 /**
@@ -317,11 +398,10 @@ export function shownInside(plan: Plan, view: ViewSpec, parent: ItemId | null): 
 }
 
 export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
-  const { items, parentOf } = viewItems(plan, view);
-  const marked = (ref: CardRef): CardRef => {
-    const parent = parentOf.get(ref.itemId);
-    return parent === undefined ? ref : { ...ref, parent };
-  };
+  const { items, open, parentOf } = viewItems(plan, view);
+  const openIds = new Set(open.map((item) => item.id));
+  // An expanded group is placed like a card, and its copy becomes its frame's header.
+  const marked = (ref: CardRef): CardRef => (openIds.has(ref.itemId) ? { ...ref, open: true } : ref);
   const { lanes: columns, bands: xBands } = axisLanes(plan, view.x, items);
   const { lanes: rows, bands: yBands } = axisLanes(plan, view.y, items);
   const columnIndex = new Map(columns.map((lane, i) => [lane.key, i]));
@@ -329,7 +409,7 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   const cells: CardRef[][][] = rows.map(() => columns.map(() => []));
   const holding: Holding = { rows: rows.map(() => []), columns: columns.map(() => []), corner: [] };
 
-  for (const item of items) {
+  for (const item of [...items, ...open].sort(compareItems)) {
     const xs = axisKeys(plan, item, view.x).filter((key) => columnIndex.has(key));
     const ys = axisKeys(plan, item, view.y).filter((key) => rowIndex.has(key));
     if (xs.length === 0 && ys.length === 0) {
@@ -354,8 +434,22 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   for (const item of items) {
     const reached = rolledUpCells(item, kids, inCells(view.x, columnIndex), inCells(view.y, rowIndex));
     for (const { x, y, inner } of reached) {
-      cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push(marked({ itemId: item.id, x, y, via: 'children', inner }));
+      cells[rowIndex.get(y)!]![columnIndex.get(x)!]!.push({ itemId: item.id, x, y, via: 'children', inner });
     }
+  }
+
+  // Expanded groups' frames (Q57), around their cards in each cell and holding lane.
+  if (open.length > 0) {
+    rows.forEach((row, i) => {
+      columns.forEach((column, j) => {
+        cells[i]![j] = framed(cells[i]![j]!, parentOf, column.key, row.key);
+      });
+      holding.rows[i] = framed(holding.rows[i]!, parentOf, null, row.key);
+    });
+    columns.forEach((column, j) => {
+      holding.columns[j] = framed(holding.columns[j]!, parentOf, column.key, null);
+    });
+    holding.corner = framed(holding.corner, parentOf, null, null);
   }
 
   const allKeys = Object.values(plan.items).flatMap((item) => (item.sequence === null ? [] : [item.sequence]));
@@ -376,14 +470,17 @@ export function layoutView(plan: Plan, view: ViewSpec): ViewLayout {
   };
 }
 
-/** Every copy on the board, in board order: cells first, then the holding lanes. */
+/**
+ * Every copy on the board, in board order: cells first, then the holding
+ * lanes. Expanded groups' frames are opened up (`unwrap`); faded copies stay.
+ */
 export function allCopies(layout: ViewLayout): CardRef[] {
-  return [
+  return unwrap([
     ...layout.cells.flat(2),
     ...layout.holding.rows.flat(),
     ...layout.holding.columns.flat(),
     ...layout.holding.corner,
-  ];
+  ]);
 }
 
 /**

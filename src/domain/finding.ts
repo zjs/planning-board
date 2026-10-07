@@ -3,7 +3,7 @@
 // inside collapsed groups. Finding dims the rest; it never hides or moves a card.
 
 import type { Item, ItemId, Plan } from './model.ts';
-import type { CardRef, ViewLayout } from './view.ts';
+import { allCopies, type CardRef, type ViewLayout } from './view.ts';
 
 /** Lowercase, without accents, so "resume" finds "Résumé". */
 export function foldText(text: string): string {
@@ -42,14 +42,13 @@ export interface Found {
   inside: ReadonlyMap<ItemId, ItemId[]>;
 }
 
-/** Every copy, faded group copies and the cards they frame included, in board order. */
+/**
+ * Every copy, faded group copies and the cards they frame included, in
+ * board order. An expanded group's header isn't counted: the group's cards
+ * are on the board, and a match inside it is one of them.
+ */
 function boardOrder(layout: ViewLayout): ItemId[] {
-  const refs: CardRef[] = [
-    ...layout.cells.flat(2),
-    ...layout.holding.rows.flat(),
-    ...layout.holding.columns.flat(),
-    ...layout.holding.corner,
-  ];
+  const refs: CardRef[] = allCopies(layout).filter((ref) => !ref.open);
   return [...new Set(refs.flatMap((ref) => [ref.itemId, ...(ref.inner ?? []).map((r) => r.itemId)]))];
 }
 

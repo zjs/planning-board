@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { card, cell, dragTo, expandGroup, foldAll, openApp, pickAxes, reveal } from './app.ts';
+import { card, cell, dragTo, expandGroup, foldAll, frameName, openApp, pickAxes, reveal } from './app.ts';
 
 // Sprint 4's exit criteria (docs/sprint-4.md) 1–10, end to end, on the sample plan. An import replaces the
 // board, so criterion 4 runs last. Zoom is gone since sprint 5 (ADR 0013): zooming into a band is
@@ -89,8 +89,8 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await pickAxes(page, 'sequence', 'system');
   await select(page, 'eu-data-residency', 'usage-based-pricing');
   await page.keyboard.press('e');
-  await expect(card(page, 'eu-invoice-storage').locator('.parent-chip')).toHaveText('EU data residency');
-  await expect(card(page, 'usage-dashboard').locator('.parent-chip')).toHaveText('Usage-based pricing');
+  await expect(frameName(card(page, 'eu-invoice-storage'))).toHaveText('EU data residency');
+  await expect(frameName(card(page, 'usage-dashboard'))).toHaveText('Usage-based pricing');
   await select(page, 'usage-dashboard');
   await page.keyboard.press('Shift+E');
   await expect(card(page, 'usage-based-pricing').first()).toBeVisible();
@@ -98,8 +98,8 @@ test('sprint 4 exit criteria', async ({ page }) => {
   // 8. See two groups' children at once: expand both, each child marked with its parent.
   await select(page, 'usage-based-pricing', 'public-api-v2');
   await page.keyboard.press('e');
-  await expect(card(page, 'usage-dashboard').locator('.parent-chip')).toHaveText('Usage-based pricing');
-  await expect(card(page, 'rate-limiting-v2').locator('.parent-chip')).toHaveText('Public API v2');
+  await expect(frameName(card(page, 'usage-dashboard'))).toHaveText('Usage-based pricing');
+  await expect(frameName(card(page, 'rate-limiting-v2'))).toHaveText('Public API v2');
   await select(page, 'usage-dashboard', 'rate-limiting-v2');
   await page.keyboard.press('Shift+E');
   // Fold EU back, so its frames show.
@@ -109,15 +109,15 @@ test('sprint 4 exit criteria', async ({ page }) => {
   // 9. A faded copy is a frame around the cards that put it there; dragging one changes that card.
   await pickAxes(page, 'time', 'system');
   await page.getByRole('button', { name: 'Fold Q3 2027' }).click();
-  const child = cell(page, 'identity', 'q3').locator('.frame[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]');
+  const child = cell(page, 'identity', 'q3').locator('.frame-via[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]');
   await expect(child).toBeVisible();
   await dragTo(page, child, cell(page, 'billing', 'q3'));
-  await expect(cell(page, 'billing', 'q3').locator('.frame[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]')).toBeVisible();
+  await expect(cell(page, 'billing', 'q3').locator('.frame-via[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]')).toBeVisible();
 
   // 10. Reload without losing anything: the plan, folded bands, and expanded groups.
   await page.reload();
   await page.getByTestId('board').waitFor();
-  await expect(cell(page, 'billing', 'q3').locator('.frame[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]')).toBeVisible();
+  await expect(cell(page, 'billing', 'q3').locator('.frame-via[data-frame="eu-data-residency"] .card[data-item="region-pinned-directory-sync"]')).toBeVisible();
   await expect(page.locator('.column-header.lane-collapsed[data-column="q1"]')).toHaveText('2 releases ▸');
   await select(page, 'credit-notes');
   await page.keyboard.press('i');
@@ -128,11 +128,11 @@ test('sprint 4 exit criteria', async ({ page }) => {
   const dialog = page.getByTestId('import-dialog');
   await dialog.getByRole('button', { name: 'Next: values →' }).click();
   await dialog.getByRole('button', { name: 'Import 53 cards' }).click();
-  const epic = page.locator('.card:not(.via-children):not(.frame .card)', { hasText: 'Enterprise SSO self-service' }).first();
+  const epic = page.locator('.card:not(.via-children):not(.frame-via .card)', { hasText: 'Enterprise SSO self-service' }).first();
   await expect(epic.locator('.attr[data-property="level"]')).toHaveText('Epic');
   await reveal(epic);
   await epic.locator('.card-title').click();
   await expect(inspector(page).locator('.inspector-meta .attr.key')).toHaveText('IDN-1');
-  const story = page.locator('.card:not(.via-children):not(.frame .card)', { hasText: 'Zero-downtime index rebuild' }).first();
+  const story = page.locator('.card:not(.via-children):not(.frame-via .card)', { hasText: 'Zero-downtime index rebuild' }).first();
   await expect(story.locator('.attr[data-property="level"]')).toHaveText('Story');
 });

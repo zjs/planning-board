@@ -45,10 +45,28 @@ export function holding(page: Page, lane: { row?: string; column?: string } = {}
 
 /**
  * A card's own copies. A group's faded "via children" copies, and copies
- * shown inside another group's frame (Q33), are left out; ask for those explicitly.
+ * framed by a collapsed group (Q33), are left out; ask for those explicitly.
+ * Cards in an expanded group's frame (Q57) are on the board, so they count.
  */
 export function card(scope: Page | Locator, itemId: string) {
-  return scope.locator(`.card[data-item="${itemId}"]:not(.via-children):not(.frame .card)`);
+  return scope.locator(`.card[data-item="${itemId}"]:not(.via-children):not(.frame-via .card)`);
+}
+
+/**
+ * The name on the expanded group's frame a card sits in (Q57), which is
+ * what its group chip used to say; nothing if it isn't in one. Pass the
+ * card's id when it may itself head a frame, so its own frame is skipped.
+ */
+export function frameName(cardLocator: Locator, id?: string) {
+  const notOwn = id === undefined ? '' : `[not(div[contains(@class, "frame-head")]/*[@data-item="${id}"])]`;
+  return cardLocator
+    .locator(`xpath=ancestor::div[contains(concat(" ", @class, " "), " frame-open ")]${notOwn}[1]/div[contains(@class, "frame-head")]`)
+    .locator('.frame-title, .card-title');
+}
+
+/** A card shown in an expanded group's frame (Q57), directly rather than in a frame inside it. */
+export function inFrame(scope: Page | Locator, group: string, itemId: string) {
+  return scope.locator(`.frame-open[data-frame="${group}"] > .card[data-item="${itemId}"]`);
 }
 
 /**
