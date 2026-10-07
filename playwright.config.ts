@@ -12,6 +12,8 @@ export default defineConfig({
   retries: 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
+    // Pivots animate (ADR 0015); tests measure cards where they settle. motion.spec.ts turns it back on.
+    reducedMotion: 'reduce',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

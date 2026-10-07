@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   addDependency,
   createChild,
@@ -44,7 +44,6 @@ import { newItemSpot } from '../domain/items.ts';
 import { ancestry, canNest, childCounts, childrenOf } from '../domain/tree.ts';
 import { layoutView, shownInside, type AxisSpec, type CardRef } from '../domain/view.ts';
 import sample from '../seed/sample-plan.json';
-import { AxisPicker } from './AxisPicker.tsx';
 import {
   axisNames,
   chooseAxis,
@@ -64,6 +63,7 @@ import {
   toViewSpec,
   validChoice,
   withFolding,
+  type ViewChoice,
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
 import type { CommitHow } from './Card.tsx';
@@ -76,7 +76,9 @@ import { datedFileName, downloadText } from './files.ts';
 import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
 import { Menu } from './Menu.tsx';
 import { Inspector } from './Inspector.tsx';
+import { ViewBar } from './ViewBar.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
+import { capturePositions, playFrom, type Positions } from './motion.ts';
 import { keyNames } from './platform.ts';
 import { isCellTarget, isIntoTarget, isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
 
@@ -302,6 +304,32 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setSelectedLinks(new Set());
   }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Pivots move (Q52, ADR 0015): where the cards were, measured just before a new choice renders.
+  const pivotFrom = useRef<Positions | null>(null);
+  const [pivoting, setPivoting] = useState(false);
+  const pivot = useCallback(
+    (next: ViewChoice) => {
+      if (next.x === shown.x && next.y === shown.y) return;
+      if (scrollRef.current) pivotFrom.current = capturePositions(scrollRef.current);
+      setChoice(next);
+    },
+    [shown],
+  );
+  useLayoutEffect(() => {
+    const before = pivotFrom.current;
+    pivotFrom.current = null;
+    if (!before || !scrollRef.current) return;
+    const ms = playFrom(scrollRef.current, before);
+    // A pivot that moves nothing still ends one that was moving, whose timer this effect's cleanup cleared.
+    if (ms === 0) {
+      setPivoting(false);
+      return;
+    }
+    // Lines are drawn where the cards end up, so they wait until the cards get there.
+    setPivoting(true);
+    const timer = setTimeout(() => setPivoting(false), ms);
+    return () => clearTimeout(timer);
+  }, [shown]);
   /** Every copy on the board, for finding which group a selected card is shown for. */
   const shownCopies = useMemo(
     () => layout.cells.flat(2).concat(layout.holding.rows.flat(), layout.holding.columns.flat(), layout.holding.corner),
@@ -764,7 +792,10 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   ]);
 
   const loadSample = () => {
-    if (empty || window.confirm('Replace the board with the sample plan? You can undo this.')) loadPlan(store, samplePlan());
+    if (!empty && !window.confirm('Replace the board with the sample plan? You can undo this.')) return;
+    loadPlan(store, samplePlan());
+    // The sample opens on Roadmap, which reads as a grid of two properties straight away (Q52).
+    setChoice({ x: TIME, y: SYSTEM });
   };
   // Starting from scratch (Q51): the built-in properties, no cards, and the first card's title ready to type.
   const startBlank = () => {
@@ -852,7 +883,6 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     <div className="app">
       <header className="toolbar">
         <h1>Planning Board</h1>
-        <AxisPicker plan={plan} choice={shown} onChange={setChoice} foldAll={{ x: foldAll('x'), y: foldAll('y') }} />
         <div className="actions">
           <button
             type="button"
@@ -950,6 +980,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           </button>
         </div>
       </header>
+      {!empty && <ViewBar plan={plan} choice={shown} onChange={pivot} foldAll={{ x: foldAll('x'), y: foldAll('y') }} />}
       {persistence === 'unavailable' && (
         <div className="banner" role="status">
           This browser isn't letting the board save, so changes will be lost when you reload. Chrome and Edge are
@@ -1047,6 +1078,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onSelectMatching={onSelectMatching}
           levelNames={levelNames}
           found={found}
+          pivoting={pivoting}
         />
         {panel === 'inspector' && (
           <Inspector
@@ -1066,7 +1098,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             store={store}
             plan={plan}
             onClose={() => setPanel(null)}
-            onShowAsRows={(property) => setChoice(chooseAxis(shown, 'y', property))}
+            onShowAsRows={(property) => pivot(chooseAxis(shown, 'y', property))}
             onNotice={noticeLatest}
           />
         )}

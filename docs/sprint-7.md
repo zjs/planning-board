@@ -18,14 +18,14 @@ Scope: single user, browser only, no server.
 
 ### 1. Views and visible pivots (Q52)
 
-- [ ] A view bar above the board, with one-click views:
+- [x] A view bar above the board, with one-click views:
   - **Sequence** (Sequence × System);
   - **Roadmap** (Time × System);
   - **Sizing** (Size × Level);
   - **Structure** (Level × System).
-- [ ] Rows, Columns, ⇄ and Fold all / Unfold all move into the view bar, so the toolbar fits on one row at 1280px.
-- [ ] When the view changes, cards glide to their new places, unless the browser asks for reduced motion.
-- [ ] The sample plan opens on Roadmap.
+- [x] Rows, Columns, ⇄ and Fold all / Unfold all move into the view bar, so the toolbar fits on one row at 1280px.
+- [x] When the view changes, cards glide to their new places, unless the browser asks for reduced motion.
+- [x] The sample plan opens on Roadmap.
 
 ### 2. Edit values from the headers (Q55)
 

@@ -18,3 +18,4 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0012](0012-nested-axes.md) | Nested axes: parent bands, a lane per parent keyed by its value, collapse as viewer state | Accepted; lane zoom superseded by 0013 |
 | [0013](0013-expand-and-fold-replace-zoom.md) | Expand and fold replace zoom: one axis choice per property, folded by default; order judged by the lanes shown | Accepted |
 | [0014](0014-find-dims-not-filters.md) | Find dims, it doesn't filter: matching on word starts, an overlay on the finished layout, a bar opened with / | Accepted |
+| [0015](0015-views-and-motion.md) | Built-in views as viewer state, in a view bar; pivots animate with FLIP, respecting reduced motion | Accepted |
