@@ -76,18 +76,6 @@ Entry format:
 - Recommendation: (a), because each kind of rot is cheapest to fix when it's caused. Also (c): it catches security fixes between sprints, and its PRs go through the same CI and merge-on-green as engineering's. Skip (d) while sprints follow each other closely.
 - Status: open. The 2026-10-02 pass followed (a)'s checklists, and `CLAUDE.md` points to them as a proposal.
 
-### Q52: Showing the pivot
-- Context: Requirements 1, 2 and 8, the "pivoting erases spatial memory" risk, and the backlog's theme K. Pivoting is the core bet, but it's two dropdowns, and the board redraws instantly. The sample opens in Sequence × System, which has unlabeled columns, so it doesn't read as a grid of two properties. Time × System does.
-- Options: (a) a row of built-in perspectives above the board (Sequence, Roadmap = time × area, Sizing = size × level, Structure = level × area), one click each, with Rows and Columns kept for anything else; (b) keep the pickers and only animate; (c) both, and the sample opens on Roadmap.
-- Recommendation: (c). The cards glide to their new places in about 300 ms, with reduced motion respected. The presets aren't saved views, so requirement 8 stays deferred. Opening on Roadmap shows the grid first; Sequence is one click away, and the guided start (Q53) can make that click the first step.
-- Status: open.
-
-### Q53: Teaching a first-time visitor
-- Context: Requirement 10, Q7, and the backlog's theme K. First-visit help is a reference of about 30 entries that opens over the board as the sample loads. Nothing teaches once it's closed. The tester session demos first, so it can't see first-visit problems.
-- Options: (a) keep the reference panel; (b) a guided start on the sample: three steps (switch perspective, drag a card, point at a card to see its links), each done by doing it, skippable; then the help becomes a cheat sheet grouped by goal; (c) (b), plus one-time hints when a feature first applies, such as "Hold Alt to add instead" on the first drag on a multi-value axis.
-- Recommendation: (c), and a five-minute cold start before the demo in the next tester session, so its effect can be measured.
-- Status: open.
-
 ### Q54: Making actions findable
 - Context: The backlog's theme K. These are reachable only by a key or an invisible gesture:
   - E, ⇧E, L, I and /;
@@ -98,13 +86,8 @@ Entry format:
 - The toolbar's selection buttons wrap the toolbar at 1280 wide. Groups use Expand and Fold, and bands use Fold and Unfold.
 - Options: (a) a card menu, on right-click and on a "⋯" that shows on hover, listing actions with their keys; (b) a command palette on ⌘K; (c) both, with the selection buttons moving out of the toolbar. Separately: (d) the drag ghost names what a drop will write ("→ Q2 2027 · Billing"); (e) one word pair for showing the level below, such as Expand and Collapse for both groups and bands.
 - Recommendation: (c), (d) and (e). Menus that show keys are how people learn shortcuts _(recalled)_. The ghost puts "drag writes values" into words at the moment it happens. (e) renames what Q42 and Q43 settled, so it's the PM's call.
-- Status: open.
-
-### Q55: Structure for a blank plan
-- Context: Requirements 10, 21 and 27, Q51, and the backlog's theme K. After a brain dump into a blank plan, the next step is sorting ideas into areas, but there are none. Areas are made only in the Properties panel. Typed cards also come out sorted by title, not in the order they were typed.
-- Options: (a) "+ Add area" after the last row header and "+ Add quarter" after the last column, named inline, on every board; (b) only on a blank plan; (c) leave it to Properties, with a pointer in the empty message.
-- Recommendation: (a). Keeping typed order needs an order within a cell, which is Q46: with its option (c), a plan-wide rank, a brain dump would fill the rank in typing order. Sequence keys can't do it, because each distinct key is its own column (Q8).
-- Status: open.
+- Status: partly answered 2026-10-07: not (e). Changing how the board is laid out (showing an area's components) and changing how much of the cards you see (showing a group's children) are different operations, and keep different words, but they must not share any. (a)–(d) are open.
+  - Engineering's default, since the PM isn't attached to particular terms: bands keep **Fold** and **Unfold**, and groups use **Expand** and **Collapse**. Only ⇧E's label changes, from Fold to Collapse, along with the help and notices.
 
 ## Answered
 
@@ -409,3 +392,24 @@ Entry format:
   - Engineering's defaults:
     - First-visit help stays closed on a blank start, because it would cover the card being named. It isn't remembered as closed, so it still opens on the next visit.
     - With no rows (no areas yet), the bottom holding lane grows with its cards and scrolls with the board, rather than staying a short strip pinned to the edge. The right lane does the same with no columns.
+
+### Q52: Showing the pivot
+- Context: Requirements 1, 2 and 8, the "pivoting erases spatial memory" risk, and the backlog's theme K. Pivoting is the core bet, but it's two dropdowns, and the board redraws instantly. The sample opens in Sequence × System, which has unlabeled columns, so it doesn't read as a grid of two properties. Time × System does.
+- Options: (a) a row of built-in perspectives above the board (Sequence, Roadmap = time × area, Sizing = size × level, Structure = level × area), one click each, with Rows and Columns kept for anything else; (b) keep the pickers and only animate; (c) both, and the sample opens on Roadmap.
+- Recommendation: (c). The cards glide to their new places in about 300 ms, with reduced motion respected. The presets aren't saved views, so requirement 8 stays deferred. Opening on Roadmap shows the grid first; Sequence is one click away, and the guided start (Q53) can make that click the first step.
+- Status: answered 2026-10-07: preset views, and pivots that are clearer. The audience to optimize for is a new user who finds the board from a public link or word of mouth.
+  - Engineering's defaults, each reversible: the presets sit above the board, with Rows and Columns kept beside them for any other pair; a pivot animates, so cards visibly move; and the sample opens on Roadmap. Which presets ship is settled in sprint 7 planning.
+
+### Q53: Teaching a first-time visitor
+- Context: Requirement 10, Q7, and the backlog's theme K. First-visit help is a reference of about 30 entries that opens over the board as the sample loads. Nothing teaches once it's closed. The tester session demos first, so it can't see first-visit problems.
+- Options: (a) keep the reference panel; (b) a guided start on the sample: three steps (switch perspective, drag a card, point at a card to see its links), each done by doing it, skippable; then the help becomes a cheat sheet grouped by goal; (c) (b), plus one-time hints when a feature first applies, such as "Hold Alt to add instead" on the first drag on a multi-value axis.
+- Recommendation: (c), and a five-minute cold start before the demo in the next tester session, so its effect can be measured.
+- Status: answered 2026-10-07: a guided start, but for someone starting from a blank plan rather than on the sample. It walks through the journey: dump ideas, start organizing them, start grouping them. The audience is a new user from a public link or word of mouth.
+  - Engineering's defaults: each step finishes when it's done, not when it's read, and the tutorial can be skipped. The reference help becomes a cheat sheet grouped by goal, and stops opening by itself. One-time hints, as in (c), cover what the tutorial doesn't, such as Alt-drop. A cold start goes before the demo in the next tester session.
+
+### Q55: Structure for a blank plan
+- Context: Requirements 10, 21 and 27, Q51, and the backlog's theme K. After a brain dump into a blank plan, the next step is sorting ideas into areas, but there are none. Areas are made only in the Properties panel. Typed cards also come out sorted by title, not in the order they were typed.
+- Options: (a) "+ Add area" after the last row header and "+ Add quarter" after the last column, named inline, on every board; (b) only on a blank plan; (c) leave it to Properties, with a pointer in the empty message.
+- Recommendation: (a). Keeping typed order needs an order within a cell, which is Q46: with its option (c), a plan-wide rank, a brain dump would fill the rank in typing order. Sequence keys can't do it, because each distinct key is its own column (Q8).
+- Status: answered 2026-10-07: edit properties right from the headers, broader than (a). It's part of the blank-plan journey (Q53): organizing ideas means making the lanes to put them in.
+  - Engineering's defaults: on every board, a row or column header can be renamed in place, and "+ Add" after the last header adds a value at that level. Moving and deleting values stay in the Properties panel until a session asks for more. Typed order waits for Q46.

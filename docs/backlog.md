@@ -66,7 +66,15 @@ Every tester so far met the board after a demo. A stranger opening the public li
 - **A blank plan grows its structure on the board:** add areas and quarters from the headers, and keep typed order. → [Q55](questions.md#q55-structure-for-a-blank-plan)
 - **Calm:** explain or drop the area color, collapsible holding lanes, and a quieter sample plan. These need no decision beyond Q23, and can ride with the slices above.
 
-**Lands:** sprint 7 candidate, alongside the ones below. A cold-start segment in the tester session would confirm or kill these findings before building.
+**The PM's direction** (2026-10-07):
+
+- Optimize for new users who find the board from a public link or word of mouth.
+- The guided start follows someone starting from a blank plan: dumping ideas, starting to organize them, starting to group them (Q53).
+- Edit properties right from the row and column headers (Q55).
+- Preset views, and pivots that are clearer (Q52).
+- Laying out the board (folding an area's components) and showing more of the cards (expanding a group) keep separate words, with none shared (Q54).
+
+**Lands:** sprint 7 candidate, the PM's priority for new users. A cold-start segment in the tester session would confirm or kill these findings.
 
 ### D. Small fixes
 
