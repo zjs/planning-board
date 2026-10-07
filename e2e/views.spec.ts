@@ -45,12 +45,21 @@ test.describe('with motion', () => {
 
   test('cards glide to a new view, and lines wait until they land', async ({ page }) => {
     await openSample(page);
+    // The pivot lasts about 320 ms, which a slow runner can spend on one round trip, so the page records
+    // what it saw the moment the board started pivoting, rather than the test looking afterwards.
+    await page.evaluate(() => {
+      const seen = { pivoting: false, running: 0 };
+      (window as unknown as { seen: typeof seen }).seen = seen;
+      new MutationObserver(() => {
+        if (seen.pivoting || !document.querySelector('.board-scroll.pivoting')) return;
+        seen.pivoting = true;
+        seen.running = document.getAnimations().filter((a) => (a.effect as KeyframeEffect | null)?.target instanceof Element).length;
+      }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    });
     await page.getByTestId('preset-sequence').click();
-    const running = await page.evaluate(
-      () => document.getAnimations().filter((a) => (a.effect as KeyframeEffect | null)?.target instanceof Element).length,
-    );
-    expect(running).toBeGreaterThan(0);
-    await expect(page.locator('.board-scroll.pivoting')).toHaveCount(1);
+    const seen = await page.evaluate(() => (window as unknown as { seen: { pivoting: boolean; running: number } }).seen);
+    expect(seen.pivoting).toBe(true);
+    expect(seen.running).toBeGreaterThan(0);
     await expect(page.locator('.board-scroll.pivoting')).toHaveCount(0);
   });
 });

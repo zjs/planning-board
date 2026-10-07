@@ -57,7 +57,7 @@ A group's cards show in two ways. A collapsed group frames the cards that put it
 
 **Generalization:** a group on the board is always a frame: its header, and whichever of its cards show in that cell. Expanding and collapsing change which cells show its cards, not how they look. → [Q57](questions.md#q57-one-look-for-a-groups-cards)
 
-**Lands:** sprint 8 candidate.
+**Lands:** sprint 8 candidate. The PM chose frames for both, nesting three deep, on 2026-10-07.
 
 ### D. Small fixes
 
@@ -243,12 +243,14 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 **Open**
 
 - **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
-- **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02).
+- **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02; still blocked on 2026-10-07, typescript-eslint 8.71.1).
+- **`braces` advisory (GHSA-vfj7-8cjw-p6xm).** `npm audit` reports three high-severity findings, all one advisory in `braces`, which reaches the build through `vite-plugin-singlefile` and `micromatch`. No patched `braces` exists yet, and audit's only fix is a downgrade to `vite-plugin-singlefile` 0.9. It runs only at build time, on the project's own globs, so nothing in the app or its users' plans can reach it. Take the fix when a patched release ships (maintenance pass, 2026-10-07).
 - **Node 24 in CI.** CI and the docs use Node 22, which is supported until April 2027 _(recalled)_. Move to Node 24, the current LTS, in a maintenance pass well before then, and check the build and tests on it.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
 
+- **Maintenance pass, 2026-10-07,** before planning sprint 8: patch and minor updates (eslint, typescript-eslint, vite, the React plugin); CI actions are on their current majors, and Node 22 is still supported; no open GitHub issues. The pivot animation's end-to-end test failed on slow runs, because it looked for a 320 ms state one round trip after the click. It now records what the page saw at the moment the pivot started.
 - **Compatibility fixtures for sprint 7** (2026-10-07), the release pass's last step: sprint 7's plan file, imported plan and browser board open in every later build. The imported plan carries ranks, so the new field is covered.
 - **Compatibility fixtures before `rank`** (2026-10-07, sprint 7, slice 5): plan files and boards from the last build before items gained a rank, as ADR 0005's policy asks for a format change.
 - **Compatibility fixtures for sprint 6** (2026-10-03), added with the blank-plan slice: its plan file and browser board open in every later build.
