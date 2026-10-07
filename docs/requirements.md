@@ -19,6 +19,8 @@ This tool is a collaborative planning whiteboard that sits upstream of Jira. Goa
 
 The primary users are product leadership on a product line: product managers, engineering managers, and technical leads. They plan releases that span several components or several products in the same line.
 
+New users usually arrive with no guide: from a public link or by word of mouth, and often with no data to import. The board has to explain itself to them, starting from a blank plan (Q53).
+
 The tool serves two modes of work. In a live session, several people rearrange one plan together, like sticky notes on a whiteboard. In asynchronous back-and-forth, a PM proposes a scenario and an EM counters it days later. A plan moves through phases: brainstorming ideas and how they build on each other, then rough sizing, then placing work in time.
 
 The project is open source. Users are likely to self-host inside their company network, because roadmaps are confidential.

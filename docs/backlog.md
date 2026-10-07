@@ -25,7 +25,7 @@ Dependencies have one type: A comes before B (requirement 15). Plans also have l
 
 **Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
 
-**Lands:** sprint 7 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), and again when find took sprint 6 (PM, 2026-10-03).
+**Lands:** sprint 8 candidate. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), again when find took sprint 6 (PM, 2026-10-03), and again when first-visit work took sprint 7 (PM, 2026-10-07).
 
 ### H. Arranging and moving cards
 
@@ -43,7 +43,40 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 - **Dragging a selection** moves every selected card, with the same drop rules as one card. → [Q48](questions.md#q48-dragging-several-cards)
 - **Moving a card into a group is a drag:** hold it over the group to put it inside, or drop it on a "Move out" strip. A Group field in the inspector is the fallback for targets that aren't on screen. → [Q42](questions.md#q42-replace-zooming-with-expand-and-fold)
 
-**Lands:** moving between groups shipped in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are open, and sprint 7 candidates.
+**More feedback** (the PM, 2026-10-07): "It seems like a natural flow is to brainstorm cards, sort them into a rough sequence, and then try to bucket them into a timeline … when you get to the step where you want to slot work into a timeline, it seems like you have to start over and re-do the sequencing work. Alternatively, maybe sequence is a third level of the time hierarchy?" → [Q56](questions.md#q56-sequence-nested-under-time)
+
+**Lands:** moving between groups shipped in sprint 5 (slice 2). In sprint 7 ([`docs/sprint-7.md`](sprint-7.md)): cells keep the order cards were made in (Q46's MVP), box select, and dragging several cards (Q48). Reordering by hand (Q46 c) and sequence under time (Q56) are sprint 8 candidates.
+
+### K. First visit and discoverability
+
+Every tester so far met the board after a demo. A stranger opening the public link meets a reference manual over the board, a first view where pivoting isn't visible or animated, and a dozen gestures and keys that nothing on screen shows.
+
+**Feedback** (engineering's expert review for the PM, 2026-10-07, [`reviews/2026-10-07-ux-assessment.md`](reviews/2026-10-07-ux-assessment.md)):
+
+- *The core idea isn't visible on arrival.* The sample opens on unlabeled sequence columns with one area filling the screen. Pivoting is two dropdowns, and it redraws instantly, so nothing shows the cards are the same cards.
+- *Help is a manual.* About 30 entries open over the board on first load. At 1280×720 they cover all of it.
+- *Hidden power.* E, L, I, /, Alt-drop, hold to nest, ⇧-click a badge or header, and double-click empty space have no visible affordance. There's no card menu or command palette, and the drag ghost doesn't say what a drop will write.
+- *A blank plan stalls.* After a brain dump there are no areas to sort into, and areas can only be made in Properties. Typed cards come out sorted by title.
+- *Visual load.* An unexplained area color on every card, 45 ⚠ markers in the sample's first view, holding lanes taking about 40% of the screen, and a toolbar that wraps at 1280 wide.
+- *Vocabulary and keyboard.* "Fold" pairs with both "Expand" (groups) and "Unfold" (bands). Cards can't take keyboard focus.
+
+**Generalization:**
+
+- **Show the idea:** perspectives as one-click presets, and pivots that animate. → [Q52](questions.md#q52-showing-the-pivot)
+- **Teach by doing:** a short guided start on the sample, hints the first time they apply, and help as a cheat sheet. → [Q53](questions.md#q53-teaching-a-first-time-visitor)
+- **Every action findable:** a card menu and a command palette, each showing keys; a drag ghost that names the values it will write; one word pair for showing the level below. → [Q54](questions.md#q54-making-actions-findable)
+- **A blank plan grows its structure on the board:** add areas and quarters from the headers, and keep typed order. → [Q55](questions.md#q55-structure-for-a-blank-plan)
+- **Calm:** explain or drop the area color, collapsible holding lanes, and a quieter sample plan. These need no decision beyond Q23, and can ride with the slices above.
+
+**The PM's direction** (2026-10-07):
+
+- Optimize for new users who find the board from a public link or word of mouth.
+- The guided start follows someone starting from a blank plan: dumping ideas, starting to organize them, starting to group them (Q53).
+- Edit properties right from the row and column headers (Q55).
+- Preset views, and pivots that are clearer (Q52).
+- Laying out the board (folding an area's components) and showing more of the cards (expanding a group) keep separate words, with none shared (Q54).
+
+**Lands:** sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), with a cold-start segment in the tester session. The calm items wait for the conflicts panel.
 
 ### D. Small fixes
 
@@ -177,9 +210,12 @@ Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
 - **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–6 (`docs/demos/sprint-5-session.md`).
 - **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)) shipped on 2026-10-03: / to find cards, dimming the rest (theme I, Q50). It ships before the combined session, which now covers sprints 3–6.
 - **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
-- **Sprint 7 candidates:**
+- **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)), planned 2026-10-07: views and visible pivots, editing values from the headers, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
+- **Sprint 8 candidates:**
+  - sequence nested under time, as a Timeline view (Q56), after the cold-start session;
   - "related to" links (theme F, Q44);
-  - order within a cell (Q46), and dragging several cards (Q48);
+  - reordering cards by hand within a cell (Q46 c);
+  - the calm items from theme K: the area color, quieter markers (Q23), and collapsible holding lanes;
   - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).
 
 ## Deferred, from earlier sprints
