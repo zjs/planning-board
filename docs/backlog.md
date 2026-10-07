@@ -246,6 +246,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 8** (2026-10-07), the release pass's last step: sprint 8's plan file, imported plan and browser board open in every later build. The plan file carries the sample's related links, so the new field is covered.
+- **CI's browser install** (2026-10-07): a stalled Ubuntu mirror hung `playwright install --with-deps` until the job timed out. apt now gives up on a mirror after 20 seconds and moves on, and a stalled attempt is retried after its leftover apt-get is stopped.
 - **Maintenance pass, 2026-10-07,** before planning sprint 8: patch and minor updates (eslint, typescript-eslint, vite, the React plugin); CI actions are on their current majors, and Node 22 is still supported; no open GitHub issues. The pivot animation's end-to-end test failed on slow runs, because it looked for a 320 ms state one round trip after the click. It now records what the page saw at the moment the pivot started.
 - **Compatibility fixtures for sprint 7** (2026-10-07), the release pass's last step: sprint 7's plan file, imported plan and browser board open in every later build. The imported plan carries ranks, so the new field is covered.
 - **Compatibility fixtures before `rank`** (2026-10-07, sprint 7, slice 5): plan files and boards from the last build before items gained a rank, as ADR 0005's policy asks for a format change.

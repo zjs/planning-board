@@ -29,6 +29,7 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-7', commit: '3d11656' },
   // The last build before related links (sprint 8, slice 2; ADR 0005's amendment).
   { name: 'sprint-8-before-related', commit: '641dadc' },
+  { name: 'sprint-8', commit: '6b97747' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;
