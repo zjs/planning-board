@@ -45,6 +45,29 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 
 **Lands:** moving between groups shipped in sprint 5 (slice 2). Order within a cell (Q46) and dragging several cards (Q48) are open, and sprint 7 candidates.
 
+### K. First visit and discoverability
+
+Every tester so far met the board after a demo. A stranger opening the public link meets a reference manual over the board, a first view where pivoting isn't visible or animated, and a dozen gestures and keys that nothing on screen shows.
+
+**Feedback** (engineering's expert review for the PM, 2026-10-07, [`reviews/2026-10-07-ux-assessment.md`](reviews/2026-10-07-ux-assessment.md)):
+
+- *The core idea isn't visible on arrival.* The sample opens on unlabeled sequence columns with one area filling the screen. Pivoting is two dropdowns, and it redraws instantly, so nothing shows the cards are the same cards.
+- *Help is a manual.* About 30 entries open over the board on first load. At 1280×720 they cover all of it.
+- *Hidden power.* E, L, I, /, Alt-drop, hold to nest, ⇧-click a badge or header, and double-click empty space have no visible affordance. There's no card menu or command palette, and the drag ghost doesn't say what a drop will write.
+- *A blank plan stalls.* After a brain dump there are no areas to sort into, and areas can only be made in Properties. Typed cards come out sorted by title.
+- *Visual load.* An unexplained area color on every card, 45 ⚠ markers in the sample's first view, holding lanes taking about 40% of the screen, and a toolbar that wraps at 1280 wide.
+- *Vocabulary and keyboard.* "Fold" pairs with both "Expand" (groups) and "Unfold" (bands). Cards can't take keyboard focus.
+
+**Generalization:**
+
+- **Show the idea:** perspectives as one-click presets, and pivots that animate. → [Q52](questions.md#q52-showing-the-pivot)
+- **Teach by doing:** a short guided start on the sample, hints the first time they apply, and help as a cheat sheet. → [Q53](questions.md#q53-teaching-a-first-time-visitor)
+- **Every action findable:** a card menu and a command palette, each showing keys; a drag ghost that names the values it will write; one word pair for showing the level below. → [Q54](questions.md#q54-making-actions-findable)
+- **A blank plan grows its structure on the board:** add areas and quarters from the headers, and keep typed order. → [Q55](questions.md#q55-structure-for-a-blank-plan)
+- **Calm:** explain or drop the area color, collapsible holding lanes, and a quieter sample plan. These need no decision beyond Q23, and can ride with the slices above.
+
+**Lands:** sprint 7 candidate, alongside the ones below. A cold-start segment in the tester session would confirm or kill these findings before building.
+
 ### D. Small fixes
 
 No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
@@ -178,6 +201,7 @@ Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
 - **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)) shipped on 2026-10-03: / to find cards, dimming the rest (theme I, Q50). It ships before the combined session, which now covers sprints 3–6.
 - **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
 - **Sprint 7 candidates:**
+  - first visit and discoverability (theme K, Q52–Q55);
   - "related to" links (theme F, Q44);
   - order within a cell (Q46), and dragging several cards (Q48);
   - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).
