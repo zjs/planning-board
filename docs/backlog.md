@@ -47,6 +47,18 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 
 **Lands:** moving between groups shipped in sprint 5 (slice 2). Sprint 7 shipped cells that keep the order cards were made in (Q46's MVP), box select, and dragging several cards (Q48). Reordering by hand (Q46 c) and sequence under time (Q56) are sprint 8 candidates.
 
+### L. One look for a group's cards
+
+A group's cards show in two ways. A collapsed group frames the cards that put it in a lane; an expanded group disappears, and its cards are marked with chips, spread among other cards.
+
+**Feedback** (the PM, 2026-10-07):
+
+- *Two patterns.* "We have two ways to visualize cards inside a group, the shadow card pattern and the label pattern on expanded groups. Should we use the shadow card pattern for both?"
+
+**Generalization:** a group on the board is always a frame: its header, and whichever of its cards show in that cell. Expanding and collapsing change which cells show its cards, not how they look. → [Q57](questions.md#q57-one-look-for-a-groups-cards)
+
+**Lands:** sprint 8 candidate.
+
 ### D. Small fixes
 
 No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
@@ -212,6 +224,7 @@ Sprints 3 to 7 await the PM's acceptance and one combined tester session, which 
 - **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
 - **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)) shipped on 2026-10-07: views and visible pivots, editing values from the headers, drags that say what they do, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
 - **Sprint 8 candidates:**
+  - one look for a group's cards: frames for expanded groups too (theme L, Q57);
   - sequence nested under time, as a Timeline view (Q56), after the cold-start session;
   - "related to" links (theme F, Q44);
   - reordering cards by hand within a cell (Q46 c);
