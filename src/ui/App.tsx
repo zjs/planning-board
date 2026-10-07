@@ -72,6 +72,7 @@ import {
 } from './axes.ts';
 import { Board, type Editing } from './Board.tsx';
 import type { CommitHow } from './Card.tsx';
+import { ContextMenu, type ContextEntry } from './ContextMenu.tsx';
 import { Dialog } from './Dialog.tsx';
 import type { DrawnLine } from './DependencyLines.tsx';
 import { DragGhost } from './DragGhost.tsx';
@@ -831,6 +832,54 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     clearFind,
   ]);
 
+  // A card's actions (Q54): right-click a card, or its "⋯". The menu acts on the selection; a card that isn't in it
+  // becomes the selection first, as a right-click does in file managers.
+  const [cardMenu, setCardMenu] = useState<{ x: number; y: number } | null>(null);
+  const closeCardMenu = useCallback(() => setCardMenu(null), []);
+  const openCardMenu = useCallback((id: ItemId, x: number, y: number) => {
+    setSelection((current) => (current.has(id) ? current : new Set([id])));
+    setSelectedLinks(new Set());
+    setCardMenu({ x, y });
+  }, []);
+  const cardMenuEntries = (): ContextEntry[] => {
+    const ids = [...selected];
+    const one = ids.length === 1 ? ids[0]! : null;
+    const groups = ids.filter((id) => counts.has(id));
+    const collapsible = ids.some((id) =>
+      shownCopies.some((ref) => ref.itemId === id && ref.parent !== undefined && expanded.includes(ref.parent)),
+    );
+    return [
+      {
+        label: 'Rename',
+        shortcut: 'Enter',
+        disabled: one === null || !renamable.has(one),
+        onSelect: () => one !== null && setEditing({ kind: 'rename', card: { itemId: one, x: null, y: null } }),
+      },
+      { label: 'Inspect', shortcut: keys.inspect, onSelect: () => setPanel('inspector') },
+      { label: 'Add a card inside', disabled: one === null, onSelect: () => one !== null && addInside(one) },
+      'divider',
+      {
+        label: 'Expand',
+        shortcut: keys.expand,
+        disabled: !groups.some((id) => !expanded.includes(id)),
+        title: 'Show what’s inside, right here',
+        onSelect: expandSelection,
+      },
+      { label: 'Collapse', shortcut: keys.collapse, disabled: !collapsible, onSelect: collapseSelection },
+      { label: ids.length > 1 ? 'Group these cards' : 'Put in a new group', shortcut: keys.group, onSelect: groupSelection },
+      { label: 'Ungroup', shortcut: keys.ungroup, disabled: groups.length === 0, onSelect: ungroupSelection },
+      'divider',
+      {
+        label: ids.length === 2 ? 'Link: first comes before second' : 'Start a link from here',
+        shortcut: keys.link,
+        disabled: ids.length > 2,
+        onSelect: linkSelection,
+      },
+      'divider',
+      { label: ids.length > 1 ? `Delete ${ids.length} cards` : 'Delete', shortcut: keys.delete, onSelect: deleteSelection },
+    ];
+  };
+
   const loadSample = () => {
     if (!empty && !window.confirm('Replace the board with the sample plan? You can undo this.')) return;
     loadPlan(store, samplePlan());
@@ -1114,6 +1163,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onBackgroundPointerDown={clearSelection}
           mismatches={mismatches}
           onBandToggle={onBandToggle}
+          onCardMenu={openCardMenu}
           onRenameValue={onRenameValue}
           onAddValue={onAddValue}
           onSelectLanes={onSelectLanes}
@@ -1161,6 +1211,15 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
             </button>
           )}
         </div>
+      )}
+      {cardMenu && selected.size > 0 && (
+        <ContextMenu
+          x={cardMenu.x}
+          y={cardMenu.y}
+          label={selected.size === 1 ? 'Card actions' : `Actions for ${selected.size} cards`}
+          entries={cardMenuEntries()}
+          onClose={closeCardMenu}
+        />
       )}
       {legendOpen && <Legend onClose={closeLegend} />}
       <input

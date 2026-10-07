@@ -43,6 +43,7 @@ function render(p: Plan, view: ViewSpec, compact = false, find = ''): string {
       onCancelEdit={() => undefined}
       onBackgroundPointerDown={() => undefined}
       onRenameValue={() => null}
+      onCardMenu={() => undefined}
       onAddValue={() => null}
       onBandToggle={() => undefined}
       levelNames={{ x: 'value', y: 'value' }}

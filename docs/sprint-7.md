@@ -41,7 +41,7 @@ Scope: single user, browser only, no server.
 
 ### 4. Card menu (Q54)
 
-- [ ] Right-click a card, or click its "⋯", for every action on it, each with its key.
+- [x] Right-click a card, or click its "⋯", for every action on it, each with its key.
 
 ### 5. From a sequence to a timeline (Q46, Q48)
 

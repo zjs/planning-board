@@ -1210,6 +1210,75 @@ kbd {
   outline: none;
 }
 
+/* A card's actions at the pointer (Q54), each with its key. */
+.context-menu {
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.context-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  color: var(--text);
+}
+
+.context-menu button:disabled {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.context-menu button:not(:disabled):hover,
+.context-menu button:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+
+.menu-key {
+  font: inherit;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* A card's "⋯": there on hover and selection, out of the way otherwise. */
+.card-menu {
+  flex: none;
+  margin-left: auto;
+  padding: 0 4px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.card:hover > .card-main > .card-menu,
+.card.selected > .card-main > .card-menu,
+.card-menu:focus-visible {
+  opacity: 1;
+}
+
+.card-menu:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
 .menu-divider {
   height: 1px;
   margin: 4px 6px;
