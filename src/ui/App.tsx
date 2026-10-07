@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   addDependency,
+  addValue,
   createChild,
   createItem,
   deleteItems,
@@ -14,6 +15,7 @@ import {
   removeDependencies,
   removeDependency,
   renameItem,
+  renameValue,
   resetPlan,
   snapshotSource,
   undo,
@@ -38,6 +40,7 @@ import type { DropMode, DropTarget } from '../domain/move.ts';
 import { findOnBoard, queryWords, stepMatch } from '../domain/finding.ts';
 import { mismatches as findMismatches } from '../domain/mismatches.ts';
 import { parsePlanJson, planFileText, readPlanFile } from '../domain/planJson.ts';
+import { valueLabelProblem } from '../domain/properties.ts';
 import { cardsOnBoard, laneCards, matchingCards } from '../domain/selecting.ts';
 import { blankPlan } from '../domain/builtins.ts';
 import { newItemSpot } from '../domain/items.ts';
@@ -61,6 +64,7 @@ import {
   setAllFolded,
   toggleFold,
   toViewSpec,
+  unfoldBand,
   validChoice,
   withFolding,
   type ViewChoice,
@@ -153,6 +157,32 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   );
   const names = { x: axisNames(plan, shown, 'x'), y: axisNames(plan, shown, 'y') };
   const layout = useMemo(() => layoutView(plan, view), [plan, view]);
+  // Values named from the headers (Q55): rename one, or add one at the top level or under a parent.
+  const onRenameValue = useCallback(
+    (which: 'x' | 'y', value: string, name: string): string | null => {
+      const property = plan.properties[view[which].property];
+      const node = property?.kind === 'select' ? property.values[value] : undefined;
+      if (property?.kind !== 'select' || !node) return 'This value no longer exists.';
+      const problem = valueLabelProblem(property, name, node.parent, value);
+      if (problem !== null) return problem;
+      renameValue(store, property.id, value, name);
+      return null;
+    },
+    [plan, view, store],
+  );
+  const onAddValue = useCallback(
+    (which: 'x' | 'y', parent: string | null, name: string): string | null => {
+      const property = plan.properties[view[which].property];
+      if (property?.kind !== 'select') return 'Values can only be added to a property with a list of values.';
+      const problem = valueLabelProblem(property, name, parent);
+      if (problem !== null) return problem;
+      if (addValue(store, property.id, name, parent) === null) return 'This value couldn’t be added.';
+      // A band with something new inside it opens, so the new value is on the board.
+      if (parent !== null) setFoldings((f) => unfoldBand(f, property.id, parent));
+      return null;
+    },
+    [plan, view, store],
+  );
   const onBandToggle = useCallback(
     (which: 'x' | 'y', key: string) => setFoldings((f) => toggleFold(f, view[which].property, key)),
     [view],
@@ -1074,6 +1104,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           onBackgroundPointerDown={clearSelection}
           mismatches={mismatches}
           onBandToggle={onBandToggle}
+          onRenameValue={onRenameValue}
+          onAddValue={onAddValue}
           onSelectLanes={onSelectLanes}
           onSelectMatching={onSelectMatching}
           levelNames={levelNames}

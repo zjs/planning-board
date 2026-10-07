@@ -844,6 +844,76 @@ body.dragging * {
   box-shadow: var(--holding-edge-left);
 }
 
+/* Values named from the headers (Q55): "+ Add area" under a holding lane's name, and the field that replaces it. */
+.holding-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.holding-row-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.header-add {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  font-style: normal;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.header-add:hover {
+  text-decoration: underline;
+}
+
+.lane-note + .header-add {
+  display: block;
+  margin-top: 4px;
+}
+
+.header-field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+}
+
+.header-field input {
+  width: 100%;
+  min-width: 0;
+  max-width: 200px;
+  font: inherit;
+  font-style: normal;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.header-field input[aria-invalid='true'] {
+  border-color: #e03131;
+}
+
+.header-problem {
+  font-size: 11px;
+  font-weight: normal;
+  font-style: normal;
+  color: #e03131;
+  white-space: normal;
+}
+
 .holding-right {
   right: 0;
   z-index: 2;

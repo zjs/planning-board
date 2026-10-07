@@ -20,7 +20,7 @@ test('shows the sample plan as sequence × system with unlabeled sequence column
   for (const text of await headers.allTextContents()) expect(text).toBe('');
   // Holding lanes along the right and bottom edges, and the corner.
   await expect(page.locator('.holding-head')).toContainText('No position');
-  await expect(page.locator('.holding-row-header')).toHaveText('No area');
+  await expect(page.locator('.holding-row-header > span').first()).toHaveText('No area');
   await expect(holding(page, { row: 'identity' }).locator('.card').first()).toBeVisible();
   await expect(page.locator('.holding-bottom[data-column] .card').first()).toBeVisible();
   await expect(holding(page).locator('.card').first()).toBeVisible();

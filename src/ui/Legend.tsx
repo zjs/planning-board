@@ -162,6 +162,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
           Every property of the selected cards, editable without pivoting; select several to change them all at once.
           Also a card's description, its group, and its links, and a way to add a card inside it.
         </dd>
+        <dt>Headers</dt>
+        <dd>
+          Double-click a row or column header to rename it. <b>+ Add area</b> (or quarter, size, team…) under a holding
+          lane's name adds one, and stays open for the next.
+        </dd>
         <dt>Properties</dt>
         <dd>
           Add your own, such as Team; each one is a choice of rows or columns. Click a value to rename it; hover for

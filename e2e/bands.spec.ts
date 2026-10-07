@@ -12,11 +12,11 @@ test('unfolded System: area bands, a "no component" lane per area, and the edge 
   await foldAll(page, 'System', false);
   await expect(page.locator('.band-y .band-head')).toHaveText([/▾\s*Identity & Access/, /▾\s*Billing/, /▾\s*Data Platform/, /▾\s*Customer Experience/]);
   await expect(page.locator('.row-header.lane-parent')).toHaveCount(4);
-  await expect(page.locator('.row-header.lane-parent').first()).toHaveText('No component');
+  await expect(page.locator('.row-header.lane-parent .lane-note').first()).toHaveText('No component');
   // An area-only card sits in its area's own lane, not at the board's edge.
   await expect(rowOf(page, 'contractor-and-guest-identities')).toHaveAttribute('data-row', 'identity');
   await expect(page.locator('.holding-bottom .card[data-item="contractor-and-guest-identities"]')).toHaveCount(0);
-  await expect(page.locator('.holding-row-header')).toHaveText('No area');
+  await expect(page.locator('.holding-row-header > span').first()).toHaveText('No area');
   await expect(page.locator('.holding-bottom .card[data-item="accessibility-audit-fixes"]').first()).toBeAttached();
 
   // Dropping a card on Identity's own lane gives it plain Identity (Q22's rule); undo puts RBAC back.
@@ -73,7 +73,7 @@ test('Time: quarter bands, a "no release" column per quarter, and folding a quar
   await pickAxes(page, 'time', 'system');
   await foldAll(page, 'Time', false);
   await expect(page.locator('.band-x .band-head')).toHaveText([/Q1 2027/, /Q2 2027/, /Q3 2027/, /Q4 2027/]);
-  await expect(page.locator('.column-header.lane-parent')).toHaveText(['No release', 'No release', 'No release', 'No release']);
+  await expect(page.locator('.column-header.lane-parent .lane-note')).toHaveText(['No release', 'No release', 'No release', 'No release']);
   // A quarter-only card is in its quarter's own column.
   const quarterOnly = card(page, 'contractor-and-guest-identities').first();
   await reveal(quarterOnly);

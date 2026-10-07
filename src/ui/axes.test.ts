@@ -14,6 +14,7 @@ import {
   setAllFolded,
   swapAxes,
   toggleFold,
+  unfoldBand,
   toViewSpec,
   validChoice,
   withFolding,
@@ -147,5 +148,18 @@ describe('presets (Q52)', () => {
     expect(activePreset({ x: TIME, y: SYSTEM })?.id).toBe('roadmap');
     expect(activePreset({ x: SYSTEM, y: TIME })).toBeNull();
     expect(activePreset({ x: SEQUENCE, y: SYSTEM })?.id).toBe('sequence');
+  });
+});
+
+describe('unfoldBand (Q55)', () => {
+  it('unfolds a band that is folded by default, and leaves an unfolded one alone', () => {
+    const once = unfoldBand({}, SYSTEM, 'identity');
+    expect(once[SYSTEM]).toEqual({ all: 'folded', except: ['identity'] });
+    expect(unfoldBand(once, SYSTEM, 'identity')).toBe(once);
+  });
+
+  it('unfolds a band folded by hand while the rest are unfolded', () => {
+    const f = { [SYSTEM]: { all: 'unfolded' as const, except: ['identity'] } };
+    expect(unfoldBand(f, SYSTEM, 'identity')[SYSTEM]).toEqual({ all: 'unfolded', except: [] });
   });
 });

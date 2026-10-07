@@ -83,5 +83,5 @@ test('rename a level', async ({ page }) => {
   await system.getByRole('textbox', { name: 'Rename level Component' }).press('Enter');
   // An unfolded area's own lane is named for the level below it.
   await foldAll(page, 'System', false);
-  await expect(page.locator('.row-header.lane-parent').first()).toHaveText('No service');
+  await expect(page.locator('.row-header.lane-parent .lane-note').first()).toHaveText('No service');
 });
