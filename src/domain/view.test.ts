@@ -321,3 +321,20 @@ describe('cellOf', () => {
     expect(cellOf(layout, 'epic')).toEqual({ x: 'a0', y: 'id' });
   });
 });
+
+describe('order within a cell (Q46)', () => {
+  it('follows sequence, then the order cards were made, then title; cards with no rank come first', () => {
+    const p = plan(
+      item('old-b', { title: 'B', sequence: 'a0', values: { [SYSTEM]: ['id'] } }),
+      item('old-a', { title: 'A', sequence: 'a0', values: { [SYSTEM]: ['id'] } }),
+      item('new-z', { title: 'Z', sequence: 'a0', rank: 'a0', values: { [SYSTEM]: ['id'] } }),
+      item('new-y', { title: 'Y', sequence: 'a0', rank: 'a1', values: { [SYSTEM]: ['id'] } }),
+      item('later', { title: 'A later column', sequence: 'a1', rank: 'Zz', values: { [SYSTEM]: ['id'] } }),
+    );
+    expect(cellMap(layoutView(p, seqBySystem))['id / a0']).toEqual(['old-a', 'old-b', 'new-z', 'new-y']);
+    // In a view without sequence, sequence still leads, so a rough order carries into time and size views.
+    const bySize = layoutView(p, { x: { property: SIZE, level: 0 }, y: { property: SYSTEM, level: 0 } });
+    const row = bySize.rows.findIndex((r) => r.key === 'id');
+    expect(bySize.holding.rows[row]!.map((ref) => ref.itemId)).toEqual(['old-a', 'old-b', 'new-z', 'new-y', 'later']);
+  });
+});

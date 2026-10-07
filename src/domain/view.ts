@@ -198,12 +198,21 @@ export function laneOrder(plan: Plan, axis: AxisSpec): string[] {
   return property?.kind === 'select' ? axisLanes(plan, axis, []).lanes.map((lane) => lane.key) : [];
 }
 
-/** Stable order within a cell: sequence, then title, then ID. Unsequenced items go last. */
+/**
+ * Stable order within a cell: sequence, then the order cards were made in
+ * (Q46), then title, then ID. Unsequenced items go last; cards from before
+ * ranks existed go ahead of ranked ones, since they're older.
+ */
 function compareItems(a: Item, b: Item): number {
   if (a.sequence !== b.sequence) {
     if (a.sequence === null) return 1;
     if (b.sequence === null) return -1;
     return compareOrderKeys(a.sequence, b.sequence);
+  }
+  if (a.rank !== b.rank) {
+    if (a.rank === undefined) return -1;
+    if (b.rank === undefined) return 1;
+    return compareOrderKeys(a.rank, b.rank);
   }
   return a.title.localeCompare(b.title) || compareOrderKeys(a.id, b.id);
 }

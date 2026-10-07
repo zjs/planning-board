@@ -82,6 +82,22 @@ describe('parsePlanJson', () => {
     expect(result.ok && result.plan.items['a']!.sequence).toBe('a0V');
   });
 
+  it('reads a rank (Q46), and reports one that is not an order key', () => {
+    const result = parsePlanJson(base({ items: [{ id: 'a', title: 'A', rank: 'a1' }] }));
+    expect(result.ok && result.plan.items['a']!.rank).toBe('a1');
+    expect(errorsOf(base({ items: [{ id: 'a', title: 'A', rank: 'not a key!' }] }))).toEqual(['items[0].rank: must be an order key']);
+  });
+
+  it('writes a rank only when a card has one, and reads it back', () => {
+    const result = parsePlanJson(base({ items: [{ id: 'a', title: 'A', rank: 'a1' }, { id: 'b', title: 'B' }] }));
+    if (!result.ok) throw new Error(result.errors.join('\n'));
+    const text = planFileText(result.plan);
+    expect(text).toContain('"rank": "a1"');
+    const again = parsePlanJson(JSON.parse(text));
+    expect(again.ok && again.plan.items['a']!.rank).toBe('a1');
+    expect(again.ok && again.plan.items['b']!.rank).toBeUndefined();
+  });
+
   it('rejects order keys outside the base-62 digit set', () => {
     for (const key of ['a0 ', 'a0~', 'a0-']) {
       expect(errorsOf(base({ items: [{ id: 'a', title: 'A', sequence: key }] }))).toEqual([

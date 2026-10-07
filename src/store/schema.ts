@@ -58,6 +58,7 @@ export function itemToY(item: Item): Y.Map<unknown> {
   map.set('description', item.description);
   map.set('parent', item.parent);
   map.set('sequence', item.sequence);
+  if (item.rank !== undefined) map.set('rank', item.rank);
   if (item.externalKey !== undefined) map.set('externalKey', item.externalKey);
   const values = new Y.Map<ValueSet>();
   for (const [property, ids] of Object.entries(item.values)) values.set(property, valueSet(ids));
@@ -122,6 +123,8 @@ export function readPlan(doc: Y.Doc): Plan {
     };
     const externalKey = strOrNull(map.get('externalKey'));
     if (externalKey !== null) items[id].externalKey = externalKey;
+    const rank = orderKeyOrNull(map.get('rank'));
+    if (rank !== null) items[id].rank = rank;
   });
 
   const dependencies = [...r.dependencies.values()].filter((d) => items[d.from] && items[d.to]);

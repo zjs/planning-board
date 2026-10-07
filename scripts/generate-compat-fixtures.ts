@@ -24,6 +24,8 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-4', commit: '5827e07' },
   { name: 'sprint-5', commit: 'f330dfe' },
   { name: 'sprint-6', commit: '2895eb5' },
+  // The last build before items gained a rank (sprint 7, slice 5; ADR 0005's amendment).
+  { name: 'sprint-7-before-rank', commit: 'ccf5325' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;

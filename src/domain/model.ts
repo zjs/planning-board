@@ -60,6 +60,14 @@ export interface Item {
   parent: ItemId | null;
   sequence: OrderKey | null;
   /**
+   * The order cards were made in, plan-wide: a fractional key, set after every
+   * other card's when a card is made, and in row order on import. Cells sort
+   * by sequence, then by this (questions.md Q46), so ideas typed one after
+   * another stay in that order. Cards from before sprint 7 have none, and
+   * sort by title among themselves, ahead of cards that have one.
+   */
+  rank?: OrderKey;
+  /**
    * Values per select property. Each value may sit at any level of the
    * property's hierarchy (a quarter, or a release inside it). A missing key
    * and an empty array both mean "no value".

@@ -44,6 +44,7 @@ function render(p: Plan, view: ViewSpec, compact = false, find = ''): string {
       onBackgroundPointerDown={() => undefined}
       onRenameValue={() => null}
       onCardMenu={() => undefined}
+      onBoxSelect={() => undefined}
       onAddValue={() => null}
       onBandToggle={() => undefined}
       levelNames={{ x: 'value', y: 'value' }}

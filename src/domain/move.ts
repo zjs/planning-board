@@ -1,5 +1,5 @@
 import { withoutAncestors } from './hierarchy.ts';
-import type { Item, OrderKey, Plan, PropertyId, ValueId } from './model.ts';
+import type { Item, ItemId, OrderKey, Plan, PropertyId, ValueId } from './model.ts';
 import { itemValues } from './model.ts';
 import { laneKeyOf, type AxisSpec, type CardRef, type ViewSpec } from './view.ts';
 
@@ -67,6 +67,50 @@ export function planDrop(
     else change.values[axis.property] = next.values;
   }
   return changed ? change : null;
+}
+
+/**
+ * Dropping a selection of cards together (questions.md Q48 a): every card
+ * gets the drop's values on both axes, in one change.
+ *
+ * The dragged copy moves as it would alone. Every other card moves as if
+ * its own copy in the dragged copy's lanes had been dragged:
+ * - on an axis that holds several values, its value in the dragged copy's
+ *   lane is replaced, or, with nothing in that lane, the target is added;
+ * - on a single-valued axis or sequence, its value is replaced, and a
+ *   holding lane clears it.
+ * Returns each card that changes, with its change.
+ */
+export function planDrops(
+  plan: Plan,
+  view: ViewSpec,
+  dragged: CardRef,
+  ids: Iterable<ItemId>,
+  target: DropTarget,
+  mode: DropMode = 'replace',
+): [ItemId, ItemChange][] {
+  const out: [ItemId, ItemChange][] = [];
+  for (const id of new Set([dragged.itemId, ...ids])) {
+    const card = id === dragged.itemId ? dragged : copyLike(plan, view, dragged, id);
+    const change = card && planDrop(plan, view, card, target, mode);
+    if (change) out.push([id, change]);
+  }
+  return out;
+}
+
+/** Another card's stand-in for the dragged copy: its own lane on each axis, as the rules above choose. */
+function copyLike(plan: Plan, view: ViewSpec, dragged: CardRef, id: ItemId): CardRef | null {
+  const item = plan.items[id];
+  if (!item) return null;
+  const from = (axis: AxisSpec, lane: string | null): string | null => {
+    const property = plan.properties[axis.property];
+    if (property?.kind === 'sequence') return item.sequence;
+    if (property?.kind !== 'select') return null;
+    const lanes = itemValues(item, property.id).map((v) => laneKeyOf(property, v, axis));
+    if (!property.multi) return lanes.find((l) => l !== null) ?? null;
+    return lane !== null && lanes.includes(lane) ? lane : null;
+  };
+  return { itemId: id, x: from(view.x, dragged.x), y: from(view.y, dragged.y) };
 }
 
 const UNCHANGED = Symbol('unchanged');

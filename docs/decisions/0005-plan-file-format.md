@@ -75,3 +75,9 @@ The repo is public, so plans saved by any released build must keep opening in ev
   - Fixtures are never regenerated or edited. A test that fails on an old fixture means the reader has to change, not the fixture.
   - Each released sprint adds its last commit to `VERSIONS` in `scripts/generate-compat-fixtures.ts`, and the script writes only the new version's files.
   - A change to the file format or the Yjs schema also adds a fixture straight away, written from the commit before the change. It doesn't wait for the sprint's release.
+
+## Amendment (sprint 7): `rank`
+
+An item may carry an optional `rank`, an order key for the order cards were made in (questions.md Q46). New cards get a rank after every other card's, and an import ranks cards in its row order. Cells sort by sequence, then rank, then title. Cards without a rank, including every card saved before sprint 7, sort ahead of ranked ones by title, as they always did.
+
+It's an addition, not a change: older builds ignore an item field they don't know, so the file version stays 1, as it did for related links (Q44). A rank that isn't an order key is reported as an error, as a bad sequence key is.

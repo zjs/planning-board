@@ -72,6 +72,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Right-click a card, or its ⋯</dt>
         <dd>Every action on it, with its key, for the card or for everything selected.</dd>
+        <dt>Drag across empty space</dt>
+        <dd>
+          Draws a box that selects the cards it touches; <kbd>⇧ Shift</kbd> adds to what's selected. Drag any
+          selected card to move them all.
+        </dd>
         <dt>Click to select</dt>
         <dd>
           <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>Delete</kbd> removes the

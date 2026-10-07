@@ -45,9 +45,9 @@ Scope: single user, browser only, no server.
 
 ### 5. From a sequence to a timeline (Q46, Q48)
 
-- [ ] Cards in one cell keep sequence order, then the order they were made in, instead of title order.
-- [ ] Drag across empty space to box-select cards, in cells and holding lanes.
-- [ ] Dragging any selected card moves the whole selection, in one undo step.
+- [x] Cards in one cell keep sequence order, then the order they were made in, instead of title order.
+- [x] Drag across empty space to box-select cards, in cells and holding lanes.
+- [x] Dragging any selected card moves the whole selection, in one undo step.
 
 ### 6. Guided start (Q53)
 

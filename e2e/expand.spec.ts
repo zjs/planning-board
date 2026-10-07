@@ -41,6 +41,8 @@ test('a card moved out of a group with the strip leaves it; undo puts it back', 
   await select(page, EU);
   await page.keyboard.press('e');
   await expect(chip(page, 'eu-invoice-storage')).toHaveText('EU data residency');
+  // E selected all of the group's cards; select just this one, so only it moves (Q48 drags a whole selection).
+  await select(page, 'eu-invoice-storage');
   await dragTo(page, card(page, 'eu-invoice-storage').first(), page.getByTestId('move-out'));
   await expect(chip(page, 'eu-invoice-storage')).toHaveCount(0);
   await expect(card(page, EU).first()).toHaveCount(0);

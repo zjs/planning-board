@@ -72,6 +72,8 @@ test('dragging a card in a group shows a strip that moves it out one level', asy
 
   const strip = page.getByTestId('move-out');
   await expect(strip).toHaveCount(0);
+  // E selected all of the group's cards; select just this one, so only it moves (Q48 drags a whole selection).
+  await select(page, 'eu-invoice-storage');
   await dragTo(page, card(page, 'eu-invoice-storage').first(), strip);
   await expect(notice(page)).toContainText('Moved “EU invoice storage” out of “EU data residency”');
   await expect(card(page, 'eu-invoice-storage').first()).toBeVisible();
