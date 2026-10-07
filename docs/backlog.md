@@ -15,18 +15,6 @@ Each feedback item says where and when it came from. Themes are generalized from
 
 Themes with work still to do. Each says where it lands.
 
-### F. Links other than "comes before"
-
-Dependencies have one type: A comes before B (requirement 15). Plans also have looser relationships that people want to see without implying any order.
-
-**Feedback** (PM testing, 2026-10-02):
-
-- *"Related to" links.* "We may need other types of links, including 'related to' rather than just 'comes before' and 'comes after'. Perhaps these could also be shown as dotted or dashed lines without arrows", styled differently from the lines joining a card's copies.
-
-**Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
-
-**Lands:** sprint 8, slice 2 ([`docs/sprint-8.md`](sprint-8.md)). It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), again when find took sprint 6 (PM, 2026-10-03), and again when first-visit work took sprint 7 (PM, 2026-10-07).
-
 ### H. Arranging and moving cards
 
 Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.
@@ -47,18 +35,6 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 
 **Lands:** moving between groups shipped in sprint 5 (slice 2). Sprint 7 shipped cells that keep the order cards were made in (Q46's MVP), box select, and dragging several cards (Q48). Reordering by hand (Q46 c) and sequence under time (Q56) wait for the combined cold-start session, then are sprint 9 candidates.
 
-### L. One look for a group's cards
-
-A group's cards show in two ways. A collapsed group frames the cards that put it in a lane; an expanded group disappears, and its cards are marked with chips, spread among other cards.
-
-**Feedback** (the PM, 2026-10-07):
-
-- *Two patterns.* "We have two ways to visualize cards inside a group, the shadow card pattern and the label pattern on expanded groups. Should we use the shadow card pattern for both?"
-
-**Generalization:** a group on the board is always a frame: its header, and whichever of its cards show in that cell. Expanding and collapsing change which cells show its cards, not how they look. → [Q57](questions.md#q57-one-look-for-a-groups-cards)
-
-**Lands:** sprint 8, slice 1 ([`docs/sprint-8.md`](sprint-8.md)). The PM chose frames for both, nesting three deep, on 2026-10-07.
-
 ### D. Small fixes
 
 No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
@@ -73,6 +49,30 @@ No decision needed: each one goes into the next sprint. None is waiting right no
 ## Shipped themes
 
 Kept for the record: the feedback behind each, and how it was generalized.
+
+### L. One look for a group's cards
+
+A group's cards show in two ways. A collapsed group frames the cards that put it in a lane; an expanded group disappears, and its cards are marked with chips, spread among other cards.
+
+**Feedback** (the PM, 2026-10-07):
+
+- *Two patterns.* "We have two ways to visualize cards inside a group, the shadow card pattern and the label pattern on expanded groups. Should we use the shadow card pattern for both?"
+
+**Generalization:** a group on the board is always a frame: its header, and whichever of its cards show in that cell. Expanding and collapsing change which cells show its cards, not how they look. → [Q57](questions.md#q57-one-look-for-a-groups-cards)
+
+**Lands:** shipped in sprint 8, slice 1 ([`docs/sprint-8.md`](sprint-8.md)), which awaits the PM's acceptance. The PM chose frames for both, nesting three deep, on 2026-10-07.
+
+### F. Links other than "comes before"
+
+Dependencies have one type: A comes before B (requirement 15). Plans also have looser relationships that people want to see without implying any order.
+
+**Feedback** (PM testing, 2026-10-02):
+
+- *"Related to" links.* "We may need other types of links, including 'related to' rather than just 'comes before' and 'comes after'. Perhaps these could also be shown as dotted or dashed lines without arrows", styled differently from the lines joining a card's copies.
+
+**Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
+
+**Lands:** shipped in sprint 8, slice 2 ([`docs/sprint-8.md`](sprint-8.md)), which awaits the PM's acceptance. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), again when find took sprint 6 (PM, 2026-10-03), and again when first-visit work took sprint 7 (PM, 2026-10-07).
 
 ### K. First visit and discoverability
 
@@ -103,7 +103,7 @@ Every tester so far met the board after a demo. A stranger opening the public li
 - Preset views, and pivots that are clearer (Q52).
 - Laying out the board (folding an area's components) and showing more of the cards (expanding a group) keep separate words, with none shared (Q54).
 
-**Lands:** shipped in sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), which awaits the PM's acceptance. The combined session now opens with a cold start. Two calm items, explaining the area color and collapsible holding lanes, are in sprint 8, slice 3. Quieter markers come with the conflicts panel, a sprint 9 candidate. The command palette (Q54 b) waits for the session.
+**Lands:** shipped in sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), which awaits the PM's acceptance. The combined session now opens with a cold start. Two calm items, explaining the area color and collapsible holding lanes, shipped in sprint 8, slice 3. Quieter markers come with the conflicts panel, a sprint 9 candidate. The command palette (Q54 b) waits for the session.
 
 ### J. Starting from scratch
 
@@ -214,7 +214,7 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 
 ## Sprints
 
-Sprints 3 to 7 await the PM's acceptance and one combined tester session, which opens with a cold start. Sprint 8 ships before the session, which then covers sprints 3–8.
+Sprints 3 to 8 await the PM's acceptance and one combined tester session, which opens with a cold start (`docs/demos/sprint-5-session.md`).
 
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
@@ -223,7 +223,7 @@ Sprints 3 to 7 await the PM's acceptance and one combined tester session, which 
 - **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)) shipped on 2026-10-03: / to find cards, dimming the rest (theme I, Q50). It ships before the combined session, which now covers sprints 3–6.
 - **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
 - **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)) shipped on 2026-10-07: views and visible pivots, editing values from the headers, drags that say what they do, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
-- **Sprint 8: polish, then the session** ([`docs/sprint-8.md`](sprint-8.md)), planned on 2026-10-07: frames for expanded groups (theme L, Q57), "related to" links (theme F, Q44), and two calm items from theme K (the area color, and holding lanes that collapse). It ships before the combined cold-start session.
+- **Sprint 8: polish, then the session** ([`docs/sprint-8.md`](sprint-8.md)) shipped on 2026-10-07: frames for expanded groups (theme L, Q57), "related to" links (theme F, Q44), and two calm items from theme K (the area color explained, and holding lanes that collapse). It ships before the combined cold-start session.
 - **Sprint 9 candidates:**
   - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40), reviewed conflicts coming back on any relevant change (Q41), contention judged by the lanes shown (Q12), and per-type hiding for quieter markers (Q23);
   - after the session: sequence nested under time, as a Timeline view (Q56); reordering cards by hand within a cell (Q46 c); a command palette (Q54 b), if people looked for one.
