@@ -236,6 +236,7 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 7** (2026-10-07), the release pass's last step: sprint 7's plan file, imported plan and browser board open in every later build. The imported plan carries ranks, so the new field is covered.
 - **Compatibility fixtures before `rank`** (2026-10-07, sprint 7, slice 5): plan files and boards from the last build before items gained a rank, as ADR 0005's policy asks for a format change.
 - **Compatibility fixtures for sprint 6** (2026-10-03), added with the blank-plan slice: its plan file and browser board open in every later build.
 - **Plan file compatibility, as a CI gate** (sprint 5, slice 1). "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.) Plan files and browser boards from every released build are fixtures that `npm run check` opens, so a break fails CI. Each release adds its own (ADR 0005); sprint 5's were added in the 2026-10-02 housekeeping pass.
