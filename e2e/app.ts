@@ -145,7 +145,7 @@ export async function storageSettled(page: Page) {
     () =>
       new Promise<void>((resolve, reject) => {
         const open = indexedDB.open('planning-board:v1:default');
-        open.onerror = () => reject(open.error);
+        open.onerror = () => reject(new Error(`Couldn't open storage: ${String(open.error)}`));
         open.onsuccess = () => {
           const db = open.result;
           const tx = db.transaction('updates', 'readonly');
@@ -154,7 +154,7 @@ export async function storageSettled(page: Page) {
             db.close();
             resolve();
           };
-          tx.onerror = () => reject(tx.error);
+          tx.onerror = () => reject(new Error(`Couldn't read storage: ${String(tx.error)}`));
         };
       }),
   );
