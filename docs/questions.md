@@ -56,18 +56,6 @@ Entry format:
 - Status: open. Built (a).
   - Slices 4–5: the import dialog's Values step lists each component with an area field (defaulting to the project's name) and each version with a quarter menu (defaulting to "Not dated").
 
-### Q46: Order within a cell
-- Context: The backlog's theme H. Cards in a cell sort by sequence, then title. In PM testing, people wanted to put cards in order within a cell, in views without a sequence axis. Sequence is already a layout, though: its keys are the sequence view's columns (Q8), so changing a card's key to reorder it in a time view would also move it to another column in the sequence view. Remembering positions per view is out of scope for v1.
-- Options: (a) cells keep sorting by sequence, and can't be reordered by hand; (b) dragging within a cell changes the card's sequence key, accepting that it moves in the sequence view too; (c) a separate plan-wide rank, like Jira's: cells sort by it in every view, dragging within a cell changes it, and imports can fill it from Jira's rank or row order (Q30); sequence stays the sequence view's columns.
-- Recommendation: (c). Rearranging doesn't disturb the sequence view, there's still only one order for the whole plan (not one per view), and Jira's rank gets a home.
-- Status: open.
-
-### Q48: Dragging several cards
-- Context: Requirements 2 and 3, and the backlog's theme H. With several cards selected, a drag moves only the card under the pointer today.
-- Options: (a) every selected card gets the drop's values on both axes; on a multi-value axis, each card's value in the dragged copy's lane is replaced, or the value is added if the card has nothing in that lane; (b) every card keeps its offset from the dragged one, moving the same number of lanes.
-- Recommendation: (a). It reads as "put these here", and it's one undo step. (b) breaks on cards with several copies, and at the edges of the board.
-- Status: open.
-
 ### Q49: How housekeeping fits into our way of working
 - Context: The repo is public, and its README, help panel, backlog and questions drifted out of date over sprints 3–5. Dependencies and CI actions aged on their own. A cleanup pass on 2026-10-02 fixed them, and [`docs/housekeeping.md`](housekeeping.md) proposes how to keep it that way.
 - Options:
@@ -88,6 +76,19 @@ Entry format:
 - Recommendation: (c), (d) and (e). Menus that show keys are how people learn shortcuts _(recalled)_. The ghost puts "drag writes values" into words at the moment it happens. (e) renames what Q42 and Q43 settled, so it's the PM's call.
 - Status: partly answered 2026-10-07: not (e). Changing how the board is laid out (showing an area's components) and changing how much of the cards you see (showing a group's children) are different operations, and keep different words, but they must not share any. (a)–(d) are open.
   - Engineering's default, since the PM isn't attached to particular terms: bands keep **Fold** and **Unfold**, and groups use **Expand** and **Collapse**. Only ⇧E's label changes, from Fold to Collapse, along with the help and notices.
+
+### Q46: Order within a cell
+- Context: The backlog's theme H. Cards in a cell sort by sequence, then title. In PM testing, people wanted to put cards in order within a cell, in views without a sequence axis. Sequence is already a layout, though: its keys are the sequence view's columns (Q8), so changing a card's key to reorder it in a time view would also move it to another column in the sequence view. Remembering positions per view is out of scope for v1.
+- Options: (a) cells keep sorting by sequence, and can't be reordered by hand; (b) dragging within a cell changes the card's sequence key, accepting that it moves in the sequence view too; (c) a separate plan-wide rank, like Jira's: cells sort by it in every view, dragging within a cell changes it, and imports can fill it from Jira's rank or row order (Q30); sequence stays the sequence view's columns.
+- Recommendation: (c). Rearranging doesn't disturb the sequence view, there's still only one order for the whole plan (not one per view), and Jira's rank gets a home.
+- Status: partly answered 2026-10-07: an MVP for sprint 7. Cells keep sequence order, and cards in one sequence column follow the order they were made, not their titles. There's no reordering by hand outside the sequence view. The PM's flow: brainstorm, sort into a rough sequence, then bucket into a timeline without redoing the sequence. Box select and dragging several cards (Q48) do the bucketing.
+  - Engineering's default: the tie-break is an optional plan-wide `rank`, set when a card is made, so (c) can build on it later. Q56 asks whether sequence should also nest under time.
+
+### Q56: Sequence nested under time
+- Context: Requirements 6, 7 and 16, Q46, and the PM's planning flow (2026-10-07): brainstorm, sort into a rough sequence, then bucket into a timeline. Sequence and time are separate axes, so bucketing means dragging cards from a time view's "No quarter" lane, which lists them in sequence order. Sprint 7 makes that faster with box select and dragging several cards. The PM asked whether sequence could instead be a third level of the time hierarchy.
+- Options: (a) keep them separate, and rely on sprint 7's bucketing; (b) a Timeline view: Time unfolds Quarter → Release → sequence columns, so a quarter band holds the sequence columns of the cards in it, and a drag sets both quarter and position; (c) cut lines: in a sequence view, time bands sit over the sequence columns, and dragging a boundary between columns dates every card on each side.
+- Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
+- Status: open. A sprint 8 candidate.
 
 ## Answered
 
@@ -414,3 +415,9 @@ Entry format:
 - Recommendation: (a). Keeping typed order needs an order within a cell, which is Q46: with its option (c), a plan-wide rank, a brain dump would fill the rank in typing order. Sequence keys can't do it, because each distinct key is its own column (Q8).
 - Status: answered 2026-10-07: edit properties right from the headers, broader than (a). It's part of the blank-plan journey (Q53): organizing ideas means making the lanes to put them in.
   - Engineering's defaults: on every board, a row or column header can be renamed in place, and "+ Add" after the last header adds a value at that level. Moving and deleting values stay in the Properties panel until a session asks for more. Typed order waits for Q46.
+
+### Q48: Dragging several cards
+- Context: Requirements 2 and 3, and the backlog's theme H. With several cards selected, a drag moves only the card under the pointer today.
+- Options: (a) every selected card gets the drop's values on both axes; on a multi-value axis, each card's value in the dragged copy's lane is replaced, or the value is added if the card has nothing in that lane; (b) every card keeps its offset from the dragged one, moving the same number of lanes.
+- Recommendation: (a). It reads as "put these here", and it's one undo step. (b) breaks on cards with several copies, and at the edges of the board.
+- Status: answered 2026-10-07: (a), as recommended. Sprint 7, with box select to pick up a run of cards.
