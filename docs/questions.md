@@ -95,6 +95,27 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. A sprint 8 candidate.
 
+### Q57: One look for a group's cards
+- Context: Requirements 12 and 13, Q16, Q33 and Q42, and the backlog's theme L. The board shows the cards inside a group in two ways:
+  - **A collapsed group,** in a lane only its cards reach, is a dashed frame: the group's title and badges on top, and the cards that put it there inside (Q33).
+  - **An expanded group** leaves the board, and its cards spread through the cells. Each one carries a colored chip and edge that name the group.
+  - In the sample's Roadmap, expanding *Passwordless login* puts its three stories in two cells, between unrelated cards, linked only by a teal chip. Expanding *Public API v2* shows both patterns on one card: *API auth* is a frame, and it carries a pink chip.
+- Options:
+  - (a) **Frames for both.** A group in a cell is a frame: its header, then whichever of its cards show in that cell. Collapsed, it's a header alone where the group itself is placed (today's card), and a header with the cards that put it there everywhere else (today's faded frame). Expanded, its cards show in every cell they reach, under its header. Chips go.
+  - (b) **Keep both, as one family.** The frame takes the group's color, as chips do, and nothing else changes.
+  - (c) **Chips for both.** Drop frames, and mark the cards that put a collapsed group in a lane with chips. This undoes Q33: those lanes would show loose cards with no sign of the group.
+- Recommendation: (a). Each group then has one look on the board, and it fixes three things:
+  - A group's cards sit together in a cell, under its name, instead of being mixed in with other cards.
+  - An expanded group's own values stay on the board. Today they're only in the inspector, so a ballpark quarter that disagrees with the children disappears when you look closer.
+  - The header gets a ▾ that collapses the group. Today Collapse has no control on the board; you select a child and press ⇧E.
+- Engineering's defaults, each reversible:
+  - **Collapsed or expanded:** dashed frames are collapsed and solid ones expanded. The difference left is the group's own lanes: collapsed, they show its header alone; expanded, its cards too.
+  - **Nesting:** frames nest two deep. A group expanded deeper than that joins its parent's frame, with a two-part title ("Public API v2 › API auth"), so the board's 230px columns keep room for cards.
+  - **Order in a cell:** a frame sits where its first card would sort (sequence, then rank; Q46), and its cards keep that order inside it.
+  - **The cost:** a header repeats in every cell the group's cards reach, as chips do today, but a header takes a line of its own. It's one line, and the group's badges show only where the group itself is placed.
+  - **Effort:** one slice. The layout already builds frames for collapsed groups (ADR 0008, amended), and expanded groups would use the same structure. ADR 0008 gets another amendment.
+- Status: open. Raised by the PM, 2026-10-07. A sprint 8 candidate.
+
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -445,3 +466,4 @@ Entry format:
 - Status: answered 2026-10-07: (a), as recommended. Sprint 7, with box select to pick up a run of cards.
   - Built in sprint 7, slice 5. A drag across empty space in a cell or holding lane draws a box, and ⇧ adds to the selection. Dragging any selected card moves the whole selection in one undo step; the dragged card says "+3 more", and a notice with Undo says where they went. Holding the selection over a card puts every card that can go inside it there. The move-out strip moves the selected cards that share the dragged card's group.
   - Engineering's default: E no longer selects the cards it reveals. Until now it did, so dragging one of them right after expanding, as sprint 5's own walkthrough does ("expand, then drag a child to Move out"), would have moved all its siblings too. The revealed cards are marked with their group's chip and edge instead, and the expanded group leaves the selection. Expanding a card inside, or collapsing one, now starts by selecting that card, as the sprint 5 exit criteria already do.
+  - PM, 2026-10-07: keep it.
