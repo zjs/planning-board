@@ -43,8 +43,8 @@ Scope: single user, browser only, no server.
 
 ### 4. Tester-ready
 
-- [ ] The combined session script covers sprints 3–8. It opens with the cold start, and it adds tasks for frames and related links.
-- [ ] A demo note (`docs/demos/sprint-8.md`), and the release pass (`docs/housekeeping.md`).
+- [x] The combined session script covers sprints 3–8. It opens with the cold start, and it adds tasks for frames and related links.
+- [x] A demo note (`docs/demos/sprint-8.md`), and the release pass (`docs/housekeeping.md`).
 
 ## Deferred (don't build)
 

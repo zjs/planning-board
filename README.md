@@ -21,18 +21,19 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - **Name things where they are:** double-click a row or column header to rename it, and add areas, quarters, sizes or your own values from "+ Add" at the board's edges.
 - **Move several cards at once:** drag a box across empty space to select a run of cards, then drag one of them; they all move, in one undo step.
 - **Right-click any card,** or its ⋯, for every action on it and its keyboard shortcut. **?** opens a cheat sheet.
-- **Dependencies:** select two cards and press L. Links show when you point at a card, and links whose order contradicts the board are always drawn in red, along with loops.
-- **Groups and levels:** cards nest to any depth, as initiatives, epics, and stories. Expand a group in place to see what's inside, collapse it again, and hold a dragged card over another to put it inside. Markers flag cards that don't fit their group: dated outside it, larger than it, in another area, or at or above its level.
+- **Dependencies:** select two cards and press L. Links show when you point at a card, and links whose order contradicts the board are always drawn in red, along with loops. Press ⌥L (Alt+L) instead to mark two cards as related, with no order: a dotted line that's never red.
+- **Groups and levels:** cards nest to any depth, as initiatives, epics, and stories. Expand a group in place to see its cards framed under its name, wherever they land, and collapse it again from the frame. Hold a dragged card over another to put it inside. Markers flag cards that don't fit their group: dated outside it, larger than it, in another area, or at or above its level.
+- **A calmer board:** each card's colored edge is its area, and the headers say which. The holding lanes collapse to a thin rail that still takes drops.
 - **Find:** press / and type. Cards that match stay bright and the rest fade, without anything moving; Enter selects them all.
 - **An inspector** for editing any card's properties, description, group, and links without pivoting, for one card or many.
 - **Your own properties,** such as Team, and editing any property's values (rename, move, reorder, delete).
-- **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, and "Blocks" links become dependencies.
+- **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, "Blocks" links become dependencies, and "Relates" links become related links.
 - **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
 
 **Not yet**
 
 - Component contention (too much work landing on one component at once), and a panel listing every conflict.
-- "Related to" links, and reordering cards by hand within a cell.
+- Reordering cards by hand within a cell.
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
 - An import replaces the board. Updating a board from a fresh export isn't built.
 - One person at a time. Live collaboration comes later, through a relay that only ever sees encrypted data.
