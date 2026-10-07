@@ -4,7 +4,7 @@
 
 import { isWithin } from './hierarchy.ts';
 import type { Dependency, Item, ItemId, Plan } from './model.ts';
-import { compareOrderKeys, itemValues, SEQUENCE, TIME } from './model.ts';
+import { compareOrderKeys, itemValues, relatedPair, SEQUENCE, TIME } from './model.ts';
 import { ancestry } from './tree.ts';
 import { laneKeyOf, laneOrder, type AxisSpec, type ViewSpec } from './view.ts';
 
@@ -23,6 +23,25 @@ export function linkProblem(plan: Plan, from: ItemId, to: ItemId): string | null
   if (from === to) return "A card can't come before itself.";
   if (hasLink(plan, from, to)) return 'Those cards are already linked.';
   return null;
+}
+
+/** Whether two cards are related (Q44), in either order. */
+export function hasRelated(plan: Plan, x: ItemId, y: ItemId): boolean {
+  const { a, b } = relatedPair(x, y);
+  return plan.related.some((l) => l.a === a && l.b === b);
+}
+
+/** Why two cards can't be related, in plain words, or null if they can (Q44). */
+export function relatedProblem(plan: Plan, x: ItemId, y: ItemId): string | null {
+  if (!plan.items[x] || !plan.items[y]) return 'One of those cards no longer exists.';
+  if (x === y) return "A card can't be related to itself.";
+  if (hasRelated(plan, x, y)) return 'Those cards are already related.';
+  return null;
+}
+
+/** The cards related to `id` (Q44). */
+export function relatedTo(plan: Plan, id: ItemId): ItemId[] {
+  return plan.related.flatMap((l) => (l.a === id ? [l.b] : l.b === id ? [l.a] : []));
 }
 
 /**
@@ -48,6 +67,16 @@ function subtree(plan: Plan, id: ItemId): Set<ItemId> {
 export function directLinks(plan: Plan, id: ItemId): Dependency[] {
   const inside = subtree(plan, id);
   return plan.dependencies.filter((d) => inside.has(d.from) || inside.has(d.to));
+}
+
+/**
+ * The related links (Q44) of a card, or anything inside it, as
+ * from-to pairs for drawing. Related links have no order, so hovering and
+ * selecting both show these direct ones, never a chain.
+ */
+export function directRelated(plan: Plan, id: ItemId): Dependency[] {
+  const inside = subtree(plan, id);
+  return plan.related.filter((l) => inside.has(l.a) || inside.has(l.b)).map((l) => ({ from: l.a, to: l.b }));
 }
 
 /**

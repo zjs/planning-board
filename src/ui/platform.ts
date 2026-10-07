@@ -6,6 +6,7 @@ export function keyNames(): {
   group: string;
   ungroup: string;
   link: string;
+  relate: string;
   inspect: string;
   expand: string;
   collapse: string;
@@ -16,7 +17,7 @@ export function keyNames(): {
   // platform is deprecated and can be empty (fingerprinting protection), so fall back on the user agent.
   const mac = /Mac|iPhone|iPad/.test(nav?.platform || nav?.userAgent || '');
   return mac
-    ? { add: '⌥ Option', undo: '⌘Z', redo: '⇧⌘Z', group: '⌘G', ungroup: '⇧⌘G', link: 'L', inspect: 'I', expand: 'E', collapse: '⇧E', selectAll: '⌘A', delete: '⌫' }
+    ? { add: '⌥ Option', undo: '⌘Z', redo: '⇧⌘Z', group: '⌘G', ungroup: '⇧⌘G', link: 'L', relate: '⌥L', inspect: 'I', expand: 'E', collapse: '⇧E', selectAll: '⌘A', delete: '⌫' }
     : {
         add: 'Alt',
         undo: 'Ctrl+Z',
@@ -24,6 +25,7 @@ export function keyNames(): {
         group: 'Ctrl+G',
         ungroup: 'Ctrl+Shift+G',
         link: 'L',
+        relate: 'Alt+L',
         inspect: 'I',
         expand: 'E',
         collapse: 'Shift+E',

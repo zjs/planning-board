@@ -1999,6 +1999,14 @@ button.link:hover {
   }
 }
 
+/* A related link (Q44): dotted, in the accent color, with no arrow. It carries no order, so it's never red. */
+.dep-line.related {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-dasharray: 0.5 6;
+  opacity: 0.85;
+}
+
 /* A card's copies (Q45): dashed, with no arrow, unlike a dependency. */
 .copy-line {
   fill: none;

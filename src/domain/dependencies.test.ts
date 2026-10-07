@@ -205,6 +205,11 @@ describe('linkProblems and group counts (requirement 18)', () => {
     expect([...problems.keys()].sort()).toEqual(['s1->s2', 'x->y', 'y->x']);
   });
 
+  it('never flags a related link (Q44): it has no order, even running backwards or round a loop', () => {
+    const related = { ...p, dependencies: [], related: [{ a: 's1', b: 's2' }, { a: 'x', b: 'y' }] };
+    expect(linkProblems(related, seqView).size).toBe(0);
+  });
+
   it('counts a flagged link on every group around either card, in plain words', () => {
     const inside = linkProblemsInside(p, linkProblems(p, seqView));
     expect([...inside]).toEqual([['epic', ['“Story one” must come before “Story two”, but it\'s to its right in the sequence.']]]);

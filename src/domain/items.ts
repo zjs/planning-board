@@ -1,7 +1,7 @@
 // Creating and deleting items, as pure rules over plan snapshots. The
 // commands in src/commands/ apply the results to the Yjs document.
 
-import { SEQUENCE, type Dependency, type Item, type ItemId, type OrderKey, type Plan, type PropertyId, type ValueId } from './model.ts';
+import { SEQUENCE, type Dependency, type Item, type ItemId, type OrderKey, type Plan, type PropertyId, type Related, type ValueId } from './model.ts';
 import { generateKeyBetween } from 'fractional-indexing';
 import { planDrop, type DropTarget } from './move.ts';
 import { cellOf, layoutView, type ViewSpec } from './view.ts';
@@ -72,10 +72,10 @@ export function valuesForChild(parent: Item, view: ViewSpec): NewItemValues {
 
 /**
  * Everything deleting `ids` removes (questions.md Q17): the items, every
- * item inside them at any depth, and every dependency touching one of
- * those. Cycle-safe, so bad parent data can't loop forever.
+ * item inside them at any depth, and every dependency and related link
+ * touching one of those. Cycle-safe, so bad parent data can't loop forever.
  */
-export function deletionOf(plan: Plan, ids: Iterable<ItemId>): { items: ItemId[]; dependencies: Dependency[] } {
+export function deletionOf(plan: Plan, ids: Iterable<ItemId>): { items: ItemId[]; dependencies: Dependency[]; related: Related[] } {
   const children = new Map<ItemId, ItemId[]>();
   for (const item of Object.values(plan.items)) {
     if (item.parent === null) continue;
@@ -94,6 +94,7 @@ export function deletionOf(plan: Plan, ids: Iterable<ItemId>): { items: ItemId[]
   return {
     items: [...doomed],
     dependencies: plan.dependencies.filter((d) => doomed.has(d.from) || doomed.has(d.to)),
+    related: plan.related.filter((l) => doomed.has(l.a) || doomed.has(l.b)),
   };
 }
 

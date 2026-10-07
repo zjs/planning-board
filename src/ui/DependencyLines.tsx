@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import type { VisibleLink } from '../domain/dependencies.ts';
 
-/** One line, as drawn. `tone` picks its color and arrowhead. */
+/** One line, as drawn. `tone` picks its color and arrowhead; a related link (Q44) is dotted, with none. */
 export interface DrawnLine extends VisibleLink {
-  tone: 'focus' | 'problem';
+  tone: 'focus' | 'problem' | 'related';
   /** Hover text: "A → B" or what's wrong, one line per link it stands for. */
   label: string;
   /** Clicked, ready for Delete. */
@@ -100,7 +100,7 @@ export function DependencyLines({
         const path = document.createElementNS(SVG, 'path');
         path.setAttribute('d', d);
         path.setAttribute('class', `dep-line ${line.tone}${line.selected ? ' selected' : ''}${line.dimmed ? ' dimmed' : ''}`);
-        path.setAttribute('marker-end', `url(#dep-arrow-${line.tone})`);
+        if (line.tone !== 'related') path.setAttribute('marker-end', `url(#dep-arrow-${line.tone})`);
         path.dataset.from = line.from;
         path.dataset.to = line.to;
         // A wide, invisible twin takes the pointer: easier to hover and click than a 2px line.

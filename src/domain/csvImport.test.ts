@@ -13,7 +13,7 @@ import {
   sizeForPoints,
   type Mapping,
 } from './csvImport.ts';
-import { LEVEL, SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
+import { LEVEL, relatedPair, SIZE, SYSTEM, TIME, type SelectProperty } from './model.ts';
 import { parsePlanJson, planToJson } from './planJson.ts';
 
 const table = parseCsv(JIRA_EXPORT);
@@ -146,7 +146,7 @@ describe('planFromDraft', () => {
   });
 
   it('makes cards with their Jira keys, titles, and descriptions', () => {
-    expect(result.counts).toEqual({ cards: 5, groups: 1, dependencies: 1 });
+    expect(result.counts).toEqual({ cards: 5, groups: 1, dependencies: 1, related: 0 });
     expect(byKey('PAY-2')).toMatchObject({ title: 'SAML metadata upload', description: 'Upload a metadata XML file.\nValidate it first.' });
   });
 
@@ -224,7 +224,7 @@ describe('planFromDraft, awkward files', () => {
     const t = parseCsv('Summary\nOne\nTwo');
     const d = draftFromCsv(t, detectMapping(columnGroups(t.header)));
     const r = planFromDraft(d, defaultChoices(d), counter());
-    expect(r.counts).toEqual({ cards: 2, groups: 0, dependencies: 0 });
+    expect(r.counts).toEqual({ cards: 2, groups: 0, dependencies: 0, related: 0 });
     expect(r.notes).toEqual([]);
   });
 });
@@ -249,13 +249,38 @@ describe('the sample export in docs/samples', () => {
       'Description',
       'Outward issue link (Blocks)',
       'Inward issue link (Blocks)',
+      'Outward issue link (Relates)',
+      'Inward issue link (Relates)',
     ]);
     const d = draftFromCsv(t, mapping);
     const r = planFromDraft(d, defaultChoices(d), counter());
-    expect(r.counts).toEqual({ cards: 53, groups: 9, dependencies: 12 });
+    expect(r.counts).toEqual({ cards: 53, groups: 9, dependencies: 12, related: 3 });
     expect(r.notes).toEqual([
       '4 versions weren’t given a quarter, so their cards have no date: 2027.2, 2027.1, 2027.3, 2027.4.',
       '2 “Blocks” links point to issues that aren’t in the file, so they were left out.',
     ]);
+  });
+});
+
+describe('related links (Q44)', () => {
+  it('reads Relates links in either direction as one related link each, and notes ones outside the file', () => {
+    const t = parseCsv(
+      [
+        'Summary,Issue key,Outward issue link (Relates),Inward issue link (Relates)',
+        'Alpha,A-1,A-2,',
+        'Beta,A-2,,A-1',
+        'Gamma,A-3,A-99,',
+      ].join('\n'),
+    );
+    const mapping = detectMapping(columnGroups(t.header));
+    expect(mapping['Outward issue link (Relates)']).toEqual({ kind: 'relates' });
+    expect(mapping['Inward issue link (Relates)']).toEqual({ kind: 'relates' });
+    const d = draftFromCsv(t, mapping);
+    const r = planFromDraft(d, defaultChoices(d), counter());
+    const id = (key: string) => Object.values(r.plan.items).find((i) => i.externalKey === key)!.id;
+    expect(r.plan.related).toEqual([relatedPair(id('A-1'), id('A-2'))]);
+    expect(r.plan.dependencies).toEqual([]);
+    expect(r.counts.related).toBe(1);
+    expect(r.notes).toContain('One “Relates” link points to an issue that isn’t in the file, so it was left out.');
   });
 });

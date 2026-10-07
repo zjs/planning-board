@@ -15,7 +15,7 @@ test('help stays closed until asked for, and opens from the toolbar as a cheat s
     'Change the view',
     'Groups',
     'Select and find',
-    'Dependencies',
+    'Links',
     'Plans and properties',
     'What the board tells you',
   ]);

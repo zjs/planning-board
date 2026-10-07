@@ -3,7 +3,7 @@
 // plain Plan snapshots.
 
 import * as Y from 'yjs';
-import type { Dependency, Item, Plan, Property, ValueNode } from '../domain/model.ts';
+import type { Dependency, Item, Plan, Property, Related, ValueNode } from '../domain/model.ts';
 import { compareOrderKeys } from '../domain/model.ts';
 import { isOrderKey } from '../domain/sequence.ts';
 
@@ -16,6 +16,8 @@ export const root = (doc: Y.Doc) => ({
   properties: doc.getMap<Y.Map<unknown>>('properties'),
   items: doc.getMap<Y.Map<unknown>>('items'),
   dependencies: doc.getMap<Dependency>('dependencies'),
+  /** Related links (Q44), keyed by `relatedKey`. Boards from before sprint 8 have none. */
+  related: doc.getMap<Related>('related'),
 });
 
 export function isEmpty(doc: Y.Doc): boolean {
@@ -29,12 +31,15 @@ export function writePlan(doc: Y.Doc, plan: Plan): void {
   r.properties.clear();
   r.items.clear();
   r.dependencies.clear();
+  r.related.clear();
   for (const property of Object.values(plan.properties)) r.properties.set(property.id, propertyToY(property));
   for (const item of Object.values(plan.items)) r.items.set(item.id, itemToY(item));
   for (const dep of plan.dependencies) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });
+  for (const link of plan.related) r.related.set(relatedKey(link), { a: link.a, b: link.b });
 }
 
 export const dependencyKey = (dep: Dependency) => `${dep.from}->${dep.to}`;
+export const relatedKey = (link: Related) => `${link.a}~${link.b}`;
 
 export function propertyToY(property: Property): Y.Map<unknown> {
   const map = new Y.Map<unknown>();
@@ -128,5 +133,6 @@ export function readPlan(doc: Y.Doc): Plan {
   });
 
   const dependencies = [...r.dependencies.values()].filter((d) => items[d.from] && items[d.to]);
-  return { properties, items, dependencies };
+  const related = [...r.related.values()].filter((l) => items[l.a] && items[l.b] && l.a !== l.b);
+  return { properties, items, dependencies, related };
 }

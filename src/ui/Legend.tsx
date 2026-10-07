@@ -113,7 +113,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
           </dl>
         </section>
         <section>
-          <h3>Dependencies</h3>
+          <h3>Links</h3>
           <dl>
             <dt>
               Select two cards, press <kbd>{keys.link}</kbd>
@@ -121,6 +121,13 @@ export function Legend({ onClose }: { onClose: () => void }) {
             <dd>
               The first comes before the second. <kbd>{keys.link}</kbd> again removes it. With one card selected, it
               starts a link you finish on any card.
+            </dd>
+            <dt>
+              Select two cards, press <kbd>{keys.relate}</kbd>
+            </dt>
+            <dd>
+              Relates them, with no order: a dotted line with no arrow, never red. <kbd>{keys.relate}</kbd> again removes
+              it. Not the same as <kbd>{keys.add}</kbd> while dropping, which adds a value.
             </dd>
             <dt>Lines</dt>
             <dd>

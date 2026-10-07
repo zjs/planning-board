@@ -55,5 +55,6 @@ export function plan(...items: Item[]): Plan {
     },
     items: Object.fromEntries(items.map((i) => [i.id, i])),
     dependencies: [],
+    related: [],
   };
 }

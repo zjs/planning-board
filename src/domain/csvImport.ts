@@ -14,8 +14,8 @@
 import { generateNKeysBetween } from 'fractional-indexing';
 import { LEVELS, levelForIssueType, SIZES, SYSTEM_LEVELS, TIME_LEVELS, type LevelId, type SizeId } from './builtins.ts';
 import type { CsvTable } from './csv.ts';
-import type { Dependency, Item, Plan, Property, SelectProperty, ValueNode } from './model.ts';
-import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
+import type { Dependency, Item, Plan, Property, Related, SelectProperty, ValueNode } from './model.ts';
+import { LEVEL, relatedPair, SEQUENCE, SIZE, SYSTEM, TIME } from './model.ts';
 import { wouldCreateCycle } from './tree.ts';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +36,7 @@ export type FieldKind =
   | 'parent'
   | 'blocks'
   | 'blockedBy'
+  | 'relates'
   | 'property';
 
 /** Every field a column can map to, with the words the mapping step shows. */
@@ -53,6 +54,7 @@ export const FIELDS: { kind: FieldKind; label: string; hint: string }[] = [
   { kind: 'parent', label: 'Parent (makes groups)', hint: 'A parent’s key or issue ID' },
   { kind: 'blocks', label: 'Blocks (dependency)', hint: 'This card comes before those' },
   { kind: 'blockedBy', label: 'Is blocked by (dependency)', hint: 'Those come before this card' },
+  { kind: 'relates', label: 'Relates to', hint: 'Related, with no order (Q44)' },
   { kind: 'property', label: 'Custom property', hint: 'A new property you can pivot by' },
 ];
 
@@ -103,18 +105,23 @@ const DETECT: [RegExp, ColumnMapping][] = [
   [/^(parent|parent id|parent key|epic link)$/i, { kind: 'parent' }],
   [/^outward issue link \(blocks\)$/i, { kind: 'blocks' }],
   [/^inward issue link \(blocks\)$/i, { kind: 'blockedBy' }],
+  [/^(outward|inward) issue link \(relates\)$/i, { kind: 'relates' }],
   [/^labels?$/i, { kind: 'property', multi: true }],
   [/^teams?$/i, { kind: 'property', multi: false }],
 ];
 
-/** A first guess at the mapping, from the headers alone. Each field other than parent and custom properties is used once. */
+/**
+ * A first guess at the mapping, from the headers alone. Each field other
+ * than parent, relates and custom properties is used once. Jira writes
+ * Relates links as two columns, outward and inward, and both are wanted.
+ */
 export function detectMapping(groups: readonly ColumnGroup[]): Mapping {
   const mapping: Mapping = {};
   const used = new Set<FieldKind>();
   for (const group of groups) {
     const clean = cleanHeader(group.name);
     const hit = DETECT.find(([pattern]) => pattern.test(clean))?.[1];
-    const single = hit && hit.kind !== 'property' && hit.kind !== 'parent';
+    const single = hit && hit.kind !== 'property' && hit.kind !== 'parent' && hit.kind !== 'relates';
     if (!hit || (single && used.has(hit.kind))) {
       mapping[group.name] = { kind: 'ignore' };
       continue;
@@ -143,6 +150,8 @@ export interface DraftItem {
   parents: string[];
   blocks: string[];
   blockedBy: string[];
+  /** Keys or issue IDs this card relates to, in either direction (Q44). */
+  relates: string[];
   /** Custom property values, by column group name. */
   properties: Record<string, string[]>;
 }
@@ -193,6 +202,7 @@ export function draftFromCsv(table: CsvTable, mapping: Mapping): Draft {
       parents: cells(row, byKind('parent')),
       blocks: cells(row, byKind('blocks')),
       blockedBy: cells(row, byKind('blockedBy')),
+      relates: cells(row, byKind('relates')),
       properties: Object.fromEntries(propertyGroups.map((g) => [g.name, cells(row, [g])])),
     });
   });
@@ -289,7 +299,7 @@ export interface ImportResult {
   plan: Plan;
   /** What was left out or couldn't be matched, in plain words. */
   notes: string[];
-  counts: { cards: number; groups: number; dependencies: number };
+  counts: { cards: number; groups: number; dependencies: number; related: number };
 }
 
 type NewId = (prefix: string) => string;
@@ -425,7 +435,7 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
   }
 
   // Parents become groups (requirement 11). A loop is broken where it closes.
-  const plan: Plan = { properties, items, dependencies: [] };
+  const plan: Plan = { properties, items, dependencies: [], related: [] };
   const missingParents = new Set<string>();
   let loops = 0;
   for (const draftItem of draft.items) {
@@ -473,6 +483,34 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
         : `${outside} “Blocks” links point to issues that aren’t in the file, so they were left out.`,
     );
   }
+
+  // "Relates" links become related links (Q44). Jira lists each one on both issues, outward and inward: kept once.
+  const related: Related[] = [];
+  const relatedSeen = new Set<string>();
+  let relatesOutside = 0;
+  for (const draftItem of draft.items) {
+    const id = idOf.get(draftItem)!;
+    for (const ref of draftItem.relates) {
+      const other = byRef.get(ref);
+      if (other === undefined) {
+        relatesOutside++;
+        continue;
+      }
+      if (other === id) continue;
+      const pair = relatedPair(id, other);
+      const key = `${pair.a} ${pair.b}`;
+      if (relatedSeen.has(key)) continue;
+      relatedSeen.add(key);
+      related.push(pair);
+    }
+  }
+  if (relatesOutside > 0) {
+    notes.push(
+      relatesOutside === 1
+        ? 'One “Relates” link points to an issue that isn’t in the file, so it was left out.'
+        : `${relatesOutside} “Relates” links point to issues that aren’t in the file, so they were left out.`,
+    );
+  }
   if (draft.skipped.length > 0) {
     notes.push(
       `${draft.skipped.length} ${draft.skipped.length === 1 ? 'row has' : 'rows have'} no title and ${draft.skipped.length === 1 ? 'was' : 'were'} skipped (row ${draft.skipped
@@ -484,8 +522,8 @@ export function planFromDraft(draft: Draft, choices: ValueChoices, newId: NewId,
 
   const groups = new Set(Object.values(items).flatMap((i) => (i.parent ? [i.parent] : []))).size;
   return {
-    plan: { properties, items, dependencies },
+    plan: { properties, items, dependencies, related },
     notes,
-    counts: { cards: Object.keys(items).length, groups, dependencies: dependencies.length },
+    counts: { cards: Object.keys(items).length, groups, dependencies: dependencies.length, related: related.length },
   };
 }

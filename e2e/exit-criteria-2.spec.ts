@@ -51,7 +51,7 @@ test('sprint 2 exit criteria', async ({ page }) => {
   await page.getByTestId('import-csv-input').setInputFiles(SAMPLE.pathname);
   const dialog = page.getByTestId('import-dialog');
   await expect(dialog.getByLabel('Import Component/s as')).toHaveValue('components');
-  await expect(dialog.getByTestId('import-summary')).toContainText('Imports 53 cards, including 9 groups with cards inside, and 12 dependencies');
+  await expect(dialog.getByTestId('import-summary')).toContainText('Imports 53 cards, including 9 groups with cards inside, 12 dependencies, and 3 related links');
   await dialog.getByRole('button', { name: 'Next: values →' }).click();
   for (const component of ['Admin Console', 'Notifications', 'Checkout']) {
     await dialog.getByLabel(`Area for ${component}`).fill('Customer Experience');

@@ -80,4 +80,10 @@ The repo is public, so plans saved by any released build must keep opening in ev
 
 An item may carry an optional `rank`, an order key for the order cards were made in (questions.md Q46). New cards get a rank after every other card's, and an import ranks cards in its row order. Cells sort by sequence, then rank, then title. Cards without a rank, including every card saved before sprint 7, sort ahead of ranked ones by title, as they always did.
 
-It's an addition, not a change: older builds ignore an item field they don't know, so the file version stays 1, as it did for related links (Q44). A rank that isn't an order key is reported as an error, as a bad sequence key is.
+It's an addition, not a change: older builds ignore an item field they don't know, so the file version stays 1. (This note first said related links had set the precedent; they were only planned then, and came in sprint 8, below.) A rank that isn't an order key is reported as an error, as a bad sequence key is.
+
+## Amendment (sprint 8): `related`
+
+A plan file may carry `related`, a list of `[a, b]` pairs of item ids: cards related with no order between them (questions.md Q44). Each pair is written with its ids sorted, the list is sorted, and it's left out when empty. A pair read twice, in either order, is kept once. An unknown id or a card related to itself is reported as an error, as a bad dependency is. In the browser, related links live in their own Yjs map, `related`, keyed `a~b`.
+
+Older builds ignore a top-level field they don't know, so the file version stays 1. The fixture `sprint-8-before-related` holds the last build before the change.

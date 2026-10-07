@@ -13,6 +13,8 @@ export function compatSummary(plan: Plan) {
     dependencies: plan.dependencies.length,
     /** "A → B" pairs, by title. */
     links: plan.dependencies.map((d) => `${titleOf(d.from)} → ${titleOf(d.to)}`).sort(),
+    /** "A ~ B" related pairs (Q44), by title. Versions before sprint 8 have none. */
+    related: plan.related.map((l) => [titleOf(l.a), titleOf(l.b)].sort().join(' ~ ')).sort(),
     /** "Title: property=value,value" for every value a card holds, by value label path. */
     values: items
       .flatMap((i) =>

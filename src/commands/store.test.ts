@@ -12,6 +12,7 @@ import sample from '../seed/sample-plan.json';
 import { isEmpty, readPlan } from '../store/schema.ts';
 import {
   addDependency,
+  addRelated,
   addValue,
   createChild,
   createItem,
@@ -23,6 +24,7 @@ import {
   renameProperty,
   removeDependencies,
   removeDependency,
+  removeRelated,
   renameValue,
   reorderValue,
   createPlanStore,
@@ -621,6 +623,51 @@ describe('removeDependencies', () => {
     expect(readPlan(store.doc).dependencies).toEqual([]);
     undo(store);
     expect(readPlan(store.doc).dependencies).toHaveLength(2);
+  });
+});
+
+describe('related links (Q44)', () => {
+  it('relates two cards once, in either order, in one undo step; removing undoes too', () => {
+    const store = storeWith(item('a'), item('b'));
+    expect(addRelated(store, 'b', 'a')).toBeNull();
+    expect(readPlan(store.doc).related).toEqual([{ a: 'a', b: 'b' }]);
+    expect(addRelated(store, 'a', 'b')).toBe('Those cards are already related.');
+    expect(addRelated(store, 'a', 'a')).toBe("A card can't be related to itself.");
+    expect(removeRelated(store, 'b', 'a')).toBe(true);
+    expect(readPlan(store.doc).related).toEqual([]);
+    expect(removeRelated(store, 'a', 'b')).toBe(false);
+    undo(store);
+    expect(readPlan(store.doc).related).toEqual([{ a: 'a', b: 'b' }]);
+  });
+
+  it('never adds an order: no dependency appears, and the plan file keeps the pair', () => {
+    const store = storeWith(item('a'), item('b'));
+    addRelated(store, 'a', 'b');
+    expect(readPlan(store.doc).dependencies).toEqual([]);
+    const reread = readPlanFile(planFileText(readPlan(store.doc)));
+    expect(reread.ok && reread.plan.related).toEqual([{ a: 'a', b: 'b' }]);
+  });
+
+  it('goes with a deleted card, and one undo brings it back', () => {
+    const store = storeWith(item('a'), item('b'), item('c'));
+    addRelated(store, 'a', 'b');
+    addRelated(store, 'b', 'c');
+    deleteItems(store, ['a']);
+    expect(readPlan(store.doc).related).toEqual([{ a: 'b', b: 'c' }]);
+    undo(store);
+    expect(readPlan(store.doc).related).toHaveLength(2);
+  });
+
+  it('moves to each card inside a group that is ungrouped, as dependencies do (Q21)', () => {
+    const store = storeWith(item('g'), item('x', { parent: 'g' }), item('y', { parent: 'g' }), item('other'));
+    addRelated(store, 'g', 'other');
+    ungroupItems(store, ['g']);
+    expect(readPlan(store.doc).related).toEqual([
+      { a: 'other', b: 'x' },
+      { a: 'other', b: 'y' },
+    ]);
+    undo(store);
+    expect(readPlan(store.doc).related).toEqual([{ a: 'g', b: 'other' }]);
   });
 });
 
