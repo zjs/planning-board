@@ -51,9 +51,9 @@ Scope: single user, browser only, no server.
 
 ### 6. Guided start (Q53)
 
-- [ ] **Start a blank plan** is the empty board's primary button, and it starts a short guide: dump ideas, make an area, sort into it, see another view, and group. Each step is checked off by doing it, and the guide can be skipped.
-- [ ] Help becomes a cheat sheet grouped by goal, and stops opening by itself.
-- [ ] Two one-time hints: "Alt adds instead" while dragging, and "Press E to see what's inside" on first selecting a group.
+- [x] **Start a blank plan** is the empty board's primary button, and it starts a short guide: dump ideas, make an area, sort into it, see another view, and group. Each step is checked off by doing it, and the guide can be skipped.
+- [x] Help becomes a cheat sheet grouped by goal, and stops opening by itself.
+- [x] Two one-time hints: "Alt adds instead" while dragging, and "Press E to see what's inside" on first selecting a group.
 
 ### 7. Tester-ready
 

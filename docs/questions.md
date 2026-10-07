@@ -408,6 +408,14 @@ Entry format:
 - Status: answered 2026-10-07: a guided start, but for someone starting from a blank plan rather than on the sample. It walks through the journey: dump ideas, start organizing them, start grouping them. The audience is a new user from a public link or word of mouth.
   - Engineering's defaults: each step finishes when it's done, not when it's read, and the tutorial can be skipped. The reference help becomes a cheat sheet grouped by goal, and stops opening by itself. One-time hints, as in (c), cover what the tutorial doesn't, such as Alt-drop. A cold start goes before the demo in the next tester session.
   - 2026-10-07: on the empty board, **Start a blank plan** becomes the primary button and starts the guided tour. The sample stays one click away.
+  - Built in sprint 7, slice 6. A coach panel at the bottom right lists five steps, and each is ticked off by doing it on the board:
+    1. type three ideas;
+    2. make an area with "+ Add area";
+    3. drag an idea into it;
+    4. size a card in Sizing, then see it kept its area in Sequence;
+    5. put one card inside another.
+  - The last panel points to E, L and right-click, the cheat sheet, and the sample. It survives a reload while running. Loading another plan sets it aside, and once it's finished or skipped, a new blank plan doesn't offer it again.
+  - Help opens only from "?", as a cheat sheet in seven groups. The hints are "Alt adds instead" while dragging, and "Press E, or click its count, to see what's inside" the first time a group is clicked.
 
 ### Q55: Structure for a blank plan
 - Context: Requirements 10, 21 and 27, Q51, and the backlog's theme K. After a brain dump into a blank plan, the next step is sorting ideas into areas, but there are none. Areas are made only in the Properties panel. Typed cards also come out sorted by title, not in the order they were typed.

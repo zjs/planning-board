@@ -1,213 +1,167 @@
 import { keyNames } from './platform.ts';
 
-const STORAGE_KEY = 'planning-board:legend-dismissed';
-
 /** Where feedback goes. A plain link: nothing is sent unless someone follows it. */
 export const FEEDBACK_URL = 'https://github.com/zjs/planning-board/issues/new/choose';
 
 /** The commit this build came from, so a report names its build. */
 export const BUILD = import.meta.env.VITE_BUILD_COMMIT?.slice(0, 7) || 'local';
 
-/** Open on first visit; remembered per browser once closed. */
-export function legendInitiallyOpen(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) !== '1';
-  } catch {
-    return true;
-  }
-}
-
-export function rememberLegendClosed(): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, '1');
-  } catch {
-    // A convenience only.
-  }
-}
-
-/** How to use the board, for testers driving on their own (questions.md Q7). */
+/**
+ * The cheat sheet, grouped by what you want to do (Q53). It opens from "?",
+ * never by itself: a first-time visitor learns from the guided start and
+ * from the board, and comes here to look something up.
+ */
 export function Legend({ onClose }: { onClose: () => void }) {
   const keys = keyNames();
   return (
-    <aside className="legend" aria-label="How to use the board" data-testid="legend">
+    <aside className="legend" aria-label="Cheat sheet" data-testid="legend">
       <header>
-        <h2>How it works</h2>
+        <h2>Cheat sheet</h2>
         <button type="button" onClick={onClose} aria-label="Close help">
           ✕
         </button>
       </header>
       <div className="legend-body">
-      <section>
-        <h3>Moving cards</h3>
-      <dl>
-        <dt>Views, under the toolbar</dt>
-        <dd>
-          Sequence, Roadmap, Sizing and Structure are one click each, and the same cards move to their new places. Rows
-          and Columns pick any other pair; <b>⇄</b> swaps them. Nothing is lost by pivoting: every card keeps all its
-          values.
-        </dd>
-        <dt>Drag a card into a cell</dt>
-        <dd>
-          It takes that row's and column's values, and says which while you drag. A card in several areas has a copy in
-          each; drag one to move it.
-          Hover it to see every copy, joined by dashed lines.
-        </dd>
-        <dt>
-          Hold <kbd>{keys.add}</kbd> while dropping
-        </dt>
-        <dd>Adds that row's or column's value instead of replacing the one it came from.</dd>
-        <dt>Gaps between sequence columns</dt>
-        <dd>Drop there to open a new position. Columns have no numbers on purpose.</dd>
-        <dt>Lanes along the right and bottom edges</dt>
-        <dd>Cards missing a column (right), a row (bottom), or both (corner). Drop there to clear a value.</dd>
-        <dt>Hold a card over another</dt>
-        <dd>
-          After a moment it highlights: drop to put the card inside it, keeping its values. Dragging a card that's in a
-          group shows a strip at the top that moves it out a level.
-        </dd>
-      </dl>
-      </section>
-      <section>
-        <h3>Cards and groups</h3>
-      <dl>
-        <dt>Right-click a card, or its ⋯</dt>
-        <dd>Every action on it, with its key, for the card or for everything selected.</dd>
-        <dt>Drag across empty space</dt>
-        <dd>
-          Draws a box that selects the cards it touches; <kbd>⇧ Shift</kbd> adds to what's selected. Drag any
-          selected card to move them all.
-        </dd>
-        <dt>Click to select</dt>
-        <dd>
-          <kbd>⇧ Shift</kbd>-click adds more; <kbd>Esc</kbd> or empty space clears. <kbd>Delete</kbd> removes the
-          selection, and everything inside a group.
-        </dd>
-        <dt>
-          <kbd>⇧ Shift</kbd>-click a badge or a header
-        </dt>
-        <dd>
-          Selects every card that matches, in any pivot: every Initiative, or everything in a row.{' '}
-          <kbd>{keys.selectAll}</kbd> selects every card on the board.
-        </dd>
-        <dt>
-          Press <kbd>/</kbd> and type
-        </dt>
-        <dd>
-          Finds cards by title, Jira key or description. The rest fade back and nothing moves; a collapsed group with
-          matches inside says how many. <kbd>Enter</kbd> selects them all, expanding groups as needed, and{' '}
-          <kbd>↓</kbd> <kbd>↑</kbd> go from one to the next. <kbd>Esc</kbd> stops finding.
-        </dd>
-        <dt>Double-click empty space</dt>
-        <dd>
-          Makes a card there with that cell's values; in a gap between sequence columns, it's a new column. After
-          naming it, <kbd>Enter</kbd> starts the next card beside it, and <kbd>Esc</kbd> stops. Double-click a card, or
-          press Enter, to rename it.
-        </dd>
-        <dt>
-          <kbd>{keys.group}</kbd> groups the selection
-        </dt>
-        <dd>
-          Into a new card you name, or into the one group already selected. <kbd>{keys.ungroup}</kbd> ungroups.
-        </dd>
-        <dt>
-          Select groups, press <kbd>{keys.expand}</kbd>
-        </dt>
-        <dd>
-          What's inside shows right here, each card marked with its group, and groups inside expand the same way. A
-          selected group's count <span className="legend-chip"><span className="child-count">4</span>›</span> does it
-          too.
-        </dd>
-        <dt>
-          <kbd>{keys.collapse}</kbd> on a card inside
-        </dt>
-        <dd>Collapses its group back into one card.</dd>
-      </dl>
-      </section>
-      <section>
-        <h3>Folding</h3>
-      <dl>
-        <dt>System or Time as an axis</dt>
-        <dd>
-          Areas or quarters are bands, each folded into one lane to start. Click a band, or a folded lane's "4
-          components ▸", to unfold it; <b>Fold all</b> and <b>Unfold all</b> sit beside the axis. An unfolded area has
-          a "No component" lane for cards with just the area.
-        </dd>
-      </dl>
-      </section>
-      <section>
-        <h3>Dependencies</h3>
-      <dl>
-        <dt>
-          Select two cards, press <kbd>{keys.link}</kbd>
-        </dt>
-        <dd>
-          The first one selected comes before the second. <kbd>{keys.link}</kbd> again removes the link. With one card
-          selected, <kbd>{keys.link}</kbd> starts a link you can finish anywhere, even inside a group.
-        </dd>
-        <dt>Lines</dt>
-        <dd>
-          Hover a card to see its links; select it to see its whole chain. <span className="legend-red">Red</span> lines
-          always show: a card placed after one it must come before, or a loop. A folded quarter counts as one lane,
-          so the releases inside it are judged against each other only once it's unfolded. Click a line and press{' '}
-          <kbd>Delete</kbd> to remove it.
-        </dd>
-      </dl>
-      </section>
-      <section>
-        <h3>Plans and properties</h3>
-      <dl>
-        <dt>File › Save plan, Open plan</dt>
-        <dd>A plan as one file, to move between browsers or send to someone. Opening replaces the board; undo brings it back.</dd>
-        <dt>File › Import CSV</dt>
-        <dd>
-          From a Jira export: choose what each column becomes, then where components, versions, and story points go.
-          It replaces the board, and cards keep their Jira keys.
-        </dd>
-        <dt>
-          Inspect, <kbd>{keys.inspect}</kbd>
-        </dt>
-        <dd>
-          Every property of the selected cards, editable without pivoting; select several to change them all at once.
-          Also a card's description, its group, and its links, and a way to add a card inside it.
-        </dd>
-        <dt>Headers</dt>
-        <dd>
-          Double-click a row or column header to rename it. <b>+ Add area</b> (or quarter, size, team…) under a holding
-          lane's name adds one, and stays open for the next.
-        </dd>
-        <dt>Properties</dt>
-        <dd>
-          Add your own, such as Team; each one is a choice of rows or columns. Click a value to rename it; hover for
-          move and delete. A deleted release's cards stay in its quarter.
-        </dd>
-      </dl>
-      </section>
-      <section>
-        <h3>What the board tells you</h3>
-      <dl>
-        <dt>Heavier borders</dt>
-        <dd>Initiatives and epics, from the Level property. A card with no level hasn't been decided yet.</dd>
-        <dt>Dashed lines and outlines</dt>
-        <dd>The copies of the card you're pointing at or have selected, when it's in more than one lane.</dd>
-        <dt>Dashed frames</dt>
-        <dd>
-          A group, shown wherever the cards inside it are, around those cards. Drag them as usual; double-click the
-          group to expand it.
-        </dd>
-        <dt>
-          <span className="mismatch">⚠</span> markers
-        </dt>
-        <dd>
-          A card that doesn't fit its group: dated outside it, larger than it, in another area, or at or above its
-          level (an epic inside an epic). On a group, the count covers everything inside. Hover for why; nothing is
-          changed for you.
-        </dd>
-        <dt>Undo, redo, cancel</dt>
-        <dd>
-          <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.
-        </dd>
-      </dl>
-      </section>
+        <section>
+          <h3>Add and arrange cards</h3>
+          <dl>
+            <dt>Double-click empty space</dt>
+            <dd>
+              A new card with that cell’s values. <kbd>Enter</kbd> after its title starts the next one; <kbd>Esc</kbd>{' '}
+              stops. Double-click a card, or press <kbd>Enter</kbd>, to rename it.
+            </dd>
+            <dt>Drag a card into a cell</dt>
+            <dd>It takes that row’s and column’s values, and says which while you drag.</dd>
+            <dt>
+              Hold <kbd>{keys.add}</kbd> while dropping
+            </dt>
+            <dd>Adds the row’s or column’s value instead of replacing the one it came from.</dd>
+            <dt>Lanes along the right and bottom</dt>
+            <dd>Cards missing a column, a row, or both. Drop there to clear a value.</dd>
+            <dt>Gaps between sequence columns</dt>
+            <dd>Drop there to open a new position. Columns have no numbers on purpose.</dd>
+            <dt>Drag across empty space</dt>
+            <dd>
+              Selects the cards in the box; <kbd>⇧ Shift</kbd> adds. Drag any selected card to move them all.
+            </dd>
+            <dt>Right-click a card, or its ⋯</dt>
+            <dd>Every action on it, with its key.</dd>
+          </dl>
+        </section>
+        <section>
+          <h3>Change the view</h3>
+          <dl>
+            <dt>Views, under the toolbar</dt>
+            <dd>
+              Sequence, Roadmap, Sizing and Structure, one click each. Rows and Columns pick any other pair; <b>⇄</b>{' '}
+              swaps them. Every card keeps all its values.
+            </dd>
+            <dt>Fold and unfold</dt>
+            <dd>
+              Areas and quarters start folded. Click one, or its “4 components ▸”, to unfold it; <b>Fold all</b> and{' '}
+              <b>Unfold all</b> sit beside the axis.
+            </dd>
+            <dt>Headers</dt>
+            <dd>
+              Double-click one to rename it. <b>+ Add area</b> (or quarter, size, team…) under a holding lane’s name adds
+              one.
+            </dd>
+          </dl>
+        </section>
+        <section>
+          <h3>Groups</h3>
+          <dl>
+            <dt>Hold a card over another</dt>
+            <dd>When it highlights, let go: it goes inside, keeping its values.</dd>
+            <dt>
+              <kbd>{keys.group}</kbd> groups the selection
+            </dt>
+            <dd>
+              Into a new card you name, or into the one group selected. <kbd>{keys.ungroup}</kbd> ungroups.
+            </dd>
+            <dt>
+              <kbd>{keys.expand}</kbd> expands, <kbd>{keys.collapse}</kbd> collapses
+            </dt>
+            <dd>
+              Shows what’s inside the selected groups right here, each card marked with its group. A selected group’s
+              count <span className="legend-chip"><span className="child-count">4</span>›</span> does it too.
+            </dd>
+            <dt>Move out of a group</dt>
+            <dd>Drag a card that’s inside one: drop it on the strip at the top.</dd>
+          </dl>
+        </section>
+        <section>
+          <h3>Select and find</h3>
+          <dl>
+            <dt>Click, ⇧-click</dt>
+            <dd>
+              Selects, or adds to the selection. <kbd>Esc</kbd> or empty space clears. <kbd>{keys.selectAll}</kbd> selects
+              every card.
+            </dd>
+            <dt>
+              <kbd>⇧ Shift</kbd>-click a badge or a header
+            </dt>
+            <dd>Selects every card that matches: every Initiative, or everything in a row.</dd>
+            <dt>
+              Press <kbd>/</kbd> and type
+            </dt>
+            <dd>
+              Finds cards by title, Jira key or description, and fades the rest. <kbd>Enter</kbd> selects them all;{' '}
+              <kbd>↓</kbd> <kbd>↑</kbd> step through them.
+            </dd>
+          </dl>
+        </section>
+        <section>
+          <h3>Dependencies</h3>
+          <dl>
+            <dt>
+              Select two cards, press <kbd>{keys.link}</kbd>
+            </dt>
+            <dd>
+              The first comes before the second. <kbd>{keys.link}</kbd> again removes it. With one card selected, it
+              starts a link you finish on any card.
+            </dd>
+            <dt>Lines</dt>
+            <dd>
+              Point at a card for its links; select it for its whole chain. <span className="legend-red">Red</span>{' '}
+              lines always show: out of order, or a loop. Click a line and press <kbd>Delete</kbd> to remove it.
+            </dd>
+          </dl>
+        </section>
+        <section>
+          <h3>Plans and properties</h3>
+          <dl>
+            <dt>File › Save plan, Open plan</dt>
+            <dd>A plan as one file, to move between browsers or send to someone.</dd>
+            <dt>File › Import CSV</dt>
+            <dd>From a Jira export. It replaces the board, and cards keep their Jira keys.</dd>
+            <dt>
+              Inspect, <kbd>{keys.inspect}</kbd>
+            </dt>
+            <dd>Every property of the selected cards, editable without pivoting, plus descriptions and links.</dd>
+            <dt>Properties</dt>
+            <dd>Add your own, such as Team, and move or delete values.</dd>
+          </dl>
+        </section>
+        <section>
+          <h3>What the board tells you</h3>
+          <dl>
+            <dt>Heavier borders</dt>
+            <dd>Initiatives and epics. A card with no level hasn’t been decided yet.</dd>
+            <dt>Dashed lines and outlines</dt>
+            <dd>The copies of a card that’s in more than one lane.</dd>
+            <dt>Dashed frames</dt>
+            <dd>A group, shown around the cards inside it that are in this cell.</dd>
+            <dt>
+              <span className="mismatch">⚠</span> markers
+            </dt>
+            <dd>A card that doesn’t fit its group: dated outside it, larger, in another area, or at its level or above.</dd>
+            <dt>Undo, redo, cancel</dt>
+            <dd>
+              <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.
+            </dd>
+          </dl>
+        </section>
       </div>
       <p className="legend-foot">Everything saves in this browser as you go. Save to a file to take it somewhere else.</p>
       <p className="legend-foot">

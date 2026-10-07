@@ -40,8 +40,11 @@ export function ContextMenu({
     const onPointerDown = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) onClose();
     };
+    // A scroll the board makes on its own just after opening, as a drag's end settles its layout, isn't someone
+    // scrolling away: only scrolls after the first moment close the menu.
+    const opened = performance.now();
     const onScroll = (e: Event) => {
-      if (!root.current?.contains(e.target as Node)) onClose();
+      if (performance.now() - opened > 200 && !root.current?.contains(e.target as Node)) onClose();
     };
     window.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('scroll', onScroll, true);

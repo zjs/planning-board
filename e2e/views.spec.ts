@@ -61,3 +61,12 @@ test('with reduced motion, a pivot is instant', async ({ page }) => {
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   await expect(page.locator('.board-scroll.pivoting')).toHaveCount(0);
 });
+
+test('after clicking a view, keys act on the card selected next, not on the view button', async ({ page }) => {
+  await openSample(page);
+  await page.getByTestId('preset-sequence').click();
+  const c = page.locator('.card[data-item="custom-roles"]').first();
+  await c.locator('.card-title').click();
+  await page.keyboard.press('Delete');
+  await expect(page.locator('.card[data-item="custom-roles"]')).toHaveCount(0);
+});

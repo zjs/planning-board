@@ -5,12 +5,12 @@ export const APP_URL = pathToFileURL(new URL('../dist/index.html', import.meta.u
 
 /**
  * Open the app, loading the sample plan if the board is empty (every test
- * starts with fresh storage), and close the first-run help so it doesn't
- * cover cards.
+ * starts with fresh storage). Help no longer opens by itself (Q53); the
+ * check stays so an older habit can't leave it covering cards.
  */
 export async function openApp(page: Page, { keepHelp = false } = {}) {
   await page.goto(APP_URL);
-  const loadButton = page.locator('.empty-state button.primary');
+  const loadButton = page.locator('.empty-state').getByRole('button', { name: 'Load sample plan' });
   await page.getByTestId('board').or(loadButton).waitFor();
   if (await loadButton.isVisible()) {
     await loadButton.click();
@@ -133,4 +133,29 @@ export async function foldAll(page: Page, property: string, folded: boolean) {
     .getByRole('group', { name: `Fold ${property}` })
     .getByRole('button', { name: folded ? 'Fold all' : 'Unfold all', exact: true })
     .click();
+}
+
+/**
+ * Wait until the board's edits so far are in browser storage, before a reload. The storage provider starts a
+ * write as each edit happens, and IndexedDB doesn't start a later read of the same store until earlier writes
+ * finish, so one read is enough. (Reloading right after an edit can otherwise beat the write on a slow runner.)
+ */
+export async function storageSettled(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('planning-board:v1:default');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('updates', 'readonly');
+          tx.objectStore('updates').count();
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+  );
 }

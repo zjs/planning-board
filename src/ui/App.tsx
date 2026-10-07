@@ -80,7 +80,9 @@ import { DragGhost } from './DragGhost.tsx';
 import { FindBar, FindButton } from './FindBar.tsx';
 import { ImportDialog } from './ImportDialog.tsx';
 import { datedFileName, downloadText } from './files.ts';
-import { Legend, legendInitiallyOpen, rememberLegendClosed } from './Legend.tsx';
+import { Guide } from './Guide.tsx';
+import { loadGuide, offersGuide, saveGuide, type GuideState } from './guide.ts';
+import { Legend } from './Legend.tsx';
 import { Menu } from './Menu.tsx';
 import { Inspector } from './Inspector.tsx';
 import { ViewBar } from './ViewBar.tsx';
@@ -122,6 +124,7 @@ export function App() {
 }
 
 const JUST_MOVED_MS = 1400;
+const EXPAND_HINT_KEY = 'planning-board:hint-expand';
 const NOTICE_MS = 8000;
 
 /** A short message after a delete, with its own Undo. `step` is the delete's own undo step. */
@@ -318,6 +321,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
 
   const onCardClick = useCallback(
     (card: CardRef, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
+      // A one-time hint (Q53): the first time a group is clicked, say how to see inside it. Remembered per browser.
+      if (!(e.shiftKey || e.metaKey || e.ctrlKey) && counts.has(card.itemId) && !card.via) {
+        try {
+          if (localStorage.getItem(EXPAND_HINT_KEY) !== '1') {
+            localStorage.setItem(EXPAND_HINT_KEY, '1');
+            setNotice((current) => current ?? { text: `Press ${keyNames().expand}, or click its count, to see what’s inside right here.` });
+          }
+        } catch {
+          // Storage can be unavailable; a hint is a convenience.
+        }
+      }
       setAnchor(card);
       setSelectedLinks(new Set());
       setSelection((current) => {
@@ -328,7 +342,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
         return next;
       });
     },
-    [],
+    [counts],
   );
   // Selecting many at once (Q47): every match for a badge, every card in a lane, or everything.
   const selectMany = useCallback((ids: ItemId[], what: string) => {
@@ -655,24 +669,26 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     return () => events.forEach((event) => store.undoManager.off(event, dismissIfStale));
   }, [notice, store]);
 
-  // First-visit help opens once there's a board to explain, so it never covers the empty board's buttons.
-  // Null until the viewer opens or closes it themselves.
-  const [legendChoice, setLegendOpen] = useState<boolean | null>(null);
-  const [firstVisit] = useState(legendInitiallyOpen);
-  const legendOpen = legendChoice ?? (firstVisit && !empty);
-  const closeLegend = () => {
-    setLegendOpen(false);
-    rememberLegendClosed();
-  };
+  // The cheat sheet opens from "?" only (Q53): a first-time visitor learns from the guided start and the board.
+  const [legendOpen, setLegendOpen] = useState(false);
+  const closeLegend = () => setLegendOpen(false);
+  // The guided start (Q53): offered with a blank plan until it's been finished or skipped in this browser.
+  const [guide, setGuideState] = useState<GuideState | null>(loadGuide);
+  const setGuide = useCallback((state: GuideState) => {
+    setGuideState(state);
+    saveGuide(state);
+  }, []);
   const keys = keyNames();
   const canNestCard = useCallback((id: ItemId, into: ItemId) => canNest(plan, id, into), [plan]);
   const { drag, startDrag } = useCardDrag(onDrop, scrollRef, onCardClick, canNestCard);
   const dragging = drag !== null;
-  // A press on a card would otherwise leave the keyboard in the find field (the drag stops the browser moving
-  // focus), and E or L would be typed there instead of acting on the card.
+  // A press on a card doesn't move focus (the drag stops the browser doing it), so whatever had it keeps it: the
+  // find field would swallow E or L, and a button just clicked, such as a view or Expand, would take Enter and
+  // Delete for itself. Take focus off anything outside the board, so keys act on the card.
   const onCardPointerDown = useCallback(
     (...args: Parameters<typeof startDrag>) => {
-      if (document.activeElement === findRef.current) findRef.current?.blur();
+      const focused = document.activeElement;
+      if (focused instanceof HTMLElement && focused !== document.body && !scrollRef.current?.contains(focused)) focused.blur();
       startDrag(...args);
     },
     [startDrag],
@@ -907,6 +923,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const loadSample = () => {
     if (!empty && !window.confirm('Replace the board with the sample plan? You can undo this.')) return;
     loadPlan(store, samplePlan());
+    if (guide === 'running') setGuide('skipped');
     // The sample opens on Roadmap, which reads as a grid of two properties straight away (Q52).
     setChoice({ x: TIME, y: SYSTEM });
   };
@@ -918,8 +935,7 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     setChoice(DEFAULT_VIEW);
     setSelection(new Set());
     clearFind(); // otherwise every new idea would be faded for not matching
-    // First-visit help would cover the card being named. It isn't remembered as closed, so it opens next visit.
-    if (legendChoice === null) setLegendOpen(false);
+    if (offersGuide(guide)) setGuide('running');
     const first = layoutView(blank, toViewSpec(blank, DEFAULT_VIEW)).gaps.x?.[0];
     setEditing(first === undefined ? null : { kind: 'new', spot: { x: first, y: null } });
   };
@@ -1124,17 +1140,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
       )}
       {empty ? (
         <div className="empty-state">
-          <h2>No plan yet</h2>
+          <h2>Sort out a release plan</h2>
           <p>
-            Load the sample plan: about 150 roadmap items for a fictional product line. Or start from scratch, open a
-            plan file you saved earlier, or import a Jira export.
+            Put your ideas on cards, then sort the same cards by area, time, size or level, just by dragging. Start
+            with a blank plan and a short guide, or look around a sample product line first.
           </p>
           <div className="empty-actions">
-            <button type="button" className="primary" onClick={loadSample}>
-              Load sample plan
-            </button>
-            <button type="button" onClick={startBlank}>
+            <button type="button" className="primary" onClick={startBlank}>
               Start a blank plan
+            </button>
+            <button type="button" onClick={loadSample}>
+              Load sample plan
             </button>
             <button type="button" onClick={() => openInput.current?.click()}>
               Open plan file…
@@ -1197,6 +1213,22 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           found={found}
           pivoting={pivoting}
         />
+        {guide === 'running' && (
+          // A column beside the board, not over it, so it never hides a card a step asks you to drag.
+          <Guide
+            plan={plan}
+            onSkip={() => setGuide('skipped')}
+            onFinish={() => setGuide('finished')}
+            onHelp={() => {
+              setGuide('finished');
+              setLegendOpen(true);
+            }}
+            onSample={() => {
+              setGuide('finished');
+              loadSample();
+            }}
+          />
+        )}
         {panel === 'inspector' && (
           <Inspector
             store={store}
