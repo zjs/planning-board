@@ -406,6 +406,7 @@ Entry format:
 - Recommendation: (c), and a five-minute cold start before the demo in the next tester session, so its effect can be measured.
 - Status: answered 2026-10-07: a guided start, but for someone starting from a blank plan rather than on the sample. It walks through the journey: dump ideas, start organizing them, start grouping them. The audience is a new user from a public link or word of mouth.
   - Engineering's defaults: each step finishes when it's done, not when it's read, and the tutorial can be skipped. The reference help becomes a cheat sheet grouped by goal, and stops opening by itself. One-time hints, as in (c), cover what the tutorial doesn't, such as Alt-drop. A cold start goes before the demo in the next tester session.
+  - 2026-10-07: on the empty board, **Start a blank plan** becomes the primary button and starts the guided tour. The sample stays one click away.
 
 ### Q55: Structure for a blank plan
 - Context: Requirements 10, 21 and 27, Q51, and the backlog's theme K. After a brain dump into a blank plan, the next step is sorting ideas into areas, but there are none. Areas are made only in the Properties panel. Typed cards also come out sorted by title, not in the order they were typed.
