@@ -57,8 +57,8 @@ Scope: single user, browser only, no server.
 
 ### 7. Tester-ready
 
-- [ ] The session script starts with five minutes of cold start on the public link, before any demo.
-- [ ] A demo note (`docs/demos/sprint-7.md`), and the release pass (`docs/housekeeping.md`).
+- [x] The session script starts with five minutes of cold start on the public link, before any demo.
+- [x] A demo note (`docs/demos/sprint-7.md`), and the release pass (`docs/housekeeping.md`).
 
 ## Deferred (don't build)
 

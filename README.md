@@ -4,7 +4,7 @@ A planning whiteboard for product leadership on enterprise product lines: a plac
 
 Every roadmap item is a card with properties: sequence, system area and component, size, time, and your own (team, customer, …). Any two of them can be the board's rows and columns. Drag a card into a cell and it takes both values. Pivot to another pair, and the same cards rearrange: a sequencing brainstorm, a component map, and a quarterly plan are three views of one plan, not three documents. The goal is to add dependency and component conflicts as highlights to argue about, never as hard rules.
 
-**[Try it in your browser →](https://zjs.github.io/planning-board/)** Load the sample plan, or import a Jira CSV export.
+**[Try it in your browser →](https://zjs.github.io/planning-board/)** Start a blank plan and follow the short guide, look around the sample plan, or import a Jira CSV export.
 
 ## Your roadmap stays on your machine
 
@@ -16,10 +16,13 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 
 **Works today**
 
-- **Start from scratch** with a blank plan, and type ideas one after another: Enter after each title starts the next card. Or explore the sample plan, or import your own.
-- **Pivot** any two properties as rows and columns, and drag cards to set both values. Areas and quarters fold into one lane each, or unfold into components and releases. Undo everything.
+- **Start from scratch** with a blank plan and a five-step guide that's done by doing it. Type ideas one after another: Enter after each title starts the next card, and they stay in the order you typed them.
+- **Pivot** with one click: Sequence, Roadmap, Sizing and Structure, or any two properties as rows and columns. The cards glide to their new places, so you can see they're the same cards. Drag a card to set both values; it says where it will land while you drag. Areas and quarters fold into one lane each, or unfold into components and releases. Undo everything.
+- **Name things where they are:** double-click a row or column header to rename it, and add areas, quarters, sizes or your own values from "+ Add" at the board's edges.
+- **Move several cards at once:** drag a box across empty space to select a run of cards, then drag one of them; they all move, in one undo step.
+- **Right-click any card,** or its ⋯, for every action on it and its keyboard shortcut. **?** opens a cheat sheet.
 - **Dependencies:** select two cards and press L. Links show when you point at a card, and links whose order contradicts the board are always drawn in red, along with loops.
-- **Groups and levels:** cards nest to any depth, as initiatives, epics, and stories. Expand a group in place to see what's inside, and hold a dragged card over another to put it inside. Markers flag cards that don't fit their group: dated outside it, larger than it, in another area, or at or above its level.
+- **Groups and levels:** cards nest to any depth, as initiatives, epics, and stories. Expand a group in place to see what's inside, collapse it again, and hold a dragged card over another to put it inside. Markers flag cards that don't fit their group: dated outside it, larger than it, in another area, or at or above its level.
 - **Find:** press / and type. Cards that match stay bright and the rest fade, without anything moving; Enter selects them all.
 - **An inspector** for editing any card's properties, description, group, and links without pivoting, for one card or many.
 - **Your own properties,** such as Team, and editing any property's values (rename, move, reorder, delete).
@@ -28,8 +31,8 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 
 **Not yet**
 
-- Component contention (too much work landing on one component at once), and a panel listing every conflict. They're next.
-- "Related to" links, ordering cards within a cell, and dragging several cards at once.
+- Component contention (too much work landing on one component at once), and a panel listing every conflict.
+- "Related to" links, and reordering cards by hand within a cell.
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
 - An import replaces the board. Updating a board from a fresh export isn't built.
 - One person at a time. Live collaboration comes later, through a relay that only ever sees encrypted data.

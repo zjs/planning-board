@@ -1,6 +1,8 @@
-# Sprints 3–6 tester session: script (30 minutes)
+# Sprints 3–7 tester session: script (35 minutes)
 
-One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), expand, fold and nesting (sprint 5), find (sprint 6), and starting a blank plan (Q51). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
+One session for everything built since the last one: dependencies (sprint 3), plan structure and the inspector (sprint 4), expand, fold and nesting (sprint 5), find (sprint 6), starting a blank plan (Q51), and a board that explains itself (sprint 7). It replaces the separate [sprint 3](sprint-3-session.md) and [sprint 4](sprint-4-session.md) scripts, which describe zoom, now removed.
+
+Since sprint 7 it opens with a **cold start**: five minutes on the public link before anyone demos anything (Q53). Every earlier session started with a demo, so none of them could see what a stranger meets first.
 
 Run it with one or two PMs or EMs, ideally on an export of their own with Epic and Story issue types and real Blocks links. There are six things to learn:
 
@@ -10,8 +12,22 @@ Run it with one or two PMs or EMs, ideally on an export of their own with Epic a
 4. **Restructuring:** when they reorganize groups, do they drag (hold to nest, the strip), or use the inspector?
 5. **Finding:** on their own import, do they reach for **/**, **⌘F**, or scan the board? Is fading the other cards enough, or do they want them gone?
 6. **Starting from scratch:** is a blank plan and Enter-to-continue fast enough to get a brain dump onto the board?
+7. **First visit (sprint 7):** with no demo, does the board explain itself? Do they pivot without being asked? Does the guide get them from ideas to a grouped plan?
+8. **From a sequence to a timeline (Q46, Q48, Q56):** can they bucket a rough sequence into quarters without feeling they're redoing it?
 
 Stay quiet while they drive, and note what they try first.
+
+## 0. Cold start (5 minutes, before anything else)
+
+Best with someone who hasn't seen the board at all. Send them https://zjs.github.io/planning-board/ in a private window, so it starts empty. Say only: "Tell me what you think this is for, then try it." Do this before the setup below, so nothing has been shown yet. Then say nothing for five minutes, and note:
+
+- what they say it's for, before touching anything;
+- whether they start a blank plan or load the sample, and whether they follow the guide or skip it;
+- whether they switch views without being asked, and how soon;
+- the first gesture they try that does nothing;
+- whether they ever open **?**.
+
+If they finish the guide early, ask: "Put these ideas in a rough order, left to right, then plan them into quarters." Watch whether they find box select (dragging across empty space), and whether they say they're redoing the order (Q56).
 
 ## Before (10 minutes, with the tester)
 
@@ -50,6 +66,8 @@ Hand over control on their own import. Give one task at a time, and don't hint f
 
 ## 3. Debrief (5 minutes)
 
+0. Before I showed you anything, what did you think this was for? What was the first thing that confused you?
+
 1. Which red lines would you act on? Which would you want to hide?
 2. Could you tell the shape of the plan at a glance: what's an initiative, what's a story, what belongs to what?
 3. When you wanted to look inside something, was expanding and unfolding enough? Did you miss being able to zoom into one thing and hide the rest?
@@ -59,4 +77,4 @@ Hand over control on their own import. Give one task at a time, and don't hint f
 
 ## After
 
-For each observation, update an open question in `docs/questions.md`, or add a new one with what you saw. Start with Q23 (marker noise), Q33, Q35, Q39 and Q50, and note the hold delay. Add feedback to `docs/backlog.md` under a theme. If anyone looks for zoom, write down what they wanted to see: it says what expand and fold are missing.
+For each observation, update an open question in `docs/questions.md`, or add a new one with what you saw. Start with the cold start (Q53, Q52, Q56), then Q23 (marker noise), Q33, Q35, Q39 and Q50, and note the hold delay. Add feedback to `docs/backlog.md` under a theme. If anyone looks for zoom, write down what they wanted to see: it says what expand and fold are missing.
