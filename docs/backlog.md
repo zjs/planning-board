@@ -45,7 +45,22 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 
 **More feedback** (the PM, 2026-10-07): "It seems like a natural flow is to brainstorm cards, sort them into a rough sequence, and then try to bucket them into a timeline … when you get to the step where you want to slot work into a timeline, it seems like you have to start over and re-do the sequencing work. Alternatively, maybe sequence is a third level of the time hierarchy?" → [Q56](questions.md#q56-sequence-nested-under-time)
 
-**Lands:** moving between groups shipped in sprint 5 (slice 2). In sprint 7 ([`docs/sprint-7.md`](sprint-7.md)): cells keep the order cards were made in (Q46's MVP), box select, and dragging several cards (Q48). Reordering by hand (Q46 c) and sequence under time (Q56) are sprint 8 candidates.
+**Lands:** moving between groups shipped in sprint 5 (slice 2). Sprint 7 shipped cells that keep the order cards were made in (Q46's MVP), box select, and dragging several cards (Q48). Reordering by hand (Q46 c) and sequence under time (Q56) are sprint 8 candidates.
+
+### D. Small fixes
+
+No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
+
+| Item | Source | Lands |
+|---|---|---|
+| Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
+| Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
+| Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
+| Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
+
+## Shipped themes
+
+Kept for the record: the feedback behind each, and how it was generalized.
 
 ### K. First visit and discoverability
 
@@ -76,22 +91,7 @@ Every tester so far met the board after a demo. A stranger opening the public li
 - Preset views, and pivots that are clearer (Q52).
 - Laying out the board (folding an area's components) and showing more of the cards (expanding a group) keep separate words, with none shared (Q54).
 
-**Lands:** sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), with a cold-start segment in the tester session. The calm items wait for the conflicts panel.
-
-### D. Small fixes
-
-No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
-
-| Item | Source | Lands |
-|---|---|---|
-| Double-click a gap between sequence columns to create a card in a new column. Today it takes two steps: create the card in a column, then drag it into the gap. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
-| Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
-| Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
-| Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
-
-## Shipped themes
-
-Kept for the record: the feedback behind each, and how it was generalized.
+**Lands:** shipped in sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), which awaits the PM's acceptance. The combined session now opens with a cold start. The calm items (the area color, quieter markers, collapsible holding lanes) and the command palette (Q54 b) didn't ship; they're sprint 8 candidates.
 
 ### J. Starting from scratch
 
@@ -106,7 +106,7 @@ The board opened onto the sample plan, a plan file, or a Jira import. Nothing se
 - **A blank plan:** every built-in property and no cards. Areas and quarters belong to the plan, so they start empty.
 - **Typing cards one after another:** a brain dump is many short titles in a row. Enter after a new card's title starts the next one, on any board. → [Q51](questions.md#q51-starting-a-blank-plan)
 
-**Lands:** built 2026-10-03, as a slice before sprint 7. It awaits the PM's acceptance along with sprints 3–6.
+**Lands:** built 2026-10-03, as a slice before sprint 7. It awaits the PM's acceptance along with sprints 3–7.
 
 ### I. Finding cards
 
@@ -202,7 +202,7 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 
 ## Sprints
 
-Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
+Sprints 3 to 7 await the PM's acceptance and one combined tester session, which opens with a cold start.
 
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
@@ -210,12 +210,13 @@ Sprints 3, 4, 5 and 6 await the PM's acceptance and one combined tester session.
 - **Sprint 5: shore up what we have** ([`docs/sprint-5.md`](sprint-5.md)) shipped on 2026-10-02: the compatibility gate; expand and fold replace zoom (Q42, Q43); nesting by drag; selecting every match (Q47); and a card's copies (Q45). One tester session covers sprints 3–6 (`docs/demos/sprint-5-session.md`).
 - **Sprint 6: find** ([`docs/sprint-6.md`](sprint-6.md)) shipped on 2026-10-03: / to find cards, dimming the rest (theme I, Q50). It ships before the combined session, which now covers sprints 3–6.
 - **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
-- **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)), planned 2026-10-07: views and visible pivots, editing values from the headers, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
+- **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)) shipped on 2026-10-07: views and visible pivots, editing values from the headers, drags that say what they do, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
 - **Sprint 8 candidates:**
   - sequence nested under time, as a Timeline view (Q56), after the cold-start session;
   - "related to" links (theme F, Q44);
   - reordering cards by hand within a cell (Q46 c);
   - the calm items from theme K: the area color, quieter markers (Q23), and collapsible holding lanes;
+  - a command palette (Q54 b), if the session shows people looking for one;
   - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40) and reviewed conflicts coming back on any relevant change (Q41).
 
 ## Deferred, from earlier sprints
@@ -235,6 +236,7 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures before `rank`** (2026-10-07, sprint 7, slice 5): plan files and boards from the last build before items gained a rank, as ADR 0005's policy asks for a format change.
 - **Compatibility fixtures for sprint 6** (2026-10-03), added with the blank-plan slice: its plan file and browser board open in every later build.
 - **Plan file compatibility, as a CI gate** (sprint 5, slice 1). "Do we have tests to ensure that data exported from a previous version can be safely imported into a new version? If not, now that the tool is public, we should add that and treat backwards compatibility breakage from any previous version as CI-blocking." (PM, 2026-10-02.) Plan files and browser boards from every released build are fixtures that `npm run check` opens, so a break fails CI. Each release adds its own (ADR 0005); sprint 5's were added in the 2026-10-02 housekeeping pass.
 - **Housekeeping pass, 2026-10-02:** dependencies updated within their ranges, CI actions moved to their current majors (checkout and setup-node v6, upload-artifact v7, upload-pages-artifact v5), and CI builds now download as a single `.html` file with no zip. The README, the help panel, `questions.md` and this backlog were brought up to date.

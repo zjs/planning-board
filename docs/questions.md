@@ -34,7 +34,7 @@ Entry format:
   - **Time bucket.** Contention and time-order checks default to quarters. The requirements table says contention is "measured here" on Time → Release, which may mean releases. The function takes either.
   - **Uncertain order.** A dependency is flagged only when the order is certain. A prerequisite in Q2 against a dependent in Q1/R1 is flagged; one in Q1 against Q1/R1 isn't.
 - Recommendation: keep these for sprint 1 and revisit with real data. The time bucket is the one most likely to matter, since it changes which conflicts show at all.
-- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 7 candidate).
+- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 8 candidate).
   - Sprint 5 (ADR 0013): with one Time axis that folds, "the level it shows" became the lanes it shows. A folded quarter is one bucket, and an unfolded one a bucket per release.
 
 ### Q21: What happens to a group's dependencies when it's ungrouped?
@@ -47,7 +47,7 @@ Entry format:
 - Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
 - Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
 - Recommendation: (a), and watch the tester session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds the conflicts panel.
-- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 7 candidate. The session now covers sprints 3–6.
+- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 8 candidate. The session now covers sprints 3–7. Sprint 7's review counted 45 ⚠ markers in the sample's first view, which a first-time visitor reads as a plan with problems everywhere.
 
 ### Q27: Where do flat Jira values go in our two-level hierarchies?
 - Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
@@ -76,6 +76,11 @@ Entry format:
 - Recommendation: (c), (d) and (e). Menus that show keys are how people learn shortcuts _(recalled)_. The ghost puts "drag writes values" into words at the moment it happens. (e) renames what Q42 and Q43 settled, so it's the PM's call.
 - Status: partly answered 2026-10-07: not (e). Changing how the board is laid out (showing an area's components) and changing how much of the cards you see (showing a group's children) are different operations, and keep different words, but they must not share any. (a)–(d) are open.
   - Engineering's default, since the PM isn't attached to particular terms: bands keep **Fold** and **Unfold**, and groups use **Expand** and **Collapse**. Only ⇧E's label changes, from Fold to Collapse, along with the help and notices.
+  - Sprint 7 (the PM had no preference on its scope) built (a), (d) and the new words, and deferred (b):
+    - **(a), the card menu:** right-click or ⋯, every action with its key, acting on the selection (slice 4).
+    - **(d), the drop label:** a dragged card names what the drop will write, "→ Q3 2027 · Billing", with "Alt adds instead" where it applies (slice 3).
+    - **The words:** Collapse replaces Fold for groups (slice 3, ADR 0013).
+    - **(b), the command palette:** still open, and still worth building if the session shows people looking for one.
 
 ### Q46: Order within a cell
 - Context: The backlog's theme H. Cards in a cell sort by sequence, then title. In PM testing, people wanted to put cards in order within a cell, in views without a sequence axis. Sequence is already a layout, though: its keys are the sequence view's columns (Q8), so changing a card's key to reorder it in a time view would also move it to another column in the sequence view. Remembering positions per view is out of scope for v1.
@@ -311,13 +316,13 @@ Entry format:
 - Context: Requirements 16, 17 and 20, and Q12. Time-based checks are judged at the level the view shows, and a view by size or team doesn't judge order at all. So "every active conflict" depends on the view.
 - Options: (a) the panel follows the view: it lists what the board in front of you highlights, and in a view with no time axis it says to pivot to a time view to check order and contention; loops and group mismatches show in every view; (b) the panel always checks the whole plan at one plan-wide level, whatever the view.
 - Recommendation: (a), so the panel never names a conflict the board doesn't show.
-- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 7 candidate.
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 8 candidate.
 
 ### Q41: What brings a reviewed conflict back?
 - Context: Requirement 19: a reviewed conflict "stays suppressed until an involved item moves".
 - Options: (a) any relevant change: an involved card's values that the check uses change (its time or components, for contention), or a card joins or leaves the conflict; (b) only a change to the cards it was reviewed with; (c) never, until someone un-reviews it.
 - Recommendation: (a). A fourth card on a component reviewed at three is a new situation. The note stays attached, so the earlier reasoning is still visible.
-- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 7 candidate.
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 8 candidate.
 
 ### Q42: Replace zooming with expand and fold
 - Context: Requirements 7, 10, 11 and 12, Q20, Q33, Q34 and Q36, and the backlog's theme G. Sprint 4 left four ways to see detail: zooming into a group, zooming into a lane, expanding in place, and folding bands. In PM testing, expanding and folding did what zooming did, kept the rest of the board and its links in view, and were easier to find than zooming out with Esc. Zooming is also how you add the first card inside a group and move a card out of one, so those need new homes.
@@ -400,6 +405,10 @@ Entry format:
 - Recommendation: (c). The cards glide to their new places in about 300 ms, with reduced motion respected. The presets aren't saved views, so requirement 8 stays deferred. Opening on Roadmap shows the grid first; Sequence is one click away, and the guided start (Q53) can make that click the first step.
 - Status: answered 2026-10-07: preset views, and pivots that are clearer. The audience to optimize for is a new user who finds the board from a public link or word of mouth.
   - Engineering's defaults, each reversible: the presets sit above the board, with Rows and Columns kept beside them for any other pair; a pivot animates, so cards visibly move; and the sample opens on Roadmap. Which presets ship is settled in sprint 7 planning.
+  - Built in sprint 7, slice 1 (ADR 0015):
+    - **The presets** are Sequence, Roadmap (Time × System), Sizing (Size × Level) and Structure (Level × System). They sit in a view bar under the toolbar, beside the Rows and Columns pickers, which moved there so the toolbar fits on one row at 1280px.
+    - **Pivots** animate over about 320 ms, unless the browser asks for reduced motion, and lines wait until the cards land.
+    - **The sample** opens on Roadmap.
 
 ### Q53: Teaching a first-time visitor
 - Context: Requirement 10, Q7, and the backlog's theme K. First-visit help is a reference of about 30 entries that opens over the board as the sample loads. Nothing teaches once it's closed. The tester session demos first, so it can't see first-visit problems.
@@ -408,6 +417,14 @@ Entry format:
 - Status: answered 2026-10-07: a guided start, but for someone starting from a blank plan rather than on the sample. It walks through the journey: dump ideas, start organizing them, start grouping them. The audience is a new user from a public link or word of mouth.
   - Engineering's defaults: each step finishes when it's done, not when it's read, and the tutorial can be skipped. The reference help becomes a cheat sheet grouped by goal, and stops opening by itself. One-time hints, as in (c), cover what the tutorial doesn't, such as Alt-drop. A cold start goes before the demo in the next tester session.
   - 2026-10-07: on the empty board, **Start a blank plan** becomes the primary button and starts the guided tour. The sample stays one click away.
+  - Built in sprint 7, slice 6. A coach panel at the bottom right lists five steps, and each is ticked off by doing it on the board:
+    1. type three ideas;
+    2. make an area with "+ Add area";
+    3. drag an idea into it;
+    4. size a card in Sizing, then see it kept its area in Sequence;
+    5. put one card inside another.
+  - The last panel points to E, L and right-click, the cheat sheet, and the sample. It survives a reload while running. Loading another plan sets it aside, and once it's finished or skipped, a new blank plan doesn't offer it again.
+  - Help opens only from "?", as a cheat sheet in seven groups. The hints are "Alt adds instead" while dragging, and "Press E, or click its count, to see what's inside" the first time a group is clicked.
 
 ### Q55: Structure for a blank plan
 - Context: Requirements 10, 21 and 27, Q51, and the backlog's theme K. After a brain dump into a blank plan, the next step is sorting ideas into areas, but there are none. Areas are made only in the Properties panel. Typed cards also come out sorted by title, not in the order they were typed.
@@ -415,6 +432,11 @@ Entry format:
 - Recommendation: (a). Keeping typed order needs an order within a cell, which is Q46: with its option (c), a plan-wide rank, a brain dump would fill the rank in typing order. Sequence keys can't do it, because each distinct key is its own column (Q8).
 - Status: answered 2026-10-07: edit properties right from the headers, broader than (a). It's part of the blank-plan journey (Q53): organizing ideas means making the lanes to put them in.
   - Engineering's defaults: on every board, a row or column header can be renamed in place, and "+ Add" after the last header adds a value at that level. Moving and deleting values stay in the Properties panel until a session asks for more. Typed order waits for Q46.
+  - Built in sprint 7, slice 2:
+    - **Renaming:** double-click a lane or band header.
+    - **Adding:** "+ Add area", or quarter, component, size, team, sits under each holding lane's name, "No area" and "No quarter", which stay pinned to the board's edges. It's also under each area's own "No component" lane.
+    - **Naming:** the field stays open for the next name, says why a name can't be used, and unfolds the area it adds into.
+    - **Typed order:** comes from Q46's MVP (slice 5).
 
 ### Q48: Dragging several cards
 - Context: Requirements 2 and 3, and the backlog's theme H. With several cards selected, a drag moves only the card under the pointer today.

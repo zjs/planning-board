@@ -1,6 +1,6 @@
 # Sprint 7: engineering plan
 
-Status: **approved 2026-10-07.** Scope is in `docs/sprint-7.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-10-07.** **Complete 2026-10-07.** Slices 1–6 were PRs #45–#50, and slice 7 follows. Scope is in `docs/sprint-7.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## What this sprint has to prove
 

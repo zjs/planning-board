@@ -1099,6 +1099,102 @@ body.dragging * {
   gap: 3px;
 }
 
+/*
+ * The guided start (Q53): a column beside the board, like the inspector. Floating over the board, it hid
+ * whatever was under it, such as the corner lane where every unsized card waits in Sizing.
+ */
+.guide {
+  flex: 0 0 300px;
+  overflow: auto;
+  padding: 14px;
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  font-size: 13px;
+}
+
+.guide header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.guide h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.guide-progress {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-steps li {
+  display: flex;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.guide-steps li.current,
+.guide-steps li.done {
+  color: var(--text);
+}
+
+.guide-steps li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guide-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.guide-steps li.current .guide-mark {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.guide-steps li.done .guide-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+
+.guide-how {
+  color: var(--text);
+  line-height: 1.4;
+}
+
+p.guide-how {
+  margin: 0 0 10px;
+}
+
+.guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .legend {
   position: fixed;
   left: 16px;

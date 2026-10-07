@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { APP_URL, cell, dragTo, openApp, reveal } from './app.ts';
+import { APP_URL, cell, dragTo, openApp, reveal, storageSettled } from './app.ts';
 
 // Sprint 7, slice 5: from a sequence to a timeline. Cards keep the order they were made in (Q46's MVP), a box
 // selects a run of them, and dragging one moves them all (Q48).
@@ -37,6 +37,7 @@ test('ideas typed into one column stay in the order they were typed', async ({ p
   await page.keyboard.press('Escape');
   await expect(page.locator('.card-title')).toHaveText(['Zebra crossing', 'Apple pie', 'Mango smoothie']);
   // Still in that order after a reload.
+  await storageSettled(page);
   await page.reload();
   await page.getByTestId('board').waitFor();
   await expect(page.locator('.card-title')).toHaveText(['Zebra crossing', 'Apple pie', 'Mango smoothie']);
