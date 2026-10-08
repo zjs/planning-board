@@ -1,6 +1,6 @@
 # Sprint 11: engineering plan
 
-Status: **approved 2026-10-08.** Scope is in `docs/sprint-11.md`. This doc covers how engineering delivers it.
+Status: **approved 2026-10-08; built 2026-10-08,** awaiting the PM's acceptance (`docs/demos/sprint-11.md`). Scope is in `docs/sprint-11.md`. This doc covers how engineering delivers it.
 
 ## Context
 

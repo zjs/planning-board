@@ -481,6 +481,7 @@ Entry format:
 - Recommendation: (a). It needs more than one board per browser, which is useful on its own (a scratch plan beside the real one). Mockup: artboard 8.
 - Status: answered 2026-10-08: (a). On a shared plan, Open, Import and New blank plan make a new plan; replacing the shared plan stays as a second, warned choice. M2 sprint 10.
   - Built in sprint 10, slice 2, on every plan (Q66): the File menu lists your plans, and Open, Import, New blank plan and Load sample plan each make a new one (ADR 0021). The warned "replace the shared plan for everyone" comes with sharing, in sprint 11.
+  - Built in sprint 11, slice 3: on a shared plan you can edit, **File › Replace this shared plan from a file…** warns that everyone with the link will see the file’s plan instead. It’s one undo step.
 
 ### Q59: Coming back after working apart
 - Context: Requirements 31 and 19, and the PM's question for sprint 9: the relay is on a company network, someone drops off the VPN for a while, and both sides keep editing. Should the merge be reviewed, or prevented? Sprint 9 found:
@@ -491,6 +492,7 @@ Entry format:
 - Options: (a) offline is always allowed and merges automatically; on reconnecting, "Since you were away" marks what others changed on the board and lists your changes that didn't stick, each with "Use mine" or "Restore"; (b) a review step before your offline changes merge; (c) read-only while the relay can't be reached; (d) (a), plus an opt-in "Keep my changes as a scenario instead", once scenarios exist.
 - Recommendation: (a) now and (d) later. The connection pill says plainly what offline means ("7 changes not shared yet"). Mockups: artboards 4 and 5.
 - Status: answered 2026-10-08: (a). Offline is always allowed and merges automatically, and "Since you were away" shows what happened. (d), keeping offline changes as a scenario, waits for scenarios. M2: the connection pill in sprint 11, "Since you were away" in its own sprint (Q65).
+  - The connection pill built in sprint 11, slice 4: Live, Reconnecting… after 3 seconds, and Offline with the number of cards not shared yet, louder after an hour or 25 cards ("Others may be changing the same cards").
 
 ### Q60: Two people reaching for one card
 - Context: Requirements 2, 3 and 31. In a live session, two people can drag the same card within the same second. Today's schema leaves a single-valued property holding two values (L1 in `merge-results.md`). After the schema change, one value wins.
@@ -513,6 +515,7 @@ Entry format:
 - Options: (a) "Can edit" and "Can view" links, and "Make new links" to revoke, which says that people with old links keep what they already saw; (b) edit links only; (c) passwords on top of links.
 - Recommendation: (a). It's the only access control end-to-end encryption allows cheaply, and it needs no accounts. Mockup: artboard 7.
 - Status: answered 2026-10-08: (a). "Can edit" and "Can view" links, and "Make new links" to revoke. M2 sprint 11.
+  - Can edit and Can view links built in sprint 11, slice 3 (ADR 0018, amended). "Make new links" comes in sprint 12.
 
 ### Q63: History: what's kept, and for how long
 - Context: Requirements 31 and 32, and the PM's priority for sprint 9: knowing who changed what. Yjs records no lasting authors, so history is our own log, kept in its own encrypted document beside the board's. Names are self-chosen and times come from each person's clock, so it's a courtesy, not an audit trail.
@@ -586,15 +589,18 @@ Entry format:
 - Options: (a) the plan you're on becomes the shared plan, marked as shared in File › Your plans; (b) Share makes a shared copy and opens it, and your own plan stays beside it, unshared.
 - Recommendation: (a). One plan, one name, and no copy drifting apart from the shared one. A private version is a saved file away.
 - Status: answered 2026-10-08: (a). Sprint 11, slice 3.
+  - Built in slice 3. File › Your plans lists the shared plan where it was; the toolbar shows its connection pill.
 
 ### Q69: How the relay reaches people
 - Context: Requirements 30 and 37, and Q64 (e). GitHub Pages can't run a relay, so accepting sprint 11, and any pilot, means running one somewhere.
 - Options: (a) CI builds the relay, with the app inside, for Mac, Linux and Windows as downloads, and publishes a container image on each merge to `main`; (b) a container image only; (c) build from source.
 - Recommendation: (a). A pilot user downloads one file and runs it; IT runs the container.
 - Status: answered 2026-10-08: (a). Sprint 11, slice 1.
+  - Built in slice 1. CI builds the relay for five targets on every run; after CI passes on `main`, `release.yml` publishes the `relay-latest` downloads and `ghcr.io/zjs/planning-board`.
 
 ### Q70: Sharing from a build the relay doesn't serve
 - Context: Requirement 30 and Q64. The relay serves the app, so its links point at the relay's own address. The public build on GitHub Pages, and the HTML file opened from disk, have no relay until sprint 14's hosted one.
 - Options: (a) Share asks once for a relay address, such as a laptop's or a company's, and remembers it; (b) Share is offered only when the app was opened from a relay.
 - Recommendation: (a). Share works from every build.
 - Status: answered 2026-10-08: (a). Sprint 11, slice 3. From the public build, which is served over https, the relay must be `https` or `localhost`; the dialog says so and offers to open the app from the relay instead.
+  - Built in slice 3. A relay that served the page is used without asking; anywhere else, Share asks for the address, checks the relay answers, and remembers it.

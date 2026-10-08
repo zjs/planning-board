@@ -84,14 +84,14 @@ export function relayAddress(typed: string): { relay: string } | { problem: stri
   try {
     url = new URL(/^[a-z]+:\/\//i.test(text) ? text : `http://${text}`);
   } catch {
-    return { problem: "That doesn't look like an address." };
+    return { problem: 'That doesn’t look like an address.' };
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return { problem: 'A relay address starts with http:// or https://.' };
   const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
   if (typeof location !== 'undefined' && location.protocol === 'https:' && url.protocol === 'http:' && !local) {
     return {
       problem:
-        'This page is served over https, so the browser won\'t let it reach a relay over plain http. Open the app from the relay\'s own address instead, or use an https relay.',
+        'This page is served over https, so the browser won’t let it reach a relay over plain http. Open the app from the relay’s own address instead, or use an https relay.',
     };
   }
   return { relay: `${url.origin}${url.pathname.replace(/\/$/, '')}` };

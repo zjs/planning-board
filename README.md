@@ -8,11 +8,13 @@ Every roadmap item is a card with properties: sequence, system area and componen
 
 ## Your roadmap stays on your machine
 
-The app is one static HTML file. It runs entirely in your browser, makes no network requests, and has no server, account, or analytics. Your plan is saved in your browser's own storage, and **File › Save plan to file** gives you a copy you control. You can also download the file (below) and open it from disk.
+The app is one static HTML file. It runs entirely in your browser, and has no account or analytics. Your plan is saved in your browser's own storage, and **File › Save plan to file** gives you a copy you control. You can also download the file (below) and open it from disk.
+
+It makes no network requests unless you share a plan. A shared plan goes through a relay, which you run yourself (below). Everything is encrypted in your browser first, with a key that's only in the share link, after the `#`, which browsers never send to a server. The relay stores and forwards what it can't read.
 
 ## Status: early preview
 
-This is being built in the open, a sprint at a time. It's usable for trying the idea on your own data, but it isn't finished, and plans are single-user for now.
+This is being built in the open, a sprint at a time. It's usable for trying the idea on your own data, but it isn't finished.
 
 **Works today**
 
@@ -29,6 +31,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - **Your own properties,** such as Team, and editing any property's values (rename, move, reorder, delete).
 - **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, "Blocks" links become dependencies, and "Relates" links become related links.
 - **Several plans in one browser:** a scratch plan beside the real one, listed in the File menu and named in the toolbar. Opening a file, importing and loading the sample each make a new plan, so nothing you're working on is overwritten. The same plan open in two tabs stays in step as you edit.
+- **Share a plan** through a relay you run: **Share** gives a Can edit and a Can view link. Edits show up on everyone's board as they're made. Work offline whenever you like: the board counts what isn't shared yet, and shares it when you're back.
 - **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
 
 **Not yet**
@@ -37,7 +40,8 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - Reordering cards by hand within a cell.
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
 - Updating a plan from a fresh Jira export: each import is a new plan.
-- Sharing a plan with other people. Live collaboration is being built now, through a relay that only ever sees encrypted data ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)). Its design is in [`docs/research/collaboration/`](docs/research/collaboration/README.md).
+- Seeing who else is on a shared plan, and where they're pointing; history of who changed what; and making new links to cut off old ones. These are being built now ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)).
+- A hosted relay to share through without running your own.
 
 What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). What's coming is in [`docs/backlog.md`](docs/backlog.md), and decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).
 
@@ -46,6 +50,12 @@ What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). Wh
 ## Feedback
 
 [Open an issue](https://github.com/zjs/planning-board/issues/new/choose): something broken, an export that didn't import well, or what you'd need before using this for real. Please don't paste anything from a confidential roadmap. For an import problem, your file's header row is usually all that's needed. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Run your own relay
+
+The relay is one program, with the app inside. Download the archive for your computer from the [`relay-latest` release](https://github.com/zjs/planning-board/releases/tag/relay-latest), unpack it, and run `planning-board-relay`. It prints two addresses: one for this computer, and one colleagues on your network can open. Open it, and **Share** a plan from there.
+
+For a server, there's a container: `docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board`. Options, Mac and Windows notes, and what the relay can and can't see are in [`relay/README.md`](relay/README.md).
 
 ## Other ways to run it
 
@@ -57,7 +67,7 @@ npm install
 npm run dev          # dev server with hot reload
 npm run check        # typecheck + lint + unit tests
 npm run build        # dist/index.html, the single-file app
-npm run e2e          # Playwright tests against dist/index.html (build first)
+npm run e2e          # Playwright tests against dist/index.html (build first); with Go installed, also against a relay
 npm run seed         # regenerate the sample plan, src/seed/sample-plan.json
 npm run sample:jira  # regenerate the sample Jira export, docs/samples/jira-export.csv
 npm run compat:fixtures  # save fixtures from a newly released build (ADR 0005)
@@ -67,9 +77,10 @@ npm run compat:fixtures  # save fixtures from a newly released build (ADR 0005)
 
 - `src/domain/`: the model and every query over it, as pure functions. No UI or storage imports.
 - `src/commands/`: every change to a plan, each one Yjs transaction and one undo step.
-- `src/store/`: the Yjs document layout and browser storage.
+- `src/store/`: the Yjs document layout, browser storage, and syncing a shared plan through a relay, encrypted.
 - `src/ui/`: React components.
-- `e2e/`: Playwright tests, including each sprint's exit criteria.
+- `relay/`: the relay, in Go. It serves the app, and stores and forwards shared plans it can't read.
+- `e2e/`: Playwright tests, including each sprint's exit criteria. `e2e/relay/` runs against a real relay.
 - `scripts/`: generators for the sample plan, the sample Jira export, and the compatibility fixtures.
 - `docs/`: requirements, the backlog and open questions, sprint scopes and plans, decision records, demo notes, and sample data. [`docs/housekeeping.md`](docs/housekeeping.md) is how the repo is kept tidy.
 

@@ -43,7 +43,7 @@ The engineering plan is `docs/plans/sprint-11-plan.md`.
 
 ### 5. Tester-ready
 
-- [ ] A demo note (`docs/demos/sprint-11.md`), an exit-criteria test with a real relay, the README's "Run your own relay", the cheat sheet, and the release pass.
+- [x] A demo note (`docs/demos/sprint-11.md`), an exit-criteria test with a real relay, the README's "Run your own relay", the cheat sheet, and the release pass.
 
 ## Deferred (don't build)
 
