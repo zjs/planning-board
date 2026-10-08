@@ -34,6 +34,8 @@ import { Card, DraftCard, type CommitHow } from "./Card.tsx";
 import { areaPalette, cardAreas } from "./areas.ts";
 import { inSentence, type HoldingCollapsed } from "./axes.ts";
 import { DependencyLines, type DrawnLine } from "./DependencyLines.tsx";
+import { PresenceLayer } from "./PresenceLayer.tsx";
+import type { PresenceView } from "./usePresence.ts";
 import { HeaderField } from "./HeaderField.tsx";
 import { keyNames } from "./platform.ts";
 import { isCellTarget, isIntoTarget, type BoardTarget } from "./useCardDrag.ts";
@@ -89,6 +91,8 @@ interface Props {
   pivoting?: boolean;
   /** A plan this computer can't change (a view link): no adding or renaming from the headers. */
   readOnly?: boolean;
+  /** Everyone else on a shared plan, drawn where their cards are in this view (ADR 0019). */
+  presence?: PresenceView | null;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
   /** Open a card's actions at a point on screen (Q54): right-click, or its "⋯". */
@@ -243,6 +247,7 @@ export const Board = memo(function Board({
   found,
   pivoting = false,
   readOnly = false,
+  presence = null,
 }: Props) {
   /**
    * A lane header. On a nested axis, a parent's own lane reads "No
@@ -944,6 +949,15 @@ export const Board = memo(function Board({
               scroller={scrollRef}
               layoutKey={layout}
               onLineClick={onLineClick}
+            />
+          )}
+          {presence && presence.others.length > 0 && (
+            <PresenceLayer
+              others={presence.others}
+              pointers={presence.pointers}
+              board={boardRef}
+              scroller={scrollRef}
+              layoutKey={layout}
             />
           )}
           <div

@@ -28,6 +28,7 @@ import { loopRepairs, wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 import { syncTabs } from '../store/tabs.ts';
+import { PresenceChannel } from '../store/presence.ts';
 import { indexedDbSyncStore, memorySyncStore, RelayProvider } from '../store/relay.ts';
 import { FIRST_PLAN, planDatabase, syncDatabase, type PlanId, type SharedPlan } from './plans.ts';
 
@@ -86,6 +87,8 @@ export interface OpenPlan {
   persistence: PersistenceStatus;
   /** The relay connection, for a shared plan (ADR 0017). */
   connection: Connection | null;
+  /** Who else is on it, for a shared plan (ADR 0019). */
+  presence: Presence | null;
   readOnly: ReadOnlyReason | null;
   close: () => Promise<void>;
 }
@@ -93,6 +96,8 @@ export interface OpenPlan {
 /** A shared plan's connection to its relay, as the board sees it. */
 export type Connection = RelayProvider;
 export type { ConnectionStatus, RelayProblem } from '../store/relay.ts';
+/** Who else is on a shared plan, and what they're doing (ADR 0019). */
+export type Presence = PresenceChannel;
 
 /**
  * Open one of the browser's plans, backed by its own database. Resolves once
@@ -121,13 +126,16 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN, shared?: SharedPlan
         sync: typeof indexedDB === 'undefined' ? memorySyncStore() : indexedDbSyncStore(syncDatabase(id)),
       })
     : null;
+  const presence = connection ? new PresenceChannel(connection) : null;
   const opened: OpenPlan = {
     id,
     store,
     persistence: status,
     connection,
+    presence,
     readOnly,
     close: async () => {
+      presence?.destroy();
       connection?.destroy();
       stopLoops();
       stopTabs();

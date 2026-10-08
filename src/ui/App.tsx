@@ -30,6 +30,7 @@ import {
   watchPlanName,
   type Connection,
   type OpenPlan,
+  type Presence,
   type ReadOnlyReason,
   type PersistenceStatus,
   type PlanStore,
@@ -58,7 +59,7 @@ import {
   type PlanId,
   type SharedPlan,
 } from '../commands/plans.ts';
-import { isNewerLink, joinFromLink, linkInHash, sharingConfirmed, startSharing, myName } from '../commands/sharing.ts';
+import { isNewerLink, joinFromLink, linkInHash, sharingConfirmed, startSharing } from '../commands/sharing.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
   chain,
@@ -127,7 +128,9 @@ import { PlanName } from './PlanName.tsx';
 import { Inspector } from './Inspector.tsx';
 import { ViewBar } from './ViewBar.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
+import { Avatars } from './Avatars.tsx';
 import { ConnectionPill } from './ConnectionPill.tsx';
+import { usePresence } from './usePresence.ts';
 import { ShareDialog, useConnection } from './ShareDialog.tsx';
 import { capturePositions, playFrom, type Positions } from './motion.ts';
 import { keyNames } from './platform.ts';
@@ -467,6 +470,7 @@ export function App() {
         store={session.plan.store}
         persistence={session.plan.persistence}
         connection={session.plan.connection}
+        presence={session.plan.presence}
         readOnly={session.plan.readOnly}
         start={session.start}
         planActions={actions}
@@ -518,6 +522,7 @@ function Workspace({
   store,
   persistence,
   connection,
+  presence,
   readOnly: openedReadOnly,
   start,
   planActions,
@@ -526,6 +531,7 @@ function Workspace({
   store: PlanStore;
   persistence: PersistenceStatus;
   connection: Connection | null;
+  presence: Presence | null;
   readOnly: ReadOnlyReason | null;
   start: PlanStart | null;
   planActions: PlanActions;
@@ -785,6 +791,8 @@ function Workspace({
     setSelectedLinks(new Set());
   }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Who else is on a shared plan, and what this tab shares with them (ADR 0019).
+  const presenceView = usePresence(presence, selected, scrollRef);
   // Pivots move (Q52, ADR 0015): where the cards were, measured just before a new choice renders.
   const pivotFrom = useRef<Positions | null>(null);
   const [pivoting, setPivoting] = useState(false);
@@ -1580,10 +1588,10 @@ function Workspace({
             connection={connection}
             viewOnly={readOnly === 'view-link'}
             hasLocal={!empty}
-            name={myName()}
             onOpen={() => setSharing(true)}
           />
         )}
+        {presenceView && <Avatars view={presenceView} />}
         <div className="actions">
           <button
             type="button"
@@ -1810,6 +1818,7 @@ function Workspace({
           found={found}
           pivoting={pivoting}
           readOnly={!canEdit}
+          presence={presenceView}
         />
         {guide === 'running' && (
           // A column beside the board, not over it, so it never hides a card a step asks you to drag.

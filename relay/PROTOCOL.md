@@ -17,7 +17,7 @@ The first frame from the client must be `hello`. Before it, the relay answers an
 | `0x01` | hello | version, token, after, flags | I speak `version`; here's the write token, or empty to only read; send me everything after update `after`. Flags: `1` create the room with this token if it doesn't exist (repeating it with the same token is harmless); `2` replay every update the relay keeps, ignoring the snapshot. |
 | `0x02` | update | ref, data | A change to number, store and forward. `ref` is the app's own, echoed in the ack or the refusal. |
 | `0x03` | snapshot | upto, data | The whole plan as of update `upto`. The relay keeps the updates it covers for 30 days, then drops them. |
-| `0x04` | ephemeral | data | Presence: forwarded to everyone else in the room, never stored. |
+| `0x04` | ephemeral | data | Presence: forwarded to everyone else in the room, never stored. A view link may send it too. It has a rate of its own (30 a second by default, `-presence-rate`), and over that, or over 4 KiB, it's dropped without an error, since a newer one follows within seconds. |
 
 ## From the relay
 

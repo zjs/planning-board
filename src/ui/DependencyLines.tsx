@@ -53,24 +53,7 @@ export function DependencyLines({
     const boardEl = board.current;
     if (!svg || !boardEl) return;
     const draw = () => {
-      const origin = boardEl.getBoundingClientRect();
-      // Measure the board without the overlay: its own size counts in the board's scroll size, so a
-      // board that got narrower (after a pivot) would otherwise keep the old width and a blank strip.
-      svg.setAttribute('width', '0');
-      svg.setAttribute('height', '0');
-      svg.setAttribute('width', String(boardEl.scrollWidth));
-      svg.setAttribute('height', String(boardEl.scrollHeight));
-      // Clip to the area under the pinned headers, so a line to a card scrolled beneath them doesn't
-      // seem to point at a header. Lines still reach the pinned holding lanes on the right and bottom.
-      const corner = boardEl.querySelector('.corner')?.getBoundingClientRect();
-      const view = scroller.current?.getBoundingClientRect();
-      const clip = svg.querySelector('clipPath rect')!;
-      if (corner && view) {
-        clip.setAttribute('x', String(corner.right - origin.left));
-        clip.setAttribute('y', String(corner.bottom - origin.top));
-        clip.setAttribute('width', String(Math.max(0, view.right - corner.right)));
-        clip.setAttribute('height', String(Math.max(0, view.bottom - corner.bottom)));
-      }
+      const origin = fitOverlay(svg, boardEl, scroller.current);
       const group = svg.querySelector('g.lines')!;
       group.replaceChildren();
       const local = (r: DOMRect): Box => ({
@@ -120,27 +103,7 @@ export function DependencyLines({
         group.append(path, hit);
       }
     };
-    draw();
-    let frame = 0;
-    const soon = () => {
-      if (frame === 0) {
-        frame = requestAnimationFrame(() => {
-          frame = 0;
-          draw();
-        });
-      }
-    };
-    const scrollEl = scroller.current;
-    scrollEl?.addEventListener('scroll', soon, { passive: true });
-    window.addEventListener('resize', soon);
-    const resize = new ResizeObserver(soon);
-    resize.observe(boardEl);
-    return () => {
-      cancelAnimationFrame(frame);
-      scrollEl?.removeEventListener('scroll', soon);
-      window.removeEventListener('resize', soon);
-      resize.disconnect();
-    };
+    return redrawOnChange(draw, boardEl, scroller.current);
   }, [lines, copies, board, scroller, layoutKey]);
 
   return (
@@ -167,6 +130,61 @@ export function DependencyLines({
       <g className="lines" clipPath="url(#dep-clip)" />
     </svg>
   );
+}
+
+/**
+ * Size an overlay to the whole board, and clip it to the area under the
+ * pinned headers, so a mark on a card scrolled beneath them doesn't seem to
+ * point at a header. Marks still reach the pinned holding lanes on the right
+ * and bottom. Returns the board's position, for turning screen rectangles
+ * into overlay coordinates.
+ */
+export function fitOverlay(svg: SVGSVGElement, boardEl: HTMLElement, scroller: HTMLElement | null): DOMRect {
+  const origin = boardEl.getBoundingClientRect();
+  // Measure the board without the overlay: its own size counts in the board's scroll size, so a
+  // board that got narrower (after a pivot) would otherwise keep the old width and a blank strip.
+  svg.setAttribute('width', '0');
+  svg.setAttribute('height', '0');
+  svg.setAttribute('width', String(boardEl.scrollWidth));
+  svg.setAttribute('height', String(boardEl.scrollHeight));
+  const corner = boardEl.querySelector('.corner')?.getBoundingClientRect();
+  const view = scroller?.getBoundingClientRect();
+  const clip = svg.querySelector('clipPath rect');
+  if (clip && corner && view) {
+    clip.setAttribute('x', String(corner.right - origin.left));
+    clip.setAttribute('y', String(corner.bottom - origin.top));
+    clip.setAttribute('width', String(Math.max(0, view.right - corner.right)));
+    clip.setAttribute('height', String(Math.max(0, view.bottom - corner.bottom)));
+  }
+  return origin;
+}
+
+/**
+ * Draw now, and again (once a frame at most) whenever the board scrolls or
+ * changes size, since the pinned holding lanes move relative to the board.
+ * Returns the cleanup.
+ */
+export function redrawOnChange(draw: () => void, boardEl: HTMLElement, scroller: HTMLElement | null): () => void {
+  draw();
+  let frame = 0;
+  const soon = () => {
+    if (frame === 0) {
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        draw();
+      });
+    }
+  };
+  scroller?.addEventListener('scroll', soon, { passive: true });
+  window.addEventListener('resize', soon);
+  const resize = new ResizeObserver(soon);
+  resize.observe(boardEl);
+  return () => {
+    cancelAnimationFrame(frame);
+    scroller?.removeEventListener('scroll', soon);
+    window.removeEventListener('resize', soon);
+    resize.disconnect();
+  };
 }
 
 export interface Box {

@@ -45,7 +45,7 @@ test('share a plan, open its links on two other computers, and edit it together'
   expect(links.edit).toMatch(/^http:\/\/127\.0\.0\.1:18787\/#v=1&room=[\w-]+&key=[\w-]+$/);
   expect(links.view).toMatch(/&view=/);
   await expect(ada.getByTestId('connection-state')).toHaveText('Live');
-  await expect(ada.locator('.toolbar .me-chip')).toHaveText('Ada');
+  await expect(ada.getByTestId('avatar').first()).toHaveAttribute('data-person', 'Ada');
   // The key leaves the address bar once it's saved.
   expect(new URL(ada.url()).hash).toMatch(/^#plan=/);
 

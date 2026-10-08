@@ -13,15 +13,12 @@ export function ConnectionPill({
   connection,
   viewOnly,
   hasLocal,
-  name,
   onOpen,
 }: {
   store: PlanStore;
   connection: Connection;
   viewOnly: boolean;
   hasLocal: boolean;
-  /** Your name on shared plans, if you've given one. */
-  name: string | null;
   onOpen: () => void;
 }) {
   const { status, problem } = useConnection(connection);
@@ -59,11 +56,6 @@ export function ConnectionPill({
         <button type="button" className="pill-action" onClick={() => connection.recreate()} title="Make the plan again on the relay, from your copy">
           Put it back
         </button>
-      )}
-      {name !== null && (
-        <span className="me-chip" title="Your name on shared plans">
-          {name}
-        </span>
       )}
     </span>
   );

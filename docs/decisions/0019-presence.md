@@ -34,3 +34,42 @@ A card that isn't on your board, because it's inside a collapsed group or scroll
 
 - Large sessions need the cursor setting (Everyone, Driver only, None), since presence fans out to everyone.
 - There's no following (Q61). If it comes back, following means applying someone's view, not their scroll position, and presence would add the view: axes, folded bands and expanded groups.
+
+## Amendment: as built in sprint 12, slice 1
+
+**The message** (`src/domain/presence.ts`, `PeerState` version 1) is JSON, sealed with the plan's key as kind `presence` (ADR 0018). It holds:
+- `id`: random, kept per browser, so one person's tabs and reconnections show as one avatar. The relay's own connection numbers change on every reconnect.
+- `name` and `color`.
+- `pointer`: `{item, fx, fy}`.
+- `selection`: up to 200 card IDs.
+- `drag`: `{item, label}`.
+- `drive`: a claim to drive.
+- `dropped`: a card just dropped, for collision notices (slice 2).
+
+Anything out of shape, or of another version, is ignored rather than drawn.
+
+**Timing** follows the spike:
+- sends throttled to one every 50 ms;
+- a heartbeat every 3 seconds;
+- someone silent for 10 seconds dropped, and anyone the relay says has left dropped at once;
+- losing the connection drops everyone until their heartbeats bring them back.
+
+**The relay** counts presence apart from changes (30 a second, `-presence-rate`), so a pointer moving never slows anyone's edits. Over that rate, or over 4 KiB, presence is dropped without an error. A view link may send presence.
+
+**The driver (Q71).** "I'm driving" claims the lead with a Lamport number, one higher than any claim seen. Every browser picks the highest claim, ties broken by ID, so all agree with no server deciding. A claim someone else has overtaken is given up, so when the new driver stops, nobody drives. Leaving gives it up too. A claim reaches everyone within one heartbeat.
+
+**Drawing** (`src/ui/PresenceLayer.tsx`) is an SVG over the board, sized, clipped and redrawn the same way as the dependency lines:
+- a selection outlines every copy, in the person's color;
+- a pointer, an arrow with a name, goes on the first copy on screen;
+- a card that isn't on this board draws nothing.
+
+The pointer is tracked over the whole page, since a plan opened from a link has no board until its first sync.
+
+**Avatars** sit beside the connection pill, yours first, with a ring around the driver's. The row opens a menu to drive, to change your name, and to choose whose pointers show:
+- the choices are Everyone, Driver only, and None;
+- the setting is kept per browser, and quiets pointers only;
+- avatars and selections always show.
+
+The menu keeps the toolbar to one row at 1280 wide.
+
+**Colors** are eight named colors, picked from the person's ID. They're darker than the area colors, and drawn only as outlines and pointers, never as a card's edge.

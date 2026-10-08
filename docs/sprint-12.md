@@ -19,9 +19,9 @@ The engineering plan is `docs/plans/sprint-12-plan.md`.
 
 ### 1. Presence (ADR 0019, Q61, Q71)
 
-- [ ] Avatars beside the connection pill: one per person, however many tabs they have open.
-- [ ] Each person's pointer and selection, in their color, on the same cards in your own view.
-- [ ] I'm driving, and a cursor setting: Everyone, Driver only, or None.
+- [x] Avatars beside the connection pill: one per person, however many tabs they have open.
+- [x] Each person's pointer and selection, in their color, on the same cards in your own view.
+- [x] I'm driving, and a cursor setting: Everyone, Driver only, or None.
 
 ### 2. Drag intent and collisions (Q60)
 

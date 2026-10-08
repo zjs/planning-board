@@ -3,6 +3,8 @@ import * as Y from 'yjs';
 import { deriveKeys, fromBase64Url, newRoom, toBase64Url, unseal, viewKeyOf } from './keys.ts';
 import { Frame, FrameReader, FrameWriter, HelloFlag, RelayError } from './frames.ts';
 import { memorySyncStore, RelayProvider, roomUrl, SNAPSHOT_EVERY, type RelaySocket, type SyncStore } from './relay.ts';
+import { PresenceChannel, SILENT_MS } from './presence.ts';
+import type { PeerState } from '../domain/presence.ts';
 
 /**
  * A relay in memory that speaks the same protocol as relay/ (PROTOCOL.md),
@@ -13,8 +15,9 @@ class FakeRelay {
   rooms = new Map<string, { token: string; epoch: Uint8Array; head: number; log: { seq: number; data: Uint8Array }[]; snapshot?: { upto: number; data: Uint8Array }; peers: Set<FakeSocket> }>();
   down = false;
   sockets = new Set<FakeSocket>();
+  private nextPeer = 0;
   open = (url: string): RelaySocket => {
-    const socket = new FakeSocket(this, url.split('/rooms/')[1]!);
+    const socket = new FakeSocket(this, url.split('/rooms/')[1]!, ++this.nextPeer);
     this.sockets.add(socket);
     queueMicrotask(() => (this.down ? socket.drop() : socket.onopen?.()));
     return socket;
@@ -47,7 +50,7 @@ class FakeRelay {
       }
       for (const e of target.log) if (e.seq > from) socket.deliver(new FrameWriter(Frame.UpdateOut).uint(e.seq).uint(0).bytes(e.data).done());
       const upto = target.snapshot?.upto ?? 0;
-      socket.deliver(new FrameWriter(Frame.Synced).uint(target.head).uint(upto).bytes(target.epoch).uint(1).uint(socket.canWrite ? 1 : 0).done());
+      socket.deliver(new FrameWriter(Frame.Synced).uint(target.head).uint(upto).bytes(target.epoch).uint(socket.id).uint(socket.canWrite ? 1 : 0).done());
       target.peers.add(socket);
       return;
     }
@@ -60,6 +63,10 @@ class FakeRelay {
       room.log.push({ seq, data });
       for (const peer of room.peers) if (peer !== socket) peer.deliver(new FrameWriter(Frame.UpdateOut).uint(seq).uint(0).bytes(data).done());
       socket.deliver(new FrameWriter(Frame.Ack).uint(ref).uint(seq).uint(0).done());
+    } else if (r.kind === Frame.Ephemeral) {
+      // Presence is forwarded to everyone else, view links included, and never kept.
+      const data = r.bytes();
+      for (const peer of room.peers) if (peer !== socket) peer.deliver(new FrameWriter(Frame.EphemeralOut).uint(socket.id).bytes(data).done());
     } else if (r.kind === Frame.Snapshot && socket.canWrite) {
       const upto = r.uint();
       room.snapshot = { upto, data: r.bytes() };
@@ -77,6 +84,7 @@ class FakeSocket implements RelaySocket {
   constructor(
     private readonly relay: FakeRelay,
     readonly room: string,
+    readonly id: number,
   ) {}
   send(frame: Uint8Array) {
     if (this.closed) return;
@@ -97,7 +105,10 @@ class FakeSocket implements RelaySocket {
     if (this.closed) return;
     this.closed = true;
     this.relay.sockets.delete(this);
-    for (const room of this.relay.rooms.values()) room.peers.delete(this);
+    for (const room of this.relay.rooms.values()) {
+      if (!room.peers.delete(this)) continue;
+      for (const peer of room.peers) peer.deliver(new FrameWriter(Frame.Left).uint(this.id).done());
+    }
     queueMicrotask(() => this.onclose?.());
   }
 }
@@ -336,5 +347,96 @@ describe('syncing through a relay (ADR 0017)', () => {
     await settle(clock);
     expect(a.status).toBe('live');
     expect(cards(alice)).toEqual({ a: 'A' });
+  });
+});
+
+describe('presence (ADR 0019)', () => {
+  const me = (id: string, patch: Partial<PeerState> = {}): PeerState => ({
+    v: 1, id, name: id, color: '#c92a2a', pointer: null, selection: [], drag: null, drive: null, dropped: null, ...patch,
+  });
+
+  function room() {
+    const t = setup();
+    let now = 1_000_000;
+    const options = { now: () => now, setTimer: t.clock.setTimer, clearTimer: t.clock.clearTimer };
+    return { ...t, options, advance: (ms: number) => (now += ms) };
+  }
+
+  it('shows each person what the others point at and select, sealed on the way', async () => {
+    const { clock, make, options, relay } = room();
+    const a = make(new Y.Doc(), { create: true });
+    await settle(clock);
+    const b = make(new Y.Doc(), { edit: false });
+    await settle(clock);
+    const pa = new PresenceChannel(a, options);
+    const pb = new PresenceChannel(b, options);
+    // What travels through the relay is sealed: spy on what the fake relay forwards.
+    const forwarded: string[] = [];
+    const deliver = Object.getOwnPropertyDescriptor(Object.getPrototypeOf([...relay.sockets][0]!), 'deliver')!.value as (f: Uint8Array) => void;
+    for (const s of relay.sockets) {
+      const sock = s as unknown as { deliver: (f: Uint8Array) => void };
+      sock.deliver = (f: Uint8Array) => {
+        forwarded.push(new TextDecoder().decode(f));
+        deliver.call(s, f);
+      };
+    }
+    pa.set(me('ada', { pointer: { item: 'card-1', fx: 0.2, fy: 0.8 }, selection: ['card-1', 'card-2'] }));
+    pb.set(me('bo'));
+    await settle(clock);
+    expect(pb.states()).toEqual([me('ada', { pointer: { item: 'card-1', fx: 0.2, fy: 0.8 }, selection: ['card-1', 'card-2'] })]);
+    expect(pa.states().map((s) => s.id)).toEqual(['bo']);
+    expect(forwarded.join('')).not.toContain('card-1');
+    pa.destroy();
+    pb.destroy();
+    a.destroy();
+    b.destroy();
+  });
+
+  it('drops someone who leaves, or goes quiet, and brings them back on their next heartbeat', async () => {
+    const { clock, make, options, advance } = room();
+    const a = make(new Y.Doc(), { create: true });
+    const b = make(new Y.Doc());
+    await settle(clock);
+    const pa = new PresenceChannel(a, options);
+    const pb = new PresenceChannel(b, options);
+    pa.set(me('ada'));
+    pb.set(me('bo'));
+    await settle(clock);
+    expect(pa.states()).toHaveLength(1);
+    // Quiet: Bo's tab stops sending (as a sleeping laptop would) while Ada's keeps going.
+    pb.destroy();
+    advance(SILENT_MS);
+    await settle(clock);
+    expect(pa.states()).toHaveLength(0);
+    // Gone: the relay says so.
+    const pc = new PresenceChannel(b, options);
+    pc.set(me('bo'));
+    await settle(clock);
+    expect(pa.states()).toHaveLength(1);
+    b.destroy();
+    await settle(clock);
+    expect(pa.states()).toHaveLength(0);
+    pa.destroy();
+    pc.destroy();
+    a.destroy();
+  });
+
+  it('remembers the highest claim to drive it has seen (Q71)', async () => {
+    const { clock, make, options } = room();
+    const a = make(new Y.Doc(), { create: true });
+    const b = make(new Y.Doc());
+    await settle(clock);
+    const pa = new PresenceChannel(a, options);
+    const pb = new PresenceChannel(b, options);
+    pb.set(me('bo', { drive: 7 }));
+    await settle(clock);
+    expect(pa.claimsSeen()).toBe(7);
+    pb.set(me('bo'));
+    await settle(clock);
+    expect(pa.claimsSeen()).toBe(7);
+    pa.destroy();
+    pb.destroy();
+    a.destroy();
+    b.destroy();
   });
 });
