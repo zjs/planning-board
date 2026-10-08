@@ -580,3 +580,21 @@ Entry format:
 - Recommendation: (a). No new step for a first visit. It matches mockup artboard 8.
 - Status: answered 2026-10-08: (a). Sprint 10, slice 2.
   - Built in slice 2 (ADR 0021): *Your plans* in the File menu, last opened first, with a ✓ on the open one; the toolbar shows the name, renamed by double-click, and so does the browser tab. Each plan remembers its own view, foldings and expanded groups, and the link names it (`#plan=…`).
+
+### Q68: What Share does to the plan you're on
+- Context: Requirements 30 and 34, Q58, and artboard 7. The sprint 9 mockup had Share make a shared copy and open it, leaving your own copy beside it. That assumed one board per browser; sprint 10 brought several plans (ADR 0021).
+- Options: (a) the plan you're on becomes the shared plan, marked as shared in File › Your plans; (b) Share makes a shared copy and opens it, and your own plan stays beside it, unshared.
+- Recommendation: (a). One plan, one name, and no copy drifting apart from the shared one. A private version is a saved file away.
+- Status: answered 2026-10-08: (a). Sprint 11, slice 3.
+
+### Q69: How the relay reaches people
+- Context: Requirements 30 and 37, and Q64 (e). GitHub Pages can't run a relay, so accepting sprint 11, and any pilot, means running one somewhere.
+- Options: (a) CI builds the relay, with the app inside, for Mac, Linux and Windows as downloads, and publishes a container image on each merge to `main`; (b) a container image only; (c) build from source.
+- Recommendation: (a). A pilot user downloads one file and runs it; IT runs the container.
+- Status: answered 2026-10-08: (a). Sprint 11, slice 1.
+
+### Q70: Sharing from a build the relay doesn't serve
+- Context: Requirement 30 and Q64. The relay serves the app, so its links point at the relay's own address. The public build on GitHub Pages, and the HTML file opened from disk, have no relay until sprint 14's hosted one.
+- Options: (a) Share asks once for a relay address, such as a laptop's or a company's, and remembers it; (b) Share is offered only when the app was opened from a relay.
+- Recommendation: (a). Share works from every build.
+- Status: answered 2026-10-08: (a). Sprint 11, slice 3. From the public build, which is served over https, the relay must be `https` or `localhost`; the dialog says so and offers to open the app from the relay instead.

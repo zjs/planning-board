@@ -15,7 +15,9 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 10 (M2's foundations, still single-user) is built and awaits the PM's acceptance on its build: schema 2 (ADR 0016), several plans per browser (ADR 0021), and two tabs of one plan in sync. Its demo note is `docs/demos/sprint-10.md`, and its compatibility fixtures follow in the next PR. Next is sprint 11, the relay, which starts in plan mode after the maintenance pass. The rest of M2 is `docs/plans/m2-plan.md`: sprints 11–14, from requirements 30–37.
+Sprint 11 (the relay) is under way: the relay for real, loop repair, share and join, and the connection pill. Its scope is in `docs/sprint-11.md`, and its slice plan in `docs/plans/sprint-11-plan.md`. The relay is Go, in `relay/`. The rest of M2 is `docs/plans/m2-plan.md`: sprints 12–14.
+
+Sprint 10 (M2's foundations: schema 2, several plans per browser, two tabs in sync) is built, and awaits the PM's acceptance on its build (`docs/demos/sprint-10.md`).
 
 Sprint 9 designed collaboration, and its summary is `docs/research/collaboration/README.md`. ADRs 0016–0020 are Accepted. The spikes are in `spikes/`, out of lint, typecheck and CI.
 

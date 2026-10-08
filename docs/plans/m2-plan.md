@@ -35,6 +35,8 @@ What it proves: two people on two computers share a plan, end to end encrypted, 
 | 3 | **The connection pill, and offline** (Q59, requirement 35): live, reconnecting, offline with a count, view-only | Go off the VPN, keep working, come back, and converge. |
 | 4 | **Loop repair** (ADR 0004), with L8 in the store's merge tests (the other scenarios became store tests in sprint 10) | Two people nesting cards inside each other's at once leaves one nest, not two loose cards. |
 
+Sprint 11's plan (`docs/plans/sprint-11-plan.md`) builds loop repair second, before sharing, so every build that can share stamps its moves, and adds a slice of setup and one to get tester-ready.
+
 ## Sprint 12: seeing each other
 
 What it proves: a live session feels like a whiteboard, and collisions are rare and recoverable.
