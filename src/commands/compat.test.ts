@@ -33,7 +33,7 @@ function openBoard(file: string) {
 
 describe('boards stored by earlier versions', () => {
   it('has a board from every released version', () => {
-    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
+    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-11', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
   });
 
   for (const file of boards) {

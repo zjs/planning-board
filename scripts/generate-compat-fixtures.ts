@@ -36,6 +36,8 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-10', commit: '1296bfe' },
   // The last build before cards record their moves, for loop repair (sprint 11, slice 2; ADR 0004).
   { name: 'sprint-11-before-loop-repair', commit: '6f0142d' },
+  // The first build that can share: moves carry stamps (ADR 0004), and plans record their writer (meta.writer).
+  { name: 'sprint-11', commit: 'd50c040' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;
@@ -90,7 +92,8 @@ try {
     try {
       symlinkSync(join(repo, 'node_modules'), join(dir, 'node_modules'));
       writeFileSync(join(dir, 'export-compat.ts'), EXPORTER);
-      execFileSync('node', ['export-compat.ts', out, name], { cwd: dir, stdio: 'inherit' });
+      // Transform, not just strip, types: sprint 11's relay.ts used a parameter property, which stripping rejects.
+      execFileSync('node', ['--experimental-transform-types', '--no-warnings', 'export-compat.ts', out, name], { cwd: dir, stdio: 'inherit' });
       console.log(`${name}: generated from ${commit}`);
     } finally {
       execFileSync('git', ['worktree', 'remove', '--force', dir], { cwd: repo, stdio: 'ignore' });
