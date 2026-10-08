@@ -57,7 +57,8 @@ Sprints 3–10 and the blank-plan slice (Q51) await the PM's acceptance. One com
 - All fast checks (what CI runs first): `npm run check` = `npm run typecheck && npm run lint && npm test`
 - Build the single-file app: `npm run build` → `dist/index.html`
 - End-to-end tests: `npm run build && npm run e2e`. Playwright runs Chromium against `dist/index.html` over `file://`. Locally, the config uses `/opt/pw-browsers/chromium` if it exists; don't run `playwright install` in the cloud container.
+- The relay (Go, in `relay/`): `cd relay && go test -race ./...`. To run it with the current build: `npm run build && cd relay && go run . -static ../dist -data /tmp/relay-data`. It needs Go 1.26 or later; with an older Go installed, `GOTOOLCHAIN=auto` fetches the one `go.mod` asks for.
 - Regenerate the sample plan: `npm run seed`
 - Regenerate the sample Jira export (`docs/samples/jira-export.csv`): `npm run sample:jira`
 - Add compatibility fixtures for a new release (ADR 0005): add its commit to `VERSIONS` in `scripts/generate-compat-fixtures.ts`, then `npm run compat:fixtures`. Existing fixtures are never rewritten.
-- Deploy: automatic. `.github/workflows/pages.yml` publishes every `main` build to https://zjs.github.io/planning-board/. CI also attaches the build to every run, unzipped, as `planning-board-<sha>.html`.
+- Deploy: automatic, after CI passes on `main`. `.github/workflows/pages.yml` publishes the build to https://zjs.github.io/planning-board/, and `.github/workflows/release.yml` publishes the relay's downloads as the `relay-latest` release and its image as `ghcr.io/zjs/planning-board`. CI also attaches the build to every run, unzipped, as `planning-board-<sha>.html`, and the relay for each computer as `planning-board-relay-<os>-<arch>`.

@@ -20,10 +20,10 @@ The engineering plan is `docs/plans/sprint-11-plan.md`.
 
 ### 1. The relay, for real (ADR 0017)
 
-- [ ] `relay/`: rooms are created explicitly, and only someone with the edit link's write token can change one. A view link reads and can't write.
-- [ ] A versioned binary protocol, receive times, compacted log kept for 30 days, an origin check, and limits on size, rooms and rates.
-- [ ] It serves the app, and on a laptop prints the address colleagues can open.
-- [ ] Go tests in CI. Downloads for Mac, Linux and Windows, and a container image, published after CI passes on `main`.
+- [x] `relay/`: rooms are created explicitly, and only someone with the edit link's write token can change one. A view link reads and can't write.
+- [x] A versioned binary protocol, receive times, compacted log kept for 30 days, an origin check, and limits on size, rooms and rates.
+- [x] It serves the app, and on a laptop prints the address colleagues can open.
+- [x] Go tests in CI. Downloads for Mac, Linux and Windows, and a container image, published after CI passes on `main`.
 
 ### 2. Loop repair (ADR 0004)
 

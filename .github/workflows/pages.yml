@@ -4,8 +4,11 @@ name: Pages
 # without a GitHub login (questions.md Q5, Q31). It's the same single file
 # CI attaches to every run. Needs Settings › Pages › Source: GitHub Actions.
 
+# Only after CI passes on main, so a red build never reaches the public page.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -20,11 +23,16 @@ concurrency:
 jobs:
   build:
     # Pages on a free plan needs a public repo; skip quietly until then.
-    if: ${{ !github.event.repository.private }}
+    if: >-
+      !github.event.repository.private &&
+      (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v7
         with:
@@ -36,7 +44,7 @@ jobs:
       - name: Build single-file app
         run: npm run build
         env:
-          VITE_BUILD_COMMIT: ${{ github.sha }}
+          VITE_BUILD_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/upload-pages-artifact@v5
         with:

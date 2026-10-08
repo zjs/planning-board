@@ -95,3 +95,93 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: ignore
+
+  # The relay (ADR 0017): Go, in relay/. Its tests run beside the web checks.
+  relay-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: relay
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: relay/go.sum
+
+      - name: Formatting
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Tests
+        run: go test -race ./...
+
+  # The relay for each computer, with the app built above inside it (Q69). The downloads people use come from
+  # the relay-latest release (release.yml); these are attached to every run, like the HTML file.
+  relay-build:
+    needs: [check, relay-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        target:
+          - { os: darwin, arch: arm64 }
+          - { os: darwin, arch: amd64 }
+          - { os: linux, arch: amd64 }
+          - { os: linux, arch: arm64 }
+          - { os: windows, arch: amd64 }
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: relay/go.sum
+
+      - name: Fetch the app built by the check job
+        uses: actions/download-artifact@v8
+        with:
+          name: planning-board-${{ github.event.pull_request.head.sha || github.sha }}.html
+          path: app
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.target.os }}
+          GOARCH: ${{ matrix.target.arch }}
+          CGO_ENABLED: '0'
+        run: |
+          cp app/*.html relay/web/index.html
+          exe=planning-board-relay
+          if [ "$GOOS" = windows ]; then exe=$exe.exe; fi
+          mkdir -p out/planning-board-relay
+          (cd relay && go build -trimpath -ldflags="-s -w" -o "../out/planning-board-relay/$exe" .)
+          cp relay/README.md out/planning-board-relay/README.md
+          name="planning-board-relay-$GOOS-$GOARCH"
+          if [ "$GOOS" = windows ]; then
+            (cd out && zip -qr "../$name.zip" planning-board-relay)
+            echo "ARCHIVE=$name.zip" >> "$GITHUB_ENV"
+          else
+            tar -czf "$name.tar.gz" -C out planning-board-relay
+            echo "ARCHIVE=$name.tar.gz" >> "$GITHUB_ENV"
+          fi
+          # The bare Linux binaries go into the container image (release.yml).
+          if [ "$GOOS" = linux ]; then cp "out/planning-board-relay/$exe" "planning-board-relay-linux-$GOARCH"; fi
+
+      - name: Attach the download
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ env.ARCHIVE }}
+          archive: false
+          if-no-files-found: error
+
+      - name: Attach the Linux binary for the container
+        if: matrix.target.os == 'linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: planning-board-relay-linux-${{ matrix.target.arch }}
+          path: planning-board-relay-linux-${{ matrix.target.arch }}
+          if-no-files-found: error
