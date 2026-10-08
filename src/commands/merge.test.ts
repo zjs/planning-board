@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
 import { SIZE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
-import { topLevelItems } from '../domain/tree.ts';
+import { loopRepairs } from '../domain/tree.ts';
 import type { ViewSpec } from '../domain/view.ts';
-import { readPlan } from '../store/schema.ts';
+import { readPlan, readTree } from '../store/schema.ts';
 import {
   addDependency,
   addValue,
@@ -22,10 +22,13 @@ import {
   editCardValues,
   loadPlan,
   moveToParent,
+  redo,
   renameItem,
+  repairLoops,
   renameValue,
   reorderValue,
   undo,
+  watchLoops,
   type PlanStore,
 } from './store.ts';
 
@@ -201,15 +204,87 @@ describe('two people at once (ADR 0016)', () => {
     expectConverged(two);
   });
 
-  it('L8: nesting two cards inside each other leaves a loop that readers surface at the top level (repair: ADR 0004, sprint 11)', () => {
+  it('L8: nesting two cards inside each other at once leaves one nest, the same on both sides (ADR 0004)', () => {
+    for (const aliceFirst of [true, false]) {
+      const two = pair(aliceFirst);
+      moveToParent(two.alice, ['tax'], 'invoices');
+      moveToParent(two.bob, ['invoices'], 'tax');
+      sync(two);
+      // Each side repairs what it sees, as its watcher would; the repairs agree.
+      repairLoops(two.alice);
+      repairLoops(two.bob);
+      sync(two);
+      const plan = p(two.alice);
+      const nested = [plan.items['tax']!.parent, plan.items['invoices']!.parent];
+      expect(nested.filter((parent) => parent !== null)).toHaveLength(1);
+      // The later client's move loses: Bob's when he has the higher client ID.
+      const loser = aliceFirst ? 'invoices' : 'tax';
+      expect(plan.items[loser]!.parent).toBeNull();
+      expectConverged(two);
+    }
+  });
+
+  it('the watcher repairs a loop as soon as the other side\'s move arrives', async () => {
+    const two = pair();
+    watchLoops(two.alice);
+    watchLoops(two.bob);
+    moveToParent(two.alice, ['tax'], 'invoices');
+    moveToParent(two.bob, ['invoices'], 'tax');
+    sync(two);
+    await Promise.resolve();
+    sync(two);
+    expect(loopRepairs(readTree(two.alice.doc)).size).toBe(0);
+    expect(p(two.alice).items['invoices']!.parent).toBeNull();
+    expectConverged(two);
+  });
+
+  it("undoing a move that a repair settled changes nothing, and redoing it is settled again", () => {
     const two = pair();
     moveToParent(two.alice, ['tax'], 'invoices');
     moveToParent(two.bob, ['invoices'], 'tax');
     sync(two);
-    const top = topLevelItems(p(two.alice));
-    expect(top).toContain('tax');
-    expect(top).toContain('invoices');
+    repairLoops(two.alice);
+    repairLoops(two.bob);
+    sync(two);
+    expect(p(two.bob).items['invoices']!.parent).toBeNull();
+    undo(two.bob);
+    repairLoops(two.bob);
+    expect(p(two.bob).items['invoices']!.parent).toBeNull();
+    expect(p(two.bob).items['tax']!.parent).toBe('invoices');
+    redo(two.bob);
+    repairLoops(two.bob);
+    sync(two);
+    repairLoops(two.alice);
+    sync(two);
+    expect(loopRepairs(readTree(two.alice.doc)).size).toBe(0);
     expectConverged(two);
+  });
+
+  it('random concurrent nesting never leaves a loop, and both sides agree', () => {
+    let seed = 11;
+    const random = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+    for (let run = 0; run < 25; run++) {
+      const two = pair(run % 2 === 0);
+      for (let step = 0; step < 30; step++) {
+        for (const store of [two.alice, two.bob]) {
+          const ids = Object.keys(p(store).items).sort();
+          const id = ids[Math.floor(random() * ids.length)]!;
+          const into = random() < 0.2 ? null : ids[Math.floor(random() * ids.length)]!;
+          moveToParent(store, [id], into);
+        }
+        if (random() < 0.3) {
+          sync(two);
+          repairLoops(two.alice);
+          repairLoops(two.bob);
+        }
+      }
+      sync(two);
+      repairLoops(two.alice);
+      repairLoops(two.bob);
+      sync(two);
+      expect(loopRepairs(readTree(two.alice.doc)).size).toBe(0);
+      expectConverged(two);
+    }
   });
 
   it('random edits on both sides converge, and a single-valued property never holds two values', () => {

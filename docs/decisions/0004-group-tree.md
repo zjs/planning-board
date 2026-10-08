@@ -1,6 +1,6 @@
 # 0004: Group tree representation
 
-Status: Accepted (sprint 0, slice 1). Single-user guard now; concurrent repair designed for M2. Sprint 9's merge harness confirmed the race is rare (no loops in 6,000 random edits) and that readers survive one (scenario L8, `docs/research/collaboration/merge-scenarios.md`); the repair is built in M2's first relay slice, with L8 as its test.
+Status: Accepted (sprint 0, slice 1). Single-user guard now; concurrent repair designed for M2. Sprint 9's merge harness confirmed the race is rare (no loops in 6,000 random edits) and that readers survive one (scenario L8, `docs/research/collaboration/merge-scenarios.md`); the repair is built in M2's first relay slice, with L8 as its test. Built in sprint 11, slice 2 (amendment below).
 
 ## Context
 
@@ -21,3 +21,17 @@ Any item can contain items, recursively; an item has at most one parent (require
 
 - A lost concurrent move is visible (the item lands back where it was). Acceptable for a rare race; the UI can flash the item.
 - Every derived view must go through the cycle-safe tree helpers, never follow `parent` blindly. Tests in `tree.test.ts` cover this.
+
+## Amendment (sprint 11, slice 2): loop repair, as built
+
+Built before any build could share, so every build that can share stamps its moves.
+
+- **What a card records.** A move between groups writes one `move` key beside `parent`: `{ previous, counter, client }`, the group it left and a Lamport stamp. `counter` is one more than the highest in the document; `client` is the Yjs client ID. `moveToParent`, `groupItems` and `ungroupItems` all go through one helper, so every move in a command shares a stamp.
+- **Finding loops.** `loopRepairs` (`src/domain/tree.ts`) is pure. It looks at every card, deleted ones too, so a restore can't bring a loop back. In each loop, the card with the highest stamp loses (then the higher client ID, then the higher card ID, which also orders cards from before stamps existed). It goes back to the group it left. If that group is gone, or would loop again, it goes to the top level. A group that's deleted still counts: the card hides with it (ADR 0016). It repeats until no loop is left.
+- **Writing the repair.** `repairLoops` writes `parent` only, with its own origin, outside undo. Every computer works out the same repair from the same cards, so two writing it at once agree. `watchLoops` runs it after any change that isn't itself a repair: another tab's or person's move, and undo, which can restore a group someone has since moved inside. It also runs once when a plan opens. In slice 3, view-only plans won't write repairs.
+- **Undo after a repair.** Undoing the move that lost changes nothing on the board: Yjs won't put back a value something untracked has replaced. Redoing it makes the loop again, which is settled again. Both are pinned by tests.
+- **Values can't loop.** A value only moves under another value one level up (`moveTargets`), so a move never changes its depth. A loop would need depth to fall all the way round, so it can't happen.
+- **Evidence.**
+  - `src/commands/merge.test.ts`: L8 ends in one nest on both sides, in both client orders. The watcher settles a loop as soon as the other side's move arrives.
+  - A property test: 25 runs of random concurrent nesting leave no loop, and both sides agree.
+  - Sprint 9's harness, rerun with repairs: L8 leaves one nest, and random edits converge with no loop.

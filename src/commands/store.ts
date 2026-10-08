@@ -23,7 +23,7 @@ import {
   valueLabelProblem,
   type CardValueChange,
 } from '../domain/properties.ts';
-import { wouldCreateCycle } from '../domain/tree.ts';
+import { loopRepairs, wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 import { syncTabs } from '../store/tabs.ts';
@@ -35,7 +35,10 @@ import {
   dependencyKey,
   isEmpty,
   itemToY,
+  latestMoveCounter,
+  moveItem,
   planNameOf,
+  readTree,
   propertyToY,
   readPlan,
   relatedKey,
@@ -79,11 +82,15 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN): Promise<OpenPlan> 
   ensureBuiltIns(store);
   // The same plan open in another tab follows along (sprint 10, slice 3).
   const stopTabs = syncTabs(store.doc, planDatabase(id));
+  // A loop two tabs made at once, or one left in storage, is settled now and whenever one appears (ADR 0004).
+  repairLoops(store);
+  const stopLoops = watchLoops(store);
   return {
     id,
     store,
     persistence: status,
     close: async () => {
+      stopLoops();
       stopTabs();
       store.undoManager.destroy();
       await close();
@@ -132,6 +139,54 @@ export function ensureBuiltIns(store: PlanStore): boolean {
     for (const property of missing) properties.set(property.id, propertyToY(property));
   });
   return true;
+}
+
+/** Marks loop repairs (ADR 0004): not anyone's edit, so undo never tracks them. */
+const REPAIR_ORIGIN = { source: 'loop-repair' };
+
+/**
+ * Settle any loop of groups that two people's moves made together (ADR
+ * 0004), by writing the new parents every computer works out alike.
+ * Outside undo. Returns how many cards moved.
+ */
+export function repairLoops(store: PlanStore): number {
+  const repairs = loopRepairs(readTree(store.doc));
+  if (repairs.size === 0) return 0;
+  const items = root(store.doc).items;
+  store.doc.transact(() => {
+    for (const [id, parent] of repairs) items.get(id)?.set('parent', parent);
+  }, REPAIR_ORIGIN);
+  return repairs.size;
+}
+
+/**
+ * Repair loops whenever the document changes other than by a repair: after
+ * an edit from another tab or person, and after undo, which can restore a
+ * group someone has since moved inside. Batched to once per task. Returns a
+ * function that stops.
+ */
+export function watchLoops(store: PlanStore): () => void {
+  let queued = false;
+  const onUpdate = (_update: Uint8Array, origin: unknown) => {
+    if (origin === REPAIR_ORIGIN || queued) return;
+    queued = true;
+    queueMicrotask(() => {
+      queued = false;
+      repairLoops(store);
+    });
+  };
+  store.doc.on('update', onUpdate);
+  return () => store.doc.off('update', onUpdate);
+}
+
+/** Move cards to new groups in one transaction, all with the same move stamp (ADR 0004). */
+function moveItems(store: PlanStore, moves: Iterable<readonly [ItemId, ItemId | null]>): void {
+  const items = root(store.doc).items;
+  const counter = latestMoveCounter(store.doc) + 1;
+  for (const [id, parent] of moves) {
+    const item = items.get(id);
+    if (item) moveItem(item, parent, counter, store.doc.clientID);
+  }
 }
 
 function edit(store: PlanStore, change: () => void): void {
@@ -357,16 +412,14 @@ export function groupItems(store: PlanStore, ids: Iterable<ItemId>): { group: It
   if (!grouping) return null;
   const items = root(store.doc).items;
   if (grouping.kind === 'join') {
-    edit(store, () => {
-      for (const id of grouping.members) items.get(id)?.set('parent', grouping.group);
-    });
+    edit(store, () => moveItems(store, grouping.members.map((id) => [id, grouping.group] as const)));
     return { group: grouping.group, created: false };
   }
   const id = newItemId();
   const { sequence, values } = sharedValues(plan, grouping.members);
   edit(store, () => {
     items.set(id, itemToY({ id, title: NEW_GROUP_TITLE, description: '', parent: grouping.parent, sequence, rank: nextRank(plan), values }, plan));
-    for (const member of grouping.members) items.get(member)?.set('parent', id);
+    moveItems(store, grouping.members.map((member) => [member, id] as const));
   });
   return { group: id, created: true };
 }
@@ -381,7 +434,7 @@ export function ungroupItems(store: PlanStore, ids: Iterable<ItemId>): ItemId[] 
   if (!ungroup) return [];
   const r = root(store.doc);
   edit(store, () => {
-    for (const { item, parent } of ungroup.moves) r.items.get(item)?.set('parent', parent);
+    moveItems(store, ungroup.moves.map(({ item, parent }) => [item, parent] as const));
     for (const dep of ungroup.removed) r.dependencies.delete(dependencyKey(dep));
     for (const dep of ungroup.added) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });
     for (const link of ungroup.relatedRemoved) r.related.delete(relatedKey(link));
@@ -404,10 +457,7 @@ export function moveToParent(store: PlanStore, ids: Iterable<ItemId>, parent: It
     (id) => plan.items[id] && plan.items[id].parent !== parent && !wouldCreateCycle(plan, id, parent),
   );
   if (moving.length === 0) return [];
-  const items = root(store.doc).items;
-  edit(store, () => {
-    for (const id of moving) items.get(id)?.set('parent', parent);
-  });
+  edit(store, () => moveItems(store, moving.map((id) => [id, parent] as const)));
   return moving;
 }
 

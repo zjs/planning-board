@@ -34,6 +34,8 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-9', commit: 'a5bc057' },
   // The first schema 2 build, with several plans per browser (ADR 0016, ADR 0021).
   { name: 'sprint-10', commit: '1296bfe' },
+  // The last build before cards record their moves, for loop repair (sprint 11, slice 2; ADR 0004).
+  { name: 'sprint-11-before-loop-repair', commit: '6f0142d' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;

@@ -27,7 +27,7 @@ The engineering plan is `docs/plans/sprint-11-plan.md`.
 
 ### 2. Loop repair (ADR 0004)
 
-- [ ] Two people nesting cards inside each other's at once leaves one nest, and every computer agrees which. The card that loses goes back where it was.
+- [x] Two people nesting cards inside each other's at once leaves one nest, and every computer agrees which. The card that loses goes back where it was.
 
 ### 3. Share and join (ADR 0018)
 
