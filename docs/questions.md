@@ -604,3 +604,15 @@ Entry format:
 - Recommendation: (a). Share works from every build.
 - Status: answered 2026-10-08: (a). Sprint 11, slice 3. From the public build, which is served over https, the relay must be `https` or `localhost`; the dialog says so and offers to open the app from the relay instead.
   - Built in slice 3. A relay that served the page is used without asking; anywhere else, Share asks for the address, checks the relay answers, and remembers it.
+
+### Q71: Who the driver is
+- Context: Requirement 32 and Q61: the cursor setting has a "Driver only" choice, and nothing said who the driver is.
+- Options: (a) claimed by clicking "I'm driving", one at a time, a new claim taking over; (b) whoever shared the plan, always; (c) drop "Driver only", leaving Everyone and None.
+- Recommendation: (a). It suits a live session, where whoever is presenting changes, and needs no server.
+- Status: answered 2026-10-08: (a). Everyone sees who's driving, and with nobody driving, "Driver only" shows no pointers. Sprint 12, slice 1.
+
+### Q72: How a changes file's key travels
+- Context: Requirement 37 and Q64 (f). A changes file is encrypted with the plan's key, for companies where no relay is allowed, but someone has to get the key the first time.
+- Options: (a) Share by file makes the plan's key and gives a short Can edit link, sent once by a second channel, and files carry no key; (b) the first file carries the key, so one email is enough; (c) a password the sender picks.
+- Recommendation: (a). A forwarded or misfiled attachment is unreadable, and nothing new has to be remembered.
+- Status: answered 2026-10-08: (a). Sprint 12, slice 4 (ADR 0022).
