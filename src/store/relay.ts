@@ -165,7 +165,10 @@ export class RelayProvider {
   private readonly setTimer: (fn: () => void, ms: number) => unknown;
   private readonly clearTimer: (timer: unknown) => void;
 
-  constructor(private readonly options: RelayOptions) {
+  private readonly options: RelayOptions;
+
+  constructor(options: RelayOptions) {
+    this.options = options;
     this.key = fromBase64Url(options.viewKey);
     this.token = options.secret ? deriveKeys(fromBase64Url(options.secret)).token : null;
     this.create = options.create === true;

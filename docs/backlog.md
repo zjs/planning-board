@@ -278,6 +278,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 11** (2026-10-08), the release pass's last step: the first build that can share, whose moves carry stamps for loop repair and whose plans record their writer, opens in every later build. The generator now transforms old builds' TypeScript rather than only stripping it, since sprint 11's `relay.ts` used a parameter property; the current one no longer does.
+
 - **Maintenance pass, 2026-10-08,** before planning sprint 11. Run in the background, read-only, with its fixes applied in sprint 11, slice 0.
   - **npm:** vite 8.3.3 → 8.3.4.
   - **Node:** the plan above changed from Node 24 to Node 26, after checking the release schedule.
