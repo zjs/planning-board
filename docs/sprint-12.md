@@ -35,7 +35,7 @@ The engineering plan is `docs/plans/sprint-12-plan.md`.
 
 ### 4. Changes by file (Q64 f, Q72)
 
-- [ ] Share by file, Send changes and Merge changes: a shared plan travels as an encrypted file, with no relay.
+- [x] Share by file, Send changes and Merge changes: a shared plan travels as an encrypted file, with no relay.
 
 ### 5. Tester-ready
 

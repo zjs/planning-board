@@ -21,8 +21,8 @@ import { sha256 } from '@noble/hashes/sha2.js';
 /** The format of links and sealed messages. A change bumps it, and older builds refuse what they can't read. */
 export const KEY_VERSION = 1;
 
-/** What a sealed message is: one change, the whole plan, or presence (sprint 12). */
-export type SealedKind = 'update' | 'snapshot' | 'presence';
+/** What a sealed message is: one change, the whole plan, presence, or the board in a changes file (sprint 12, ADR 0022). */
+export type SealedKind = 'update' | 'snapshot' | 'presence' | 'file';
 
 export function randomBytes(n: number): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(n));
@@ -87,6 +87,8 @@ export interface ShareLink {
   viewKey: string;
   /** The relay's address, when it isn't where the app was opened from. */
   relay?: string;
+  /** Shared by file, with no relay (ADR 0022): `file=1` in the link. */
+  file?: true;
 }
 
 /** The encryption key, as text, that a secret gives: what the view link carries. */
@@ -96,7 +98,8 @@ export function viewKeyOf(secret: string): string {
 
 /**
  * Read a share link's fragment: `#v=1&room=…&key=…` for editing, or
- * `&view=…` for viewing, with `&relay=…` when the relay is elsewhere.
+ * `&view=…` for viewing, with `&relay=…` when the relay is elsewhere, or
+ * `&file=1` for a plan shared by file.
  * Null for anything else, including a link from a newer version.
  */
 export function parseShareLink(hash: string): ShareLink | null {
@@ -104,14 +107,15 @@ export function parseShareLink(hash: string): ShareLink | null {
   const room = params.get('room');
   if (params.get('v') !== String(KEY_VERSION) || !room || !/^[A-Za-z0-9_-]{16,64}$/.test(room)) return null;
   const relay = params.get('relay') ?? undefined;
+  const where = params.get('file') === '1' ? { file: true as const } : relay ? { relay } : {};
   try {
     const secret = params.get('key');
     if (secret) {
       if (fromBase64Url(secret).length !== 32) return null;
-      return { room, secret, viewKey: viewKeyOf(secret), ...(relay ? { relay } : {}) };
+      return { room, secret, viewKey: viewKeyOf(secret), ...where };
     }
     const view = params.get('view');
-    if (view && fromBase64Url(view).length === 32) return { room, viewKey: view, ...(relay ? { relay } : {}) };
+    if (view && fromBase64Url(view).length === 32) return { room, viewKey: view, ...where };
   } catch {
     // Not base64: not a link of ours.
   }
@@ -130,7 +134,7 @@ export function isNewerLink(hash: string): boolean {
  */
 export function shareLinks(app: string, link: ShareLink): { edit: string | null; view: string } {
   const base = app.replace(/[#?].*$/, '').replace(/\/?$/, '/');
-  const relay = link.relay && sameOrigin(link.relay, base) ? '' : link.relay ? `&relay=${encodeURIComponent(link.relay)}` : '';
+  const relay = link.file ? '&file=1' : link.relay && sameOrigin(link.relay, base) ? '' : link.relay ? `&relay=${encodeURIComponent(link.relay)}` : '';
   const head = `${base}#v=${KEY_VERSION}&room=${link.room}`;
   return {
     edit: link.secret ? `${head}&key=${link.secret}${relay}` : null,

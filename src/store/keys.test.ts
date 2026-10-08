@@ -69,6 +69,14 @@ describe('keys and links (ADR 0018)', () => {
     expect(parseShareLink(new URL(links.view).hash)?.relay).toBe('https://plans.example.com');
   });
 
+  it('marks a plan shared by file, with no relay (ADR 0022)', () => {
+    const { room, secret } = newRoom();
+    const s = toBase64Url(secret);
+    const links = shareLinks('https://zjs.github.io/planning-board/', { room, secret: s, viewKey: viewKeyOf(s), file: true });
+    expect(links.edit).toBe(`https://zjs.github.io/planning-board/#v=1&room=${room}&key=${s}&file=1`);
+    expect(parseShareLink(new URL(links.edit!).hash)).toEqual({ room, secret: s, viewKey: viewKeyOf(s), file: true });
+  });
+
   it("a view link can't be turned into an edit link", () => {
     const { secret } = newRoom();
     const { key, token } = deriveKeys(secret);

@@ -3,7 +3,16 @@
 
 /** Offer `text` as a download named `name`. */
 export function downloadText(name: string, text: string, type = 'application/json'): void {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+  download(name, new Blob([text], { type }));
+}
+
+/** Offer `bytes` as a download named `name`. */
+export function downloadBytes(name: string, bytes: Uint8Array, type = 'application/octet-stream'): void {
+  download(name, new Blob([bytes as Uint8Array<ArrayBuffer>], { type }));
+}
+
+function download(name: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = name;

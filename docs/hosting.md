@@ -116,4 +116,4 @@ What to know:
 - **Moving to a server.** Stop the relay, copy `planning-board-data` to the server's data folder, and start the server's relay. Everyone then uses **The relay moved?** with the server's address, or the share links made from it.
 - **Company policy.** Running a server on a laptop may be covered by your company's policy too. Check before a pilot.
 
-Where neither a hosted relay nor a laptop is allowed, a shared plan will be able to travel as an encrypted file instead, through email or a shared drive (requirement 37).
+Where neither a hosted relay nor a laptop is allowed, a shared plan can travel as encrypted files instead, through email or a shared drive: **Share › No relay allowed? Share by file** (requirement 37, ADR 0022).

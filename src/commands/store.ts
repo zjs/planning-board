@@ -116,10 +116,12 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN, shared?: SharedPlan
   // A loop two tabs made at once, or one left in storage, is settled now and whenever one appears (ADR 0004).
   repairLoops(store);
   const stopLoops = watchLoops(store);
-  const connection = shared
+  // A plan shared by file has no relay to connect to (ADR 0022).
+  const relay = shared?.relay;
+  const connection = shared && relay !== undefined
     ? new RelayProvider({
         doc: store.doc,
-        relay: shared.relay,
+        relay,
         room: shared.room,
         viewKey: shared.viewKey,
         ...(shared.secret ? { secret: shared.secret } : {}),

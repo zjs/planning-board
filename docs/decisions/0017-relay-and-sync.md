@@ -34,7 +34,7 @@ Requirements 30–31, and the architecture rule that the relay only ever sees en
 Requirement 37 covers companies that can't use a hosted relay.
 
 - **A pilot on a laptop.** The relay binary runs as is on one person's computer. It prints the address colleagues on the same network can open, and keeps its data directory next to it. Nothing about it differs from a self-hosted relay, so a pilot that works becomes the install.
-- **Changes by file.**
+- **Changes by file** (built as ADR 0022).
   - "Send changes" writes the plan's whole Yjs state, encrypted with the plan's key, to one file.
   - "Merge changes" applies a file to the board. Yjs merges any state, in any order, any number of times, so a file can be sent around freely, and receiving an old one changes nothing.
   - A whole state, not a diff since a cursor, keeps it simple: a few hundred cards is tens of kilobytes. A file holds no key. It belongs to a plan whose link the person already has.

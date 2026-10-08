@@ -28,7 +28,8 @@ export interface PlanEntry {
  * the plan itself unencrypted (ADR 0018).
  */
 export interface SharedPlan {
-  relay: string;
+  /** The relay it's shared through; absent for a plan shared by file (ADR 0022). */
+  relay?: string;
   room: string;
   /** The edit link's secret; absent when this browser has only the view link. */
   secret?: string;
@@ -162,10 +163,15 @@ export function setShared(id: PlanId, shared: SharedPlan, store = defaultStore()
   update(store, id, (e) => ({ ...e, shared }));
 }
 
-/** The plan this browser keeps for a room on a relay, if any, deleted or not. */
-export function findShared(relay: string, room: string, store = defaultStore()): PlanEntry | null {
-  const same = (a: string, b: string) => a.replace(/\/$/, '') === b.replace(/\/$/, '');
+/** The plan this browser keeps for a room on a relay, or shared by file when `relay` is undefined; deleted or not. */
+export function findShared(relay: string | undefined, room: string, store = defaultStore()): PlanEntry | null {
+  const same = (a: string | undefined, b: string | undefined) => (a === undefined || b === undefined ? a === b : a.replace(/\/$/, '') === b.replace(/\/$/, ''));
   return readAll(store).find((e) => e.shared?.room === room && same(e.shared.relay, relay)) ?? null;
+}
+
+/** The plans this browser keeps for a room, however they're shared: where a changes file goes (ADR 0022). Deleted ones aren't. */
+export function plansForRoom(room: string, store = defaultStore()): PlanEntry[] {
+  return readAll(store).filter((e) => e.shared?.room === room && e.deletedAt === undefined);
 }
 
 /** Add a plan opened from someone's share link. It's named once its first sync brings the plan's name. */

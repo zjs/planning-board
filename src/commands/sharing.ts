@@ -139,6 +139,12 @@ export function renewLinks(id: PlanId): SharedPlan | null {
   if (!old?.secret) return null;
   const { room, secret } = newRoom();
   const s = toBase64Url(secret);
+  // Shared by file, there's no relay to tell: files made with the old key just stop merging (ADR 0022).
+  if (old.relay === undefined) {
+    const shared: SharedPlan = { room, secret: s, viewKey: viewKeyOf(s) };
+    setShared(id, shared);
+    return shared;
+  }
   // A share that never reached the relay has nothing to retire.
   const replaces = [...(old.replaces ?? []), ...(old.pending ? [] : [{ room: old.room, secret: old.secret }])];
   const shared: SharedPlan = { relay: old.relay, room, secret: s, viewKey: viewKeyOf(s), pending: true, replaces };
@@ -153,8 +159,9 @@ export function renewLinks(id: PlanId): SharedPlan | null {
  */
 export async function retireReplaced(id: PlanId, open?: OpenSocket): Promise<RetireResult> {
   const shared = findPlan(id)?.shared;
-  if (!shared?.replaces?.length || shared.pending) return 'retired';
-  const results = await Promise.all(shared.replaces.map((old) => retireRoom({ relay: shared.relay, ...old, ...(open ? { open } : {}) })));
+  const relay = shared?.relay;
+  if (!shared?.replaces?.length || shared.pending || relay === undefined) return 'retired';
+  const results = await Promise.all(shared.replaces.map((old) => retireRoom({ relay, ...old, ...(open ? { open } : {}) })));
   const left = shared.replaces.filter((_, i) => results[i] === 'failed');
   // Sharing may have changed meanwhile, in another tab: only what this call retired is taken off.
   const now = findPlan(id)?.shared;
@@ -166,6 +173,30 @@ export async function retireReplaced(id: PlanId, open?: OpenSocket): Promise<Ret
   }
   return results.includes('unsupported') ? 'unsupported' : left.length > 0 ? 'failed' : 'retired';
 }
+
+/**
+ * Share a plan by file, with no relay (requirement 37, ADR 0022): a room and
+ * secret, as for a relay, and nothing to confirm. The plan's link carries the
+ * key, sent once by another channel (Q72); files carry none.
+ */
+export function startSharingByFile(id: PlanId): SharedPlan {
+  const { room, secret } = newRoom();
+  const s = toBase64Url(secret);
+  const shared: SharedPlan = { room, secret: s, viewKey: viewKeyOf(s) };
+  setShared(id, shared);
+  return shared;
+}
+
+/**
+ * Where a link to a plan shared by file opens the app: this page, unless it
+ * was opened from disk, whose address means nothing on another computer.
+ */
+export function appForFileLinks(): string {
+  return location.protocol.startsWith('http') ? location.href : PUBLIC_APP;
+}
+
+/** The public build, on GitHub Pages (Q31). */
+export const PUBLIC_APP = 'https://zjs.github.io/planning-board/';
 
 /** The relay confirmed the room. */
 export function sharingConfirmed(id: PlanId, shared: SharedPlan): void {
@@ -189,7 +220,7 @@ export function appForLinks(publicRelay: string): string {
  * this browser uses (`localhost`).
  */
 export function linksFor(shared: SharedPlan, app: string, publicRelay = shared.relay): { edit: string | null; view: string } {
-  const link: ShareLink = { room: shared.room, viewKey: shared.viewKey, relay: publicRelay };
+  const link: ShareLink = { room: shared.room, viewKey: shared.viewKey, ...(publicRelay !== undefined ? { relay: publicRelay } : { file: true }) };
   if (shared.secret) link.secret = shared.secret;
   return shareLinks(app, link);
 }
@@ -205,6 +236,7 @@ export type JoinResult =
 /**
  * Open a share link (`#v=1&room=…`) in this browser. `here` is the relay
  * when the link doesn't name one: this page's own address, which served it.
+ * A link with `file=1` has no relay: its plan travels by file (ADR 0022).
  *
  * - A plan this browser doesn't have is added, named once its first sync
  *   brings the plan's own name.
@@ -212,11 +244,17 @@ export type JoinResult =
  * - An edit link upgrades a plan held only for viewing.
  * - Keys that don't match the plan held are refused, never overwritten.
  */
-export function joinFromLink(link: ShareLink, here: string): JoinResult {
-  const relay = link.relay ?? here;
+export function joinFromLink(link: ShareLink, here: string | null): JoinResult {
+  // A plan shared by file has no relay (ADR 0022).
+  const relay = link.file ? undefined : (link.relay ?? here ?? undefined);
   const held = findShared(relay, link.room);
   if (!held?.shared) {
-    const shared: SharedPlan = { relay, room: link.room, viewKey: link.viewKey, ...(link.secret ? { secret: link.secret } : {}) };
+    const shared: SharedPlan = {
+      ...(relay !== undefined ? { relay } : {}),
+      room: link.room,
+      viewKey: link.viewKey,
+      ...(link.secret ? { secret: link.secret } : {}),
+    };
     return { kind: 'new', entry: addSharedPlan(shared, 'Shared plan') };
   }
   if (held.deletedAt !== undefined) unmarkDeleted(held.id);
