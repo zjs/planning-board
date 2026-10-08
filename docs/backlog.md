@@ -277,6 +277,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 10** (2026-10-08), the release pass's last step: the first schema 2 build's plan file, imported plan and browser board open in every later build. Writing a new card no longer reads from a Yjs map before it's in the document, which logged "Invalid access" warnings.
+
 - **Compatibility fixtures for sprint 9** (2026-10-08, sprint 10, slice 1): the last build before schema 2. Every browser board from sprint 9 and earlier opens through the one-time migration (ADR 0016).
 
 - **Maintenance pass, 2026-10-08,** before planning sprint 10. Run in the background, read-only, with its fixes applied in sprint 10, slice 0.
