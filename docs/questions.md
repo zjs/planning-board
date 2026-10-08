@@ -97,6 +97,69 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
+### Q58: Shared plans, and your own
+- Context: Requirements 10, 28, 29 and 30, Q26 and Q51, and sprint 9's research (`docs/research/collaboration/`). Opening a plan file, importing a CSV and New blank plan each replace the board. On a shared board they'd replace it for everyone. In the merge harness, one person's offline "New blank plan" wiped the shared board for everyone (O3), and an offline "Open" left a mix of the file and the shared board (O2). Today a browser holds one board.
+- Options: (a) on a shared plan, Open, Import and New each make a **new** plan, and the File menu lists your plans, shared ones and ones only on this computer; replacing the shared plan stays possible as a second, warned choice, for restoring a backup; (b) the same, with no way to replace a shared plan; (c) keep replacing, behind a confirmation.
+- Recommendation: (a). It needs more than one board per browser, which is useful on its own (a scratch plan beside the real one). Mockup: artboard 8.
+- Status: open
+
+### Q59: Coming back after working apart
+- Context: Requirements 31 and 19, and the PM's question for sprint 9: the relay is on a company network, someone drops off the VPN for a while, and both sides keep editing. Should the merge be reviewed, or prevented? Sprint 9 found:
+  - every shipped tool merges automatically;
+  - Ink & Switch moved away from reviewing drafts before a merge;
+  - with four schema changes, our merges are predictable (`merge-scenarios.md`);
+  - blocking edits while offline turns a VPN blip into lost work.
+- Options: (a) offline is always allowed and merges automatically; on reconnecting, "Since you were away" marks what others changed on the board and lists your changes that didn't stick, each with "Use mine" or "Restore"; (b) a review step before your offline changes merge; (c) read-only while the relay can't be reached; (d) (a), plus an opt-in "Keep my changes as a scenario instead", once scenarios exist.
+- Recommendation: (a) now and (d) later. The connection pill says plainly what offline means ("7 changes not shared yet"). Mockups: artboards 4 and 5.
+- Status: open
+
+### Q60: Two people reaching for one card
+- Context: Requirements 2, 3 and 31. In a live session, two people can drag the same card within the same second. Today's schema leaves a single-valued property holding two values (L1 in `merge-results.md`). After the schema change, one value wins.
+- Options: (a) no locks: a card being dragged shows "Ada is moving this → Q3 · Billing" to everyone, a second person's drag ghost warns them, the later drop wins, and both people are told, each with a one-click way back; (b) a soft lock: others can't pick up a card someone holds; (c) silent last-writer-wins, as Figma does.
+- Recommendation: (a). Locks need a server that knows who holds what, which ours can't, and a sleeping laptop would strand them. Showing intent prevents most collisions, and the notices handle the rest. Mockup: artboard 2.
+- Status: open
+
+### Q61: What people see of each other
+- Context: Requirement 32 (presence and cursors), the M1 assumption that one person drives while others watch, and the PM's question for sprint 9. People can be in different views, so a cursor's screen position means nothing on someone else's board.
+- Options:
+  - **Presence:** (a) pointers, selections and drags, anchored to cards, each with a name and color, plus avatars; (b) avatars only.
+  - **Quieting it:** (c) a cursor setting (Everyone, Driver only, None); (d) none.
+  - **Following:** (e) "Ask everyone to follow me" takes followers to the driver's view, with "Not now" and "Stop following"; (f) no following.
+  - **Names:** chosen once per browser, and asked for the first time someone shares or joins.
+- Recommendation: (a), (c) and (e). The spike showed card-anchored presence works across pivots, and following a view, not just a scroll position, is what a pivoting board needs. Mockups: artboards 1 and 3.
+- Status: open
+
+### Q62: Who can open a shared plan
+- Context: Requirement 30, the fixed rule that the relay never reads plan content, and the out-of-scope list (no accounts or permissions). The link is the key. Sprint 9's relay accepted an update from someone holding the wrong key, because it can't tell. Write tokens fix that, and also make view-only links possible.
+- Options: (a) "Can edit" and "Can view" links, and "Make new links" to revoke, which says that people with old links keep what they already saw; (b) edit links only; (c) passwords on top of links.
+- Recommendation: (a). It's the only access control end-to-end encryption allows cheaply, and it needs no accounts. Mockup: artboard 7.
+- Status: open
+
+### Q63: History: what's kept, and for how long
+- Context: Requirements 31 and 32, and the PM's priority for sprint 9: knowing who changed what. Yjs records no lasting authors, so history is our own log, kept in its own encrypted document beside the board's. Names are self-chosen and times come from each person's clock, so it's a courtesy, not an audit trail.
+- Options: for what's shown, (a) an Activity feed for the plan plus a History tab in the inspector, (b) Activity only, or (c) "last changed by" only. For how long it's kept: 30 days, 90 days, or forever.
+- Recommendation: (a), kept for 90 days, with deletions restorable from Activity. Forever grows without bound, at about 60 bytes per change. Mockup: artboard 6.
+- Status: open
+
+### Q64: A relay for the public demo
+- Context: Requirement 30, Q31, and Q52 and Q53 (optimize for strangers arriving from a public link). GitHub Pages can't run a relay. The PM left this for after the research (2026-10-08). The options are costed in `docs/research/collaboration/relay-and-sync.md`.
+- Options: (a) a hosted demo relay, with quotas, expiry and a privacy note; (b) peer-to-peer over WebRTC, which has no stored snapshots, so it fails requirement 30; (c) self-host only; (d) (c), plus two tabs of one browser syncing, with no server.
+- Recommendation: (d) as M2 is built, then (a) once M2 is solid, so a stranger's first share works well. (a) is cheap, but someone has to keep it running, so it's the PM's call.
+- Status: open
+
+### Q65: M2's scope, as the research reshapes it
+- Context: Requirements 30–32 and the M2 milestone. Sprint 9 found that M2 needs more than requirements 30–32 say, if collaboration is to be trusted. The candidates, all recommended:
+  - **view-only links** (Q62);
+  - **"Since you were away"** (Q59);
+  - **history** (Q63);
+  - **following** (Q61);
+  - **more than one plan per browser** (Q58).
+
+  It also found that a schema change has to come first.
+- Options: (a) add these to the requirements as M2 items, with the build plan in `docs/plans/m2-plan.md`; (b) keep M2 at requirements 30–32, and leave the rest for later.
+- Recommendation: (a). Without "since you were away" and history, the PM's three priorities (live collisions, who changed what, offline divergence) are answered only by "it merges". The build plan is four sprints, each ending in something usable.
+- Status: open
+
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?

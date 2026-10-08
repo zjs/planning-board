@@ -35,7 +35,7 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 9 explores and plans ([`docs/sprint-9.md`](sprint-9.md)). The build starts in sprint 10 or later, from the plan sprint 9 produces.
+**Lands:** sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)), and it awaits the PM's acceptance. The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The build plan, [`plans/m2-plan.md`](plans/m2-plan.md), proposes four sprints (10–13), pending Q58–Q65.
 
 ### H. Arranging and moving cards
 
@@ -246,9 +246,9 @@ Sprints 3 to 8 await the PM's acceptance and one combined tester session, which 
 - **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
 - **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)) shipped on 2026-10-07: views and visible pivots, editing values from the headers, drags that say what they do, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
 - **Sprint 8: polish, then the session** ([`docs/sprint-8.md`](sprint-8.md)) shipped on 2026-10-07: frames for expanded groups (theme L, Q57), "related to" links (theme F, Q44), and two calm items from theme K (the area color explained, and holding lanes that collapse). It ships before the combined cold-start session.
-- **Sprint 9: design collaboration** ([`docs/sprint-9.md`](sprint-9.md)), started 2026-10-08: research, merge experiments on our own schema, a relay and encrypted sync spike, the experience design, and an M2 build plan (theme M). The app doesn't change.
+- **Sprint 9: design collaboration** ([`docs/sprint-9.md`](sprint-9.md)) finished on 2026-10-08: prior art, merge experiments on our own schema, an encrypted relay and sync spike on the real board, presence and history, eight mockups, draft ADRs 0016–0020, Q58–Q65, and an M2 build plan (theme M). The app didn't change.
 - **Sprint 10 candidates:**
-  - **The first M2 build slices,** from sprint 9's plan.
+  - **M2's foundations,** once Q58–Q65 are answered: schema 2, more than one plan per browser, the plan diff, and two tabs syncing ([`plans/m2-plan.md`](plans/m2-plan.md), sprint 10).
   - **Component contention and the conflicts panel** (requirements 17–20):
     - the panel follows the view (Q40);
     - reviewed conflicts come back on any relevant change (Q41);

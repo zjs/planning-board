@@ -36,7 +36,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - Reordering cards by hand within a cell.
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
 - An import replaces the board. Updating a board from a fresh export isn't built.
-- One person at a time. Live collaboration comes later, through a relay that only ever sees encrypted data.
+- One person at a time. Live collaboration comes later, through a relay that only ever sees encrypted data. Its design is in [`docs/research/collaboration/`](docs/research/collaboration/README.md).
 
 What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). What's coming is in [`docs/backlog.md`](docs/backlog.md), and decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).
 

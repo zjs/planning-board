@@ -1,6 +1,6 @@
 # Sprint 9: engineering plan
 
-Status: **approved 2026-10-08.** Scope is in `docs/sprint-9.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-10-08.** **Complete 2026-10-08.** Slices 0–2 were PRs #59–#61, slices 3 and 4 were #62, and slices 5 and 6 follow. The summary is `docs/research/collaboration/README.md`, and the build plan `docs/plans/m2-plan.md`. Scope is in `docs/sprint-9.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## Context
 

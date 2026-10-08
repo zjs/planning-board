@@ -1,6 +1,6 @@
 # 0004: Group tree representation
 
-Status: Accepted (sprint 0, slice 1). Single-user guard now; concurrent repair designed for M2.
+Status: Accepted (sprint 0, slice 1). Single-user guard now; concurrent repair designed for M2. Sprint 9's merge harness confirmed the race is rare (no loops in 6,000 random edits) and that readers survive one (scenario L8, `docs/research/collaboration/merge-scenarios.md`); the repair is built in M2's first relay slice, with L8 as its test.
 
 ## Context
 
