@@ -15,7 +15,8 @@
 //   reorder made at once both stick.
 
 import * as Y from 'yjs';
-import type { Dependency, Item, Plan, Property, PropertyId, Related, ValueId, ValueNode } from '../domain/model.ts';
+import type { Dependency, Item, ItemId, Plan, Property, PropertyId, Related, ValueId, ValueNode } from '../domain/model.ts';
+import type { MoveStamp, TreeNode } from '../domain/tree.ts';
 import { compareOrderKeys } from '../domain/model.ts';
 import { isOrderKey } from '../domain/sequence.ts';
 
@@ -198,6 +199,50 @@ function visibleItems(items: Y.Map<Y.Map<unknown>>): Set<string> {
     if (item.get('deleted') !== true && !isHidden(id, new Set())) visible.add(id);
   });
   return visible;
+}
+
+const isMoveStamp = (v: unknown): v is MoveStamp =>
+  typeof v === 'object' &&
+  v !== null &&
+  (typeof (v as MoveStamp).previous === 'string' || (v as MoveStamp).previous === null) &&
+  Number.isFinite((v as MoveStamp).counter) &&
+  Number.isFinite((v as MoveStamp).client);
+
+/**
+ * Every card's place in the tree, deleted ones too, with how it last moved
+ * (ADR 0004): for loop repair, which must see a loop through a deleted card
+ * before anyone restores it.
+ */
+export function readTree(doc: Y.Doc): Record<ItemId, TreeNode> {
+  const nodes: Record<ItemId, TreeNode> = {};
+  root(doc).items.forEach((map, id) => {
+    const move = map.get('move');
+    nodes[id] = { parent: strOrNull(map.get('parent')), ...(isMoveStamp(move) ? { move } : {}) };
+  });
+  return nodes;
+}
+
+/** The highest move counter in the document, for the next move's Lamport stamp. */
+export function latestMoveCounter(doc: Y.Doc): number {
+  let latest = 0;
+  root(doc).items.forEach((map) => {
+    const move = map.get('move');
+    if (isMoveStamp(move) && move.counter > latest) latest = move.counter;
+  });
+  return latest;
+}
+
+/**
+ * Move a card to another group, recording the move for loop repair: the
+ * group it left, and a stamp. Call inside a transaction, with one stamp
+ * counter for every move the transaction makes.
+ */
+export function moveItem(item: Y.Map<unknown>, parent: ItemId | null, counter: number, client: number): void {
+  const previous = strOrNull(item.get('parent'));
+  if (previous === parent) return;
+  const stamp: MoveStamp = { previous, counter, client };
+  item.set('move', stamp);
+  item.set('parent', parent);
 }
 
 /** Plain snapshot of the document: deleted cards and values, and links to them, left out. */

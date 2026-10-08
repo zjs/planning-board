@@ -93,3 +93,84 @@ export function canNest(plan: Plan, id: ItemId, into: ItemId): boolean {
     !wouldCreateCycle(plan, id, into)
   );
 }
+
+/**
+ * How a card last moved between groups (ADR 0004): the group it left, and a
+ * stamp that orders moves the same way on every computer. `counter` is a
+ * Lamport clock, one more than any stamp the mover had seen; `client` breaks
+ * ties between moves made at once.
+ */
+export interface MoveStamp {
+  previous: ItemId | null;
+  counter: number;
+  client: number;
+}
+
+/** A card's place in the tree, for loop repair: deleted cards too, so a restore can't bring a loop back. */
+export interface TreeNode {
+  parent: ItemId | null;
+  move?: MoveStamp;
+}
+
+/** Whether card a's move outranks card b's: the higher stamp, then the higher card ID, which also orders moves with no stamp. */
+function outranks(a: ItemId, am: MoveStamp | undefined, b: ItemId, bm: MoveStamp | undefined): boolean {
+  const [ac, al] = am ? [am.counter, am.client] : [-1, -1];
+  const [bc, bl] = bm ? [bm.counter, bm.client] : [-1, -1];
+  if (ac !== bc) return ac > bc;
+  if (al !== bl) return al > bl;
+  return a > b;
+}
+
+/** One loop of parents, if there is any: the cards on it, in parent order. */
+function findLoop(parents: Map<ItemId, ItemId | null>): ItemId[] | null {
+  const done = new Set<ItemId>();
+  for (const start of parents.keys()) {
+    const path: ItemId[] = [];
+    const onPath = new Set<ItemId>();
+    let current: ItemId | null = start;
+    while (current !== null && parents.has(current) && !done.has(current)) {
+      if (onPath.has(current)) return path.slice(path.indexOf(current));
+      onPath.add(current);
+      path.push(current);
+      current = parents.get(current) ?? null;
+    }
+    for (const id of path) done.add(id);
+  }
+  return null;
+}
+
+/** Whether `id` is `ancestor` or below it, following `parents`. */
+function isWithin(parents: Map<ItemId, ItemId | null>, id: ItemId | null, ancestor: ItemId): boolean {
+  const seen = new Set<ItemId>();
+  while (id !== null && !seen.has(id)) {
+    if (id === ancestor) return true;
+    seen.add(id);
+    id = parents.get(id) ?? null;
+  }
+  return false;
+}
+
+/**
+ * Settle loops of parents (ADR 0004). Two people can each nest a card
+ * inside the other's at the same moment; each move is fine alone, and
+ * together they make a loop. In each loop, the move with the highest stamp
+ * loses: that card goes back to the group it left, or to the top level if
+ * that would loop too, or the group is gone. Every computer reaches the same
+ * answer from the same cards, so the repairs they write agree.
+ *
+ * Returns the new parent of each card that has to move; empty when there's
+ * no loop. A group that's deleted still counts: a card sent back to it hides
+ * with it (ADR 0016), as any card in a deleted group does.
+ */
+export function loopRepairs(nodes: Readonly<Record<ItemId, TreeNode>>): Map<ItemId, ItemId | null> {
+  const parents = new Map<ItemId, ItemId | null>(Object.entries(nodes).map(([id, node]) => [id, node.parent]));
+  const repairs = new Map<ItemId, ItemId | null>();
+  for (let loop = findLoop(parents); loop !== null; loop = findLoop(parents)) {
+    const loser = loop.reduce((a, b) => (outranks(b, nodes[b]!.move, a, nodes[a]!.move) ? b : a));
+    const previous = nodes[loser]!.move?.previous ?? null;
+    const back = previous !== null && parents.has(previous) && !isWithin(parents, previous, loser) ? previous : null;
+    parents.set(loser, back);
+    repairs.set(loser, back);
+  }
+  return repairs;
+}

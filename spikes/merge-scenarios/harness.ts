@@ -3,7 +3,7 @@
 // missing, the way a relay would once both are connected.
 
 import * as Y from 'yjs';
-import { createPlanStore, loadPlan, type PlanStore } from '../../src/commands/store.ts';
+import { createPlanStore, loadPlan, repairLoops, type PlanStore } from '../../src/commands/store.ts';
 import { withBuiltIns } from '../../src/domain/builtins.ts';
 import type { Item, ItemId, Plan, SelectProperty, ValueNode } from '../../src/domain/model.ts';
 import { SEQUENCE, SIZE, SYSTEM, TIME } from '../../src/domain/model.ts';
@@ -39,10 +39,15 @@ export function pair(base: Plan, aliceFirst: boolean): Pair {
 
 /** Exchange everything each side is missing, in both directions. */
 export function sync({ alice, bob }: Pair): void {
-  const toBob = Y.encodeStateAsUpdate(alice.doc, Y.encodeStateVector(bob.doc));
-  const toAlice = Y.encodeStateAsUpdate(bob.doc, Y.encodeStateVector(alice.doc));
-  Y.applyUpdate(bob.doc, toBob);
-  Y.applyUpdate(alice.doc, toAlice);
+  const exchange = () => {
+    const toBob = Y.encodeStateAsUpdate(alice.doc, Y.encodeStateVector(bob.doc));
+    const toAlice = Y.encodeStateAsUpdate(bob.doc, Y.encodeStateVector(alice.doc));
+    Y.applyUpdate(bob.doc, toBob);
+    Y.applyUpdate(alice.doc, toAlice);
+  };
+  exchange();
+  // Since sprint 11, each side settles loops of groups as it sees them (ADR 0004).
+  if (repairLoops(alice) + repairLoops(bob) > 0) exchange();
 }
 
 export const plan = (store: PlanStore): Plan => readPlan(store.doc);
