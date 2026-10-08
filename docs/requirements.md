@@ -108,18 +108,24 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 34. A browser keeps several plans, shared ones and ones only on that computer. On a shared plan, opening a file, importing and starting a blank plan each make a new plan. Replacing the shared plan for everyone is a separate, warned choice (Q58).
 35. Editing offline is always allowed, and merges automatically on reconnecting. The board says what hasn't been shared yet. On coming back, users see what others changed while they were away, marked on the board, and which of their own changes didn't stick, each with a way to reapply or restore it (Q59).
 36. Every change is recorded with who made it and when, kept indefinitely, and shown in each viewer's own time zone, in an activity feed for the plan and in a card's history (Q63).
+37. Where a company can't use a hosted relay, collaboration still works in two ways (Q64):
+    - one person runs the relay on their own computer, for colleagues on the same network: the same program a company would self-host;
+    - a shared plan travels as an encrypted changes file, through channels the company already approves, such as email or a shared drive. Each person merges what others send.
+
+    There's no peer-to-peer (WebRTC) fallback.
 
 ## Milestones
 
 **M1: prove the core bet.** One person drives while others watch on a shared screen. Covers requirements 1–29: pivots and folding, groups, dependencies, contention, scenarios, custom properties, CSV import, and plan files. Built on the CRDT data model from day one, so M2 needs no rewrite _(priors)_.
 
-**M2: collaboration.** Requirements 30–36, as sprint 9's research reshaped them (Q65):
+**M2: collaboration.** Requirements 30–37, as sprint 9's research reshaped them (Q65, Q64):
 - encrypted share links with stored snapshots, including view-only links;
 - live multi-user editing;
 - presence;
 - several plans per browser;
 - offline work, and seeing what changed while you were away;
-- history.
+- history;
+- fallbacks where a hosted relay isn't allowed: a relay on one person's computer, and changes by file.
 
 The relay is written in Go. The build plan is `docs/plans/m2-plan.md`, in five sprints.
 
@@ -142,7 +148,7 @@ flowchart LR
 - **Confidentiality:** sessions and snapshots are end-to-end encrypted, with the key in the URL fragment so the server never sees it _(recalled: Excalidraw's approach for shared links)_. The relay therefore can't read Yjs updates; it's a message broker and blob store.
 - **Tree integrity:** grouping uses a move operation that can't create cycles under concurrent edits. Concurrent tree moves are a known CRDT problem with published solutions _(recalled)_, and naive implementations get it wrong.
 - **Scale:** up to a few hundred items per plan, with a few dozen visible at once. Ordinary DOM or SVG rendering should be enough _(priors)_. Grouping and filtering keep views readable.
-- **Self-hosting:** one container image serving the static app, the relay, and snapshot storage on local disk.
+- **Self-hosting:** one container image serving the static app, the relay, and snapshot storage on local disk. The same relay runs on one person's computer for a pilot (Q64).
 - **Accounts:** none. A display name and cursor color identify each participant.
 - **License:** Apache 2.0.
 

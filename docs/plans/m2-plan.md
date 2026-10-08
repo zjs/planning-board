@@ -2,16 +2,15 @@
 
 Status: **approved in outline 2026-10-08** (Q65). Each sprint still starts in plan mode, and its slices are sketched here only to show the order and the size. Sprint 9 produced the plan. The research behind it is in [`docs/research/collaboration/`](../research/collaboration/README.md).
 
-M2 is requirements 30–36, as sprint 9 reshaped them. The PM's answers (2026-10-08):
+M2 is requirements 30–37, as sprint 9 reshaped them. The PM's answers (2026-10-08):
 - **Q58:** on a shared plan, Open, Import and New make a new plan;
 - **Q59:** offline is always allowed, and merges automatically;
 - **Q60:** no locks: show drag intent, and tell both people when two move one card;
 - **Q61:** card-anchored presence and a cursor setting, and **no following**;
 - **Q62:** edit and view-only links, and new links to revoke;
 - **Q63:** history kept forever, with times normalized to each viewer's time zone;
-- **Q65:** history and "since you were away" as sprints of their own.
-
-**Still open:** Q64, the public demo relay and fallbacks for companies that block it.
+- **Q65:** history and "since you were away" as sprints of their own;
+- **Q64:** fallbacks where a hosted relay is blocked: the relay from a pilot's laptop, and changes by file. No WebRTC.
 
 It's five sprints. Each ends in something the PM can use, and the first two are worth shipping even if M2 stopped there.
 
@@ -45,7 +44,8 @@ What it proves: a live session feels like a whiteboard, and collisions are rare 
 |---|---|---|
 | 1 | **Presence** (ADR 0019, Q61, requirement 32): avatars, card-anchored pointers, selections, and the cursor setting (Everyone, Driver only, None) | See who's here and what they're pointing at, in your own view. Quiet the cursors in a big session. |
 | 2 | **Drag intent, and collision notices** (Q60, requirement 31) | See "Ada is moving this". Reach for the same card and be warned. Lose a race and get a way back. |
-| 3 | **New links, and self-hosting docs** (Q62) | Revoke a link. Run the relay from the README. |
+| 3 | **New links, and hosting docs** (Q62, Q64 e): self-hosting, and running a pilot from a laptop | Revoke a link. Run the relay from the README, on a server or on your own machine. |
+| 4 | **Changes by file** (Q64 f, requirement 37): send a shared plan's changes as an encrypted file, and merge one you're sent | Collaborate through email or a shared drive, with no relay at all. |
 
 Then a tester session with three people live, and one working offline.
 
@@ -67,7 +67,7 @@ What it proves: coming back to a shared plan, you know what happened, and nothin
 |---|---|---|
 | 1 | **Change markers on the board,** built so that scenario compare (requirement 23) can reuse them | See which cards changed, and where a moved card was. |
 | 2 | **The panel** (Q59, requirement 35): others' changes, and yours that didn't stick, with "Use mine" and "Restore", and stepping through them on the board | Come back after a day, and step through what changed. |
-| 3 | **The public demo,** as Q64 decides | Depends on Q64. |
+| 3 | **A hosted demo relay** (Q64 a): quotas, expiry after 30 idle days, rate limits, a privacy note. It's dropped if the PM decides not to run one | A stranger shares a plan from the public build. |
 
 ## Risks
 
