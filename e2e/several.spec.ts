@@ -30,6 +30,8 @@ async function boxSelect(page: Page, scope: Locator, opts: { shift?: boolean } =
 test('ideas typed into one column stay in the order they were typed', async ({ page }) => {
   await page.goto(APP_URL);
   await page.getByRole('button', { name: 'Start a blank plan' }).click();
+  // A blank plan is a new plan, opened a moment after the click (ADR 0021): type once its first card has focus.
+  await expect(page.getByTestId('draft-card').locator('textarea')).toBeFocused();
   for (const title of ['Zebra crossing', 'Apple pie', 'Mango smoothie']) {
     await page.keyboard.type(title);
     await page.keyboard.press('Enter');
