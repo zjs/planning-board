@@ -3,13 +3,11 @@ import { join } from 'node:path';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { card, cell, dragTo, holding, pickAxes, planList } from '../app.ts';
 
-// Sharing through a real relay (sprint 11, slice 3): the relay serves the app, as it does on a pilot's laptop,
+// Sharing through a real relay (sprint 11, slices 3 and 4): the relay serves the app, as it does on a pilot's laptop,
 // and each person is a separate browser context, with storage of their own.
 
 async function person(browser: Browser): Promise<Page> {
   const context = await browser.newContext();
-  // Sharing is behind a switch until the connection pill ships (slice 4).
-  await context.addInitScript(() => localStorage.setItem('planning-board:feature:share', '1'));
   return context.newPage();
 }
 
@@ -46,7 +44,8 @@ test('share a plan, open its links on two other computers, and edit it together'
   const links = await share(ada, 'Ada');
   expect(links.edit).toMatch(/^http:\/\/127\.0\.0\.1:18787\/#v=1&room=[\w-]+&key=[\w-]+$/);
   expect(links.view).toMatch(/&view=/);
-  await expect(ada.getByTestId('shared-chip')).toContainText('Shared · Ada');
+  await expect(ada.getByTestId('connection-state')).toHaveText('Live');
+  await expect(ada.locator('.toolbar .me-chip')).toHaveText('Ada');
   // The key leaves the address bar once it's saved.
   expect(new URL(ada.url()).hash).toMatch(/^#plan=/);
 
@@ -69,7 +68,7 @@ test('share a plan, open its links on two other computers, and edit it together'
   const cy = await person(browser);
   await cy.goto(links.view);
   await expect(cy.getByTestId('read-only-banner')).toContainText('view link');
-  await expect(cy.getByTestId('shared-chip')).toContainText('View only');
+  await expect(cy.getByTestId('connection-state')).toHaveText('View only');
   await pickAxes(cy, 'time', 'system');
   await expect(card(cell(cy, 'billing', 'q4'), id)).toBeVisible();
   await dragTo(cy, card(cell(cy, 'billing', 'q4'), id), cell(cy, 'billing', 'q2'));
@@ -106,7 +105,7 @@ test('opening the edit link where only the view link was held lets you edit', as
   await bo.reload();
   await expect(bo.getByTestId('plan-name')).toHaveText('Sample plan');
   await expect(bo.getByTestId('read-only-banner')).toHaveCount(0);
-  await expect(bo.getByTestId('shared-chip')).toHaveText('Shared');
+  await expect(bo.getByTestId('connection-state')).toHaveText('Live');
   // Still one plan: the link opened the one Bo had.
   expect(await planList(bo)).toEqual(['Sample plan', 'My plan']);
 });
@@ -138,4 +137,39 @@ test('replacing a shared plan from a file changes it for everyone, and undo puts
   await ada.getByTestId('notice').getByRole('button', { name: 'Undo' }).click();
   await expect(bo.getByText('SSO enforcement per workspace').first()).toBeVisible();
   await expect(bo.getByText('Restored from backup')).toHaveCount(0);
+});
+
+test('offline: keep working, see what isn’t shared yet, and both boards match after reconnecting', async ({ browser }) => {
+  const ada = await person(browser);
+  await ada.goto('/');
+  await ada.locator('.empty-state').getByRole('button', { name: 'Load sample plan' }).click();
+  const links = await share(ada, 'Ada');
+  const bo = await person(browser);
+  await bo.goto(links.edit);
+  await expect(bo.getByTestId('connection-state')).toHaveText('Live');
+  await pickAxes(ada, 'time', 'system');
+  await pickAxes(bo, 'time', 'system');
+
+  await bo.context().setOffline(true);
+  await expect(bo.getByTestId('connection-state')).toHaveText('Offline');
+  // Offline is always allowed (Q59): Bo keeps working, and the pill counts what the relay hasn't got.
+  await dragTo(bo, card(holding(bo, { row: 'identity' }), id), cell(bo, 'billing', 'q3'));
+  await expect(bo.getByTestId('connection-state')).toHaveText('Offline · 1 change not shared yet');
+  // The pill, the name and Share still fit the toolbar on one row at 1280 wide.
+  await bo.setViewportSize({ width: 1280, height: 720 });
+  expect((await bo.locator('.toolbar').boundingBox())!.height).toBeLessThan(60);
+  // Both rename the plan meanwhile: one name wins, the same on both boards.
+  await bo.getByTestId('plan-name').dblclick();
+  await bo.getByLabel('Plan name').fill('Offline rename');
+  await bo.keyboard.press('Enter');
+  await ada.getByTestId('plan-name').dblclick();
+  await ada.getByLabel('Plan name').fill('Q3 platform plan');
+  await ada.keyboard.press('Enter');
+
+  await bo.context().setOffline(false);
+  await expect(bo.getByTestId('connection-state')).toHaveText('Live', { timeout: 15_000 });
+  // Both boards converge: Bo's drag reached Ada, and both agree on one name.
+  await expect(card(cell(ada, 'billing', 'q3'), id)).toBeVisible();
+  const name = await ada.getByTestId('plan-name').textContent();
+  await expect(bo.getByTestId('plan-name')).toHaveText(name!);
 });

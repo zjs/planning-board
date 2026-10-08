@@ -132,6 +132,10 @@ export class RelayProvider {
   problem: RelayProblem | null = null;
   /** When the provider was last caught up, or null if never. */
   lastLive: number | null = null;
+  /** When it lost a live connection, or null while live or before it ever was. */
+  lostAt: number | null = null;
+  /** When this connection was opened. */
+  readonly openedAt: number;
   /** Resolves the first time the provider has caught up. */
   readonly whenSynced: Promise<void>;
   /** The relay's number for this connection, as others see it. */
@@ -167,12 +171,26 @@ export class RelayProvider {
     this.create = options.create === true;
     this.open = options.open ?? openWebSocket;
     this.now = options.now ?? Date.now;
+    this.openedAt = this.now();
     this.setTimer = options.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
     this.clearTimer = options.clearTimer ?? ((t) => clearTimeout(t as ReturnType<typeof setTimeout>));
     this.whenSynced = new Promise((resolve) => (this.resolveSynced = resolve));
     options.doc.on('update', this.onDocUpdate);
+    // The browser says when the network comes and goes, sooner than a socket would notice.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', this.onOnline);
+      window.addEventListener('offline', this.onOffline);
+    }
     void this.start();
   }
+
+  private onOnline = () => {
+    if (this.status !== 'live' && this.status !== 'refused') this.reconnectNow();
+  };
+
+  private onOffline = () => {
+    this.socket?.close();
+  };
 
   private async start() {
     const record = await this.options.sync.load().catch(() => null);
@@ -203,6 +221,11 @@ export class RelayProvider {
     return diff.byteLength > 2 && !Y.equalSnapshots(Y.snapshot(this.options.doc), Y.snapshot(this.shadow)) ? diff : null;
   }
 
+  /** What the relay is known to hold, as one Yjs update: to say what isn't shared yet. */
+  sharedState(): Uint8Array {
+    return Y.encodeStateAsUpdate(this.shadow);
+  }
+
   /** Make the room again from this copy: after the relay lost it. */
   recreate() {
     if (!this.token) return;
@@ -215,6 +238,10 @@ export class RelayProvider {
   destroy() {
     this.destroyed = true;
     this.options.doc.off('update', this.onDocUpdate);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('online', this.onOnline);
+      window.removeEventListener('offline', this.onOffline);
+    }
     if (this.retryTimer !== null) this.clearTimer(this.retryTimer);
     if (this.saveTimer !== null) {
       this.clearTimer(this.saveTimer);
@@ -269,6 +296,7 @@ export class RelayProvider {
       this.socket = null;
       this.pending.clear();
       if (this.destroyed || this.status === 'refused') return;
+      if (this.status === 'live') this.lostAt = this.now();
       this.setStatus(this.lastLive === null ? 'connecting' : 'reconnecting');
       // Back off, with jitter, so a relay that comes back isn't met by everyone at once.
       const delay = Math.min(10_000, 500 * 2 ** this.retry) * (0.7 + Math.random() * 0.6);
@@ -355,6 +383,7 @@ export class RelayProvider {
         this.create = false;
         this.retry = 0;
         this.lastLive = this.now();
+        this.lostAt = null;
         this.status = 'live';
         if (this.canWrite) {
           const diff = this.unshared();

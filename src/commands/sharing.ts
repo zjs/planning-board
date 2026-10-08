@@ -8,7 +8,6 @@ export { isNewerLink, parseShareLink, type ShareLink } from '../store/keys.ts';
 
 const NAME_KEY = 'planning-board:me';
 const RELAY_KEY = 'planning-board:relay';
-const FEATURE_KEY = 'planning-board:feature:share';
 
 function read(key: string): string | null {
   try {
@@ -24,15 +23,6 @@ function write(key: string, value: string): void {
   } catch {
     // A convenience: without storage, it's asked again next time.
   }
-}
-
-/**
- * Whether Share is offered (sprint 11, slice 3): off until the connection
- * pill ships, so the public build never offers sharing without saying
- * what's shared. Tests and previews turn it on.
- */
-export function shareOffered(): boolean {
-  return read(FEATURE_KEY) === '1';
 }
 
 /** Your name on shared plans, chosen once per browser (Q61), or null before you've given one. */

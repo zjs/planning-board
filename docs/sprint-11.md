@@ -38,8 +38,8 @@ The engineering plan is `docs/plans/sprint-11-plan.md`.
 
 ### 4. The connection pill, and offline (Q59)
 
-- [ ] On a shared plan: Live, Reconnecting…, Offline · N changes not shared yet, View only, and Can't reach the relay.
-- [ ] Offline is always allowed, and both sides converge when it reconnects.
+- [x] On a shared plan: Live, Reconnecting…, Offline · N changes not shared yet, View only, and Can't reach the relay.
+- [x] Offline is always allowed, and both sides converge when it reconnects.
 
 ### 5. Tester-ready
 
