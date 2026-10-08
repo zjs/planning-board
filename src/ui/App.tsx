@@ -58,7 +58,7 @@ import {
   type PlanId,
   type SharedPlan,
 } from '../commands/plans.ts';
-import { isNewerLink, joinFromLink, linkInHash, shareOffered, sharingConfirmed, startSharing, myName } from '../commands/sharing.ts';
+import { isNewerLink, joinFromLink, linkInHash, sharingConfirmed, startSharing, myName } from '../commands/sharing.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
   chain,
@@ -127,6 +127,7 @@ import { PlanName } from './PlanName.tsx';
 import { Inspector } from './Inspector.tsx';
 import { ViewBar } from './ViewBar.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
+import { ConnectionPill } from './ConnectionPill.tsx';
 import { ShareDialog, useConnection } from './ShareDialog.tsx';
 import { capturePositions, playFrom, type Positions } from './motion.ts';
 import { keyNames } from './platform.ts';
@@ -1489,7 +1490,6 @@ function Workspace({
 
   // Sharing (requirements 30 and 33): the dialog, and replacing a shared plan from a file (Q58).
   const [sharing, setSharing] = useState(false);
-  const offerShare = shareOffered() || planActions.shared !== null;
   const replaceInput = useRef<HTMLInputElement>(null);
   const [replacing, setReplacing] = useState(false);
   const replaceFromFile = async (file: File) => {
@@ -1546,25 +1546,21 @@ function Workspace({
           disabled: empty && planActions.plans.length <= 1,
           title: 'Delete this plan from this browser. You can undo it for a few seconds.',
         },
-        ...(offerShare
+        'divider',
+        {
+          label: planActions.shared ? 'Share links…' : 'Share…',
+          onSelect: () => setSharing(true),
+          disabled: empty && !planActions.shared,
+          title: 'Share this plan with a link, through a relay',
+        },
+        ...(planActions.shared?.secret
           ? ([
-              'divider',
               {
-                label: planActions.shared ? 'Share links…' : 'Share…',
-                onSelect: () => setSharing(true),
-                disabled: empty && !planActions.shared,
-                title: 'Share this plan with a link, through a relay',
+                label: 'Replace this shared plan from a file…',
+                onSelect: () => setReplacing(true),
+                disabled: !canEdit,
+                title: 'Everyone with the link sees the file’s plan instead',
               },
-              ...(planActions.shared?.secret
-                ? [
-                    {
-                      label: 'Replace this shared plan from a file…',
-                      onSelect: () => setReplacing(true),
-                      disabled: !canEdit,
-                      title: 'Everyone with the link sees the file’s plan instead',
-                    },
-                  ]
-                : []),
             ] satisfies MenuEntry[])
           : []),
         'divider',
@@ -1578,11 +1574,15 @@ function Workspace({
     <div className="app" data-plan-db={planDatabase(planId)}>
       <header className="toolbar">
         <PlanName name={planActions.name} onRename={planActions.rename} />
-        {planActions.shared && (
-          <span className="shared-chip" data-testid="shared-chip" title={readOnly ? readOnlyText : 'Shared through a relay'}>
-            {readOnly === 'view-link' ? 'View only' : 'Shared'}
-            {myName() !== null && <span className="me-chip"> · {myName()}</span>}
-          </span>
+        {connection && (
+          <ConnectionPill
+            store={store}
+            connection={connection}
+            viewOnly={readOnly === 'view-link'}
+            hasLocal={!empty}
+            name={myName()}
+            onOpen={() => setSharing(true)}
+          />
         )}
         <div className="actions">
           <button
@@ -1648,17 +1648,15 @@ function Workspace({
             Link
           </button>
           <span className="divider" />
-          {offerShare && (
-            <button
-              type="button"
-              onClick={() => setSharing(true)}
-              disabled={empty && !planActions.shared}
-              data-testid="share-button"
-              title="Share this plan with a link"
-            >
-              Share
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setSharing(true)}
+            disabled={empty && !planActions.shared}
+            data-testid="share-button"
+            title="Share this plan with a link"
+          >
+            Share
+          </button>
           {fileMenu}
           <button
             type="button"

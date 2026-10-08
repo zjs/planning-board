@@ -8,7 +8,6 @@ export { isNewerLink, parseShareLink, type ShareLink } from '../store/keys.ts';
 
 const NAME_KEY = 'planning-board:me';
 const RELAY_KEY = 'planning-board:relay';
-const FEATURE_KEY = 'planning-board:feature:share';
 
 function read(key: string): string | null {
   try {
@@ -24,15 +23,6 @@ function write(key: string, value: string): void {
   } catch {
     // A convenience: without storage, it's asked again next time.
   }
-}
-
-/**
- * Whether Share is offered (sprint 11, slice 3): off until the connection
- * pill ships, so the public build never offers sharing without saying
- * what's shared. Tests and previews turn it on.
- */
-export function shareOffered(): boolean {
-  return read(FEATURE_KEY) === '1';
 }
 
 /** Your name on shared plans, chosen once per browser (Q61), or null before you've given one. */
@@ -94,14 +84,14 @@ export function relayAddress(typed: string): { relay: string } | { problem: stri
   try {
     url = new URL(/^[a-z]+:\/\//i.test(text) ? text : `http://${text}`);
   } catch {
-    return { problem: "That doesn't look like an address." };
+    return { problem: 'That doesn’t look like an address.' };
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return { problem: 'A relay address starts with http:// or https://.' };
   const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
   if (typeof location !== 'undefined' && location.protocol === 'https:' && url.protocol === 'http:' && !local) {
     return {
       problem:
-        'This page is served over https, so the browser won\'t let it reach a relay over plain http. Open the app from the relay\'s own address instead, or use an https relay.',
+        'This page is served over https, so the browser won’t let it reach a relay over plain http. Open the app from the relay’s own address instead, or use an https relay.',
     };
   }
   return { relay: `${url.origin}${url.pathname.replace(/\/$/, '')}` };

@@ -130,7 +130,7 @@ export function ShareDialog({
     const info = await checkRelay(relay);
     setChecking(false);
     if (!info) {
-      setProblem(`There's no relay answering at ${relay}. Check it's running, and that this computer can reach it.`);
+      setProblem(`There’s no relay answering at ${relay}. Check it’s running, and that this computer can reach it.`);
       return null;
     }
     if (info.protocol !== 1) {

@@ -157,6 +157,23 @@ export function Legend({ onClose }: { onClose: () => void }) {
           </dl>
         </section>
         <section>
+          <h3>Share</h3>
+          <dl>
+            <dt>Share</dt>
+            <dd>
+              Gives a Can edit and a Can view link, through a relay: the app opened from one, or one you name. The relay
+              keeps an encrypted copy it can’t read; the key is only in the link.
+            </dd>
+            <dt>Live, Offline</dt>
+            <dd>
+              Beside a shared plan’s name. Keep working offline: it counts what isn’t shared yet, and shares it when
+              you’re back. Click it for the plan’s links.
+            </dd>
+            <dt>View only</dt>
+            <dd>A plan opened with its Can view link: you see changes as they happen, and can’t make any.</dd>
+          </dl>
+        </section>
+        <section>
           <h3>What the board tells you</h3>
           <dl>
             <dt>The colored edge</dt>
@@ -186,7 +203,7 @@ export function Legend({ onClose }: { onClose: () => void }) {
       </div>
       <p className="legend-foot">
         Everything saves in this browser as you go, and the same plan open in two tabs stays in step. Save to a file
-        to take it somewhere else.
+        to take it somewhere else, or share it.
       </p>
       <p className="legend-foot">
         Build {BUILD} ·{' '}

@@ -48,6 +48,10 @@ import {
   namePlan,
   planName,
   startPlan,
+  replacePlan,
+  unsharedChanges,
+  watchPlanName,
+  type Connection,
 } from './store.ts';
 
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -750,5 +754,62 @@ describe('a read-only plan (sprint 11)', () => {
     renameItem(writer, 'a', 'Alpha, renamed elsewhere');
     Y.applyUpdate(store.doc, Y.encodeStateAsUpdate(writer.doc, Y.encodeStateVector(store.doc)));
     expect(readPlan(store.doc).items['a']?.title).toBe('Alpha, renamed elsewhere');
+  });
+});
+
+describe('sharing, as commands see it', () => {
+  /** A connection whose relay holds what `shared` holds. */
+  const relayHolding = (shared: Y.Doc) =>
+    ({
+      sharedState: () => Y.encodeStateAsUpdate(shared),
+      unshared: () => null,
+    }) as unknown as Connection;
+  const relayBehind = (shared: Y.Doc, doc: Y.Doc) =>
+    ({
+      sharedState: () => Y.encodeStateAsUpdate(shared),
+      unshared: () => (Y.encodeStateAsUpdate(doc, Y.encodeStateVector(shared)).byteLength > 2 ? new Uint8Array(3) : null),
+    }) as unknown as Connection;
+
+  it('counts what the relay lacks as the cards it touches', () => {
+    const store = storeWith(item('a'), item('b'));
+    const shared = new Y.Doc();
+    Y.applyUpdate(shared, Y.encodeStateAsUpdate(store.doc));
+    expect(unsharedChanges(store, relayHolding(shared))).toBe(0);
+    renameItem(store, 'a', 'a one');
+    renameItem(store, 'a', 'a two');
+    addDependency(store, 'a', 'b');
+    expect(unsharedChanges(store, relayBehind(shared, store.doc))).toBe(2);
+    // Undoing everything leaves nothing to share, though the edits happened.
+    undo(store);
+    undo(store);
+    undo(store);
+    expect(unsharedChanges(store, relayBehind(shared, store.doc))).toBe(0);
+  });
+
+  it('counts a whole plan the relay has never seen', () => {
+    const store = storeWith(item('a'), item('b'));
+    expect(unsharedChanges(store, relayBehind(new Y.Doc(), store.doc))).toBeGreaterThanOrEqual(2);
+  });
+
+  it('replaces a shared plan in one undo step', () => {
+    const store = storeWith(item('a'));
+    replacePlan(store, plan(item('z')));
+    expect(Object.keys(readPlan(store.doc).items)).toEqual(['z']);
+    undo(store);
+    expect(Object.keys(readPlan(store.doc).items)).toEqual(['a']);
+  });
+
+  it('hears the plan renamed, from anywhere', () => {
+    const store = storeWith(item('a'));
+    const names: string[] = [];
+    const stop = watchPlanName(store, (name) => names.push(name));
+    namePlan(store, 'Q3 plan');
+    const other = new Y.Doc();
+    Y.applyUpdate(other, Y.encodeStateAsUpdate(store.doc));
+    other.getMap('meta').set('name', 'Q4 plan');
+    Y.applyUpdate(store.doc, Y.encodeStateAsUpdate(other, Y.encodeStateVector(store.doc)));
+    stop();
+    namePlan(store, 'Ignored');
+    expect(names).toEqual(['Q3 plan', 'Q4 plan']);
   });
 });

@@ -23,6 +23,7 @@ import {
   valueLabelProblem,
   type CardValueChange,
 } from '../domain/properties.ts';
+import { planChanges } from '../domain/changes.ts';
 import { loopRepairs, wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
@@ -144,6 +145,20 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN, shared?: SharedPlan
     }
   });
   return opened;
+}
+
+/**
+ * How many changes on this computer the relay doesn't have yet, counted as
+ * the cards they touch, plus any property changed (requirement 35). It
+ * compares the plan with what the relay is known to hold, so it's right
+ * across tabs, undo and repairs, and survives a reload.
+ */
+export function unsharedChanges(store: PlanStore, connection: Connection): number {
+  if (connection.unshared() === null) return 0;
+  const shared = new Y.Doc();
+  Y.applyUpdate(shared, connection.sharedState());
+  const changes = planChanges(readPlan(shared), readPlan(store.doc));
+  return changes.cards + changes.properties;
 }
 
 /** The plan's name as its document keeps it (ADR 0021), if it has one. */

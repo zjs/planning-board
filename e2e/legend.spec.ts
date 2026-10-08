@@ -17,6 +17,7 @@ test('help stays closed until asked for, and opens from the toolbar as a cheat s
     'Select and find',
     'Links',
     'Plans and properties',
+    'Share',
     'What the board tells you',
   ]);
   await expect(legend).toContainText(/Hold (Alt|⌥ Option) while dropping/);
