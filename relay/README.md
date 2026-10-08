@@ -50,6 +50,7 @@ Put it behind your company's reverse proxy for HTTPS, and pass `-trust-forwarded
 | `-max-data` | 2 GB | The most all shared plans together may hold. |
 | `-max-rooms` | 1000 | The most shared plans the relay keeps. |
 | `-update-rate` | 50 | Changes per second one connection may send. |
+| `-presence-rate` | 30 | Presence messages per second one connection may send: pointers, selections and drags. Counted apart from changes. |
 | `-connection-rate` | 120 | Connections per minute from one address. |
 | `-share-rate` | 60 | New shared plans per hour from one address. |
 | `-trust-forwarded` | off | Behind a proxy, read `X-Forwarded-For` and `X-Forwarded-Proto`. |

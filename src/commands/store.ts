@@ -9,7 +9,7 @@ import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { planValueEdit, type ValueEdit } from '../domain/inspector.ts';
 import { cleanTitle, deletionOf, nextRank, valuesForChild, valuesForNewItem } from '../domain/items.ts';
 import type { Dependency, ItemId, Plan, PropertyId, Related, SelectProperty, ValueId } from '../domain/model.ts';
-import { relatedPair } from '../domain/model.ts';
+import { relatedPair, SEQUENCE } from '../domain/model.ts';
 import { planDrop, planDrops, type DropMode, type DropTarget } from '../domain/move.ts';
 import {
   cardsWithProperty,
@@ -24,10 +24,12 @@ import {
   type CardValueChange,
 } from '../domain/properties.ts';
 import { planChanges } from '../domain/changes.ts';
+import { cardState, type CardState } from '../domain/collisions.ts';
 import { loopRepairs, wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 import { syncTabs } from '../store/tabs.ts';
+import { PresenceChannel } from '../store/presence.ts';
 import { indexedDbSyncStore, memorySyncStore, RelayProvider } from '../store/relay.ts';
 import { FIRST_PLAN, planDatabase, syncDatabase, type PlanId, type SharedPlan } from './plans.ts';
 
@@ -86,6 +88,8 @@ export interface OpenPlan {
   persistence: PersistenceStatus;
   /** The relay connection, for a shared plan (ADR 0017). */
   connection: Connection | null;
+  /** Who else is on it, for a shared plan (ADR 0019). */
+  presence: Presence | null;
   readOnly: ReadOnlyReason | null;
   close: () => Promise<void>;
 }
@@ -93,6 +97,8 @@ export interface OpenPlan {
 /** A shared plan's connection to its relay, as the board sees it. */
 export type Connection = RelayProvider;
 export type { ConnectionStatus, RelayProblem } from '../store/relay.ts';
+/** Who else is on a shared plan, and what they're doing (ADR 0019). */
+export type Presence = PresenceChannel;
 
 /**
  * Open one of the browser's plans, backed by its own database. Resolves once
@@ -121,13 +127,16 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN, shared?: SharedPlan
         sync: typeof indexedDB === 'undefined' ? memorySyncStore() : indexedDbSyncStore(syncDatabase(id)),
       })
     : null;
+  const presence = connection ? new PresenceChannel(connection) : null;
   const opened: OpenPlan = {
     id,
     store,
     persistence: status,
     connection,
+    presence,
     readOnly,
     close: async () => {
+      presence?.destroy();
       connection?.destroy();
       stopLoops();
       stopTabs();
@@ -358,6 +367,26 @@ export function dropCards(
     }
   });
   return changes.length;
+}
+
+/**
+ * Put a card back where a drop of yours left it, after someone else's later
+ * drop replaced it (Q60): a fresh change, one undo step, rather than an undo,
+ * which can't reach back past their change. Returns whether anything changed.
+ */
+export function restoreCardState(store: PlanStore, id: ItemId, state: CardState, withSequence: boolean): boolean {
+  const item = root(store.doc).items.get(id);
+  const before = cardState(readPlan(store.doc), id, [...Object.keys(state.values), ...(withSequence ? [SEQUENCE] : [])]);
+  if (!item || !before) return false;
+  const same =
+    (!withSequence || before.sequence === state.sequence) &&
+    Object.entries(state.values).every(([p, v]) => (before.values[p] ?? []).join() === [...v].sort().join());
+  if (same) return false;
+  edit(store, () => {
+    if (withSequence) item.set('sequence', state.sequence);
+    for (const [property, values] of Object.entries(state.values)) writeValues(store, item, property, values);
+  });
+  return true;
 }
 
 /** Whether a property holds several values on a card (fixed when the property is made). */

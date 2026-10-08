@@ -29,6 +29,7 @@ func main() {
 	maxData := flag.Int64("max-data", defaults.MaxData, "most all shared plans together may hold, in bytes (0: no limit)")
 	maxRooms := flag.Int("max-rooms", defaults.MaxRooms, "most shared plans this relay keeps (0: no limit)")
 	updateRate := flag.Float64("update-rate", defaults.UpdatesPerSecond, "changes per second one connection may send (0: no limit)")
+	presenceRate := flag.Float64("presence-rate", defaults.PresencePerSecond, "presence messages per second one connection may send (0: no limit)")
 	connRate := flag.Float64("connection-rate", defaults.ConnectionsPerMinute, "connections per minute from one address (0: no limit)")
 	createRate := flag.Float64("share-rate", defaults.RoomsPerHour, "new shared plans per hour from one address (0: no limit)")
 	trustForwarded := flag.Bool("trust-forwarded", false, "behind a proxy, use X-Forwarded-For and X-Forwarded-Proto")
@@ -38,6 +39,7 @@ func main() {
 	cfg := DefaultConfig(*data)
 	cfg.MaxMessage, cfg.MaxRoom, cfg.MaxData, cfg.MaxRooms = *maxMessage, *maxRoom, *maxData, *maxRooms
 	cfg.UpdatesPerSecond, cfg.ConnectionsPerMinute, cfg.RoomsPerHour = *updateRate, *connRate, *createRate
+	cfg.PresencePerSecond = *presenceRate
 	cfg.TrustForwarded = *trustForwarded
 	cfg.Origins = OriginPolicy{Null: *allowNull}
 	for _, host := range strings.Split(*allowOrigins, ",") {

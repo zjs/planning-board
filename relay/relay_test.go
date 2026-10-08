@@ -46,6 +46,7 @@ func testConfig(t *testing.T, dir string) (Config, *clock) {
 	cfg.ConnectionsPerMinute = 0
 	cfg.RoomsPerHour = 0
 	cfg.UpdatesPerSecond = 0
+	cfg.PresencePerSecond = 0
 	return cfg, c
 }
 
@@ -450,6 +451,52 @@ func TestLimits(t *testing.T) {
 		a.update(5, "x")
 		if code := a.expectError(); code != ErrRateLimited {
 			t.Fatalf("code %d", code)
+		}
+	})
+	t.Run("presence has its own rate, and never uses up changes", func(t *testing.T) {
+		cfg, _ := testConfig(t, t.TempDir())
+		cfg.UpdatesPerSecond = 1  // a burst of 4
+		cfg.PresencePerSecond = 1 // a burst of 2; the test clock doesn't move
+		srv := serve(t, cfg)
+		a := dial(t, srv)
+		a.hello(token, 0, HelloCreate)
+		b := dial(t, srv)
+		b.hello(token, 0, 0)
+		for i := 0; i < 5; i++ {
+			a.send(NewFrame(FrameEphemeral).Bytes([]byte{byte('0' + i)}).Done())
+		}
+		// Changes still go through after a burst of presence, and only the first two presence messages arrived.
+		a.update(1, "x")
+		a.ack()
+		var forwarded []string
+		for {
+			kind, r := b.recv()
+			if kind == FrameUpdateOut {
+				break
+			}
+			if kind == FrameEphemeralOut {
+				r.Uint()
+				forwarded = append(forwarded, string(r.Bytes()))
+			}
+		}
+		if strings.Join(forwarded, ",") != "0,1" {
+			t.Fatalf("forwarded %v", forwarded)
+		}
+	})
+	t.Run("presence over its size is dropped quietly", func(t *testing.T) {
+		cfg, _ := testConfig(t, t.TempDir())
+		cfg.MaxPresence = 8
+		srv := serve(t, cfg)
+		a := dial(t, srv)
+		a.hello(token, 0, HelloCreate)
+		b := dial(t, srv)
+		b.hello(token, 0, 0)
+		a.send(NewFrame(FrameEphemeral).Bytes([]byte("much too long")).Done())
+		a.send(NewFrame(FrameEphemeral).Bytes([]byte("short")).Done())
+		kind, r := b.recv()
+		r.Uint()
+		if kind != FrameEphemeralOut || string(r.Bytes()) != "short" {
+			t.Fatal("the long presence message wasn't dropped, or the short one didn't arrive")
 		}
 	})
 	t.Run("new rooms from one address", func(t *testing.T) {

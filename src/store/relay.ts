@@ -157,6 +157,7 @@ export class RelayProvider {
   private destroyed = false;
   private create: boolean;
   private listeners = new Set<() => void>();
+  private ephemeralListeners = new Set<(from: number, data: Uint8Array | null) => void>();
   private resolveSynced: () => void = () => {};
   private readonly key: Uint8Array;
   private readonly token: Uint8Array | null;
@@ -222,6 +223,23 @@ export class RelayProvider {
   unshared(): Uint8Array | null {
     const diff = Y.encodeStateAsUpdate(this.options.doc, Y.encodeStateVector(this.shadow));
     return diff.byteLength > 2 && !Y.equalSnapshots(Y.snapshot(this.options.doc), Y.snapshot(this.shadow)) ? diff : null;
+  }
+
+  /**
+   * Presence from someone else in the room (ADR 0019): their connection's
+   * number, and the message, opened; null when they leave. Messages that
+   * can't be opened, written with another key, are ignored.
+   */
+  onEphemeral(listener: (from: number, data: Uint8Array | null) => void): () => void {
+    this.ephemeralListeners.add(listener);
+    return () => void this.ephemeralListeners.delete(listener);
+  }
+
+  /** Send presence, sealed, to everyone else in the room. Only while live: presence is never queued. */
+  sendEphemeral(plain: Uint8Array): boolean {
+    if (this.status !== 'live' || !this.socket) return false;
+    this.socket.send(new FrameWriter(Frame.Ephemeral).bytes(seal(this.key, this.options.room, 'presence', plain)).done());
+    return true;
   }
 
   /** What the relay is known to hold, as one Yjs update: to say what isn't shared yet. */
@@ -424,7 +442,23 @@ export class RelayProvider {
         this.emit();
         break;
       }
-      // Presence (EphemeralOut, Left) comes with sprint 12.
+      case Frame.EphemeralOut: {
+        const from = r.uint();
+        const data = r.bytes();
+        let plain: Uint8Array;
+        try {
+          plain = unseal(this.key, this.options.room, 'presence', data);
+        } catch {
+          break;
+        }
+        for (const listener of this.ephemeralListeners) listener(from, plain);
+        break;
+      }
+      case Frame.Left: {
+        const from = r.uint();
+        for (const listener of this.ephemeralListeners) listener(from, null);
+        break;
+      }
     }
     this.maybeSnapshot();
   }

@@ -40,8 +40,13 @@ type Config struct {
 	MaxRoom    int64 // ciphertext bytes one room may hold
 	MaxData    int64 // ciphertext bytes all rooms together may hold
 	MaxRooms   int   // rooms the relay keeps
-	// UpdatesPerSecond limits each connection's updates, snapshots and presence.
+	// UpdatesPerSecond limits each connection's updates and snapshots.
 	UpdatesPerSecond float64
+	// PresencePerSecond limits each connection's presence, on its own, so a
+	// pointer moving never slows down someone's changes (ADR 0019).
+	PresencePerSecond float64
+	// MaxPresence is the largest presence message forwarded; larger ones are dropped.
+	MaxPresence int64
 	// ConnectionsPerMinute and RoomsPerHour limit each address.
 	ConnectionsPerMinute float64
 	RoomsPerHour         float64
@@ -61,6 +66,8 @@ func DefaultConfig(dataDir string) Config {
 		MaxData:              2 << 30,
 		MaxRooms:             1000,
 		UpdatesPerSecond:     50,
+		PresencePerSecond:    30,
+		MaxPresence:          4 << 10,
 		ConnectionsPerMinute: 120,
 		RoomsPerHour:         60,
 		Origins:              OriginPolicy{Null: true, Hosts: []string{"zjs.github.io"}},
@@ -87,8 +94,9 @@ type Relay struct {
 type peer struct {
 	id   uint64
 	send chan []byte
-	// limiter is this connection's own: updates, snapshots and presence.
-	limiter *Limiter
+	// limiter is this connection's own, for updates and snapshots; presence has its own.
+	limiter  *Limiter
+	presence *Limiter
 }
 
 // NewRelay keeps rooms under cfg.DataDir, one directory each.
@@ -258,7 +266,12 @@ func (r *Relay) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	r.mu.Lock()
 	r.nextPeer++
-	p := &peer{id: r.nextPeer, send: make(chan []byte, 1024), limiter: NewLimiter(r.cfg.UpdatesPerSecond, time.Second, 4*r.cfg.UpdatesPerSecond, r.cfg.Now)}
+	p := &peer{
+		id:       r.nextPeer,
+		send:     make(chan []byte, 1024),
+		limiter:  NewLimiter(r.cfg.UpdatesPerSecond, time.Second, 4*r.cfg.UpdatesPerSecond, r.cfg.Now),
+		presence: NewLimiter(r.cfg.PresencePerSecond, time.Second, 2*r.cfg.PresencePerSecond, r.cfg.Now),
+	}
 	r.mu.Unlock()
 	canWrite := room.canWrite(token)
 
@@ -418,9 +431,11 @@ func (r *Relay) handle(room *Room, p *peer, frame []byte, canWrite bool) bool {
 		if fields.Err() != nil || tooBig {
 			return reply(errorFrame(ErrBadFrame, "Presence didn't arrive whole."))
 		}
-		if p.limiter.Allow("updates") {
-			room.broadcast(NewFrame(FrameEphemeralOut).Uint(p.id).Bytes(data).Done(), p)
+		// Presence is a hint, sent again within seconds: over its size or rate, it's dropped quietly.
+		if (r.cfg.MaxPresence > 0 && int64(len(data)) > r.cfg.MaxPresence) || !p.presence.Allow("presence") {
+			return true
 		}
+		room.broadcast(NewFrame(FrameEphemeralOut).Uint(p.id).Bytes(data).Done(), p)
 		return true
 	default:
 		return reply(errorFrame(ErrBadFrame, "The relay didn't understand a message."))

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 
 export type MenuEntry =
   | {
@@ -18,7 +18,20 @@ export type MenuEntry =
  * A toolbar button that opens a short list of commands. Esc or a click
  * elsewhere closes it; arrow keys move between entries.
  */
-export function Menu({ label, entries, testId }: { label: string; entries: MenuEntry[]; testId?: string }) {
+export function Menu({
+  label,
+  entries,
+  testId,
+  ariaLabel,
+  className,
+}: {
+  label: ReactNode;
+  entries: MenuEntry[];
+  testId?: string;
+  /** The button's name, when its label isn't words, such as a row of avatars. */
+  ariaLabel?: string;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -61,6 +74,8 @@ export function Menu({ label, entries, testId }: { label: string; entries: MenuE
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
         data-testid={testId}
+        aria-label={ariaLabel}
+        className={className}
       >
         {label} ▾
       </button>

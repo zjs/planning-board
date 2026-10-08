@@ -7,6 +7,7 @@ export function DragGhost({
   titleOf,
   where = null,
   hint = null,
+  warning = null,
   count = 1,
 }: {
   drag: DragState;
@@ -17,6 +18,8 @@ export function DragGhost({
   where?: string | null;
   /** A hint for a drop that replaces a value on an axis that holds several: "Alt adds instead". */
   hint?: string | null;
+  /** Someone else is dragging this card too (Q60): "Ada is moving this too". */
+  warning?: string | null;
   /** How many cards move together: the selection, when the dragged card is in it (Q48). */
   count?: number;
 }) {
@@ -31,10 +34,16 @@ export function DragGhost({
       className={drag.target ? 'drag-ghost over-target' : 'drag-ghost'}
       style={{ left: drag.x - drag.grabX, top: drag.y - drag.grabY, width: drag.width }}
       aria-hidden="true"
+      data-testid="drag-ghost"
     >
       <span className="card-title">{drag.title}</span>
       {count > 1 && <span className="ghost-count">+{count - 1} more</span>}
       {adding && <span className="add-badge">+ add</span>}
+      {warning && (
+        <span className="drag-warning" data-testid="drag-warning">
+          {warning}
+        </span>
+      )}
       {isIntoTarget(target) ? (
         <span className="nest-badge">Put inside “{titleOf(target.into)}”</span>
       ) : (
