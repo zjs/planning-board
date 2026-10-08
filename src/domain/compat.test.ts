@@ -26,6 +26,7 @@ describe('plan files saved by earlier versions', () => {
       'sprint-10.plan.json', // file names sort as text
       'sprint-11-before-loop-repair.plan.json',
       'sprint-11.plan.json',
+      'sprint-12.plan.json',
       'sprint-2.plan.json',
       'sprint-3.plan.json',
       'sprint-4.plan.json',
