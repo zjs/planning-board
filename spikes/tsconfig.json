@@ -1,0 +1,6 @@
+{
+  // Spikes aren't part of `npm run check`; this is for checking them by hand: npx tsc -p spikes
+  "extends": "../tsconfig.json",
+  "include": ["merge-scenarios", "sync-client", "../src"],
+  "exclude": ["sync-client/dist"]
+}

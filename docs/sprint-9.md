@@ -36,15 +36,15 @@ Research documents go in `docs/research/collaboration/`, and spikes in `spikes/`
 
 ### 3. A relay and encrypted sync
 
-- [ ] A Go relay that forwards and stores only ciphertext, plus a browser client that encrypts Yjs updates with the key in the link (`spikes/relay/`, `spikes/sync-client/`).
-- [ ] An automated run with two browsers that edit, go offline, reconnect and converge, which checks that the relay's storage holds no plan text.
-- [ ] Measurements of the cost of each catch-up after a disconnect, and of encryption, plus what self-hosting and a public demo would take (`relay-and-sync.md`).
+- [x] A Go relay that forwards and stores only ciphertext, plus a browser client that encrypts Yjs updates with the key in the link (`spikes/relay/`, `spikes/sync-client/`).
+- [x] An automated run with two browsers that edit, go offline, reconnect and converge, which checks that the relay's storage holds no plan text.
+- [x] Measurements of the cost of each catch-up after a disconnect, and of encryption, plus what self-hosting and a public demo would take (`relay-and-sync.md`).
 
 ### 4. Presence and who changed what
 
-- [ ] In the spike, both people see each other's cursors, selections and in-progress drags.
-- [ ] A comparison of three ways to record who changed what, with their cost.
-- [ ] A prototype "since you were away" summary built on a plan diff (`presence-and-history.md`).
+- [x] In the spike, both people see each other's cursors, selections and in-progress drags.
+- [x] A comparison of three ways to record who changed what, with their cost.
+- [x] A prototype "since you were away" summary built on a plan diff (`presence-and-history.md`).
 
 ### 5. The experience
 

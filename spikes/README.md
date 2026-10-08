@@ -12,5 +12,5 @@ A spike can import the app's real code (`src/commands/`, `src/domain/`), so its 
 | Spike | Question | Run |
 |---|---|---|
 | [`merge-scenarios/`](merge-scenarios/) | What does the board show after two people edit it at once, or one of them edits offline? | `npx vitest run --config spikes/merge-scenarios/vitest.config.ts` |
-| [`relay/`](relay/) | Can a Go relay sync the board while seeing only ciphertext? | See its README |
-| [`sync-client/`](sync-client/) | The browser side of the relay spike: encrypted Yjs sync, presence and history | See its README |
+| [`relay/`](relay/) | Can a Go relay sync the board while seeing only ciphertext? | `cd spikes/relay && go test ./...` |
+| [`sync-client/`](sync-client/) | The browser side: encrypted Yjs sync, presence and history, on the real board | `npx playwright test --config spikes/sync-client/playwright.config.ts`, after building it (see its README) |
