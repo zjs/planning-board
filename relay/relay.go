@@ -16,12 +16,15 @@ package main
 //   - A writer may upload a snapshot it made and encrypted; the relay keeps
 //     the updates it covers as a segment for 30 days.
 //   - Presence ("ephemeral") is forwarded and never stored.
+//   - A writer can retire a room when it makes new links (Q62). The room
+//     stays readable, so people keep what they saw, and refuses changes.
 //
 // There is no Yjs code here and no keys, by design.
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -52,6 +55,10 @@ type Config struct {
 	RoomsPerHour         float64
 	Origins              OriginPolicy
 	TrustForwarded       bool
+	// Restored gives every room a new epoch at start-up, after the data was
+	// restored from a backup: each board then sends whatever the backup is
+	// missing, rather than trusting what it sent before.
+	Restored bool
 	// Now is the relay's clock, replaceable in tests.
 	Now func() time.Time
 }
@@ -121,6 +128,11 @@ func NewRelay(cfg Config) (*Relay, error) {
 	for _, d := range dirs {
 		dir := filepath.Join(cfg.DataDir, d.Name())
 		if d.IsDir() && roomID.MatchString(d.Name()) && isRoom(dir) {
+			if cfg.Restored {
+				if err := newEpoch(dir); err != nil {
+					return nil, fmt.Errorf("room %s: new epoch: %w", d.Name(), err)
+				}
+			}
 			size := roomSize(dir)
 			r.sizes[d.Name()] = size
 			r.total += size
@@ -263,6 +275,17 @@ func (r *Relay) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer r.release(room)
+	canWrite := room.canWrite(token)
+	if flags&HelloRetire != 0 {
+		if !canWrite {
+			refuse(ErrReadOnly, "Only a link that can edit can replace this plan's links.")
+			return
+		}
+		if !r.retire(room) {
+			refuse(ErrInternal, "The relay couldn't replace this plan's links.")
+			return
+		}
+	}
 
 	r.mu.Lock()
 	r.nextPeer++
@@ -273,7 +296,6 @@ func (r *Relay) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		presence: NewLimiter(r.cfg.PresencePerSecond, time.Second, 2*r.cfg.PresencePerSecond, r.cfg.Now),
 	}
 	r.mu.Unlock()
-	canWrite := room.canWrite(token)
 
 	writerDone := make(chan struct{})
 	go func() {
@@ -354,10 +376,32 @@ func (r *Relay) join(room *Room, p *peer, after uint64, replay, canWrite bool) b
 	if canWrite {
 		write = 1
 	}
-	if !queue(NewFrame(FrameSynced).Uint(room.head).Uint(room.snapshot.Upto).Bytes(room.epoch).Uint(p.id).Uint(write).Done()) {
+	retired := uint64(0)
+	if room.retired() {
+		retired = 1
+	}
+	if !queue(NewFrame(FrameSynced).Uint(room.head).Uint(room.snapshot.Upto).Bytes(room.epoch).Uint(p.id).Uint(write).Uint(retired).Done()) {
 		return false
 	}
 	room.peers[p] = struct{}{}
+	return true
+}
+
+// replacedMessage is error 13's words, for a person holding an old link.
+const replacedMessage = "This link was replaced. Ask whoever shared the plan for the new one."
+
+// retire marks a room's links replaced, and tells everyone connected to it.
+func (r *Relay) retire(room *Room) bool {
+	room.mu.Lock()
+	defer room.mu.Unlock()
+	if room.retired() {
+		return true
+	}
+	if err := room.retire(r.cfg.Now()); err != nil {
+		log.Printf("room %s: retire: %v", room.id, err)
+		return false
+	}
+	room.broadcast(errorFrame(ErrReplaced, replacedMessage), nil)
 	return true
 }
 
@@ -388,6 +432,8 @@ func (r *Relay) handle(room *Room, p *peer, frame []byte, canWrite bool) bool {
 		switch {
 		case fields.Err() != nil:
 			return reply(errorFrame(ErrBadFrame, "A change didn't arrive whole."))
+		case room.retired():
+			return reply(NewFrame(FrameError).Uint(ErrReplaced).String(replacedMessage).Uint(ref).Done())
 		case !canWrite:
 			return reply(NewFrame(FrameError).Uint(ErrReadOnly).String("This link can view the plan, not change it.").Uint(ref).Done())
 		case tooBig:
@@ -412,6 +458,8 @@ func (r *Relay) handle(room *Room, p *peer, frame []byte, canWrite bool) bool {
 		switch {
 		case fields.Err() != nil:
 			return reply(errorFrame(ErrBadFrame, "A snapshot didn't arrive whole."))
+		case room.retired():
+			return true // nothing changes a retired room, and its writers already know
 		case !canWrite:
 			return reply(errorFrame(ErrReadOnly, "This link can view the plan, not change it."))
 		case tooBig || (r.cfg.MaxRoom > 0 && int64(len(data)) > r.cfg.MaxRoom):
@@ -431,8 +479,8 @@ func (r *Relay) handle(room *Room, p *peer, frame []byte, canWrite bool) bool {
 		if fields.Err() != nil || tooBig {
 			return reply(errorFrame(ErrBadFrame, "Presence didn't arrive whole."))
 		}
-		// Presence is a hint, sent again within seconds: over its size or rate, it's dropped quietly.
-		if (r.cfg.MaxPresence > 0 && int64(len(data)) > r.cfg.MaxPresence) || !p.presence.Allow("presence") {
+		// Presence is a hint, sent again within seconds: over its size or rate, or in a retired room, it's dropped quietly.
+		if room.retired() || (r.cfg.MaxPresence > 0 && int64(len(data)) > r.cfg.MaxPresence) || !p.presence.Allow("presence") {
 			return true
 		}
 		room.broadcast(NewFrame(FrameEphemeralOut).Uint(p.id).Bytes(data).Done(), p)

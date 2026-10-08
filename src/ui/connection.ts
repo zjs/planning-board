@@ -18,6 +18,8 @@ export interface PillInput {
   status: ConnectionStatus;
   problem: RelayProblem | null;
   viewOnly: boolean;
+  /** The link was replaced with new ones (Q62): the plan can be read through it, never changed. */
+  replaced?: boolean;
   /** Changes here the relay doesn't have, as cards touched. */
   unshared: number;
   /** When the connection was last caught up, or null if never, since the plan opened. */
@@ -47,6 +49,14 @@ export interface Pill {
 const changes = (n: number) => `${n} ${n === 1 ? 'change' : 'changes'} not shared yet`;
 
 export function pillState(p: PillInput): Pill {
+  if (p.replaced) {
+    return {
+      tone: 'problem',
+      label: 'Link replaced',
+      ...(p.unshared > 0 ? { detail: `${changes(p.unshared)}: they stay here` } : {}),
+      title: 'This plan was given new links, so this one can only show it. Ask whoever shared it for the new link.',
+    };
+  }
   if (p.status === 'refused') {
     const code = p.problem?.code;
     if (code === UNKNOWN_ROOM) {

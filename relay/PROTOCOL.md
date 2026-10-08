@@ -14,10 +14,10 @@ The first frame from the client must be `hello`. Before it, the relay answers an
 
 | Type | Name | Fields | Meaning |
 |---|---|---|---|
-| `0x01` | hello | version, token, after, flags | I speak `version`; here's the write token, or empty to only read; send me everything after update `after`. Flags: `1` create the room with this token if it doesn't exist (repeating it with the same token is harmless); `2` replay every update the relay keeps, ignoring the snapshot. |
+| `0x01` | hello | version, token, after, flags | I speak `version`; here's the write token, or empty to only read; send me everything after update `after`. Flags: `1` create the room with this token if it doesn't exist (repeating it with the same token is harmless); `2` replay every update the relay keeps, ignoring the snapshot; `4` retire the room, because its links were replaced (needs the write token). |
 | `0x02` | update | ref, data | A change to number, store and forward. `ref` is the app's own, echoed in the ack or the refusal. |
 | `0x03` | snapshot | upto, data | The whole plan as of update `upto`. The relay keeps the updates it covers for 30 days, then drops them. |
-| `0x04` | ephemeral | data | Presence: forwarded to everyone else in the room, never stored. A view link may send it too. It has a rate of its own (30 a second by default, `-presence-rate`), and over that, or over 4 KiB, it's dropped without an error, since a newer one follows within seconds. |
+| `0x04` | ephemeral | data | Presence: forwarded to everyone else in the room, never stored, and dropped in a retired room. A view link may send it too. It has a rate of its own (30 a second by default, `-presence-rate`), and over that, or over 4 KiB, it's dropped without an error, since a newer one follows within seconds. |
 
 ## From the relay
 
@@ -25,7 +25,7 @@ The first frame from the client must be `hello`. Before it, the relay answers an
 |---|---|---|---|
 | `0x81` | snapshot | upto, at, data | The latest snapshot, when the app is behind it. `at` is when the relay received it, in Unix milliseconds. |
 | `0x82` | update | seq, at, data | An update, in sequence order, with when the relay received it. |
-| `0x83` | synced | head, upto, epoch, self, canWrite | Caught up. `head` is the latest update; `upto` what the latest snapshot covers; `epoch` the room's 16 random bytes, made when it was created; `self` this connection's number, as other connections see it in `ephemeral` and `left`; `canWrite` is 1 if the token matched. |
+| `0x83` | synced | head, upto, epoch, self, canWrite, retired | Caught up. `head` is the latest update; `upto` what the latest snapshot covers; `epoch` the room's 16 random bytes, made when it was created; `self` this connection's number, as other connections see it in `ephemeral` and `left`; `canWrite` is 1 if the token matched; `retired` is 1 if the room's links were replaced. A relay from before sprint 12 sends no `retired`. |
 | `0x84` | ack | ref, seq, at | Update `ref` is stored as number `seq`. |
 | `0x85` | ephemeral | from, data | Someone's presence. |
 | `0x86` | left | from | That connection closed. |
@@ -47,11 +47,13 @@ The first frame from the client must be `hello`. Before it, the relay answers an
 | 10 | A frame the relay can't read | no |
 | 11 | Something other than hello came first | yes |
 | 12 | The relay couldn't store something | no |
+| 13 | The room's links were replaced: it can be read, never changed again. Sent to everyone connected when it's retired, and in answer to each update after | no |
 
 ## What the app must do
 
 - **Number nothing itself.** The relay's `seq` is the order. The app keeps the last `seq` it has applied (its cursor) and asks for everything after it.
 - **Check the epoch.** If `synced` brings an epoch other than the one the app saw before, or a `head` below its cursor, the room was replaced or restored from a backup: start the cursor again from 0 and send what the relay is missing.
+- **Retire the old room when making new links** (Q62): share to a new room first, and once the relay has it, send one hello to the old room with its write token and flag `4`. A retired room stays retired, through restarts and a later create.
 - **Encrypt everything,** binding the room, the kind of message, and for snapshots `upto`, as additional data, so the relay can't move ciphertext between rooms or kinds (ADR 0018).
 
 ## Versioning

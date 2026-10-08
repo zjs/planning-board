@@ -34,6 +34,7 @@ func main() {
 	createRate := flag.Float64("share-rate", defaults.RoomsPerHour, "new shared plans per hour from one address (0: no limit)")
 	trustForwarded := flag.Bool("trust-forwarded", false, "behind a proxy, use X-Forwarded-For and X-Forwarded-Proto")
 	announce := flag.Bool("announce", true, "print the addresses colleagues can open")
+	restored := flag.Bool("restored", false, "after restoring the data from a backup, start once with this: boards then send whatever the backup is missing")
 	flag.Parse()
 
 	cfg := DefaultConfig(*data)
@@ -41,6 +42,7 @@ func main() {
 	cfg.UpdatesPerSecond, cfg.ConnectionsPerMinute, cfg.RoomsPerHour = *updateRate, *connRate, *createRate
 	cfg.PresencePerSecond = *presenceRate
 	cfg.TrustForwarded = *trustForwarded
+	cfg.Restored = *restored
 	cfg.Origins = OriginPolicy{Null: *allowNull}
 	for _, host := range strings.Split(*allowOrigins, ",") {
 		switch host = strings.TrimSpace(host); host {

@@ -60,3 +60,26 @@ Requirement 30 says a plan is shared by link. Plans are confidential, the relay 
 - **Replaying old updates is harmless:** Yjs applies each change once.
 - **Withholding updates** only stops sync, which the connection pill will show (slice 4).
 - **A relay that serves the app over plain http** protects what it stores, not the network or its operator, who could serve altered code (ADR 0017). That's why links can name the app and the relay separately.
+
+## Amendment: making new links, as built in sprint 12, slice 3
+
+Revoking, as decided above, built as **Make new links** in the Share dialog (Q62, requirement 33).
+
+**The steps:**
+1. The plan's entry gets a new room and secret, on the same relay, and remembers the old room and its secret in `replaces`, as pending as any share.
+2. The plan reopens, makes the new room, and uploads the whole board to it. The sync record now names its room, and a record for another room is ignored, so nothing the old room held is mistaken for being in the new one.
+3. Once the new room holds everything on this computer, a one-shot connection to the old room retires it: a `hello` with the old write token and flag `4` (`relay/PROTOCOL.md`). Then `replaces` is forgotten.
+4. A room the relay can't reach stays in `replaces`, and is retried each time the plan opens, so a crash or a dropped network still cuts the old links off.
+
+**On the relay:**
+- A retired room is marked in its `room.json`, which survives restarts and backups.
+- Everyone connected is told, with error 13.
+- From then on, the room refuses updates with error 13, ignores snapshots, and forwards no presence.
+- It stays readable, so people who had the old links keep what they saw. A later `create` doesn't revive it.
+- `synced` says `retired` as a trailing field, so a board opening an old link knows at once.
+
+**For people with an old link,** the plan is read-only: `ReadOnlyReason` gains `replaced`, which wins over the others. The pill says **Link replaced**, the banner says to ask for the new link, and anything they changed that wasn't shared stays on their computer. Old links are refused, never upgraded to the new room, since the point is that they stop working.
+
+**An older relay** ignores the retire flag, and says nothing of `retired`. The app then warns that the old links still work until the relay is updated.
+
+**Restoring from a backup** (`docs/hosting.md`): start the relay once with `-restored`, which gives every room a new epoch. A board's cursor can be past what a backup holds; without a new epoch, it could ask only for updates after its cursor and miss changes made since the restore.

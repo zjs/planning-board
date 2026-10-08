@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { deriveKeys, fromBase64Url, newRoom, toBase64Url, unseal, viewKeyOf } from './keys.ts';
 import { Frame, FrameReader, FrameWriter, HelloFlag, RelayError } from './frames.ts';
-import { memorySyncStore, RelayProvider, roomUrl, SNAPSHOT_EVERY, type RelaySocket, type SyncStore } from './relay.ts';
+import { memorySyncStore, RelayProvider, retireRoom, roomUrl, SNAPSHOT_EVERY, type RelaySocket, type SyncStore } from './relay.ts';
 import { PresenceChannel, SILENT_MS } from './presence.ts';
 import type { PeerState } from '../domain/presence.ts';
 
@@ -12,8 +12,10 @@ import type { PeerState } from '../domain/presence.ts';
  * time by running its queue and the providers' timers.
  */
 class FakeRelay {
-  rooms = new Map<string, { token: string; epoch: Uint8Array; head: number; log: { seq: number; data: Uint8Array }[]; snapshot?: { upto: number; data: Uint8Array }; peers: Set<FakeSocket> }>();
+  rooms = new Map<string, { token: string; epoch: Uint8Array; head: number; log: { seq: number; data: Uint8Array }[]; snapshot?: { upto: number; data: Uint8Array }; peers: Set<FakeSocket>; retired?: boolean }>();
   down = false;
+  /** A relay from before sprint 12: no `retired` in synced, and no retiring. */
+  legacy = false;
   sockets = new Set<FakeSocket>();
   private nextPeer = 0;
   open = (url: string): RelaySocket => {
@@ -43,6 +45,13 @@ class FakeRelay {
         socket.refuse(RelayError.RoomTaken); return;
       }
       socket.canWrite = token !== '' && token === target.token;
+      if (flags & HelloFlag.Retire && !this.legacy) {
+        if (!socket.canWrite) { socket.refuse(RelayError.ReadOnly); return; }
+        if (!target.retired) {
+          target.retired = true;
+          for (const peer of target.peers) peer.deliver(new FrameWriter(Frame.Error).uint(RelayError.Replaced).bytes(new TextEncoder().encode('replaced')).done());
+        }
+      }
       let from = after;
       if (target.snapshot && after < target.snapshot.upto) {
         socket.deliver(new FrameWriter(Frame.SnapshotOut).uint(target.snapshot.upto).uint(0).bytes(target.snapshot.data).done());
@@ -50,7 +59,8 @@ class FakeRelay {
       }
       for (const e of target.log) if (e.seq > from) socket.deliver(new FrameWriter(Frame.UpdateOut).uint(e.seq).uint(0).bytes(e.data).done());
       const upto = target.snapshot?.upto ?? 0;
-      socket.deliver(new FrameWriter(Frame.Synced).uint(target.head).uint(upto).bytes(target.epoch).uint(socket.id).uint(socket.canWrite ? 1 : 0).done());
+      const synced = new FrameWriter(Frame.Synced).uint(target.head).uint(upto).bytes(target.epoch).uint(socket.id).uint(socket.canWrite ? 1 : 0);
+      socket.deliver((this.legacy ? synced : synced.uint(target.retired ? 1 : 0)).done());
       target.peers.add(socket);
       return;
     }
@@ -58,12 +68,13 @@ class FakeRelay {
     if (r.kind === Frame.Update) {
       const ref = r.uint();
       const data = r.bytes();
+      if (room.retired) { socket.deliver(new FrameWriter(Frame.Error).uint(RelayError.Replaced).bytes(new TextEncoder().encode('replaced')).uint(ref).done()); return; }
       if (!socket.canWrite) { socket.deliver(new FrameWriter(Frame.Error).uint(RelayError.ReadOnly).bytes(new TextEncoder().encode('view only')).uint(ref).done()); return; }
       const seq = ++room.head;
       room.log.push({ seq, data });
       for (const peer of room.peers) if (peer !== socket) peer.deliver(new FrameWriter(Frame.UpdateOut).uint(seq).uint(0).bytes(data).done());
       socket.deliver(new FrameWriter(Frame.Ack).uint(ref).uint(seq).uint(0).done());
-    } else if (r.kind === Frame.Ephemeral) {
+    } else if (r.kind === Frame.Ephemeral && !room.retired) {
       // Presence is forwarded to everyone else, view links included, and never kept.
       const data = r.bytes();
       for (const peer of room.peers) if (peer !== socket) peer.deliver(new FrameWriter(Frame.EphemeralOut).uint(socket.id).bytes(data).done());
@@ -347,6 +358,70 @@ describe('syncing through a relay (ADR 0017)', () => {
     await settle(clock);
     expect(a.status).toBe('live');
     expect(cards(alice)).toEqual({ a: 'A' });
+  });
+});
+
+describe('making new links (Q62)', () => {
+  it('retiring the old room tells everyone on it, keeps what they have, and refuses their changes', async () => {
+    const { relay, clock, room, secret, make } = setup();
+    const alice = new Y.Doc();
+    alice.getMap('cards').set('tax', 'Tax engine migration');
+    const a = make(alice, { create: true });
+    const bob = new Y.Doc();
+    const b = make(bob);
+    await settle(clock);
+    expect(cards(bob)).toEqual({ tax: 'Tax engine migration' });
+
+    const retiring = retireRoom({ relay: 'http://relay.test:8787', room, secret, open: relay.open });
+    await settle(clock);
+    expect(await retiring).toBe('retired');
+    expect(a.retired && b.retired).toBe(true);
+    expect(b.problem?.code).toBe(RelayError.Replaced);
+    // Bob keeps the plan, and what he changes now stays on his computer.
+    bob.getMap('cards').set('invoices', 'Invoice redesign');
+    await settle(clock);
+    expect(relay.rooms.get(room)!.log).toHaveLength(1);
+    expect(b.unshared()).not.toBeNull();
+    // Opening the old link again says so at once, and still reads.
+    const carol = new Y.Doc();
+    const c = make(carol);
+    await settle(clock);
+    expect(c.retired).toBe(true);
+    expect(cards(carol)).toEqual({ tax: 'Tax engine migration' });
+    [a, b, c].forEach((p) => p.destroy());
+  });
+
+  it('retiring needs the edit link, and says when the relay is too old to do it', async () => {
+    const { relay, clock, room, secret, make } = setup();
+    const a = make(new Y.Doc(), { create: true });
+    await settle(clock);
+    const other = toBase64Url(newRoom().secret);
+    const wrong = retireRoom({ relay: 'http://relay.test:8787', room, secret: other, open: relay.open });
+    await settle(clock);
+    expect(await wrong).toBe('failed');
+    // A room the relay doesn't have needs nothing retired.
+    const gone = retireRoom({ relay: 'http://relay.test:8787', room: 'x'.repeat(22), secret, open: relay.open });
+    await settle(clock);
+    expect(await gone).toBe('retired');
+    relay.legacy = true;
+    const old = retireRoom({ relay: 'http://relay.test:8787', room, secret, open: relay.open });
+    await settle(clock);
+    expect(await old).toBe('unsupported');
+    a.destroy();
+  });
+
+  it("a sync record from the plan's old room isn't used for its new one", async () => {
+    const { relay, clock, room, make } = setup();
+    const sync = memorySyncStore();
+    const alice = new Y.Doc();
+    alice.getMap('cards').set('tax', 'Tax engine migration');
+    // What the old room held is everything Alice has: by it, nothing would be unshared.
+    sync.record = { room: 'oldroom_0123456789abcdef', cursor: 9, epoch: 'ab', shadow: Y.encodeStateAsUpdate(alice) };
+    const a = make(alice, { create: true, sync });
+    await settle(clock);
+    expect(relay.rooms.get(room)!.log).toHaveLength(1);
+    expect(sync.record.room).toBe(room);
+    a.destroy();
   });
 });
 

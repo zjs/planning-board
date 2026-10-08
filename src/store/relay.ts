@@ -41,6 +41,8 @@ export interface RelayProblem {
 
 /** What survives a reload: the cursor, the room's epoch, and the shadow they belong to. */
 export interface SyncRecord {
+  /** The room they belong to. A plan given new links (Q62) syncs with a new room, which starts from nothing. Absent before sprint 12. */
+  room?: string;
   cursor: number;
   epoch: string | null;
   shadow: Uint8Array;
@@ -140,6 +142,8 @@ export class RelayProvider {
   readonly whenSynced: Promise<void>;
   /** The relay's number for this connection, as others see it. */
   self: number | null = null;
+  /** The room's links were replaced (Q62): it can be read, never changed again. */
+  retired = false;
 
   private shadow = new Y.Doc();
   private cursor = 0;
@@ -199,7 +203,8 @@ export class RelayProvider {
   private async start() {
     const record = await this.options.sync.load().catch(() => null);
     if (this.destroyed) return;
-    if (record) {
+    // A record for another room, from before the plan was given new links, says nothing about this one.
+    if (record && (record.room === undefined || record.room === this.options.room)) {
       Y.applyUpdate(this.shadow, record.shadow);
       this.cursor = record.cursor;
       this.epoch = record.epoch;
@@ -237,7 +242,7 @@ export class RelayProvider {
 
   /** Send presence, sealed, to everyone else in the room. Only while live: presence is never queued. */
   sendEphemeral(plain: Uint8Array): boolean {
-    if (this.status !== 'live' || !this.socket) return false;
+    if (this.status !== 'live' || !this.socket || this.retired) return false;
     this.socket.send(new FrameWriter(Frame.Ephemeral).bytes(seal(this.key, this.options.room, 'presence', plain)).done());
     return true;
   }
@@ -390,6 +395,8 @@ export class RelayProvider {
         const epoch = hex(r.bytes());
         this.self = r.uint();
         this.canWrite = r.uint() === 1;
+        // A relay from before sprint 12 doesn't say.
+        if (r.more() && r.uint() === 1) this.retired = true;
         // A room replaced or restored from a backup: start again from what this copy has.
         if ((this.epoch !== null && epoch !== this.epoch) || head < this.cursor) {
           this.reset();
@@ -406,7 +413,7 @@ export class RelayProvider {
         this.lastLive = this.now();
         this.lostAt = null;
         this.status = 'live';
-        if (this.canWrite) {
+        if (this.canWrite && !this.retired) {
           const diff = this.unshared();
           if (diff) this.send(diff);
         }
@@ -432,6 +439,7 @@ export class RelayProvider {
         const code = r.uint();
         const message = r.text();
         if (r.more()) this.pending.delete(r.uint());
+        if (code === RelayError.Replaced) this.retired = true;
         this.problem = { code, message };
         if (FATAL.includes(code)) {
           this.status = 'refused';
@@ -466,7 +474,7 @@ export class RelayProvider {
   private onDocUpdate = (update: Uint8Array, origin: unknown) => {
     if (origin === RELAY_ORIGIN) return;
     // Another tab sends its own changes; this tab's catch-up covers any it couldn't.
-    if (origin !== TAB_ORIGIN && this.status === 'live' && this.canWrite) this.send(update);
+    if (origin !== TAB_ORIGIN && this.status === 'live' && this.canWrite && !this.retired) this.send(update);
     this.emit();
   };
 
@@ -478,7 +486,7 @@ export class RelayProvider {
 
   /** Once the relay holds enough updates past its snapshot, a caught-up writer uploads a new one. */
   private maybeSnapshot() {
-    if (!this.canWrite || this.status !== 'live' || this.cursor !== this.head || this.head - this.snapshotUpto < SNAPSHOT_EVERY) return;
+    if (!this.canWrite || this.retired || this.status !== 'live' || this.cursor !== this.head || this.head - this.snapshotUpto < SNAPSHOT_EVERY) return;
     const upto = this.cursor;
     const data = seal(this.key, this.options.room, 'snapshot', Y.encodeStateAsUpdate(this.shadow), upto);
     this.socket?.send(new FrameWriter(Frame.Snapshot).uint(upto).bytes(data).done());
@@ -495,9 +503,58 @@ export class RelayProvider {
 
   private flushSave() {
     return this.options.sync
-      .save({ cursor: this.cursor, epoch: this.epoch, shadow: Y.encodeStateAsUpdate(this.shadow) })
+      .save({ room: this.options.room, cursor: this.cursor, epoch: this.epoch, shadow: Y.encodeStateAsUpdate(this.shadow) })
       .catch(() => undefined);
   }
+}
+
+/**
+ * Retire a room whose links were replaced (Q62), with one short connection:
+ * from then on the relay keeps it readable, refuses changes, and tells
+ * everyone connected. `retired` once it is, or if the relay doesn't have it,
+ * so there's nothing to retire; `unsupported` from a relay older than sprint
+ * 12, which can't; `failed` if it can't be done now, to try again later.
+ */
+export type RetireResult = 'retired' | 'unsupported' | 'failed';
+
+export function retireRoom(options: { relay: string; room: string; secret: string; open?: OpenSocket; timeoutMs?: number }): Promise<RetireResult> {
+  const token = deriveKeys(fromBase64Url(options.secret)).token;
+  const socket = (options.open ?? openWebSocket)(roomUrl(options.relay, options.room));
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (ok: RetireResult) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      socket.onclose = null;
+      socket.close();
+      resolve(ok);
+    };
+    const timer = setTimeout(() => finish('failed'), options.timeoutMs ?? 10_000);
+    socket.onopen = () =>
+      socket.send(
+        // Asks for nothing after an update it can't have reached, so the relay sends no history back.
+        new FrameWriter(Frame.Hello).uint(PROTOCOL_VERSION).bytes(token).uint(Number.MAX_SAFE_INTEGER).uint(HelloFlag.Retire).done(),
+      );
+    socket.onmessage = (frame) => {
+      try {
+        const r = new FrameReader(frame);
+        if (r.kind === Frame.Synced) {
+          r.uint();
+          r.uint();
+          r.bytes();
+          r.uint();
+          r.uint();
+          finish(!r.more() ? 'unsupported' : r.uint() === 1 ? 'retired' : 'failed');
+        } else if (r.kind === Frame.Error) {
+          finish(r.uint() === RelayError.UnknownRoom ? 'retired' : 'failed');
+        }
+      } catch {
+        finish('failed');
+      }
+    };
+    socket.onclose = () => finish('failed');
+  });
 }
 
 /** The sync record kept in memory: for tests, and when the browser won't give IndexedDB. */
