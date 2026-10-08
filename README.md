@@ -10,7 +10,7 @@ Every roadmap item is a card with properties: sequence, system area and componen
 
 The app is one static HTML file. It runs entirely in your browser, and has no account or analytics. Your plan is saved in your browser's own storage, and **File › Save plan to file** gives you a copy you control. You can also download the file (below) and open it from disk.
 
-It makes no network requests unless you share a plan. A shared plan goes through a relay, which you run yourself (below). Everything is encrypted in your browser first, with a key that's only in the share link, after the `#`, which browsers never send to a server. The relay stores and forwards what it can't read.
+It makes no network requests unless you share a plan through a relay. A shared plan goes through a relay, which you run yourself (below), or travels as files you send. Everything is encrypted in your browser first, with a key that's only in the share link, after the `#`, which browsers never send to a server. The relay stores and forwards what it can't read.
 
 ## Status: early preview
 
@@ -31,7 +31,9 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - **Your own properties,** such as Team, and editing any property's values (rename, move, reorder, delete).
 - **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, "Blocks" links become dependencies, and "Relates" links become related links.
 - **Several plans in one browser:** a scratch plan beside the real one, listed in the File menu and named in the toolbar. Opening a file, importing and loading the sample each make a new plan, so nothing you're working on is overwritten. The same plan open in two tabs stays in step as you edit.
-- **Share a plan** through a relay you run: **Share** gives a Can edit and a Can view link. Edits show up on everyone's board as they're made. Work offline whenever you like: the board counts what isn't shared yet, and shares it when you're back.
+- **Share a plan** through a relay you run: **Share** gives a Can edit and a Can view link. Edits show up on everyone's board as they're made. Work offline whenever you like: the board counts what isn't shared yet, and shares it when you're back. **Make new links** cuts off the old ones.
+- **See each other** on a shared plan: an avatar per person, and their pointers and selections on the same cards in your own view, whatever view each of you is in. Someone can drive, and pointers can be quieted to the driver's or nobody's. A card someone is dragging says so, and when two people drop the same card, both are told, each with a way back.
+- **Share by file** where no relay is allowed: the plan travels as encrypted files, by email or a shared drive, and each person merges what the others send.
 - **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
 
 **Not yet**
@@ -40,7 +42,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - Reordering cards by hand within a cell.
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
 - Updating a plan from a fresh Jira export: each import is a new plan.
-- Seeing who else is on a shared plan, and where they're pointing; history of who changed what; and making new links to cut off old ones. These are being built now ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)).
+- History of who changed what, and seeing what others changed while you were away. These are being built now ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)).
 - A hosted relay to share through without running your own.
 
 What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). What's coming is in [`docs/backlog.md`](docs/backlog.md), and decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).

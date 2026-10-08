@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Connection, ConnectionStatus, RelayProblem } from '../commands/store.ts';
 import type { SharedPlan } from '../commands/plans.ts';
 import {
+  appForFileLinks,
   appForLinks,
   checkRelay,
   isLocalOnly,
@@ -79,6 +80,8 @@ export function ShareDialog({
   onShare,
   onMoveRelay,
   onRenewLinks,
+  onShareByFile,
+  onSendChanges,
   onSaveFile,
   onClose,
 }: {
@@ -91,6 +94,10 @@ export function ShareDialog({
   onMoveRelay: (relay: string) => void;
   /** Make new links, cutting off the old ones (Q62). */
   onRenewLinks: () => void;
+  /** Share the plan by file, with no relay (ADR 0022). */
+  onShareByFile: () => void;
+  /** Download a changes file of the plan. */
+  onSendChanges: () => void;
   onSaveFile: () => void;
   onClose: () => void;
 }) {
@@ -172,7 +179,12 @@ export function ShareDialog({
   }
 
   if (shared) {
-    const links = publicRelay === null || shared.pending || replaced ? null : linksFor(shared, appForLinks(publicRelay), publicRelay);
+    const byFile = shared.relay === undefined;
+    const links = byFile
+      ? linksFor(shared, appForFileLinks())
+      : publicRelay === null || shared.pending || replaced
+        ? null
+        : linksFor(shared, appForLinks(publicRelay), publicRelay);
     return (
       <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
         {replaced ? (
@@ -183,10 +195,31 @@ export function ShareDialog({
           <p className="share-problem" role="alert">
             The relay refused this plan: {refused.message}
           </p>
-        ) : status !== 'live' && (shared.pending || publicRelay === null) ? (
+        ) : !byFile && status !== 'live' && (shared.pending || publicRelay === null) ? (
           <p role="status">{shared.replaces?.length ? 'Making new links…' : 'Sharing…'}</p>
         ) : null}
-        {links && (
+        {byFile && links?.edit && (
+          <>
+            <LinkField
+              label="Can edit"
+              hint="Send this once, a different way from the files: by chat if the files go by email. Anyone with it can read the files and send their own."
+              link={links.edit}
+              testId="edit-link"
+            />
+            <p className="share-note">
+              This plan travels by file, with no relay. <strong>Send changes</strong> downloads the whole plan as an
+              encrypted file, for email or a shared drive. Whoever has the link merges it with{' '}
+              <strong>File › Merge changes…</strong>, and sends theirs back the same way. A file can’t be read without the
+              link.
+            </p>
+            <div className="dialog-actions">
+              <button type="button" onClick={onSendChanges} data-testid="send-changes">
+                Send changes
+              </button>
+            </div>
+          </>
+        )}
+        {!byFile && links && (
           <>
             {links.edit && (
               <LinkField
@@ -218,10 +251,18 @@ export function ShareDialog({
         )}
         {renewing && (
           <div className="share-renew" role="group" aria-label="Make new links">
-            <p>
-              Both links stop working. Anyone who opens them sees the plan as it was, and can’t change it; people who had
-              them keep what they already saw. Send the new links to everyone who should still have the plan.
-            </p>
+            {byFile ? (
+              <p>
+                The link stops working: files made with it won’t merge any more, and new files can’t be read with it.
+                People who had it keep what they already merged. Send the new link to everyone who should still have the
+                plan.
+              </p>
+            ) : (
+              <p>
+                Both links stop working. Anyone who opens them sees the plan as it was, and can’t change it; people who had
+                them keep what they already saw. Send the new links to everyone who should still have the plan.
+              </p>
+            )}
             <div className="dialog-actions">
               <button type="button" onClick={() => setRenewing(false)}>
                 Cancel
@@ -240,7 +281,7 @@ export function ShareDialog({
             </div>
           </div>
         )}
-        {shared.secret && !replaced && (
+        {shared.secret && !replaced && !byFile && (
           <details className="share-move">
             <summary>The relay moved?</summary>
             <form
@@ -368,6 +409,19 @@ export function ShareDialog({
             </button>
           </div>
         </form>
+      )}
+      {relayStep.kind !== 'looking' && (
+        <details className="share-move" data-testid="share-by-file-option">
+          <summary>No relay allowed? Share by file</summary>
+          <p>
+            The plan travels as encrypted files, by email or a shared drive, with no server at all. You get one link to
+            send, once, a different way from the files. Each person merges the files others send, and sends their own
+            back. It’s slower than a relay, and works anywhere.
+          </p>
+          <button type="button" onClick={onShareByFile} data-testid="share-by-file">
+            Share by file
+          </button>
+        </details>
       )}
     </Dialog>
   );

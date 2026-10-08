@@ -61,7 +61,8 @@ import {
   type PlanId,
   type SharedPlan,
 } from '../commands/plans.ts';
-import { isNewerLink, joinFromLink, linkInHash, renewLinks, retireReplaced, sharingConfirmed, startSharing } from '../commands/sharing.ts';
+import { isNewerLink, joinFromLink, linkInHash, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
+import { CHANGES_FILE_EXTENSION, changesFileFor, changesTarget, describeMerge, mergeChanges } from '../commands/changesFile.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
   chain,
@@ -121,7 +122,7 @@ import type { DrawnLine } from './DependencyLines.tsx';
 import { DragGhost } from './DragGhost.tsx';
 import { FindBar, FindButton } from './FindBar.tsx';
 import { ImportDialog } from './ImportDialog.tsx';
-import { datedFileName, downloadText } from './files.ts';
+import { datedFileName, downloadBytes, downloadText } from './files.ts';
 import { Guide } from './Guide.tsx';
 import { loadGuide, loadGuidePlan, offersGuide, saveGuide, saveGuidePlan, type GuideState } from './guide.ts';
 import { Legend } from './Legend.tsx';
@@ -196,8 +197,8 @@ function joinLink(hash: string): { id: PlanId; notice?: string } | { notice: str
     return null;
   }
   const here = relayOfPage();
-  if (link.relay === undefined && here === null) return { notice: 'This link doesn’t say which relay its plan is on. Ask for the link again.' };
-  const joined = joinFromLink(link, link.relay ?? here!);
+  if (!link.file && link.relay === undefined && here === null) return { notice: 'This link doesn’t say which relay its plan is on. Ask for the link again.' };
+  const joined = joinFromLink(link, here);
   switch (joined.kind) {
     case 'mismatch':
       return { notice: 'This link’s key doesn’t match the shared plan you already have, so it wasn’t opened.' };
@@ -240,6 +241,10 @@ export interface PlanActions {
   moveRelay: (relay: string) => void;
   /** Give the open shared plan new links, cutting off the old ones (Q62). */
   renewLinks: () => void;
+  /** Share the open plan by file, with no relay (ADR 0022). */
+  shareByFile: () => void;
+  /** Merge a changes file into the plan it's for, opening that plan if it isn't this one (ADR 0022). */
+  mergeChanges: (file: File) => void;
   /** Make a new plan holding `content`, and switch to it. `prepare` sets its viewer state first. */
   make: (name: string, content: Plan, start?: PlanStart, prepare?: (id: PlanId) => void) => void;
   open: (id: PlanId) => void;
@@ -425,6 +430,36 @@ export function App() {
     [show, refresh],
   );
 
+  // A changes file finds its plan by room, which may not be the one on screen (ADR 0022).
+  const mergeFile = useCallback(
+    async (file: File) => {
+      retire();
+      const say = (text: string) => setNotice({ text, expire: () => undefined });
+      const target = changesTarget(new Uint8Array(await file.arrayBuffer()));
+      if (target.kind !== 'plan') {
+        const why = {
+          'not-a-changes-file': 'isn’t a changes file. They end in .pbchanges, and come from File › Send changes.',
+          'newer-version': 'is from a newer version of Planning Board. Open the latest version to merge it.',
+          'no-plan': 'is for a plan this browser doesn’t have. Open the link that came with it first, then merge the file.',
+        }[target.kind];
+        say(`“${file.name}” ${why}`);
+        return;
+      }
+      const { entry, file: changes } = target;
+      const opened = await openPlan(entry.id);
+      const result = mergeChanges(opened.store, entry.shared!, changes);
+      if (current.current !== entry.id) await show(entry.id);
+      say(
+        result.kind === 'merged'
+          ? describeMerge(result)
+          : result.kind === 'read-only'
+            ? 'This plan can only be viewed here, so changes can’t be merged into it.'
+            : `“${file.name}” doesn’t open with this plan’s key. It may be from before the plan got new links: ask for a new file.`,
+      );
+    },
+    [show, setNotice, retire],
+  );
+
   const remove = useCallback(() => {
     const id = current.current;
     if (id === null) return;
@@ -477,6 +512,11 @@ export function App() {
       refresh();
       void reopen(id);
     },
+    shareByFile: () => {
+      startSharingByFile(id);
+      refresh();
+    },
+    mergeChanges: (file) => void mergeFile(file),
     make,
     open: (other) => {
       retire();
@@ -1554,6 +1594,14 @@ function Workspace({
   const [fileProblem, setFileProblem] = useState<FileProblem | null>(null);
   const openInput = useRef<HTMLInputElement>(null);
   const savePlanFile = () => downloadText(datedFileName(fileSlug(planActions.name), 'json'), planFileText(plan, planActions.name));
+  // Changes by file (ADR 0022): the whole board, sealed, to send; and a file someone sent, to merge.
+  const mergeInput = useRef<HTMLInputElement>(null);
+  const sharedPlan = planActions.shared;
+  const byFile = sharedPlan !== null && sharedPlan.relay === undefined;
+  const sendChanges = () => {
+    if (!sharedPlan) return;
+    downloadBytes(datedFileName(`${fileSlug(planActions.name)}-changes`, CHANGES_FILE_EXTENSION), changesFileFor(store, sharedPlan));
+  };
   const openPlanFile = async (file: File) => {
     const opened = readPlanFile(await file.text());
     if (!opened.ok) {
@@ -1646,6 +1694,21 @@ function Workspace({
         ...(planActions.shared?.secret
           ? ([
               {
+                label: 'Send changes',
+                onSelect: sendChanges,
+                disabled: empty,
+                title: 'Download the plan as an encrypted changes file, to send by email or a shared drive',
+              },
+            ] satisfies MenuEntry[])
+          : []),
+        {
+          label: 'Merge changes…',
+          onSelect: () => mergeInput.current?.click(),
+          title: 'Merge a changes file someone sent you into its plan',
+        },
+        ...(planActions.shared?.secret && !byFile
+          ? ([
+              {
                 label: 'Replace this shared plan from a file…',
                 onSelect: () => setReplacing(true),
                 disabled: !canEdit,
@@ -1673,6 +1736,22 @@ function Workspace({
             hasLocal={!empty}
             onOpen={() => setSharing(true)}
           />
+        )}
+        {byFile && (
+          <span className="pill-group">
+            <button
+              type="button"
+              className="pill pill-quiet"
+              data-testid="connection-pill"
+              title="Send your changes, and merge others’, from the File menu"
+              onClick={() => setSharing(true)}
+            >
+              <span className="pill-dot" aria-hidden="true" />
+              <span className="pill-text">
+                <span data-testid="connection-state">Shared by file</span>
+              </span>
+            </button>
+          </span>
         )}
         {presenceView && <Avatars view={presenceView} />}
         <div className="actions">
@@ -1823,7 +1902,20 @@ function Workspace({
           inputRef={findRef}
         />
       )}
-      {empty ? (
+      {empty && byFile ? (
+        <div className="empty-state" data-testid="waiting-for-changes">
+          <h2>Waiting for changes</h2>
+          <p>
+            This plan travels by file. When whoever sent you its link sends a changes file too, merge it here to see
+            the plan.
+          </p>
+          <div className="empty-actions">
+            <button type="button" className="primary" onClick={() => mergeInput.current?.click()}>
+              Merge changes…
+            </button>
+          </div>
+        </div>
+      ) : empty ? (
         <div className="empty-state">
           <h2>Sort out a release plan</h2>
           <p>
@@ -1992,6 +2084,8 @@ function Workspace({
           onShare={planActions.share}
           onMoveRelay={planActions.moveRelay}
           onRenewLinks={planActions.renewLinks}
+          onShareByFile={planActions.shareByFile}
+          onSendChanges={sendChanges}
           onSaveFile={savePlanFile}
           onClose={() => setSharing(false)}
         />
@@ -2043,6 +2137,18 @@ function Workspace({
           // Cleared, so choosing the same file again still counts as a change.
           e.target.value = '';
           if (file) void openPlanFile(file);
+        }}
+      />
+      <input
+        ref={mergeInput}
+        type="file"
+        accept=".pbchanges"
+        hidden
+        data-testid="merge-changes-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (file) planActions.mergeChanges(file);
         }}
       />
       <input
