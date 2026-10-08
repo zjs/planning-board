@@ -1,4 +1,4 @@
-# Release Planning Whiteboard — Requirements (v0.2)
+# Release Planning Whiteboard — Requirements (v0.3)
 
 Provenance tags: _(recalled)_ = from memory, unverified; _(priors)_ = reasoned guess. Verify tagged claims before relying on them.
 
@@ -102,14 +102,26 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 **Sharing and collaboration**
 
 30. Users can share a plan by link. The relay stores an encrypted snapshot, so recipients can open it later without the sender online.
-31. Several users can edit the same plan at the same time and see each other's changes live.
-32. Users see who else is present and where their cursors are.
+31. Several users can edit the same plan at the same time and see each other's changes live. Nothing is locked: a card someone is dragging says so on everyone's board, and when two people move one card, the later drop wins and both are told, with a way back (Q60).
+32. Users see who else is present, where they're pointing, what they've selected, and what they're dragging. Each is anchored to cards, so it shows on any view. Cursors can be shown for everyone, for the driver only, or for no one (Q61).
+33. A shared plan has a "Can edit" link and a "Can view" link. Making new links cuts off the old ones, and people who had them keep what they already saw (Q62).
+34. A browser keeps several plans, shared ones and ones only on that computer. On a shared plan, opening a file, importing and starting a blank plan each make a new plan. Replacing the shared plan for everyone is a separate, warned choice (Q58).
+35. Editing offline is always allowed, and merges automatically on reconnecting. The board says what hasn't been shared yet. On coming back, users see what others changed while they were away, marked on the board, and which of their own changes didn't stick, each with a way to reapply or restore it (Q59).
+36. Every change is recorded with who made it and when, kept indefinitely, and shown in each viewer's own time zone, in an activity feed for the plan and in a card's history (Q63).
 
 ## Milestones
 
 **M1: prove the core bet.** One person drives while others watch on a shared screen. Covers requirements 1–29: pivots and folding, groups, dependencies, contention, scenarios, custom properties, CSV import, and plan files. Built on the CRDT data model from day one, so M2 needs no rewrite _(priors)_.
 
-**M2: collaboration.** Requirements 30–32: encrypted share links with stored snapshots, live multi-user editing, and presence. The relay is written in Go.
+**M2: collaboration.** Requirements 30–36, as sprint 9's research reshaped them (Q65):
+- encrypted share links with stored snapshots, including view-only links;
+- live multi-user editing;
+- presence;
+- several plans per browser;
+- offline work, and seeing what changed while you were away;
+- history.
+
+The relay is written in Go. The build plan is `docs/plans/m2-plan.md`, in five sprints.
 
 **Later.** Merging between scenarios, typed dependencies, Jira sync, and undo history that survives a reload.
 

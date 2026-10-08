@@ -19,8 +19,8 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0013](0013-expand-and-fold-replace-zoom.md) | Expand and fold replace zoom: one axis choice per property, folded by default; order judged by the lanes shown | Accepted |
 | [0014](0014-find-dims-not-filters.md) | Find dims, it doesn't filter: matching on word starts, an overlay on the finished layout, a bar opened with / | Accepted |
 | [0015](0015-views-and-motion.md) | Built-in views as viewer state, in a view bar; pivots animate with FLIP, respecting reduced motion | Accepted |
-| [0016](0016-schema-for-concurrent-editing.md) | Schema 2 for concurrent editing: flat value keys, one value for single-valued properties, tombstones, values as maps | Proposed (sprint 9) |
-| [0017](0017-relay-and-sync.md) | Sync through a relay that reads nothing: numbered encrypted updates, a shadow document, snapshots made by clients, write tokens | Proposed (sprint 9) |
-| [0018](0018-keys-and-links.md) | Keys and links: a secret in the fragment, edit and view-only links, new links to revoke | Proposed (sprint 9) |
-| [0019](0019-presence.md) | Presence anchored to cards, not to the screen | Proposed (sprint 9) |
-| [0020](0020-history-and-plan-diff.md) | One plan diff for scenario compare, history and "since you were away"; history in its own document | Proposed (sprint 9) |
+| [0016](0016-schema-for-concurrent-editing.md) | Schema 2 for concurrent editing: flat value keys, one value for single-valued properties, tombstones, values as maps | Accepted |
+| [0017](0017-relay-and-sync.md) | Sync through a relay that reads nothing: numbered encrypted updates, a shadow document, snapshots made by clients, write tokens | Accepted |
+| [0018](0018-keys-and-links.md) | Keys and links: a secret in the fragment, edit and view-only links, new links to revoke | Accepted |
+| [0019](0019-presence.md) | Presence anchored to cards, not to the screen | Accepted |
+| [0020](0020-history-and-plan-diff.md) | One plan diff for scenario compare, history and "since you were away"; history in its own document | Accepted |

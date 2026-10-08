@@ -19,27 +19,27 @@ Sprint 9 asked whether this board can be edited by several people at once, throu
 2. **Never block, always show.**
    - **No locks:** a card someone is dragging says so on everyone's board, and a lost race comes with a way back.
    - **Offline is always allowed:** on reconnecting, "Since you were away" marks what others changed on the board, and lists your changes that didn't stick, with "Use mine" or "Restore". Every shipped tool merges automatically, and the research project that tried reviewing before merging moved away from it.
-3. **Anchor presence to cards, not to the screen** (ADR 0019). People can be in different pivots, so a cursor's position means nothing on someone else's board, but "pointing at *Invoice redesign*" does. Following someone means taking their view.
+3. **Anchor presence to cards, not to the screen** (ADR 0019). People can be in different pivots, so a cursor's position means nothing on someone else's board, but "pointing at *Invoice redesign*" does.
 4. **A relay that numbers and stores ciphertext** (ADR 0017), with keys and write tokens from the link (ADR 0018):
    - edit and view-only links;
    - "make new links" to revoke, which says honestly that old links keep what they saw;
    - one container to self-host.
 5. **History in its own encrypted document,** and one plan diff (ADR 0020) shared by history, "since you were away" and scenario compare.
 
-**The cost** is four sprints (sprints 10–13, [`m2-plan.md`](../../plans/m2-plan.md)). Sprint 10 is still single-user and worth having on its own: the schema, more than one plan per browser, and two tabs syncing.
+**The cost** is five sprints (sprints 10–14, [`m2-plan.md`](../../plans/m2-plan.md)). Sprint 10 is still single-user and worth having on its own: the schema, more than one plan per browser, and two tabs syncing.
 
-## Decisions for the PM
+## What the PM decided (2026-10-08)
 
-Each is in `questions.md`, with options and a recommendation:
+Details are in `questions.md`, and they're now requirements 31–36.
 
-- **Q58:** On a shared plan, should Open, Import and New blank plan make a new plan instead of replacing the shared one?
-- **Q59:** Merge automatically after offline work, and show what happened, rather than review it first or block it?
-- **Q60:** No locks: show drag intent, let the later drop win, tell both people?
-- **Q61:** Card-anchored pointers and selections, a cursor setting, and following?
-- **Q62:** Edit and view-only links, with new links to revoke?
-- **Q63:** History in Activity and the inspector, kept for 90 days?
-- **Q64:** A public demo relay: tabs in one browser first, a hosted relay later?
-- **Q65:** Add these to M2's requirements, and approve the four-sprint plan?
+- **Q58:** on a shared plan, Open, Import and New blank plan make a new plan.
+- **Q59:** offline is always allowed, merges automatically, and "since you were away" shows what happened.
+- **Q60:** no locks. Drag intent shows, the later drop wins, and both people are told.
+- **Q61:** card-anchored pointers, selections and drags, and a cursor setting. **No following.**
+- **Q62:** edit and view-only links, with new links to revoke.
+- **Q63:** history in Activity and the inspector, **kept forever**, with times in each viewer's time zone.
+- **Q65:** yes, with history and "since you were away" as sprints of their own. M2 is five sprints.
+- **Still open, Q64:** the public demo, and what to offer companies whose policy blocks a hosted relay. The PM asked about falling back to WebRTC. Engineering's answer is two fallbacks that fit better: hosting the relay from a pilot user's laptop, and passing changes as encrypted files through approved channels.
 
 ## Risks worth knowing
 

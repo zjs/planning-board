@@ -1,6 +1,6 @@
 # 0016: A document schema for concurrent editing
 
-Status: Proposed (sprint 9). To be built before any sync code, in M2's first slice. Amends ADR 0006.
+Status: Accepted (sprint 9; M2's plan approved by the PM, 2026-10-08). To be built before any sync code, in sprint 10, slice 1. Amends ADR 0006.
 
 ## Context
 

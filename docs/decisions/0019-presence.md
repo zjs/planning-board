@@ -1,6 +1,6 @@
 # 0019: Presence anchored to cards
 
-Status: Proposed (sprint 9). The product side is Q61. Tried in `spikes/sync-client/presence.ts`.
+Status: Accepted (sprint 9). The product side is Q61, answered on 2026-10-08: presence and a cursor setting, and no following. Tried in `spikes/sync-client/presence.ts`.
 
 ## Context
 
@@ -13,7 +13,6 @@ Requirement 32 asks for who's present and where their cursors are. Every other t
 - **Pointer:** the card under it, and where on that card, as fractions. When it isn't over a card, nothing is shared.
 - **Selection:** the IDs of the selected cards.
 - **Drag:** the card being dragged, and the lane under the pointer, by key and label.
-- **View:** the axes, folded bands and expanded groups, for following.
 
 **How it travels:**
 - At most 20 messages a second per person while something changes, plus a heartbeat every 3 seconds.
@@ -33,5 +32,5 @@ A card that isn't on your board, because it's inside a collapsed group or scroll
 
 ## Consequences
 
-- Following someone means applying their view. It isn't a scroll position.
 - Large sessions need the cursor setting (Everyone, Driver only, None), since presence fans out to everyone.
+- There's no following (Q61). If it comes back, following means applying someone's view, not their scroll position, and presence would add the view: axes, folded bands and expanded groups.

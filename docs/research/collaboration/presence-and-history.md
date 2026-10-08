@@ -23,7 +23,7 @@ Each receiver draws it on their own board, wherever those cards are in their vie
 
 **What it leaves open:**
 - **A card that isn't on your board,** because it's inside a collapsed group or scrolled away, gets no cursor. The experience design (slice 5) decides whether its group's frame or an edge marker should show it.
-- **Following someone means taking their view,** not their scroll position. The spike doesn't do it. It's designed in slice 5.
+- **Following someone would mean taking their view,** not their scroll position. The spike doesn't do it, and the PM left it out of M2 (Q61).
 - **Presence is chatty.** About 200 bytes per message, at up to 20 a second per person while the pointer moves. That's nothing for a handful of people on an intranet. A session of 30 would want a slower rate, or cursors for the driver only (`prior-art.md`, §4).
 
 **Why it matters for collisions.** `merge-scenarios.md` found that two people dragging one card is a coin toss at best (L1, L3) and a card in two areas at worst (L2). "Ada is moving this" on the card itself makes that collision unlikely, without locking anything. That's the cheapest fix for the live half of the PM's first priority. Whether it's enough is a question for the tester session.
@@ -40,7 +40,7 @@ From the second table in [`relay-measurements.md`](relay-measurements.md): the s
 | **3. Yjs snapshots,** diffed later | "What changed between Tuesday and now", but not who | 70 KB, and it grows with every overwrite, since nothing deleted is ever discarded | **No.** Our own plan diff over periodic snapshots answers the same question without that growth. |
 
 **The history log works, and has one problem: it grows faster than the board.** Logging into the board's own document tripled its size after 1,000 edits, and it never shrinks. Two changes fix that:
-- **A history document of its own,** per plan: another encrypted Yjs document in the same relay room. The board stays lean, the history can be pruned (keep 90 days, say) without touching the board, and a plan file never includes it.
+- **A history document of its own,** per plan: another encrypted Yjs document in the same relay room. The board stays lean, the history can grow or be pruned without touching the board, and a plan file never includes it. The PM chose to keep it forever (Q63).
 - **Compact entries:** IDs and values, turned into words when shown, not stored as text. That's about 60 bytes per change _(priors)_.
 
 **What attribution can promise.** Names are self-chosen, and anyone holding the link can write any name, or any history entry. Times come from each person's clock. It's a courtesy among people who share a link, not an audit trail. The experience should never present it as one ("who did this, as far as the board knows").
@@ -71,6 +71,6 @@ The spike and the merge harness agree. **Undo reverses only your own edits** (U1
 ## Recommendations
 
 1. **Make presence card-relative.** Share the pointer, selection and drag intent. Show drag intent on the card, as the main defense against live collisions.
-2. **Keep history in its own encrypted document per plan,** with compact entries, pruned after a period the PM chooses. Don't use `PermanentUserData` or Yjs snapshots.
+2. **Keep history in its own encrypted document per plan,** with compact entries, kept forever (Q63), with times in UTC and shown in each viewer's time zone. Don't use `PermanentUserData` or Yjs snapshots.
 3. **Build one diff and one set of board markers** for "since you were away", scenario compare and history.
 4. **Present attribution as a courtesy,** in wording and design. Accounts and signatures stay out of scope (requirements, "Out of scope for v1").
