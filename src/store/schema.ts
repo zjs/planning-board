@@ -23,10 +23,33 @@ import { isOrderKey } from '../domain/sequence.ts';
 /** Bump when the layout changes incompatibly; persistence keys include it. */
 export const SCHEMA_VERSION = 2;
 
+/**
+ * The newest kind of plan this build writes, kept in `meta.writer` (sprint
+ * 11). A shared plan travels between builds of different ages; one written
+ * by a newer build opens view-only here, rather than this build writing
+ * what it doesn't understand. Additions that older builds can safely ignore
+ * don't bump it.
+ */
+export const WRITER_VERSION = 1;
+
+/** Whether a newer build than this one has written the plan. */
+export function writtenByNewer(doc: Y.Doc): boolean {
+  const writer = root(doc).meta.get('writer');
+  return typeof writer === 'number' && writer > WRITER_VERSION;
+}
+
+/** Record that this build writes the plan, unless a newer one already does. */
+export function markWriter(doc: Y.Doc): void {
+  const meta = root(doc).meta;
+  const writer = meta.get('writer');
+  if (typeof writer !== 'number' || writer < WRITER_VERSION) meta.set('writer', WRITER_VERSION);
+}
+
 export const root = (doc: Y.Doc) => ({
   /**
    * `schema`: the layout version, 2. A document without it is empty, or version 1 (src/store/schemaV1.ts).
    * `name`: the plan's name (ADR 0021). Not part of undo.
+   * `writer`: the newest kind of plan a build wrote to it (WRITER_VERSION).
    */
   meta: doc.getMap<unknown>('meta'),
   properties: doc.getMap<Y.Map<unknown>>('properties'),
@@ -71,6 +94,7 @@ export function writePlan(doc: Y.Doc, plan: Plan): void {
   r.dependencies.clear();
   r.related.clear();
   r.meta.set('schema', SCHEMA_VERSION);
+  markWriter(doc);
   for (const property of Object.values(plan.properties)) r.properties.set(property.id, propertyToY(property));
   for (const item of Object.values(plan.items)) r.items.set(item.id, itemToY(item, plan));
   for (const dep of plan.dependencies) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });

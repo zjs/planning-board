@@ -18,6 +18,23 @@ export interface PlanEntry {
   named?: boolean;
   /** Deleted, and waiting out its Undo (ADR 0021). Hidden from the list; its database goes later. */
   deletedAt?: number;
+  /** Shared through a relay (ADR 0018): where, and the keys from its link. */
+  shared?: SharedPlan;
+}
+
+/**
+ * A shared plan's place on a relay, and its keys, as the link carries them
+ * (base64url). Kept in localStorage, on the same computer that already holds
+ * the plan itself unencrypted (ADR 0018).
+ */
+export interface SharedPlan {
+  relay: string;
+  room: string;
+  /** The edit link's secret; absent when this browser has only the view link. */
+  secret?: string;
+  viewKey: string;
+  /** Shared, but the relay hasn't confirmed the room yet: a crash mid-share retries. */
+  pending?: boolean;
 }
 
 /** The board a browser had before it kept several plans. Its database and viewer state keep their old names. */
@@ -59,6 +76,11 @@ const memoryStore: KeyValue = {
   getItem: (key) => memory.get(key) ?? null,
   setItem: (key, value) => void memory.set(key, value),
 };
+
+/** Whether the plan list is kept between visits: false when the browser won't give localStorage. */
+export function listIsSaved(): boolean {
+  return defaultStore() !== memoryStore;
+}
 
 function defaultStore(): KeyValue {
   try {
@@ -129,6 +151,24 @@ export function addPlan(name: string, store = defaultStore(), now = Date.now()):
   return entry;
 }
 
+/** Make a plan shared, or change how it's shared: keys, relay, or that the relay confirmed it. */
+export function setShared(id: PlanId, shared: SharedPlan, store = defaultStore()): void {
+  update(store, id, (e) => ({ ...e, shared }));
+}
+
+/** The plan this browser keeps for a room on a relay, if any, deleted or not. */
+export function findShared(relay: string, room: string, store = defaultStore()): PlanEntry | null {
+  const same = (a: string, b: string) => a.replace(/\/$/, '') === b.replace(/\/$/, '');
+  return readAll(store).find((e) => e.shared?.room === room && same(e.shared.relay, relay)) ?? null;
+}
+
+/** Add a plan opened from someone's share link. It's named once its first sync brings the plan's name. */
+export function addSharedPlan(shared: SharedPlan, name: string, store = defaultStore(), now = Date.now()): PlanEntry {
+  const entry: PlanEntry = { id: newPlanId(), name, created: now, opened: now, shared };
+  writeAll(store, [...readAll(store), entry]);
+  return entry;
+}
+
 /** Mark a plan as the one in use. */
 export function touchPlan(id: PlanId, store = defaultStore(), now = Date.now()): void {
   update(store, id, (e) => ({ ...e, opened: now }));
@@ -166,7 +206,12 @@ export function expiredDeletes(store = defaultStore(), now = Date.now(), graceMs
 
 /** Delete a plan's board for good. */
 export function dropPlanDatabase(id: PlanId): Promise<void> {
-  return dropDatabase(planDatabase(id));
+  return Promise.all([dropDatabase(planDatabase(id)), dropDatabase(syncDatabase(id))]).then(() => undefined);
+}
+
+/** The small database where a shared plan keeps what the relay is known to hold (src/store/relay.ts). */
+export function syncDatabase(id: PlanId): string {
+  return `planning-board:v${SCHEMA_VERSION}:sync:${id}`;
 }
 
 /** Whether a localStorage change, seen in a `storage` event, is to the list of plans: another tab made, renamed or deleted one. */
