@@ -1,18 +1,23 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
 import { withBuiltIns } from '../domain/builtins.ts';
-import { SEQUENCE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
+import { SEQUENCE, SIZE, SYSTEM, TIME, type Plan } from '../domain/model.ts';
+import { FIRST_PLAN } from '../commands/plans.ts';
 import type { ViewLayout } from '../domain/view.ts';
 import {
   activePreset,
   axisNames,
   axisOptions,
   chooseAxis,
+  DEFAULT_VIEW,
   dropText,
   foldableBands,
+  loadExpanded,
   loadFoldings,
   loadViewChoice,
   presetsFor,
+  saveExpanded,
+  saveViewChoice,
   setAllFolded,
   swapAxes,
   toggleFold,
@@ -118,21 +123,37 @@ describe('views saved by earlier builds', () => {
   it('open as the property, and a level below the top opens unfolded with its collapsed bands still folded', () => {
     localStorage.setItem('planning-board:view', JSON.stringify({ x: 'time', y: 'system:1', yWithin: 'id' }));
     localStorage.setItem('planning-board:collapsed', JSON.stringify({ system: ['pay'] }));
-    expect(loadViewChoice()).toEqual({ x: 'time', y: 'system' });
-    expect(loadFoldings()).toEqual({ system: { all: 'unfolded', except: ['pay'] } });
+    expect(loadViewChoice(FIRST_PLAN)).toEqual({ x: 'time', y: 'system' });
+    expect(loadFoldings(FIRST_PLAN)).toEqual({ system: { all: 'unfolded', except: ['pay'] } });
   });
 
   it("sprint 1's names still work", () => {
     localStorage.setItem('planning-board:view', JSON.stringify({ x: 'release', y: 'component' }));
-    expect(loadViewChoice()).toEqual({ x: TIME, y: SYSTEM });
-    expect(loadFoldings()).toEqual({ [TIME]: { all: 'unfolded', except: [] }, [SYSTEM]: { all: 'unfolded', except: [] } });
+    expect(loadViewChoice(FIRST_PLAN)).toEqual({ x: TIME, y: SYSTEM });
+    expect(loadFoldings(FIRST_PLAN)).toEqual({ [TIME]: { all: 'unfolded', except: [] }, [SYSTEM]: { all: 'unfolded', except: [] } });
   });
 
   it('a top-level view opens folded, and saved folding wins once there is some', () => {
     localStorage.setItem('planning-board:view', JSON.stringify({ x: SEQUENCE, y: 'system' }));
-    expect(loadFoldings()).toEqual({});
+    expect(loadFoldings(FIRST_PLAN)).toEqual({});
     localStorage.setItem('planning-board:folding', JSON.stringify({ system: { all: 'unfolded', except: ['id'] } }));
-    expect(loadFoldings()).toEqual({ system: { all: 'unfolded', except: ['id'] } });
+    expect(loadFoldings(FIRST_PLAN)).toEqual({ system: { all: 'unfolded', except: ['id'] } });
+  });
+});
+
+describe('viewer state per plan (ADR 0021)', () => {
+  beforeEach(fakeStorage);
+
+  it("the first plan keeps the browser's view; another plan has its own", () => {
+    localStorage.setItem('planning-board:view', JSON.stringify({ x: 'time', y: 'system' }));
+    expect(loadViewChoice(FIRST_PLAN)).toEqual({ x: TIME, y: SYSTEM });
+    expect(loadViewChoice('p1')).toEqual(DEFAULT_VIEW);
+    saveViewChoice('p1', { x: SIZE, y: SYSTEM });
+    expect(loadViewChoice('p1')).toEqual({ x: SIZE, y: SYSTEM });
+    expect(loadViewChoice(FIRST_PLAN)).toEqual({ x: TIME, y: SYSTEM });
+    saveExpanded('p1', ['epic']);
+    expect(loadExpanded('p1')).toEqual(['epic']);
+    expect(loadExpanded(FIRST_PLAN)).toEqual([]);
   });
 });
 

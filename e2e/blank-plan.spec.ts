@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { APP_URL, cell, doubleClickEmpty, openApp, pickAxes } from './app.ts';
+import { APP_URL, cell, doubleClickEmpty, openApp, pickAxes, planList, switchPlan } from './app.ts';
 
 // Starting from scratch, and typing cards one after another (questions.md Q51).
 
@@ -74,25 +74,24 @@ test('Enter on an empty field, or clicking away, stops adding cards', async ({ p
   await expect(page.locator('.card')).toHaveCount(2);
 });
 
-test('New blank plan replaces the board in one undo step, and stops finding', async ({ page }) => {
+test('New blank plan is a plan of its own, beside the sample, and stops finding (Q66)', async ({ page }) => {
   await openApp(page);
   const cards = await page.locator('.card').count();
   await page.keyboard.press('/');
   await page.keyboard.type('sso');
   await page.locator('.toolbar h1').click();
   await expect(page.getByTestId('find-bar')).toBeVisible();
-  page.once('dialog', (d) => {
-    expect(d.message()).toContain('blank plan');
-    void d.accept();
-  });
   await page.getByTestId('file-menu').click();
   await page.getByRole('menuitem', { name: 'New blank plan' }).click();
   await expect(page.getByTestId('draft-card')).toBeVisible();
+  await expect(page.getByTestId('plan-name')).toHaveText('Untitled plan');
   await expect(page.getByTestId('find-bar')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.locator('.card')).toHaveCount(0);
+  await expect(page.locator('.toolbar').getByRole('button', { name: 'Undo' })).toBeDisabled();
 
-  await page.getByRole('button', { name: /Undo/ }).click();
+  expect(await planList(page)).toEqual(['Untitled plan', 'Sample plan']);
+  await switchPlan(page, 'Sample plan');
   await expect(page.locator('.card')).toHaveCount(cards);
 });
 

@@ -68,7 +68,6 @@ test('a plan file saved before levels existed opens with the Level property', as
     properties: [{ id: 'size', name: 'Size', levels: ['Size'], values: [{ id: 'm', label: 'M' }] }],
     items: [{ id: 'a', title: 'An old card', values: { size: 'm' } }],
   };
-  page.once('dialog', (d) => void d.accept());
   await page.getByTestId('open-plan-input').setInputFiles({ name: 'old.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(old)) });
   await expect(card(page, 'a')).toBeVisible();
   await page.getByRole('button', { name: 'Properties', exact: true }).click();

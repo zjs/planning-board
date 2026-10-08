@@ -132,7 +132,12 @@ test('sprint 4 exit criteria', async ({ page }) => {
   await expect(epic.locator('.attr[data-property="level"]')).toHaveText('Epic');
   await reveal(epic);
   await epic.locator('.card-title').click();
+  // The import is a new plan, so the inspector opens afresh.
+  await page.keyboard.press('i');
   await expect(inspector(page).locator('.inspector-meta .attr.key')).toHaveText('IDN-1');
+  // The import is a plan of its own (ADR 0021), with its groups collapsed: expand them all to see a story.
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('e');
   const story = page.locator('.card:not(.via-children):not(.frame-via .card)', { hasText: 'Zero-downtime index rebuild' }).first();
   await expect(story.locator('.attr[data-property="level"]')).toHaveText('Story');
 });

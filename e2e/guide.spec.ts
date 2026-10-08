@@ -56,7 +56,6 @@ test('a blank plan walks through dumping, organizing, another view, and grouping
   await guide(page).getByRole('button', { name: 'Done' }).click();
   await expect(guide(page)).toHaveCount(0);
   // Finished: a new blank plan doesn't offer it again.
-  page.once('dialog', (d) => void d.accept());
   await page.getByTestId('file-menu').click();
   await page.getByRole('menuitem', { name: 'New blank plan' }).click();
   await expect(guide(page)).toHaveCount(0);

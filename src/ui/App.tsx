@@ -9,8 +9,7 @@ import {
   dropCard,
   dropCards,
   groupItems,
-  importPlan,
-  loadPlan,
+  importedPlan,
   moveToParent,
   openPlanStore,
   redo,
@@ -20,13 +19,37 @@ import {
   removeRelatedLinks,
   renameItem,
   renameValue,
-  resetPlan,
   snapshotSource,
+  startPlan,
   undo,
   ungroupItems,
+  isEmptyPlan,
+  namePlan,
+  planName,
+  type OpenPlan,
   type PersistenceStatus,
   type PlanStore,
 } from '../commands/store.ts';
+import {
+  addPlan,
+  dropPlanDatabase,
+  expiredDeletes,
+  fileSlug,
+  findPlan,
+  forgetPlan,
+  hashFor,
+  listPlans,
+  markDeleted,
+  nameFromFile,
+  planDatabase,
+  planFromHash,
+  renamePlan,
+  touchPlan,
+  unmarkDeleted,
+  UNTITLED,
+  type PlanEntry,
+  type PlanId,
+} from '../commands/plans.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
   chain,
@@ -88,9 +111,10 @@ import { FindBar, FindButton } from './FindBar.tsx';
 import { ImportDialog } from './ImportDialog.tsx';
 import { datedFileName, downloadText } from './files.ts';
 import { Guide } from './Guide.tsx';
-import { loadGuide, offersGuide, saveGuide, type GuideState } from './guide.ts';
+import { loadGuide, loadGuidePlan, offersGuide, saveGuide, saveGuidePlan, type GuideState } from './guide.ts';
 import { Legend } from './Legend.tsx';
-import { Menu } from './Menu.tsx';
+import { Menu, type MenuEntry } from './Menu.tsx';
+import { PlanName } from './PlanName.tsx';
 import { Inspector } from './Inspector.tsx';
 import { ViewBar } from './ViewBar.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
@@ -111,23 +135,224 @@ function samplePlan(): Plan {
   return result.plan;
 }
 
-// Opened once per page, outside React, so StrictMode's double effects
-// don't attach two storage providers to the same database.
-let opening: ReturnType<typeof openPlanStore> | null = null;
+// Plans are opened once per page and plan, outside React, so StrictMode's
+// double effects don't attach two storage providers to the same database.
+const opening = new Map<PlanId, Promise<OpenPlan>>();
+function openPlan(id: PlanId): Promise<OpenPlan> {
+  let open = opening.get(id);
+  if (!open) {
+    open = openPlanStore(id);
+    opening.set(id, open);
+  }
+  return open;
+}
+function closePlan(id: PlanId): Promise<void> {
+  const open = opening.get(id);
+  opening.delete(id);
+  return open ? open.then((p) => p.close()) : Promise.resolve();
+}
 
+/** Show a plan's link in the address bar without adding a step to Back. */
+function showHash(id: PlanId) {
+  if (location.hash === hashFor(id)) return;
+  try {
+    history.replaceState(null, '', hashFor(id));
+  } catch {
+    location.hash = hashFor(id);
+  }
+}
+
+/** What a new plan does first, once its board is showing. */
+export interface PlanStart {
+  /** Open a title field for the first card (Q51). */
+  typing?: boolean;
+  /** A notice to show, such as what was opened. */
+  notice?: string;
+}
+
+/** What the App does with plans, for the board's menus and toolbar (ADR 0021). */
+export interface PlanActions {
+  plans: PlanEntry[];
+  name: string;
+  /** Make a new plan holding `content`, and switch to it. `prepare` sets its viewer state first. */
+  make: (name: string, content: Plan, start?: PlanStart, prepare?: (id: PlanId) => void) => void;
+  open: (id: PlanId) => void;
+  rename: (name: string) => void;
+  remove: () => void;
+}
+
+/** A notice the App shows across plans: a deleted plan, with its Undo. */
+interface PlanNotice {
+  text: string;
+  undo: () => void;
+  /** Called once the Undo can no longer be used. */
+  expire: () => void;
+}
+
+/**
+ * The plans in this browser (Q58, Q66, Q67, ADR 0021). One is open at a
+ * time; the board for it is a Workspace, made afresh for each plan, so
+ * viewer state never leaks from one plan to another.
+ */
 export function App() {
-  const [session, setSession] = useState<Awaited<ReturnType<typeof openPlanStore>> | null>(null);
+  const [session, setSession] = useState<{ plan: OpenPlan; start: PlanStart | null } | null>(null);
+  const [plans, setPlans] = useState(listPlans);
+  const refresh = useCallback(() => setPlans(listPlans()), []);
+  const current = useRef<PlanId | null>(null);
+
+  const show = useCallback(
+    async (id: PlanId, start: PlanStart | null = null) => {
+      const plan = await openPlan(id);
+      const previous = current.current;
+      current.current = id;
+      touchPlan(id);
+      // The document's name wins, since it's the one that will travel with a shared plan.
+      const named = planName(plan.store);
+      const entry = findPlan(id);
+      if (named !== null && entry && named !== entry.name) renamePlan(id, named);
+      else if (named === null && entry) namePlan(plan.store, entry.name);
+      showHash(id);
+      setSession({ plan, start });
+      refresh();
+      if (previous !== null && previous !== id) void closePlan(previous);
+    },
+    [refresh],
+  );
+
+  const started = useRef(false);
   useEffect(() => {
-    let live = true;
-    void (opening ??= openPlanStore()).then((s) => {
-      if (live) setSession(s);
-    });
-    return () => {
-      live = false;
+    if (started.current) return;
+    started.current = true;
+    // Plans deleted on a page closed before their Undo ran out.
+    for (const id of expiredDeletes()) {
+      forgetPlan(id);
+      void dropPlanDatabase(id);
+    }
+    const linked = planFromHash(location.hash);
+    const id = (linked !== null ? findPlan(linked)?.id : undefined) ?? listPlans()[0]?.id ?? addPlan(UNTITLED).id;
+    void show(id);
+  }, [show]);
+
+  // A link to another plan, pasted into the address bar, opens it.
+  useEffect(() => {
+    const onHash = () => {
+      const id = planFromHash(location.hash);
+      if (id !== null && id !== current.current && findPlan(id)) void show(id);
     };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [show]);
+
+  const [notice, setNoticeState] = useState<PlanNotice | null>(null);
+  const noticeRef = useRef<PlanNotice | null>(null);
+  const setNotice = useCallback((next: PlanNotice | null) => {
+    noticeRef.current = next;
+    setNoticeState(next);
   }, []);
+  // A notice replaced, or run out, can't be undone any more.
+  const retire = useCallback(() => {
+    const old = noticeRef.current;
+    setNotice(null);
+    old?.expire();
+  }, [setNotice]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(retire, NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [notice, retire]);
+
+  const make = useCallback(
+    (name: string, content: Plan, start: PlanStart = {}, prepare?: (id: PlanId) => void) => {
+      void (async () => {
+        const old = current.current;
+        const oldPlan = old !== null ? await openPlan(old) : null;
+        // An untouched empty plan is replaced rather than kept (ADR 0021): a first visit leaves no litter.
+        const replace = old !== null && oldPlan !== null && isEmptyPlan(oldPlan.store) && !findPlan(old)?.named;
+        const entry = addPlan(name);
+        const plan = await openPlan(entry.id);
+        startPlan(plan.store, content);
+        namePlan(plan.store, name);
+        prepare?.(entry.id);
+        await show(entry.id, start);
+        if (replace) {
+          forgetPlan(old);
+          await closePlan(old);
+          void dropPlanDatabase(old);
+          refresh();
+        }
+      })();
+    },
+    [show, refresh],
+  );
+
+  const remove = useCallback(() => {
+    const id = current.current;
+    if (id === null) return;
+    const name = findPlan(id)?.name ?? UNTITLED;
+    retire();
+    markDeleted(id);
+    void (async () => {
+      const next = listPlans()[0] ?? addPlan(UNTITLED);
+      await show(next.id);
+      setNotice({
+        text: `Deleted “${name}”`,
+        undo: () => {
+          unmarkDeleted(id);
+          void show(id);
+        },
+        expire: () => {
+          forgetPlan(id);
+          void dropPlanDatabase(id);
+          refresh();
+        },
+      });
+    })();
+  }, [show, refresh, retire, setNotice]);
+
   if (!session) return <div className="loading">Loading…</div>;
-  return <Workspace store={session.store} persistence={session.persistence} />;
+  const id = session.plan.id;
+  const actions: PlanActions = {
+    plans,
+    name: plans.find((p) => p.id === id)?.name ?? UNTITLED,
+    make,
+    open: (other) => {
+      retire();
+      void show(other);
+    },
+    rename: (name) => {
+      renamePlan(id, name, { byHand: true });
+      namePlan(session.plan.store, name);
+      refresh();
+    },
+    remove,
+  };
+  return (
+    <>
+      <Workspace
+        key={id}
+        planId={id}
+        store={session.plan.store}
+        persistence={session.plan.persistence}
+        start={session.start}
+        planActions={actions}
+      />
+      {notice && (
+        <div className="notice" role="status" data-testid="plan-notice">
+          {notice.text}
+          <button
+            type="button"
+            onClick={() => {
+              const undoing = notice;
+              setNotice(null);
+              undoing.undo();
+            }}
+          >
+            Undo
+          </button>
+        </div>
+      )}
+    </>
+  );
 }
 
 const JUST_MOVED_MS = 1400;
@@ -151,19 +376,31 @@ interface FileProblem {
   details: string[];
 }
 
-function Workspace({ store, persistence }: { store: PlanStore; persistence: PersistenceStatus }) {
+function Workspace({
+  planId,
+  store,
+  persistence,
+  start,
+  planActions,
+}: {
+  planId: PlanId;
+  store: PlanStore;
+  persistence: PersistenceStatus;
+  start: PlanStart | null;
+  planActions: PlanActions;
+}) {
   const source = useMemo(() => snapshotSource(store), [store]);
   const { plan, empty, canUndo, canRedo } = useSyncExternalStore(source.subscribe, source.getSnapshot);
-  const [choice, setChoice] = useState(loadViewChoice);
-  useEffect(() => saveViewChoice(choice), [choice]);
-  // Groups expanded in place (Q33, ADR 0013). Viewer state, remembered per browser.
-  const [expanded, setExpanded] = useState<ItemId[]>(loadExpanded);
-  useEffect(() => saveExpanded(expanded), [expanded]);
+  const [choice, setChoice] = useState(() => loadViewChoice(planId));
+  useEffect(() => saveViewChoice(planId, choice), [planId, choice]);
+  // Groups expanded in place (Q33, ADR 0013). Viewer state, remembered per plan (ADR 0021).
+  const [expanded, setExpanded] = useState<ItemId[]>(() => loadExpanded(planId));
+  useEffect(() => saveExpanded(planId, expanded), [planId, expanded]);
   // An axis whose property was deleted falls back, rather than showing an empty board.
   const shown = useMemo(() => validChoice(plan, choice), [plan, choice]);
   // Folded bands on nested axes (ADR 0013): viewer state per property, folded by default, remembered like the view.
-  const [foldings, setFoldings] = useState(loadFoldings);
-  useEffect(() => saveFoldings(foldings), [foldings]);
+  const [foldings, setFoldings] = useState(() => loadFoldings(planId));
+  useEffect(() => saveFoldings(planId, foldings), [planId, foldings]);
   const view = useMemo(
     () => ({
       ...withFolding(plan, toViewSpec(plan, shown), foldings),
@@ -243,8 +480,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   };
   const [compact, setCompact] = useState(loadCompactHolding);
   useEffect(() => saveCompactHolding(compact), [compact]);
-  const [holdingCollapsed, setHoldingCollapsed] = useState(loadHoldingCollapsed);
-  useEffect(() => saveHoldingCollapsed(holdingCollapsed), [holdingCollapsed]);
+  const [holdingCollapsed, setHoldingCollapsed] = useState(() => loadHoldingCollapsed(planId));
+  useEffect(() => saveHoldingCollapsed(planId, holdingCollapsed), [planId, holdingCollapsed]);
 
   const [justMoved, setJustMoved] = useState<ItemId | null>(null);
   useEffect(() => {
@@ -257,7 +494,12 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const [selection, setSelection] = useState<ReadonlySet<ItemId>>(() => new Set());
   // The last copy clicked, so Enter renames the copy you're looking at.
   const [anchor, setAnchor] = useState<CardRef | null>(null);
-  const [editingState, setEditing] = useState<Editing | null>(null);
+  // A new blank plan opens with the first card's title ready to type (Q51).
+  const [editingState, setEditing] = useState<Editing | null>(() => {
+    if (!start?.typing) return null;
+    const first = layoutView(plan, toViewSpec(plan, DEFAULT_VIEW)).gaps.x?.[0];
+    return first === undefined ? null : { kind: 'new', spot: { x: first, y: null } };
+  });
   // Cards with a solid copy on screen: only those can show a title field. A
   // rename whose card has none (it's off-screen, or only a faded copy) is
   // dropped, rather than leaving the board waiting for a field that isn't there.
@@ -271,7 +513,8 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     [layout],
   );
   const editing = editingState?.kind === 'rename' && !renamable.has(editingState.card.itemId) ? null : editingState;
-  const [notice, setNotice] = useState<Notice | null>(null);
+  // A new plan's first notice says where it came from, such as the file it was opened from.
+  const [notice, setNotice] = useState<Notice | null>(() => (start?.notice ? { text: start.notice } : null));
   // Deleted or undone items drop out of the selection.
   const selected = useMemo(() => new Set([...selection].filter((id) => plan.items[id])), [selection, plan]);
 
@@ -739,7 +982,11 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
   const [legendOpen, setLegendOpen] = useState(false);
   const closeLegend = () => setLegendOpen(false);
   // The guided start (Q53): offered with a blank plan until it's been finished or skipped in this browser.
-  const [guide, setGuideState] = useState<GuideState | null>(loadGuide);
+  // It runs in the plan it started in (ADR 0021), and waits there while another plan is open.
+  const [guide, setGuideState] = useState<GuideState | null>(() => {
+    const state = loadGuide();
+    return state === 'running' && loadGuidePlan() !== planId ? null : state;
+  });
   const setGuide = useCallback((state: GuideState) => {
     setGuideState(state);
     saveGuide(state);
@@ -1023,44 +1270,31 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     ];
   };
 
+  // Each of these makes a new plan, and nothing is overwritten (Q66).
   const loadSample = () => {
-    if (!empty && !window.confirm('Replace the board with the sample plan? You can undo this.')) return;
-    loadPlan(store, samplePlan());
-    if (guide === 'running') setGuide('skipped');
     // The sample opens on Roadmap, which reads as a grid of two properties straight away (Q52).
-    setChoice({ x: TIME, y: SYSTEM });
+    planActions.make('Sample plan', samplePlan(), {}, (id) => saveViewChoice(id, { x: TIME, y: SYSTEM }));
   };
   // Starting from scratch (Q51): the built-in properties, no cards, and the first card's title ready to type.
   const startBlank = () => {
-    if (!empty && !window.confirm('Replace the board with a blank plan? You can undo this.')) return;
-    const blank = blankPlan();
-    loadPlan(store, blank);
-    setChoice(DEFAULT_VIEW);
-    setSelection(new Set());
-    clearFind(); // otherwise every new idea would be faded for not matching
-    if (offersGuide(guide)) setGuide('running');
-    const first = layoutView(blank, toViewSpec(blank, DEFAULT_VIEW)).gaps.x?.[0];
-    setEditing(first === undefined ? null : { kind: 'new', spot: { x: first, y: null } });
-  };
-  const reset = () => {
-    if (window.confirm('Clear the whole board? You can undo this.')) resetPlan(store);
+    planActions.make(UNTITLED, blankPlan(), { typing: true }, (id) => {
+      if (!offersGuide(guide)) return;
+      saveGuide('running');
+      saveGuidePlan(id);
+    });
   };
 
   // Plan files (requirement 29, ADR 0005).
   const [fileProblem, setFileProblem] = useState<FileProblem | null>(null);
   const openInput = useRef<HTMLInputElement>(null);
-  const savePlanFile = () => downloadText(datedFileName('planning-board', 'json'), planFileText(plan));
+  const savePlanFile = () => downloadText(datedFileName(fileSlug(planActions.name), 'json'), planFileText(plan, planActions.name));
   const openPlanFile = async (file: File) => {
     const opened = readPlanFile(await file.text());
     if (!opened.ok) {
       setFileProblem({ name: file.name, summary: opened.summary, details: opened.details });
       return;
     }
-    if (!empty && !window.confirm(`Replace the board with “${file.name}”? You can undo this.`)) return;
-    loadPlan(store, opened.plan);
-    setSelection(new Set());
-    setEditing(null);
-    setNotice({ text: `Opened “${file.name}”`, step: store.undoManager.undoStack.at(-1) });
+    planActions.make(opened.name ?? nameFromFile(file.name), opened.plan, { notice: `Opened “${file.name}”` });
   };
   // CSV import (requirement 28, ADR 0010).
   const csvInput = useRef<HTMLInputElement>(null);
@@ -1082,39 +1316,57 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
     (text: string) => setNotice({ text, step: store.undoManager.undoStack.at(-1) }),
     [store],
   );
+  const yourPlans: MenuEntry[] = planActions.plans.map((entry) => ({
+    key: entry.id,
+    label: entry.name,
+    current: entry.id === planId,
+    onSelect: () => entry.id !== planId && planActions.open(entry.id),
+  }));
   const fileMenu = (
     <Menu
       label="File"
       testId="file-menu"
       entries={[
-        { label: 'Open plan file…', onSelect: () => openInput.current?.click() },
+        {
+          label: 'New blank plan',
+          onSelect: startBlank,
+          title: 'Start a new, empty plan, ready to type ideas into',
+        },
+        {
+          label: 'Open plan file…',
+          onSelect: () => openInput.current?.click(),
+          title: 'Open a saved plan file as a new plan',
+        },
         {
           label: 'Import CSV (Jira export)…',
           onSelect: () => csvInput.current?.click(),
-          title: 'Replace the board with cards from a CSV file, such as a Jira export',
+          title: 'Make a new plan from a CSV file, such as a Jira export',
         },
+        { label: 'Load sample plan', onSelect: loadSample, title: 'Open a sample product line as a new plan' },
+        'divider',
         {
           label: 'Save plan to file',
           onSelect: savePlanFile,
           disabled: empty,
           title: 'Download the plan as a file you can open again, here or in another browser',
         },
-        'divider',
         {
-          label: 'New blank plan',
-          onSelect: startBlank,
-          title: 'Replace the board with an empty plan, ready to type ideas into',
+          label: 'Delete plan',
+          onSelect: planActions.remove,
+          disabled: empty && planActions.plans.length <= 1,
+          title: 'Delete this plan from this browser. You can undo it for a few seconds.',
         },
-        { label: 'Load sample plan', onSelect: loadSample },
-        { label: 'Reset board', onSelect: reset, disabled: empty },
+        'divider',
+        { heading: 'Your plans' },
+        ...yourPlans,
       ]}
     />
   );
 
   return (
-    <div className="app">
+    <div className="app" data-plan-db={planDatabase(planId)}>
       <header className="toolbar">
-        <h1>Planning Board</h1>
+        <PlanName name={planActions.name} onRename={planActions.rename} />
         <div className="actions">
           <button
             type="button"
@@ -1424,15 +1676,17 @@ function Workspace({ store, persistence }: { store: PlanStore; persistence: Pers
           table={importing.table}
           onCancel={() => setImporting(null)}
           onImport={(draft, choices, quarterOrder) => {
-            const result = importPlan(store, draft, choices, quarterOrder);
+            const result = importedPlan(draft, choices, quarterOrder);
             setImporting(null);
+            const n = result.counts.cards;
             // Imported cards have no sequence position, so a sequence view would hold them all in
             // one lane. Time × System shows them where the export put them (questions.md Q30).
-            setChoice({ x: TIME, y: SYSTEM });
-            setSelection(new Set());
-            setEditing(null);
-            const n = result.counts.cards;
-            noticeLatest(`Imported ${n} ${n === 1 ? 'card' : 'cards'} from “${importing.fileName}”`);
+            planActions.make(
+              nameFromFile(importing.fileName),
+              result.plan,
+              { notice: `Imported ${n} ${n === 1 ? 'card' : 'cards'} from “${importing.fileName}”` },
+              (id) => saveViewChoice(id, { x: TIME, y: SYSTEM }),
+            );
           }}
         />
       )}

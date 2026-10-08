@@ -108,9 +108,8 @@ test('Escape cancels a drag without changing anything', async ({ page }) => {
   await page.mouse.up();
   await expect(page.locator('.drag-ghost')).toHaveCount(0);
   await expect(from).toHaveCount(1);
-  // The only undo step is loading the sample plan.
-  await page.getByRole('button', { name: /Undo/ }).click();
-  await expect(page.locator('.empty-state')).toBeVisible();
+  // Nothing to undo: the sample is a plan of its own, not an edit (ADR 0021).
+  await expect(page.locator('.toolbar').getByRole('button', { name: 'Undo' })).toBeDisabled();
 });
 
 test('holding a dragged card near the board edge scrolls the board', async ({ page }) => {
@@ -129,17 +128,6 @@ test('holding a dragged card near the board edge scrolls the board', async ({ pa
   await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
   await page.keyboard.press('Escape');
   await page.mouse.up();
-});
-
-test('Reset clears the board and can be undone', async ({ page }) => {
-  await openApp(page);
-  page.once('dialog', (d) => void d.accept());
-  await page.getByTestId('file-menu').click();
-  await page.getByRole('menuitem', { name: 'Reset board' }).click();
-  await expect(page.locator('.empty-state')).toBeVisible();
-  await page.getByRole('button', { name: /Undo/ }).click();
-  await expect(page.getByTestId('board')).toBeVisible();
-  await expect(card(page, 'tenant-data-deletion-gdpr')).toHaveCount(3);
 });
 
 test('a drag released outside the window is cancelled, not left stuck', async ({ page }) => {

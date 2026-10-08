@@ -63,9 +63,8 @@ test('a blank or cancelled draft creates nothing', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('draft-card')).toHaveCount(0);
   await expect(target.locator('.card')).toHaveCount(before);
-  // The only undo step is loading the sample plan.
-  await page.getByRole('button', { name: /Undo/ }).click();
-  await expect(page.locator('.empty-state')).toBeVisible();
+  // Nothing to undo: the sample is a plan of its own, not an edit (ADR 0021).
+  await expect(page.locator('.toolbar').getByRole('button', { name: 'Undo' })).toBeDisabled();
 });
 
 test('Enter and Delete on a focused button act on the button, not the selection', async ({ page }) => {

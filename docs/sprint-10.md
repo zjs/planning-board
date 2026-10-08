@@ -26,12 +26,12 @@ Scope: single user, browser only, no server.
 
 ### 2. Several plans (Q58, Q66, Q67)
 
-- [ ] The toolbar shows the plan's name. Double-click it to rename.
-- [ ] The File menu lists your plans, last opened first, and switches between them. The app opens the plan used last, and the link names it (`#plan=…`).
-- [ ] New blank plan, Open plan file, Import CSV and Load sample plan each make a new plan. An untouched empty plan is reused, not kept.
-- [ ] Delete plan replaces Reset board, with Undo.
-- [ ] The view, folded bands, expanded groups and collapsed holding lanes are remembered per plan.
-- [ ] Today's board becomes the first plan, "My plan".
+- [x] The toolbar shows the plan's name. Double-click it to rename.
+- [x] The File menu lists your plans, last opened first, and switches between them. The app opens the plan used last, and the link names it (`#plan=…`).
+- [x] New blank plan, Open plan file, Import CSV and Load sample plan each make a new plan. An untouched empty plan is reused, not kept.
+- [x] Delete plan replaces Reset board, with Undo.
+- [x] The view, folded bands, expanded groups and collapsed holding lanes are remembered per plan.
+- [x] Today's board becomes the first plan, "My plan".
 
 ### 3. Two tabs, one plan
 

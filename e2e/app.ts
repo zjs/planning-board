@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export const APP_URL = pathToFileURL(new URL('../dist/index.html', import.meta.url).pathname).href;
 
@@ -21,6 +21,64 @@ export async function openApp(page: Page, { keepHelp = false } = {}) {
   if (!keepHelp && (await page.getByTestId('legend').isVisible())) {
     await page.getByRole('button', { name: 'Close help' }).click();
   }
+}
+
+/**
+ * Make this browser look like one an earlier build used, then reload: `board` (a Yjs update) in the
+ * version 1 database where builds before sprint 10 kept it, `storage` as its localStorage, and none
+ * of this build's plans.
+ */
+export async function asEarlierBrowser(page: Page, board: readonly number[], storage: Record<string, string> = {}) {
+  await page.goto(APP_URL);
+  await page.getByTestId('board').or(page.locator('.empty-state')).waitFor();
+  await page.evaluate(
+    async ({ bytes, entries }) => {
+      localStorage.clear();
+      for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);
+      await new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('planning-board:v1:default');
+        open.onupgradeneeded = () => {
+          open.result.createObjectStore('updates', { autoIncrement: true });
+          open.result.createObjectStore('custom');
+        };
+        open.onerror = () => reject(new Error(String(open.error)));
+        open.onsuccess = () => {
+          const tx = open.result.transaction('updates', 'readwrite');
+          tx.objectStore('updates').add(new Uint8Array(bytes));
+          tx.oncomplete = () => {
+            open.result.close();
+            resolve();
+          };
+        };
+      });
+      // The page still has its plan open, so a delete waits for the reload to let go of it.
+      for (const db of await indexedDB.databases()) {
+        if (!db.name?.startsWith('planning-board:v2:')) continue;
+        await new Promise<void>((resolve) => {
+          const del = indexedDB.deleteDatabase(db.name!);
+          del.onsuccess = del.onerror = del.onblocked = () => resolve();
+        });
+      }
+    },
+    { bytes: [...board], entries: storage },
+  );
+  await page.reload();
+}
+
+/** Switch to another of the browser's plans from the File menu (ADR 0021). */
+export async function switchPlan(page: Page, name: string) {
+  await page.getByTestId('file-menu').click();
+  await page.getByRole('menu').getByRole('menuitem', { name, exact: true }).click();
+  await expect(page.getByTestId('plan-name')).toHaveText(name);
+}
+
+/** The plans the File menu lists, in its order: last opened first. */
+export async function planList(page: Page): Promise<string[]> {
+  await page.getByTestId('file-menu').click();
+  const items = page.getByRole('menu').locator('.menu-heading ~ [role="menuitem"]');
+  const names = await items.allTextContents();
+  await page.keyboard.press('Escape');
+  return names.map((n) => n.replace(/^✓ /, ''));
 }
 
 export async function pickAxes(page: Page, x: string, y: string) {
@@ -162,7 +220,9 @@ export async function storageSettled(page: Page) {
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const open = indexedDB.open('planning-board:v2:default');
+        // The open plan's own database (ADR 0021).
+        const name = document.querySelector<HTMLElement>('.app')?.dataset.planDb ?? 'planning-board:v2:default';
+        const open = indexedDB.open(name);
         open.onerror = () => reject(new Error(`Couldn't open storage: ${String(open.error)}`));
         open.onsuccess = () => {
           const db = open.result;

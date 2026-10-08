@@ -3,6 +3,7 @@ import { LEVEL, SEQUENCE, SIZE, SYSTEM, TIME, type Plan, type PropertyId, type V
 import { propertiesInOrder } from '../domain/properties.ts';
 import type { DropTarget } from '../domain/move.ts';
 import type { AxisSpec, ViewLayout, ViewSpec } from '../domain/view.ts';
+import { scopedKey, type PlanId } from '../commands/plans.ts';
 
 export interface AxisOption {
   id: string;
@@ -133,9 +134,9 @@ function fromSavedId(id: string): { id: string; unfolded: boolean } {
   return match ? { id: match[1]!, unfolded: Number(match[2]) > 0 } : { id, unfolded: false };
 }
 
-function readSavedView(): { x: string; y: string } | null {
+function readSavedView(plan: PlanId): { x: string; y: string } | null {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
+    const raw: unknown = JSON.parse(localStorage.getItem(scopedKey(STORAGE_KEY, plan)) ?? 'null');
     if (typeof raw === 'object' && raw !== null && 'x' in raw && 'y' in raw && typeof raw.x === 'string' && typeof raw.y === 'string') {
       return { x: raw.x, y: raw.y };
     }
@@ -149,17 +150,17 @@ function readSavedView(): { x: string; y: string } | null {
  * The remembered choice. It's checked against the plan (validChoice) when
  * shown. A lane zoom saved by an earlier build is dropped.
  */
-export function loadViewChoice(): ViewChoice {
-  const saved = readSavedView();
+export function loadViewChoice(plan: PlanId): ViewChoice {
+  const saved = readSavedView(plan);
   if (!saved) return DEFAULT_VIEW;
   const x = fromSavedId(saved.x).id;
   const y = fromSavedId(saved.y).id;
   return x === y ? DEFAULT_VIEW : { x, y };
 }
 
-export function saveViewChoice(choice: ViewChoice): void {
+export function saveViewChoice(plan: PlanId, choice: ViewChoice): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(choice));
+    localStorage.setItem(scopedKey(STORAGE_KEY, plan), JSON.stringify(choice));
   } catch {
     // Remembering the view is a convenience only.
   }
@@ -186,24 +187,24 @@ export function saveCompactHolding(compact: boolean): void {
 
 const HOLDING_COLLAPSED_KEY = 'planning-board:holding-collapsed';
 
-/** Which holding lanes are collapsed to a thin rail: the right one, the bottom one. Remembered per browser; both open by default. */
+/** Which holding lanes are collapsed to a thin rail: the right one, the bottom one. Remembered per plan; both open by default. */
 export interface HoldingCollapsed {
   right: boolean;
   bottom: boolean;
 }
 
-export function loadHoldingCollapsed(): HoldingCollapsed {
+export function loadHoldingCollapsed(plan: PlanId): HoldingCollapsed {
   try {
-    const raw = JSON.parse(localStorage.getItem(HOLDING_COLLAPSED_KEY) ?? '{}') as Partial<HoldingCollapsed> | null;
+    const raw = JSON.parse(localStorage.getItem(scopedKey(HOLDING_COLLAPSED_KEY, plan)) ?? '{}') as Partial<HoldingCollapsed> | null;
     return { right: raw?.right === true, bottom: raw?.bottom === true };
   } catch {
     return { right: false, bottom: false };
   }
 }
 
-export function saveHoldingCollapsed(collapsed: HoldingCollapsed): void {
+export function saveHoldingCollapsed(plan: PlanId, collapsed: HoldingCollapsed): void {
   try {
-    localStorage.setItem(HOLDING_COLLAPSED_KEY, JSON.stringify(collapsed));
+    localStorage.setItem(scopedKey(HOLDING_COLLAPSED_KEY, plan), JSON.stringify(collapsed));
   } catch {
     // A convenience only.
   }
@@ -222,7 +223,7 @@ export interface Folding {
   except: readonly ValueId[];
 }
 
-/** Folding per property, so it carries across pivots. Remembered per browser. */
+/** Folding per property, so it carries across pivots. Remembered per plan. */
 export type Foldings = Readonly<Record<PropertyId, Folding>>;
 
 const FOLDED: Folding = { all: 'folded', except: [] };
@@ -234,9 +235,9 @@ const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is
  * yet: an axis it showed below the top level ("System (component)") opens
  * unfolded, keeping the bands it had collapsed folded.
  */
-export function loadFoldings(): Foldings {
+export function loadFoldings(plan: PlanId): Foldings {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(FOLDING_KEY) ?? 'null');
+    const raw: unknown = JSON.parse(localStorage.getItem(scopedKey(FOLDING_KEY, plan)) ?? 'null');
     if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
       return Object.fromEntries(
         Object.entries(raw).flatMap(([property, f]: [string, unknown]) =>
@@ -246,9 +247,9 @@ export function loadFoldings(): Foldings {
         ),
       );
     }
-    const saved = readSavedView();
+    const saved = readSavedView(plan);
     if (!saved) return {};
-    const collapsed: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? '{}');
+    const collapsed: unknown = JSON.parse(localStorage.getItem(scopedKey(COLLAPSED_KEY, plan)) ?? '{}');
     const out: Record<PropertyId, Folding> = {};
     for (const id of [saved.x, saved.y]) {
       const { id: property, unfolded } = fromSavedId(id);
@@ -262,9 +263,9 @@ export function loadFoldings(): Foldings {
   }
 }
 
-export function saveFoldings(foldings: Foldings): void {
+export function saveFoldings(plan: PlanId, foldings: Foldings): void {
   try {
-    localStorage.setItem(FOLDING_KEY, JSON.stringify(foldings));
+    localStorage.setItem(scopedKey(FOLDING_KEY, plan), JSON.stringify(foldings));
   } catch {
     // A convenience only.
   }
@@ -332,9 +333,9 @@ function saveIds(key: string, ids: readonly string[]): void {
   }
 }
 
-/** Groups expanded in place (Q33). Remembered per browser, like the view. */
-export const loadExpanded = () => loadIds(EXPANDED_KEY);
-export const saveExpanded = (ids: readonly string[]) => saveIds(EXPANDED_KEY, ids);
+/** Groups expanded in place (Q33). Remembered per plan, like the view. */
+export const loadExpanded = (plan: PlanId) => loadIds(scopedKey(EXPANDED_KEY, plan));
+export const saveExpanded = (plan: PlanId, ids: readonly string[]) => saveIds(scopedKey(EXPANDED_KEY, plan), ids);
 
 
 /**

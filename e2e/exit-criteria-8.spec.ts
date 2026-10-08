@@ -112,6 +112,8 @@ test('sprint 8 exit criteria', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Next: values →' }).click();
   await expect(dialog).toContainText('3 related links');
   await dialog.getByRole('button', { name: 'Import 53 cards' }).click();
+  // The import opens as a plan of its own (ADR 0021): wait for it before typing.
+  await expect(notice(page)).toContainText('Imported 53 cards');
   // It's a story inside an epic: find it, and Enter expands its group and selects it, which shows its links.
   await page.keyboard.press('/');
   await page.keyboard.type('Tamper-evident');
@@ -121,7 +123,6 @@ test('sprint 8 exit criteria', async ({ page }) => {
 
   // 7. A plan file from sprint 7 opens, and saves again with nothing lost.
   const old = JSON.parse(await readFile(OLD_PLAN, 'utf8')) as PlanFile;
-  page.once('dialog', (d) => void d.accept());
   await page.getByTestId('open-plan-input').setInputFiles(OLD_PLAN.pathname);
   await expect(notice(page)).toContainText('Opened “sprint-7.plan.json”');
   const download = page.waitForEvent('download');

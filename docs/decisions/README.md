@@ -24,3 +24,4 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0018](0018-keys-and-links.md) | Keys and links: a secret in the fragment, edit and view-only links, new links to revoke | Accepted |
 | [0019](0019-presence.md) | Presence anchored to cards, not to the screen | Accepted |
 | [0020](0020-history-and-plan-diff.md) | One plan diff for scenario compare, history and "since you were away"; history in its own document | Accepted |
+| [0021](0021-plans-per-browser.md) | Several plans per browser: a list in localStorage, a database per plan, viewer state per plan, a link per plan | Accepted |

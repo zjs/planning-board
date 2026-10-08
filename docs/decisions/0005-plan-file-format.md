@@ -1,6 +1,6 @@
 # 0005: Plan file format
 
-Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now. Amended in sprint 2, slice 1: the writer, `externalKey`, and when a version bump is needed. Amended in sprint 4, slice 2: built-in properties added later. Amended in sprint 5, slice 1: the compatibility gate.
+Status: Accepted (sprint 0, slice 1). Brought forward from slice 4, because the seed data needs a format now. Amended in sprint 2, slice 1: the writer, `externalKey`, and when a version bump is needed. Amended in sprint 4, slice 2: built-in properties added later. Amended in sprint 5, slice 1: the compatibility gate. Amended in sprint 10, slice 2: the plan's `name`.
 
 ## Context
 
@@ -87,3 +87,9 @@ It's an addition, not a change: older builds ignore an item field they don't kno
 A plan file may carry `related`, a list of `[a, b]` pairs of item ids: cards related with no order between them (questions.md Q44). Each pair is written with its ids sorted, the list is sorted, and it's left out when empty. A pair read twice, in either order, is kept once. An unknown id or a card related to itself is reported as an error, as a bad dependency is. In the browser, related links live in their own Yjs map, `related`, keyed `a~b`.
 
 Older builds ignore a top-level field they don't know, so the file version stays 1. The fixture `sprint-8-before-related` holds the last build before the change.
+
+## Amendment (sprint 10): `name`
+
+A plan file may carry `name`, the plan's name (ADR 0021), written after `version`. A file opened becomes a new plan with that name, or, without one, the file's name less its extension. Saving names the file for the plan ("q3-roadmap-2026-10-08.json"). A blank or non-string name is ignored, not reported.
+
+Older builds ignore a top-level field they don't know, so the file version stays 1. The fixture `sprint-9` is the last build before the change. Saving one of the compatibility fixtures through the store writes no name, so their round trips are unchanged.
