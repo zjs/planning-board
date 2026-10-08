@@ -152,11 +152,16 @@ export const label = (p: Plan, property: string, value: string): string => {
 export const valuesOf = (p: Plan, id: ItemId, property: string): string[] =>
   (p.items[id]?.values[property] ?? []).map((v) => label(p, property, v));
 
-/** What the raw document holds for a property, before readPlan picks one value for a single-valued property. */
+/** What the raw document holds for a property, before readPlan picks out live values. Schema 2 (ADR 0016): flat keys on the card. */
 export function storedValues(store: PlanStore, id: ItemId, property: string): string[] {
   const item = store.doc.getMap<Y.Map<unknown>>('items').get(id);
-  const set = (item?.get('values') as Y.Map<Y.Map<true>> | undefined)?.get(property);
-  return set ? [...set.keys()].sort().map((v) => label(plan(store), property, v)) : [];
+  const prefix = `v\u001f${property}`;
+  const found: string[] = [];
+  for (const [key, raw] of item?.entries() ?? []) {
+    if (key === prefix && typeof raw === 'string') found.push(raw);
+    else if (key.startsWith(`${prefix}\u001f`)) found.push(key.slice(prefix.length + 1));
+  }
+  return found.sort().map((v) => label(plan(store), property, v));
 }
 
 export const titleOf = (p: Plan, id: ItemId): string => p.items[id]?.title ?? '(deleted)';

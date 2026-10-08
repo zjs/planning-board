@@ -277,6 +277,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 9** (2026-10-08, sprint 10, slice 1): the last build before schema 2. Every browser board from sprint 9 and earlier opens through the one-time migration (ADR 0016).
+
 - **Maintenance pass, 2026-10-08,** before planning sprint 10. Run in the background, read-only, with its fixes applied in sprint 10, slice 0.
   - **CI actions:** three were a major version behind, which the two previous passes had recorded wrongly as current. They moved to checkout v7, setup-node v7 and deploy-pages v5. deploy-pages v4 ran on a retired Node 20 Actions runtime.
   - **npm:** nothing to take.

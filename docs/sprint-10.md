@@ -18,11 +18,11 @@ Scope: single user, browser only, no server.
 
 ### 1. Schema 2 (ADR 0016)
 
-- [ ] A single-valued property holds one value, and values are flat keys on the card, so concurrent drops leave exactly one value, and a card's first value is no different from later ones.
-- [ ] Deleting marks cards and values as deleted, rather than removing them. Undo restores them exactly, and anything inside a deleted group hides with it.
-- [ ] A value's name, parent and position are separate keys.
-- [ ] Every board saved by an earlier build opens through a one-time migration, with nothing lost. The compatibility gate covers every released version.
-- [ ] The merge harness's scenarios are store tests, with schema 2's outcomes.
+- [x] A single-valued property holds one value, and values are flat keys on the card, so concurrent drops leave exactly one value, and a card's first value is no different from later ones.
+- [x] Deleting marks cards and values as deleted, rather than removing them. Undo restores them exactly, and anything inside a deleted group hides with it.
+- [x] A value's name, parent and position are separate keys.
+- [x] Every board saved by an earlier build opens through a one-time migration, with nothing lost. The compatibility gate covers every released version.
+- [x] The merge harness's scenarios are store tests, with schema 2's outcomes.
 
 ### 2. Several plans (Q58, Q66, Q67)
 
