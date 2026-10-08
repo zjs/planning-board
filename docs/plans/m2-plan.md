@@ -22,8 +22,7 @@ What it proves: the board is ready to be shared, and nothing a single user does 
 |---|---|---|
 | 1 | **Schema 2** (ADR 0016): flat value keys, single values as one value, tombstones, values as maps; a migration from version 1, with compatibility fixtures first | Open any old board or plan file, and see nothing different. Undoing a delete restores the group instantly. |
 | 2 | **Several plans per browser** (Q58, requirement 34): the File menu lists your plans; Open, Import and New blank plan make a new plan | Keep a scratch plan beside the real one, and switch between them. |
-| 3 | **The plan diff in `src/domain/`** (ADR 0020), tested with the merge harness's scenarios | Nothing visible yet. It's the shared piece for sprints 13 and 14, and for scenario compare. |
-| 4 | **Two tabs, one plan:** the provider over BroadcastChannel, with no server | Open a plan in two tabs, edit in one, and watch the other follow. This is the first taste of collaboration, and the public demo's first step (Q64 d). |
+| 3 | **Two tabs, one plan:** the provider over BroadcastChannel, with no server | Open a plan in two tabs, edit in one, and watch the other follow. This is the first taste of collaboration, and the public demo's first step (Q64 d). |
 
 ## Sprint 11: the relay
 
@@ -55,6 +54,7 @@ What it proves: anyone can find out who changed what, and when, in their own tim
 
 | # | Slice | You can do this afterwards |
 |---|---|---|
+| 0 | **The plan diff in `src/domain/`** (ADR 0020), moved here from sprint 10 (2026-10-08), so it's built with its first use | Nothing visible on its own. History and "since you were away" use it. |
 | 1 | **The history document** (ADR 0020, Q63, requirement 36): its own encrypted document, entries in UTC with the relay's receive time, loaded after the board | Nothing visible yet, but every change from here on is recorded. |
 | 2 | **Activity:** a feed for the whole plan, by day, filterable by person, with Restore on deletions | See what happened this week, and restore a deleted group. |
 | 3 | **A card's history** in the inspector, and "last changed by" | See who moved this card to Q3, and when. |

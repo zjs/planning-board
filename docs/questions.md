@@ -231,6 +231,7 @@ Entry format:
 - Options: (a) replace the board, undoably, and keep each card's Jira key; (b) add the imported cards to the board; (c) merge by Jira key.
 - Recommendation: (a). It's simple to reason about and one undo reverses it. Keeping the key leaves room for (c) later, as "update from a fresh export".
 - Status: answered 2026-09-30: (a). The build targets Jira's CSV format, tested with a synthetic export in the repo. The PM checks their own export locally.
+  - Superseded by Q66 (2026-10-08): an import makes a new plan, and the board it came from is untouched. Each card still keeps its Jira key.
 
 ### Q28: How do story points become sizes?
 - Context: Requirement 28 and the Size property (ordered XS–XL, no roll-up). Jira exports story points as numbers, and teams use different scales.
@@ -397,6 +398,7 @@ Entry format:
   - **Reset board.** (g) replace it with New blank plan; (h) keep both.
 - Recommendation: (a), (d) and (g).
 - Status: answered 2026-10-03: (a), (d) and (h). Reset board stays beside New blank plan.
+  - Superseded in part by Q66 (2026-10-08): New blank plan makes a new plan rather than replacing the board, and Reset board becomes Delete plan.
   - Built 2026-10-03, as a slice before sprint 7. **Start a blank plan** is on the empty board, and **File › New blank plan** replaces a board after asking, in one undo step. The plan opens in Sequence × System with the first card's title ready to type.
   - Enter after a new card's title starts the next one. In a gap between sequence columns, the next card goes in the column the first one started. Esc, Enter on an empty title, or clicking away stops. Each card is its own undo step. Renaming doesn't chain.
   - Engineering's defaults:
@@ -563,3 +565,15 @@ Entry format:
 
     If the PM doesn't want to run a hosted relay at all, sprint 14's slice drops, and the public build offers (d), (e) and (f).
   - It becomes requirement 37 and an amendment to ADR 0017.
+
+### Q66: What Open, Import and New do on a plan that isn't shared
+- Context: Requirement 34 and Q58 cover shared plans: Open, Import and New blank plan make a new plan, so nobody overwrites a shared board. Sprint 10 brings several plans per browser before anything is shared, so local plans need a rule too. Today these replace the board after asking (Q26, Q51).
+- Options: (a) always make a new plan, with Load sample plan opening the sample as its own plan, and Reset board becoming Delete plan, with Undo; (b) replace on local plans, as today, and make a new plan only on shared ones; (c) ask each time.
+- Recommendation: (a). One rule everywhere, and nothing overwritten by accident.
+- Status: answered 2026-10-08: (a). Sprint 10, slice 2. Supersedes the replacing in Q26 and Q51.
+
+### Q67: Where the plan list lives
+- Context: Requirement 34. With several plans per browser, people need to see and switch between them. Optimizing for a first-time visitor from a public link (Q52, Q53) argues against an extra step on arrival.
+- Options: (a) the File menu lists your plans, and the toolbar shows the current plan's name, renamed by clicking it; the app opens the plan used last; (b) a "Your plans" home screen on start; (c) both.
+- Recommendation: (a). No new step for a first visit. It matches mockup artboard 8.
+- Status: answered 2026-10-08: (a). Sprint 10, slice 2.

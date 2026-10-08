@@ -15,14 +15,11 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 9 (designing collaboration, M2) is complete. It produced research and throwaway spikes, and the app didn't change. The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36:
-- the summary is `docs/research/collaboration/README.md`;
-- the ADRs are 0016–0020, now Accepted;
-- the build plan is `docs/plans/m2-plan.md`: five sprints (10–14), starting with sprint 10's foundations (schema 2, several plans per browser, the plan diff, two tabs syncing);
-- Q64 is answered too (requirement 37): where a hosted relay is blocked, the relay runs from a pilot's laptop, or changes travel as encrypted files, with no WebRTC;
-- the spikes are in `spikes/`, out of lint, typecheck and CI.
+Sprint 10 (M2's foundations, still single-user) is under way: schema 2, several plans per browser, and two tabs of one plan in sync. Its scope is in `docs/sprint-10.md`, and its slice plan in `docs/plans/sprint-10-plan.md`. The rest of M2 is `docs/plans/m2-plan.md`: sprints 11–14, from requirements 30–37.
 
-Sprints 3–8 and the blank-plan slice (Q51) also await acceptance, and one combined tester session covers them, opening with a cold start (`docs/demos/sprint-5-session.md`). Sprint 10 starts in plan mode, after the maintenance pass. Its candidates are in `docs/backlog.md`: M2's foundations (sprint 10 of the M2 plan), contention with the conflicts panel, and what the session decides. The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
+Sprint 9 designed collaboration, and its summary is `docs/research/collaboration/README.md`. ADRs 0016–0020 are Accepted. The spikes are in `spikes/`, out of lint, typecheck and CI.
+
+Sprints 3–9 and the blank-plan slice (Q51) await the PM's acceptance. One combined tester session covers sprints 3–8, opening with a cold start (`docs/demos/sprint-5-session.md`). The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
 
 ## Architecture rules
 

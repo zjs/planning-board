@@ -96,7 +96,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 
 **Import and export**
 
-28. Users can import items from CSV with a column-mapping step, using Jira's CSV export as the reference format, including its Components field. An import replaces the board, undoably, and keeps each card's Jira key, so a later import can update the cards instead of duplicating them (Q26).
+28. Users can import items from CSV with a column-mapping step, using Jira's CSV export as the reference format, including its Components field. An import makes a new plan (Q66), and keeps each card's Jira key, so a later import can update the cards instead of duplicating them (Q26).
 29. Users can save a plan to a file and open it again, including all scenarios.
 
 **Sharing and collaboration**
@@ -105,7 +105,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 31. Several users can edit the same plan at the same time and see each other's changes live. Nothing is locked: a card someone is dragging says so on everyone's board, and when two people move one card, the later drop wins and both are told, with a way back (Q60).
 32. Users see who else is present, where they're pointing, what they've selected, and what they're dragging. Each is anchored to cards, so it shows on any view. Cursors can be shown for everyone, for the driver only, or for no one (Q61).
 33. A shared plan has a "Can edit" link and a "Can view" link. Making new links cuts off the old ones, and people who had them keep what they already saw (Q62).
-34. A browser keeps several plans, shared ones and ones only on that computer. On a shared plan, opening a file, importing and starting a blank plan each make a new plan. Replacing the shared plan for everyone is a separate, warned choice (Q58).
+34. A browser keeps several plans, shared ones and ones only on that computer, listed in the File menu, with the current plan's name in the toolbar (Q67). Opening a file, importing, starting a blank plan and loading the sample each make a new plan, on any plan (Q66). Replacing a shared plan for everyone is a separate, warned choice (Q58).
 35. Editing offline is always allowed, and merges automatically on reconnecting. The board says what hasn't been shared yet. On coming back, users see what others changed while they were away, marked on the board, and which of their own changes didn't stick, each with a way to reapply or restore it (Q59).
 36. Every change is recorded with who made it and when, kept indefinitely, and shown in each viewer's own time zone, in an activity feed for the plan and in a card's history (Q63).
 37. Where a company can't use a hosted relay, collaboration still works in two ways (Q64):
