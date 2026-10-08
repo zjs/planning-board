@@ -38,6 +38,7 @@ import {
   findPlan,
   forgetPlan,
   hashFor,
+  isPlanListKey,
   listPlans,
   markDeleted,
   nameFromFile,
@@ -232,6 +233,18 @@ export function App() {
     const id = (linked !== null ? findPlan(linked)?.id : undefined) ?? listPlans()[0]?.id ?? addPlan(UNTITLED).id;
     void show(id);
   }, [show]);
+
+  // Another tab made, renamed or deleted a plan. If it deleted this one, open the one used last instead.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (!isPlanListKey(e.key)) return;
+      refresh();
+      const id = current.current;
+      if (id !== null && !findPlan(id)) void show(listPlans()[0]?.id ?? addPlan(UNTITLED).id);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [refresh, show]);
 
   // A link to another plan, pasted into the address bar, opens it.
   useEffect(() => {

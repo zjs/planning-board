@@ -480,6 +480,7 @@ Entry format:
 - Options: (a) on a shared plan, Open, Import and New each make a **new** plan, and the File menu lists your plans, shared ones and ones only on this computer; replacing the shared plan stays possible as a second, warned choice, for restoring a backup; (b) the same, with no way to replace a shared plan; (c) keep replacing, behind a confirmation.
 - Recommendation: (a). It needs more than one board per browser, which is useful on its own (a scratch plan beside the real one). Mockup: artboard 8.
 - Status: answered 2026-10-08: (a). On a shared plan, Open, Import and New blank plan make a new plan; replacing the shared plan stays as a second, warned choice. M2 sprint 10.
+  - Built in sprint 10, slice 2, on every plan (Q66): the File menu lists your plans, and Open, Import, New blank plan and Load sample plan each make a new one (ADR 0021). The warned "replace the shared plan for everyone" comes with sharing, in sprint 11.
 
 ### Q59: Coming back after working apart
 - Context: Requirements 31 and 19, and the PM's question for sprint 9: the relay is on a company network, someone drops off the VPN for a while, and both sides keep editing. Should the merge be reviewed, or prevented? Sprint 9 found:
@@ -571,9 +572,11 @@ Entry format:
 - Options: (a) always make a new plan, with Load sample plan opening the sample as its own plan, and Reset board becoming Delete plan, with Undo; (b) replace on local plans, as today, and make a new plan only on shared ones; (c) ask each time.
 - Recommendation: (a). One rule everywhere, and nothing overwritten by accident.
 - Status: answered 2026-10-08: (a). Sprint 10, slice 2. Supersedes the replacing in Q26 and Q51.
+  - Built in slice 2 (ADR 0021). Each new plan is filled outside undo, so undo doesn't reach back across it; the plan you were on stays in the File menu. An untouched empty plan, one nobody has named, is replaced rather than kept. Delete plan offers Undo for 8 seconds.
 
 ### Q67: Where the plan list lives
 - Context: Requirement 34. With several plans per browser, people need to see and switch between them. Optimizing for a first-time visitor from a public link (Q52, Q53) argues against an extra step on arrival.
 - Options: (a) the File menu lists your plans, and the toolbar shows the current plan's name, renamed by clicking it; the app opens the plan used last; (b) a "Your plans" home screen on start; (c) both.
 - Recommendation: (a). No new step for a first visit. It matches mockup artboard 8.
 - Status: answered 2026-10-08: (a). Sprint 10, slice 2.
+  - Built in slice 2 (ADR 0021): *Your plans* in the File menu, last opened first, with a ✓ on the open one; the toolbar shows the name, renamed by double-click, and so does the browser tab. Each plan remembers its own view, foldings and expanded groups, and the link names it (`#plan=…`).

@@ -169,6 +169,9 @@ export function dropPlanDatabase(id: PlanId): Promise<void> {
   return dropDatabase(planDatabase(id));
 }
 
+/** Whether a localStorage change, seen in a `storage` event, is to the list of plans: another tab made, renamed or deleted one. */
+export const isPlanListKey = (key: string | null) => key === null || key === INDEX_KEY;
+
 /** The plan a link names: `#plan=<id>`. */
 export function planFromHash(hash: string): PlanId | null {
   const match = /(?:^#|&)plan=([^&]+)/.exec(hash);

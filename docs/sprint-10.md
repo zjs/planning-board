@@ -35,12 +35,12 @@ Scope: single user, browser only, no server.
 
 ### 3. Two tabs, one plan
 
-- [ ] The same plan open in two tabs stays in sync as you edit. Undo in one tab reverses only that tab's edits.
-- [ ] Renaming or deleting a plan shows in other tabs.
+- [x] The same plan open in two tabs stays in sync as you edit. Undo in one tab reverses only that tab's edits.
+- [x] Renaming or deleting a plan shows in other tabs.
 
 ### 4. Tester-ready
 
-- [ ] A demo note (`docs/demos/sprint-10.md`), an exit-criteria e2e, the cheat sheet, the README, and the release pass.
+- [x] A demo note (`docs/demos/sprint-10.md`), an exit-criteria e2e, the cheat sheet, the README, and the release pass.
 
 ## Deferred (don't build)
 

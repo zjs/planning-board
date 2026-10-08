@@ -1,6 +1,6 @@
 # 0021: Several plans per browser
 
-Status: Accepted (sprint 10, slice 2). The product side is Q58, Q66 and Q67, answered on 2026-10-08.
+Status: Accepted (sprint 10, slice 2; two tabs added in slice 3). The product side is Q58, Q66 and Q67, answered on 2026-10-08.
 
 ## Context
 
@@ -17,9 +17,18 @@ Requirement 34 and Q58: once plans are shared, a browser holds several of them, 
 - **Delete plan** hides the plan from the list and opens the one used last, or a new empty plan. A notice offers Undo for 8 seconds, then the database is dropped. A page closed during those seconds leaves the plan marked; the next start drops any plan marked more than a minute ago.
 - **The board is a `Workspace` per plan,** keyed by its id, so selection, panels and undo never carry over from one plan to another. Plans are opened through `openPlanStore(id)`, cached per page, and closed when another plan is shown.
 
+## Two tabs, one plan (slice 3)
+
+- **Each tab keeps its own Yjs document,** loaded from the plan's database, and edits travel between tabs over a `BroadcastChannel` named for that database (`src/store/tabs.ts`). It works between pages opened from disk in Chromium, which a probe checked first.
+- **A tab that opens a plan says hello with its state vector.** Any tab already open answers with what the newcomer is missing, and its own state vector, so the newcomer sends back anything only it has, such as an edit not yet written to storage.
+- **Edits from another tab carry their own origin,** so undo never tracks them: undo in one tab reverses only that tab's edits, as it will for other people in M2.
+- **The list follows along through `storage` events.** A plan made or renamed in one tab shows in the others' File menus. A plan deleted in one tab is closed in the others, which open the plan used last, and Undo brings it back to every list.
+- **It's the shape M2's sync takes,** with the channel standing in for the relay, and nothing leaves the browser.
+
 ## Alternatives
 
 - **The list in IndexedDB.** It's asynchronous, and a list of a few dozen entries doesn't need it.
+- **Sync tabs through IndexedDB alone,** by polling the database. Slower, and y-indexeddb doesn't watch for writes from elsewhere.
 - **Every plan in one Yjs document.** Every plan would load to show one, and sharing one would mean splitting it out later.
 - **Replace after asking, as before (Q26, Q51).** It's one wrong click from losing a shared plan for everyone (O2 and O3 in sprint 9's merge harness), and the PM chose a new plan every time (Q66).
 

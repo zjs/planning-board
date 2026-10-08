@@ -15,11 +15,11 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 10 (M2's foundations, still single-user) is under way: schema 2, several plans per browser, and two tabs of one plan in sync. Its scope is in `docs/sprint-10.md`, and its slice plan in `docs/plans/sprint-10-plan.md`. The rest of M2 is `docs/plans/m2-plan.md`: sprints 11–14, from requirements 30–37.
+Sprint 10 (M2's foundations, still single-user) is built and awaits the PM's acceptance on its build: schema 2 (ADR 0016), several plans per browser (ADR 0021), and two tabs of one plan in sync. Its demo note is `docs/demos/sprint-10.md`, and its compatibility fixtures follow in the next PR. Next is sprint 11, the relay, which starts in plan mode after the maintenance pass. The rest of M2 is `docs/plans/m2-plan.md`: sprints 11–14, from requirements 30–37.
 
 Sprint 9 designed collaboration, and its summary is `docs/research/collaboration/README.md`. ADRs 0016–0020 are Accepted. The spikes are in `spikes/`, out of lint, typecheck and CI.
 
-Sprints 3–9 and the blank-plan slice (Q51) await the PM's acceptance. One combined tester session covers sprints 3–8, opening with a cold start (`docs/demos/sprint-5-session.md`). The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
+Sprints 3–10 and the blank-plan slice (Q51) await the PM's acceptance. One combined tester session covers sprints 3–8, opening with a cold start (`docs/demos/sprint-5-session.md`). The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
 
 ## Architecture rules
 
