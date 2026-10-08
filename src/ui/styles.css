@@ -2740,3 +2740,56 @@ button.link:hover {
   font-family: inherit;
 }
 
+/* Someone else is dragging this card too (Q60). */
+.drag-warning {
+  display: block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  font-size: 12px;
+}
+
+/*
+ * On a desktop-width window the toolbar keeps to one row: a shared plan's
+ * name and connection pill give up width first, with an ellipsis (the pill
+ * says it all on hover), so the actions never wrap. Narrower windows still
+ * wrap whole groups.
+ */
+@media (min-width: 1024px) {
+  .toolbar {
+    flex-wrap: nowrap;
+  }
+
+  .toolbar > h1 {
+    flex: 0 1 auto;
+    min-width: 48px;
+  }
+
+  .pill-group {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .pill {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .pill-text {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .pill-text > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .avatars,
+  .actions {
+    flex: none;
+  }
+}

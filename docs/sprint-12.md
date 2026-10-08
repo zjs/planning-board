@@ -25,8 +25,8 @@ The engineering plan is `docs/plans/sprint-12-plan.md`.
 
 ### 2. Drag intent and collisions (Q60)
 
-- [ ] A card being dragged says "Ada is moving this → Q3 · Billing" on everyone's board, and a second person's drag is warned.
-- [ ] When two people move one card, both are told who won, each with a way back.
+- [x] A card being dragged says "Ada is moving this → Q3 · Billing" on everyone's board, and a second person's drag is warned.
+- [x] When two people move one card, both are told who won, each with a way back.
 
 ### 3. New links, and hosting (Q62, Q64 e)
 

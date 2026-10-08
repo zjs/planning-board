@@ -27,6 +27,7 @@ import {
   namePlan,
   planName,
   replacePlan,
+  restoreCardState,
   watchPlanName,
   type Connection,
   type OpenPlan,
@@ -131,6 +132,7 @@ import { PropertiesPanel } from './PropertiesPanel.tsx';
 import { Avatars } from './Avatars.tsx';
 import { ConnectionPill } from './ConnectionPill.tsx';
 import { usePresence } from './usePresence.ts';
+import { watchCollisions, type CollisionWatch } from '../commands/collisions.ts';
 import { ShareDialog, useConnection } from './ShareDialog.tsx';
 import { capturePositions, playFrom, type Positions } from './motion.ts';
 import { keyNames } from './platform.ts';
@@ -508,6 +510,8 @@ interface Notice {
   text: string;
   /** The undo step it offers to undo. A hint (no step) has no Undo button. */
   step?: unknown;
+  /** Another way back, such as Put it back after someone else's drop replaced yours (Q60). */
+  action?: { label: string; run: () => void };
 }
 
 /** Why a file couldn't be opened. */
@@ -694,6 +698,8 @@ function Workspace({
     [store, plan, view, renamable],
   );
 
+  // After a drop to a cell: remembered for collisions, and told to the others (Q60). Set once presence is known, below.
+  const afterDrop = useRef<(ids: ItemId[], card: ItemId, label: string) => void>(() => undefined);
   const onDrop = useCallback(
     (card: CardRef, target: BoardTarget, mode: DropMode) => {
       // Dragging a selected card moves the whole selection (Q48).
@@ -707,7 +713,11 @@ function Workspace({
             text: `Moved ${n} ${n === 1 ? 'card' : 'cards'} to ${dropText(layout, target, names)}`,
             step: store.undoManager.undoStack.at(-1),
           });
-        } else if (dropCard(store, view, card, target, mode)) setJustMoved(card.itemId);
+          afterDrop.current(several, card.itemId, dropText(layout, target, names));
+        } else if (dropCard(store, view, card, target, mode)) {
+          setJustMoved(card.itemId);
+          afterDrop.current([card.itemId], card.itemId, dropText(layout, target, names));
+        }
         return;
       }
       // Held over a card (hold to nest), or dropped on the move-out strip or the breadcrumb.
@@ -793,6 +803,43 @@ function Workspace({
   const scrollRef = useRef<HTMLDivElement>(null);
   // Who else is on a shared plan, and what this tab shares with them (ADR 0019).
   const presenceView = usePresence(presence, selected, scrollRef);
+  // Collisions (Q60): a drop of yours that someone else's later drop replaced, or that landed beside theirs.
+  const presenceRef = useRef(presenceView);
+  const collisions = useRef<CollisionWatch | null>(null);
+  useEffect(() => {
+    presenceRef.current = presenceView;
+  });
+  useEffect(() => {
+    const titleOf = (id: ItemId) => `“${source.getSnapshot().plan.items[id]?.title ?? 'this card'}”`;
+    const watch = watchCollisions(store, (c) => {
+      const who = presenceRef.current?.movingNow(c.item) ?? presenceRef.current?.droppedRecently(c.item, 15_000);
+      const name = who?.name ?? 'Someone';
+      const run = () => void restoreCardState(store, c.item, c.mine, c.withSequence);
+      setNotice(
+        c.outcome === 'lost'
+          ? { text: `${name} moved ${titleOf(c.item)} after you`, action: { label: 'Put it back', run } }
+          : { text: `${name} moved ${titleOf(c.item)} too: it’s in both lanes now`, action: { label: 'Keep only mine', run } },
+      );
+    });
+    collisions.current = watch;
+    return () => watch.stop();
+  }, [store, source]);
+  useEffect(() => {
+    afterDrop.current = (ids, card, label) => {
+      collisions.current?.remember(ids, [view.x.property, view.y.property]);
+      const p = presenceRef.current;
+      if (!p) return;
+      p.share({ dropped: { item: card, label, at: Date.now() }, drag: null });
+      // Someone dropped this card just before you: yours is the later drop, so it stands. Undo brings theirs back.
+      const before = p.droppedRecently(card);
+      if (before) {
+        setNotice({
+          text: `${before.name} moved “${source.getSnapshot().plan.items[card]?.title ?? 'this card'}” just before you. Yours stuck.`,
+          step: store.undoManager.undoStack.at(-1),
+        });
+      }
+    };
+  }, [view, store, source]);
   // Pivots move (Q52, ADR 0015): where the cards were, measured just before a new choice renders.
   const pivotFrom = useRef<Positions | null>(null);
   const [pivoting, setPivoting] = useState(false);
@@ -1152,6 +1199,13 @@ function Workspace({
   const keys = keyNames();
   const canNestCard = useCallback((id: ItemId, into: ItemId) => canNest(plan, id, into), [plan]);
   const { drag, startDrag } = useCardDrag(onDrop, scrollRef, onCardClick, canNestCard);
+  // Your drag, shown on everyone's board: the card, and the lane under it (Q60).
+  const dragItem = drag?.card.itemId ?? null;
+  const dragLabel = drag && isCellTarget(drag.target) ? dropText(layout, drag.target, names) : null;
+  const sharePresenceActivity = presenceView?.share;
+  useEffect(() => {
+    sharePresenceActivity?.({ drag: dragItem === null ? null : { item: dragItem, label: dragLabel } });
+  }, [sharePresenceActivity, dragItem, dragLabel]);
   const dragging = drag !== null;
   // A press on a card doesn't move focus (the drag stops the browser doing it), so whatever had it keeps it: the
   // find field would swallow E or L, and a button just clicked, such as a view or Expand, would take Enter and
@@ -1878,6 +1932,17 @@ function Workspace({
               Undo
             </button>
           )}
+          {notice.action && (
+            <button
+              type="button"
+              onClick={() => {
+                notice.action?.run();
+                setNotice(null);
+              }}
+            >
+              {notice.action.label}
+            </button>
+          )}
         </div>
       )}
       {cardMenu && selected.size > 0 && (
@@ -2010,6 +2075,9 @@ function Workspace({
           where={isCellTarget(drag.target) ? dropText(layout, drag.target, names) : null}
           count={selected.has(drag.card.itemId) ? selected.size : 1}
           hint={replacesAValue(drag) ? `${keys.add} adds instead` : null}
+          warning={
+            presenceView?.movingNow(drag.card.itemId) ? `${presenceView.movingNow(drag.card.itemId)!.name} is moving this too` : null
+          }
         />
       )}
     </div>

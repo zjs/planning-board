@@ -156,8 +156,13 @@ test('offline: keep working, see what isn’t shared yet, and both boards match 
   await dragTo(bo, card(holding(bo, { row: 'identity' }), id), cell(bo, 'billing', 'q3'));
   await expect(bo.getByTestId('connection-state')).toHaveText('Offline · 1 change not shared yet');
   // The pill, the name and Share still fit the toolbar on one row at 1280 wide.
-  await bo.setViewportSize({ width: 1280, height: 720 });
-  expect((await bo.locator('.toolbar').boundingBox())!.height).toBeLessThan(60);
+  // 1180 leaves room for fonts wider than this computer's, as on CI.
+  for (const width of [1280, 1180]) {
+    await bo.setViewportSize({ width, height: 720 });
+    expect((await bo.locator('.toolbar').boundingBox())!.height).toBeLessThan(60);
+    await expect(bo.locator('.toolbar').getByRole('button', { name: 'Properties' })).toBeInViewport({ ratio: 1 });
+  }
+  await bo.setViewportSize({ width: 1440, height: 900 });
   // Both rename the plan meanwhile: one name wins, the same on both boards.
   await bo.getByTestId('plan-name').dblclick();
   await bo.getByLabel('Plan name').fill('Offline rename');

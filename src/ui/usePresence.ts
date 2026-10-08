@@ -34,6 +34,10 @@ export interface PresenceView {
   share: (patch: Partial<Activity>) => void;
   /** Share again, after a change of name. */
   refresh: () => void;
+  /** Someone else dragging this card right now (Q60). */
+  movingNow: (item: string) => Person | null;
+  /** Someone else whose drop of this card arrived here in the last few seconds (Q60). */
+  droppedRecently: (item: string, withinMs?: number) => Person | null;
 }
 
 /**
@@ -95,6 +99,16 @@ export function usePresence(
     };
   }, [presence, scroller, share]);
 
+  // When each person's latest drop arrived here, by this computer's clock: theirs may be set differently.
+  const drops = useRef(new Map<string, { item: string; at: number; seen: number }>());
+  useEffect(() => {
+    for (const p of people(states)) {
+      if (!p.dropped) continue;
+      const known = drops.current.get(p.id);
+      if (!known || known.at !== p.dropped.at) drops.current.set(p.id, { item: p.dropped.item, at: p.dropped.at, seen: Date.now() });
+    }
+  }, [states]);
+
   const [drive, setDrive] = useState<number | null>(null);
   const [setting, setSettingState] = useState(cursorSetting);
   const me = useMemo(() => myPresenceId(), []);
@@ -124,6 +138,12 @@ export function usePresence(
       },
       share,
       refresh,
+      movingNow: (item: string) => others.find((p) => p.drag?.item === item) ?? null,
+      droppedRecently: (item: string, withinMs = 10_000) =>
+        others.find((p) => {
+          const d = drops.current.get(p.id);
+          return d?.item === item && Date.now() - d.seen <= withinMs;
+        }) ?? null,
     };
   }, [presence, states, me, drive, setting, share, refresh]);
 }

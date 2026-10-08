@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { card, pickAxes } from '../app.ts';
+import { card, pickAxes, reveal } from '../app.ts';
 
 // Presence (sprint 12, slice 1; ADR 0019): people on a shared plan see each other, anchored to cards,
 // whatever view each of them is in.
@@ -40,6 +40,9 @@ test('see who is here, and what they point at and select, in your own view', asy
 
   // Different views: Ada on the sample's Roadmap, Bo by Size and Level.
   await pickAxes(bo, 'size', 'level');
+  // Presence draws only on cards on screen (ADR 0019), so the card is in view on both boards.
+  await reveal(card(bo, id).first());
+  await reveal(card(ada, id).first());
   await card(ada, id).first().hover({ position: { x: 20, y: 10 } });
   const pointer = bo.locator('.presence-pointer[data-person="Ada"]');
   await expect(pointer).toHaveCount(1);
@@ -80,6 +83,7 @@ test('one driver at a time, and pointers quieted to the driver or to nobody', as
 
   // Driver only: Ada sees Bo's pointer, not Cy's.
   await people(ada, 'Driver only');
+  await reveal(card(ada, id).first());
   await card(bo, id).first().hover();
   await card(cy, id).first().hover();
   await expect(ada.locator('.presence-pointer[data-person="Bo"]')).toHaveCount(1);
