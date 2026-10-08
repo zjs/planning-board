@@ -1,0 +1,103 @@
+name: Release the relay
+
+# After CI passes on main: the relay's downloads, as the rolling relay-latest
+# release, and its container image on GHCR (questions.md Q69). Both are built
+# from what that CI run already built and tested, never rebuilt here.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-relay
+  cancel-in-progress: false
+
+jobs:
+  downloads:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Fetch the downloads CI built
+        uses: actions/download-artifact@v8
+        with:
+          pattern: planning-board-relay-*.*
+          path: downloads
+          merge-multiple: true
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Replace the relay-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          ls -la downloads
+          gh release delete relay-latest --yes --cleanup-tag || true
+          gh release create relay-latest downloads/* \
+            --prerelease \
+            --target "$SHA" \
+            --title "Relay (latest main)" \
+            --notes "The Planning Board relay, with the app inside, built from ${SHA}. Download the archive for your computer, unpack it, and run planning-board-relay. See relay/README.md."
+
+  container:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Fetch the Linux binaries CI built
+        uses: actions/download-artifact@v8
+        with:
+          pattern: planning-board-relay-linux-*
+          path: relay
+          merge-multiple: true
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Prepare the image's files
+        run: |
+          mkdir -p relay/data
+          ls -la relay
+
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Name the image
+        id: names
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          image="ghcr.io/${REPO,,}"
+          echo "tags=${image}:latest,${image}:sha-${SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: relay
+          file: relay/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.names.outputs.tags }}
