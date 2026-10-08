@@ -97,26 +97,6 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
-### Q64: A relay for the public demo
-- Context: Requirement 30, Q31, and Q52 and Q53 (optimize for strangers arriving from a public link). GitHub Pages can't run a relay. The PM left this for after the research (2026-10-08). The options are costed in `docs/research/collaboration/relay-and-sync.md`.
-- Options: (a) a hosted demo relay, with quotas, expiry and a privacy note; (b) peer-to-peer over WebRTC, which has no stored snapshots, so it fails requirement 30; (c) self-host only; (d) (c), plus two tabs of one browser syncing, with no server.
-- Recommendation: (d) as M2 is built, then (a) once M2 is solid, so a stranger's first share works well. (a) is cheap, but someone has to keep it running, so it's the PM's call.
-- Status: open.
-  - **The PM, 2026-10-08:** "Is there an option for recommending use a relay, including a self-hosting option, but falling back to WebRTC (e.g., for enterprise users whose security policy prevents use of the hosted relay, but who need to show adoption/usage/value to justify self-hosting)?"
-  - **Engineering's answer: yes, it's possible, but WebRTC is weakest in exactly that case.**
-    - WebRTC needs a signaling server to introduce two browsers before they can talk directly _(recalled)_. A policy that blocks our hosted relay will usually block a hosted signaling server too.
-    - Corporate networks often block the UDP traffic WebRTC prefers. Getting through then takes a TURN server, which is another relay _(recalled)_.
-    - WebRTC stores nothing, so it only works while people are online together. Requirement 30's asynchronous case (a PM proposes, an EM answers days later) fails.
-    - Two people on the same office network can usually connect directly _(priors)_, but they still need signaling.
-  - **Two fallbacks fit "prove the value before IT approves a server" better, and both reuse what M2 already builds:**
-    - **(e) Host from your laptop.** The relay is one Go binary that also serves the app, so a pilot user runs it on their own machine, and colleagues on the same network open its address. It's real collaboration, live and asynchronous while the laptop is on, and it's exactly what self-hosting will be, so a successful pilot becomes the self-hosted install. The catch is that many companies' policies cover running a server on a laptop too.
-    - **(f) Changes by file.** A Yjs document merges any updates, in any order, so a shared plan can travel as an encrypted "changes file" through channels the company already approves: email, a shared drive, chat. Each person opens the file, their board merges it, and they send their own changes back. It's slower, and needs no server at all. It covers the asynchronous case, which WebRTC can't.
-  - **Revised recommendation:**
-    - Recommend a relay: hosted, or self-hosted from the start for companies that can.
-    - For pilots blocked from both, offer (e), with (f) as the no-server last resort.
-    - Leave WebRTC out unless pilots show (e) and (f) aren't enough.
-    - The order is unchanged: (d) during M2, then (a). (e) comes for free with the relay in sprint 11. (f) is about a slice, and fits after sprint 11.
-
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -556,3 +536,30 @@ Entry format:
 - Recommendation: (a). Without "since you were away" and history, the PM's three priorities (live collisions, who changed what, offline divergence) are answered only by "it merges". The build plan is four sprints, each ending in something usable.
 - Status: answered 2026-10-08: (a), with "since you were away" and history as additional sprints. M2 is now five sprints (`docs/plans/m2-plan.md`): foundations, the relay, seeing each other, then history, then "since you were away". Following is out (Q61). The requirements gain 33–36.
 
+### Q64: A relay for the public demo
+- Context: Requirement 30, Q31, and Q52 and Q53 (optimize for strangers arriving from a public link). GitHub Pages can't run a relay. The PM left this for after the research (2026-10-08). The options are costed in `docs/research/collaboration/relay-and-sync.md`.
+- Options: (a) a hosted demo relay, with quotas, expiry and a privacy note; (b) peer-to-peer over WebRTC, which has no stored snapshots, so it fails requirement 30; (c) self-host only; (d) (c), plus two tabs of one browser syncing, with no server.
+- Recommendation: (d) as M2 is built, then (a) once M2 is solid, so a stranger's first share works well. (a) is cheap, but someone has to keep it running, so it's the PM's call.
+- Status: answered 2026-10-08: support (e) and (f), and no WebRTC.
+  - **The PM, 2026-10-08:** "Is there an option for recommending use a relay, including a self-hosting option, but falling back to WebRTC (e.g., for enterprise users whose security policy prevents use of the hosted relay, but who need to show adoption/usage/value to justify self-hosting)?"
+  - **Engineering's answer: yes, it's possible, but WebRTC is weakest in exactly that case.**
+    - WebRTC needs a signaling server to introduce two browsers before they can talk directly _(recalled)_. A policy that blocks our hosted relay will usually block a hosted signaling server too.
+    - Corporate networks often block the UDP traffic WebRTC prefers. Getting through then takes a TURN server, which is another relay _(recalled)_.
+    - WebRTC stores nothing, so it only works while people are online together. Requirement 30's asynchronous case (a PM proposes, an EM answers days later) fails.
+    - Two people on the same office network can usually connect directly _(priors)_, but they still need signaling.
+  - **Two fallbacks fit "prove the value before IT approves a server" better, and both reuse what M2 already builds:**
+    - **(e) Host from your laptop.** The relay is one Go binary that also serves the app, so a pilot user runs it on their own machine, and colleagues on the same network open its address. It's real collaboration, live and asynchronous while the laptop is on, and it's exactly what self-hosting will be, so a successful pilot becomes the self-hosted install. The catch is that many companies' policies cover running a server on a laptop too.
+    - **(f) Changes by file.** A Yjs document merges any updates, in any order, so a shared plan can travel as an encrypted "changes file" through channels the company already approves: email, a shared drive, chat. Each person opens the file, their board merges it, and they send their own changes back. It's slower, and needs no server at all. It covers the asynchronous case, which WebRTC can't.
+  - **Revised recommendation:**
+    - Recommend a relay: hosted, or self-hosted from the start for companies that can.
+    - For pilots blocked from both, offer (e), with (f) as the no-server last resort.
+    - Leave WebRTC out unless pilots show (e) and (f) aren't enough.
+    - The order is unchanged: (d) during M2, then (a). (e) comes for free with the relay in sprint 11. (f) is about a slice, and fits after sprint 11.
+  - Engineering's reading, as a reversible default: the PM's question framed a relay, hosted or self-hosted, as what's recommended, with fallbacks for companies that can't use one. So the order stays:
+    - (d), two tabs, during M2;
+    - (e), the relay from a pilot's laptop, with the relay in sprint 11;
+    - (f), changes by file, in sprint 12;
+    - (a), a hosted demo relay, once M2 is solid, in sprint 14.
+
+    If the PM doesn't want to run a hosted relay at all, sprint 14's slice drops, and the public build offers (d), (e) and (f).
+  - It becomes requirement 37 and an amendment to ADR 0017.

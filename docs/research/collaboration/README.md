@@ -30,7 +30,7 @@ Sprint 9 asked whether this board can be edited by several people at once, throu
 
 ## What the PM decided (2026-10-08)
 
-Details are in `questions.md`, and they're now requirements 31–36.
+Details are in `questions.md`, and they're now requirements 31–37.
 
 - **Q58:** on a shared plan, Open, Import and New blank plan make a new plan.
 - **Q59:** offline is always allowed, merges automatically, and "since you were away" shows what happened.
@@ -39,7 +39,7 @@ Details are in `questions.md`, and they're now requirements 31–36.
 - **Q62:** edit and view-only links, with new links to revoke.
 - **Q63:** history in Activity and the inspector, **kept forever**, with times in each viewer's time zone.
 - **Q65:** yes, with history and "since you were away" as sprints of their own. M2 is five sprints.
-- **Still open, Q64:** the public demo, and what to offer companies whose policy blocks a hosted relay. The PM asked about falling back to WebRTC. Engineering's answer is two fallbacks that fit better: hosting the relay from a pilot user's laptop, and passing changes as encrypted files through approved channels.
+- **Q64:** where a company's policy blocks a hosted relay, two fallbacks: the relay from a pilot's laptop, and changes as encrypted files through approved channels. No WebRTC. Requirement 37.
 
 ## Risks worth knowing
 

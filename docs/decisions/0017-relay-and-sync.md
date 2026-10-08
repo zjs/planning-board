@@ -29,11 +29,22 @@ Requirements 30–31, and the architecture rule that the relay only ever sees en
 
 **Self-hosting:** one Go binary serves the app's single HTML file and the relay, and keeps each room as a log and a snapshot under one data directory. A container image is that binary, the HTML file and a volume. The same binary on one person's laptop is a pilot, before a company commits to hosting it (Q64).
 
+## Amendment (Q64, 2026-10-08): without a hosted relay
+
+Requirement 37 covers companies that can't use a hosted relay.
+
+- **A pilot on a laptop.** The relay binary runs as is on one person's computer. It prints the address colleagues on the same network can open, and keeps its data directory next to it. Nothing about it differs from a self-hosted relay, so a pilot that works becomes the install.
+- **Changes by file.**
+  - "Send changes" writes the plan's whole Yjs state, encrypted with the plan's key, to one file.
+  - "Merge changes" applies a file to the board. Yjs merges any state, in any order, any number of times, so a file can be sent around freely, and receiving an old one changes nothing.
+  - A whole state, not a diff since a cursor, keeps it simple: a few hundred cards is tens of kilobytes. A file holds no key. It belongs to a plan whose link the person already has.
+  - The same history document (ADR 0020) travels in the file, so "since you were away" works for it too.
+
 ## Alternatives
 
 - **A Yjs server holding a readable document,** such as y-sweet or Hocuspocus. It breaks the encryption rule.
 - **The relay merging updates.** It can't read them.
-- **Peer-to-peer over WebRTC.** There's no stored snapshot (requirement 30), it still needs a signaling server, and corporate networks often block it.
+- **Peer-to-peer over WebRTC.** There's no stored snapshot (requirement 30), it still needs a signaling server, and corporate networks often block it. The PM ruled it out as a fallback too (Q64).
 
 ## Consequences
 
