@@ -26,6 +26,7 @@ import {
 import { wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
+import { syncTabs } from '../store/tabs.ts';
 import { FIRST_PLAN, planDatabase, type PlanId } from './plans.ts';
 
 export type { PersistenceStatus };
@@ -76,11 +77,14 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN): Promise<OpenPlan> 
   const store = createPlanStore();
   const { status, close } = await persist(store.doc, planDatabase(id));
   ensureBuiltIns(store);
+  // The same plan open in another tab follows along (sprint 10, slice 3).
+  const stopTabs = syncTabs(store.doc, planDatabase(id));
   return {
     id,
     store,
     persistence: status,
     close: async () => {
+      stopTabs();
       store.undoManager.destroy();
       await close();
     },
