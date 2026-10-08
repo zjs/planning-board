@@ -32,6 +32,8 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-8', commit: '6b97747' },
   // Sprint 9 changed no app code. This is also the last build before schema 2 (sprint 10, slice 1; ADR 0016).
   { name: 'sprint-9', commit: 'a5bc057' },
+  // The first schema 2 build, with several plans per browser (ADR 0016, ADR 0021).
+  { name: 'sprint-10', commit: '1296bfe' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;

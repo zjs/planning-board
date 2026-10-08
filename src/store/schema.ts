@@ -130,14 +130,21 @@ export function itemToY(item: Item, plan: Pick<Plan, 'properties'>): Y.Map<unkno
   map.set('sequence', item.sequence);
   if (item.rank !== undefined) map.set('rank', item.rank);
   if (item.externalKey !== undefined) map.set('externalKey', item.externalKey);
-  for (const [property, ids] of Object.entries(item.values)) writeItemValues(map, property, isMulti(plan, property), ids);
+  // A map not yet in a document can't be read, so a new card's values are written outright.
+  for (const [property, ids] of Object.entries(item.values)) {
+    if (!isMulti(plan, property)) {
+      if (ids[0] !== undefined) map.set(singleKey(property), ids[0]);
+      continue;
+    }
+    for (const value of new Set(ids)) map.set(multiKey(property, value), true);
+  }
   return map;
 }
 
 /**
  * Set one property's values on a card, writing only what changed, so an
  * edit made at the same time to another value survives. Call inside a
- * transaction (or on a map not yet in a document).
+ * transaction, on a card already in the document.
  */
 export function writeItemValues(item: Y.Map<unknown>, property: PropertyId, multi: boolean, next: readonly ValueId[]): void {
   if (!multi) {

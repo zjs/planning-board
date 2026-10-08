@@ -23,6 +23,7 @@ describe('plan files saved by earlier versions', () => {
     expect(files.filter((f) => !f.includes('.import.'))).toEqual([
       'sprint-0.plan.json',
       'sprint-1.plan.json',
+      'sprint-10.plan.json', // file names sort as text
       'sprint-2.plan.json',
       'sprint-3.plan.json',
       'sprint-4.plan.json',

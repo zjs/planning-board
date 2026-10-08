@@ -1,0 +1,221 @@
+{
+  "format": "planning-board",
+  "version": 1,
+  "properties": [
+    {
+      "id": "system",
+      "name": "System",
+      "levels": [
+        "Area",
+        "Component"
+      ],
+      "multi": true,
+      "values": [
+        {
+          "id": "v1",
+          "label": "Payments",
+          "children": [
+            {
+              "id": "v2",
+              "label": "SSO"
+            },
+            {
+              "id": "v3",
+              "label": "Admin Console"
+            },
+            {
+              "id": "v4",
+              "label": "Invoicing"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "level",
+      "name": "Level",
+      "levels": [
+        "Level"
+      ],
+      "values": [
+        {
+          "id": "initiative",
+          "label": "Initiative"
+        },
+        {
+          "id": "epic",
+          "label": "Epic"
+        },
+        {
+          "id": "story",
+          "label": "Story"
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "name": "Size",
+      "levels": [
+        "Size"
+      ],
+      "values": [
+        {
+          "id": "xs",
+          "label": "XS"
+        },
+        {
+          "id": "s",
+          "label": "S"
+        },
+        {
+          "id": "m",
+          "label": "M"
+        },
+        {
+          "id": "l",
+          "label": "L"
+        },
+        {
+          "id": "xl",
+          "label": "XL"
+        }
+      ]
+    },
+    {
+      "id": "time",
+      "name": "Time",
+      "levels": [
+        "Quarter",
+        "Release"
+      ],
+      "values": []
+    },
+    {
+      "id": "p5",
+      "name": "Labels",
+      "levels": [
+        "Labels"
+      ],
+      "multi": true,
+      "values": [
+        {
+          "id": "v6",
+          "label": "identity"
+        },
+        {
+          "id": "v7",
+          "label": "enterprise"
+        },
+        {
+          "id": "v8",
+          "label": "research"
+        }
+      ]
+    },
+    {
+      "id": "p9",
+      "name": "Team",
+      "levels": [
+        "Team"
+      ],
+      "values": [
+        {
+          "id": "v10",
+          "label": "Platform"
+        },
+        {
+          "id": "v11",
+          "label": "Growth"
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "i12",
+      "title": "Self-serve SSO setup",
+      "description": "Let admins set up SSO without a ticket.",
+      "externalKey": "PAY-1",
+      "rank": "a0",
+      "values": {
+        "system": [
+          "v2"
+        ],
+        "size": "xl",
+        "level": "epic",
+        "p5": [
+          "v6"
+        ],
+        "p9": "v10"
+      }
+    },
+    {
+      "id": "i13",
+      "title": "SAML metadata upload",
+      "description": "Upload a metadata XML file.\nValidate it first.",
+      "externalKey": "PAY-2",
+      "parent": "i12",
+      "rank": "a1",
+      "values": {
+        "system": [
+          "v2"
+        ],
+        "size": "s",
+        "level": "story",
+        "p5": [
+          "v6",
+          "v7"
+        ],
+        "p9": "v10"
+      }
+    },
+    {
+      "id": "i14",
+      "title": "SSO test connection",
+      "externalKey": "PAY-3",
+      "parent": "i12",
+      "rank": "a2",
+      "values": {
+        "system": [
+          "v2",
+          "v3"
+        ],
+        "size": "m",
+        "level": "story",
+        "p9": "v11"
+      }
+    },
+    {
+      "id": "i15",
+      "title": "Invoice PDF redesign",
+      "externalKey": "PAY-4",
+      "rank": "a3",
+      "values": {
+        "system": [
+          "v4"
+        ],
+        "size": "l",
+        "level": "story",
+        "p9": "v11"
+      }
+    },
+    {
+      "id": "i16",
+      "title": "Usage-based pricing spike",
+      "externalKey": "PAY-6",
+      "rank": "a4",
+      "values": {
+        "size": "xs",
+        "p5": [
+          "v8"
+        ]
+      }
+    }
+  ],
+  "dependencies": [
+    [
+      "i13",
+      "i14"
+    ]
+  ]
+}
