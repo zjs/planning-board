@@ -29,11 +29,30 @@ jobs:
       - name: Fetch the downloads CI built
         uses: actions/download-artifact@v8
         with:
-          pattern: planning-board-relay-*.*
+          pattern: planning-board-relay-*.tar.gz
           path: downloads
           merge-multiple: true
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+
+      # download-artifact unpacks an artifact that is itself a zip, so Windows' download arrives as its folder.
+      - name: Fetch the Windows download CI built
+        uses: actions/download-artifact@v8
+        with:
+          name: planning-board-relay-windows-amd64.zip
+          path: windows
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Zip the Windows download again
+        run: |
+          ls -laR windows
+          if [ -f windows/planning-board-relay-windows-amd64.zip ]; then
+            mv windows/planning-board-relay-windows-amd64.zip downloads/
+          else
+            (cd windows && zip -qr ../downloads/planning-board-relay-windows-amd64.zip planning-board-relay)
+          fi
+          test "$(ls downloads | wc -l)" -eq 5
 
       - name: Replace the relay-latest release
         env:
