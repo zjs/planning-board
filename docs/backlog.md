@@ -35,7 +35,7 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
+**Lands:** sprint 10 builds M2's foundations ([`docs/sprint-10.md`](sprint-10.md)). Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
 
 ### H. Arranging and moving cards
 
@@ -247,8 +247,8 @@ Sprints 3 to 8 await the PM's acceptance and one combined tester session, which 
 - **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)) shipped on 2026-10-07: views and visible pivots, editing values from the headers, drags that say what they do, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
 - **Sprint 8: polish, then the session** ([`docs/sprint-8.md`](sprint-8.md)) shipped on 2026-10-07: frames for expanded groups (theme L, Q57), "related to" links (theme F, Q44), and two calm items from theme K (the area color explained, and holding lanes that collapse). It ships before the combined cold-start session.
 - **Sprint 9: design collaboration** ([`docs/sprint-9.md`](sprint-9.md)) finished on 2026-10-08: prior art, merge experiments on our own schema, an encrypted relay and sync spike on the real board, presence and history, eight mockups, draft ADRs 0016–0020, Q58–Q65, and an M2 build plan (theme M). The app didn't change.
-- **Sprint 10 candidates:**
-  - **M2's foundations,** now that Q58–Q63 and Q65 are answered: schema 2, several plans per browser, the plan diff, and two tabs syncing ([`plans/m2-plan.md`](plans/m2-plan.md), sprint 10).
+- **Sprint 10: M2's foundations** ([`docs/sprint-10.md`](sprint-10.md)), started 2026-10-08: schema 2, several plans per browser (Q66, Q67), and two tabs of one plan in sync.
+- **Later candidates:**
   - **Component contention and the conflicts panel** (requirements 17–20):
     - the panel follows the view (Q40);
     - reviewed conflicts come back on any relevant change (Q41);
@@ -276,6 +276,12 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
+
+- **Maintenance pass, 2026-10-08,** before planning sprint 10. Run in the background, read-only, with its fixes applied in sprint 10, slice 0.
+  - **CI actions:** three were a major version behind, which the two previous passes had recorded wrongly as current. They moved to checkout v7, setup-node v7 and deploy-pages v5. deploy-pages v4 ran on a retired Node 20 Actions runtime.
+  - **npm:** nothing to take.
+  - **Still blocked:** TypeScript 7 (typescript-eslint 8.71.1 requires TypeScript below 6.1) and the `braces` advisory (no patched release).
+  - **Elsewhere:** no open issues, and the relay spike's WebSocket library is current.
 
 - **Maintenance pass, 2026-10-08,** before planning sprint 9. Playwright went from 1.63 to 1.64. Nothing else changed since the 2026-10-07 pass:
   - TypeScript 7 is still blocked, since typescript-eslint is still on 8.71.1;
