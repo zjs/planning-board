@@ -15,6 +15,28 @@ Each feedback item says where and when it came from. Themes are generalized from
 
 Themes with work still to do. Each says where it lands.
 
+### M. Collaboration
+
+M2 (requirements 30–32): share links, live editing with several people, and presence. Every edit so far has come from one person, so nothing has shown yet how the board behaves when two people change it at once.
+
+**Feedback** (the PM, 2026-10-08):
+
+- *Explore first.* "I'd like to explore a different option for sprint 9: collaborative editing. This may take more up front design and planning, especially to consider things like the reconciliation model if users have made edits independently of each other (e.g., relay server is on a corporate intranet and someone disconnects from the VPN for a bit) or the UX to prevent that from happening, and to design the broader UX for collaboration (e.g., can you see other users' selections? their cursors?)."
+- *Depth.* "I feel like this one needs a lot of thought, including some analysis of prior art, evaluation of what's technically feasible, etc."
+
+**Generalization:** one design sprint before any building. It covers:
+- how merges behave on our own schema;
+- what end-to-end encryption allows;
+- the experience of presence, collisions, offline work and history.
+
+The PM's answers (2026-10-08):
+- research plus throwaway spikes;
+- encryption is fixed;
+- the public demo relay is decided after the research;
+- go deepest on live collisions, who changed what, and offline divergence.
+
+**Lands:** sprint 9 explores and plans ([`docs/sprint-9.md`](sprint-9.md)). The build starts in sprint 10 or later, from the plan sprint 9 produces.
+
 ### H. Arranging and moving cards
 
 Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.
@@ -33,7 +55,7 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 
 **More feedback** (the PM, 2026-10-07): "It seems like a natural flow is to brainstorm cards, sort them into a rough sequence, and then try to bucket them into a timeline … when you get to the step where you want to slot work into a timeline, it seems like you have to start over and re-do the sequencing work. Alternatively, maybe sequence is a third level of the time hierarchy?" → [Q56](questions.md#q56-sequence-nested-under-time)
 
-**Lands:** moving between groups shipped in sprint 5 (slice 2). Sprint 7 shipped cells that keep the order cards were made in (Q46's MVP), box select, and dragging several cards (Q48). Reordering by hand (Q46 c) and sequence under time (Q56) wait for the combined cold-start session, then are sprint 9 candidates.
+**Lands:** moving between groups shipped in sprint 5 (slice 2). Sprint 7 shipped cells that keep the order cards were made in (Q46's MVP), box select, and dragging several cards (Q48). Reordering by hand (Q46 c) and sequence under time (Q56) wait for the combined cold-start session, then are sprint 10 candidates.
 
 ### D. Small fixes
 
@@ -103,7 +125,7 @@ Every tester so far met the board after a demo. A stranger opening the public li
 - Preset views, and pivots that are clearer (Q52).
 - Laying out the board (folding an area's components) and showing more of the cards (expanding a group) keep separate words, with none shared (Q54).
 
-**Lands:** shipped in sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), which awaits the PM's acceptance. The combined session now opens with a cold start. Two calm items, explaining the area color and collapsible holding lanes, shipped in sprint 8, slice 3. Quieter markers come with the conflicts panel, a sprint 9 candidate. The command palette (Q54 b) waits for the session.
+**Lands:** shipped in sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), which awaits the PM's acceptance. The combined session now opens with a cold start. Two calm items, explaining the area color and collapsible holding lanes, shipped in sprint 8, slice 3. Quieter markers come with the conflicts panel, a sprint 10 candidate. The command palette (Q54 b) waits for the session.
 
 ### J. Starting from scratch
 
@@ -224,9 +246,18 @@ Sprints 3 to 8 await the PM's acceptance and one combined tester session, which 
 - **A blank plan** (theme J, Q51), built on 2026-10-03: Start a blank plan, and Enter to type cards one after another.
 - **Sprint 7: a board that explains itself** ([`docs/sprint-7.md`](sprint-7.md)) shipped on 2026-10-07: views and visible pivots, editing values from the headers, drags that say what they do, a card menu, a guided start from a blank plan (theme K, Q52–Q55), and bucketing a sequence into a timeline (Q46's MVP, Q48).
 - **Sprint 8: polish, then the session** ([`docs/sprint-8.md`](sprint-8.md)) shipped on 2026-10-07: frames for expanded groups (theme L, Q57), "related to" links (theme F, Q44), and two calm items from theme K (the area color explained, and holding lanes that collapse). It ships before the combined cold-start session.
-- **Sprint 9 candidates:**
-  - component contention and the conflicts panel (requirements 17–20), with the panel following the view (Q40), reviewed conflicts coming back on any relevant change (Q41), contention judged by the lanes shown (Q12), and per-type hiding for quieter markers (Q23);
-  - after the session: sequence nested under time, as a Timeline view (Q56); reordering cards by hand within a cell (Q46 c); a command palette (Q54 b), if people looked for one.
+- **Sprint 9: design collaboration** ([`docs/sprint-9.md`](sprint-9.md)), started 2026-10-08: research, merge experiments on our own schema, a relay and encrypted sync spike, the experience design, and an M2 build plan (theme M). The app doesn't change.
+- **Sprint 10 candidates:**
+  - **The first M2 build slices,** from sprint 9's plan.
+  - **Component contention and the conflicts panel** (requirements 17–20):
+    - the panel follows the view (Q40);
+    - reviewed conflicts come back on any relevant change (Q41);
+    - contention is judged by the lanes shown (Q12);
+    - per-type hiding gives quieter markers (Q23).
+  - **After the session:**
+    - sequence nested under time, as a Timeline view (Q56);
+    - reordering cards by hand within a cell (Q46 c);
+    - a command palette (Q54 b), if people looked for one.
 
 ## Deferred, from earlier sprints
 
@@ -245,6 +276,12 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
+
+- **Maintenance pass, 2026-10-08,** before planning sprint 9. Playwright went from 1.63 to 1.64. Nothing else changed since the 2026-10-07 pass:
+  - TypeScript 7 is still blocked, since typescript-eslint is still on 8.71.1;
+  - `braces` still has no patched release;
+  - the CI actions are on their current majors;
+  - there are no open issues.
 
 - **Compatibility fixtures for sprint 8** (2026-10-07), the release pass's last step: sprint 8's plan file, imported plan and browser board open in every later build. The plan file carries the sample's related links, so the new field is covered.
 - **CI's browser install** (2026-10-07): a stalled Ubuntu mirror hung `playwright install --with-deps` until the job timed out. apt now gives up on a mirror after 20 seconds and moves on, and a stalled attempt is retried after its leftover apt-get is stopped.

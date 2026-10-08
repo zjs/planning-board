@@ -34,9 +34,9 @@ Entry format:
   - **Time bucket.** Contention and time-order checks default to quarters. The requirements table says contention is "measured here" on Time → Release, which may mean releases. The function takes either.
   - **Uncertain order.** A dependency is flagged only when the order is certain. A prerequisite in Q2 against a dependent in Q1/R1 is flagged; one in Q1 against Q1/R1 isn't.
 - Recommendation: keep these for sprint 1 and revisit with real data. The time bucket is the one most likely to matter, since it changes which conflicts show at all.
-- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 9 candidate).
+- Status: partly answered 2026-10-01: for dependency order, a time view judges at the level it shows (quarters or releases), so a highlight never contradicts the board in front of you. Sprint 3. Contention's time bucket and the other choices stay open until contention is built (a sprint 10 candidate).
   - Sprint 5 (ADR 0013): with one Time axis that folds, "the level it shows" became the lanes it shows. A folded quarter is one bucket, and an unfolded one a bucket per release.
-  - 2026-10-07: the PM has no preference on contention's time bucket. Engineering's default, for when contention is built (a sprint 9 candidate): the lanes shown, the same rule as dependency order, so a contention highlight never contradicts the board in front of you.
+  - 2026-10-07: the PM has no preference on contention's time bucket. Engineering's default, for when contention is built (a sprint 10 candidate): the lanes shown, the same rule as dependency order, so a contention highlight never contradicts the board in front of you.
 
 ### Q21: What happens to a group's dependencies when it's ungrouped?
 - Context: Requirements 11 and 15. Ungrouping removes the group card, but other cards may depend on it, or it on them. Dependencies aren't visible until sprint 2, but ungrouping already has to do something with them.
@@ -49,7 +49,7 @@ Entry format:
 - Context: Requirements 13 and 18, and the "Conflict noise" risk in `requirements.md`. With markers built in slice 5, 17 of the sample plan's 23 grouped cards are flagged: 9 dated outside their group, 9 in another area, and 3 larger than their group (some cards have more than one). The sample was written by hand, so real plans may be better or worse, but a PM's ballpark on an epic will often disagree with the refined children, which is the point of the marker and also the source of the noise.
 - Options: (a) keep every marker and watch the session; (b) flag only time mismatches for now, since size and area mismatches are often intentional (an epic sized by its biggest part, or a platform epic with work in several areas); (c) add per-type hiding now rather than waiting for the conflicts panel in sprint 2.
 - Recommendation: (a), and watch the tester session, with a specific question in the script ("which of these markers would you act on?"). The answer decides between (b) and (c), and it feeds the conflicts panel.
-- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 9 candidate. The session now covers sprints 3–7. Sprint 7's review counted 45 ⚠ markers in the sample's first view, which a first-time visitor reads as a plan with problems everywhere.
+- Status: open. Sprint 4 added a level marker, so there's more to watch. The combined sprint 3–5 session (`docs/demos/sprint-5-session.md`) asks the question; the conflicts panel, with per-type hiding, is a sprint 10 candidate (sprint 9 went to designing collaboration). The session now covers sprints 3–7. Sprint 7's review counted 45 ⚠ markers in the sample's first view, which a first-time visitor reads as a plan with problems everywhere.
 
 ### Q27: Where do flat Jira values go in our two-level hierarchies?
 - Context: Requirements 27 and 28, sprint 2 slices 4–5. Jira components are a flat list with no area, and fix versions have no quarter. System is Area → Component and Time is Quarter → Release, so every imported component needs an area and every version needs a quarter.
@@ -95,7 +95,7 @@ Entry format:
 - Context: Requirements 6, 7 and 16, Q46, and the PM's planning flow (2026-10-07): brainstorm, sort into a rough sequence, then bucket into a timeline. Sequence and time are separate axes, so bucketing means dragging cards from a time view's "No quarter" lane, which lists them in sequence order. Sprint 7 makes that faster with box select and dragging several cards. The PM asked whether sequence could instead be a third level of the time hierarchy.
 - Options: (a) keep them separate, and rely on sprint 7's bucketing; (b) a Timeline view: Time unfolds Quarter → Release → sequence columns, so a quarter band holds the sequence columns of the cards in it, and a drag sets both quarter and position; (c) cut lines: in a sequence view, time bands sit over the sequence columns, and dragging a boundary between columns dates every card on each side.
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
-- Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 9 candidate.
+- Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
 ## Answered
 
@@ -318,13 +318,13 @@ Entry format:
 - Context: Requirements 16, 17 and 20, and Q12. Time-based checks are judged at the level the view shows, and a view by size or team doesn't judge order at all. So "every active conflict" depends on the view.
 - Options: (a) the panel follows the view: it lists what the board in front of you highlights, and in a view with no time axis it says to pivot to a time view to check order and contention; loops and group mismatches show in every view; (b) the panel always checks the whole plan at one plan-wide level, whatever the view.
 - Recommendation: (a), so the panel never names a conflict the board doesn't show.
-- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 9 candidate.
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 10 candidate.
 
 ### Q41: What brings a reviewed conflict back?
 - Context: Requirement 19: a reviewed conflict "stays suppressed until an involved item moves".
 - Options: (a) any relevant change: an involved card's values that the check uses change (its time or components, for contention), or a card joins or leaves the conflict; (b) only a change to the cards it was reviewed with; (c) never, until someone un-reviews it.
 - Recommendation: (a). A fourth card on a component reviewed at three is a new situation. The note stays attached, so the earlier reasoning is still visible.
-- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 9 candidate.
+- Status: answered 2026-10-01: (a). For the conflicts sprint, now a sprint 10 candidate.
 
 ### Q42: Replace zooming with expand and fold
 - Context: Requirements 7, 10, 11 and 12, Q20, Q33, Q34 and Q36, and the backlog's theme G. Sprint 4 left four ways to see detail: zooming into a group, zooming into a lane, expanding in place, and folding bands. In PM testing, expanding and folding did what zooming did, kept the rest of the board and its links in view, and were easier to find than zooming out with Esc. Zooming is also how you add the first card inside a group and move a card out of one, so those need new homes.
