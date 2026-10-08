@@ -15,7 +15,13 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 9 designs collaboration (M2, requirements 30–32) before any of it is built. It produces research, throwaway spikes under `spikes/`, draft ADRs, new questions and an M2 build plan, and the app doesn't change. Its scope is in `docs/sprint-9.md`, its slice plan in `docs/plans/sprint-9-plan.md`, and its documents in `docs/research/collaboration/`. Sprints 3–8 and the blank-plan slice (Q51) await the PM's acceptance, and one combined tester session covers them, opening with a cold start (`docs/demos/sprint-5-session.md`). Sprint 10's candidates are in `docs/backlog.md`: the first M2 build slices, contention with the conflicts panel, and whatever the session decides. The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
+Sprint 9 (designing collaboration, M2) is complete and awaiting the PM's acceptance and answers to Q58–Q65. It produced research and throwaway spikes, and the app didn't change:
+- the summary is `docs/research/collaboration/README.md`;
+- the draft ADRs are 0016–0020, marked Proposed;
+- the build plan is `docs/plans/m2-plan.md`: four sprints, starting with sprint 10's foundations (schema 2, more than one plan per browser, the plan diff, two tabs syncing);
+- the spikes are in `spikes/`, out of lint, typecheck and CI.
+
+Sprints 3–8 and the blank-plan slice (Q51) also await acceptance, and one combined tester session covers them, opening with a cold start (`docs/demos/sprint-5-session.md`). Sprint 10 starts in plan mode, after the maintenance pass. Its candidates are in `docs/backlog.md`: M2's foundations once the questions are answered, contention with the conflicts panel, and what the session decides. The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
 
 ## Architecture rules
 

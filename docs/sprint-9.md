@@ -48,7 +48,7 @@ Research documents go in `docs/research/collaboration/`, and spikes in `spikes/`
 
 ### 5. The experience
 
-- [ ] Designs for each of these, each tied to the question it answers (`ux.md`, plus a clickable mockup):
+- [x] Designs for each of these, each tied to the question it answers (`ux.md`, plus a clickable mockup):
   - presence;
   - collisions;
   - connection states;
@@ -59,10 +59,10 @@ Research documents go in `docs/research/collaboration/`, and spikes in `spikes/`
 
 ### 6. Decisions and the build plan
 
-- [ ] New questions for the PM, each with a recommendation, starting at Q58.
-- [ ] Draft ADRs, marked Proposed.
-- [ ] M2 split into thin build slices over sprints 10 and later.
-- [ ] A one-page summary (`docs/research/collaboration/README.md`).
+- [x] New questions for the PM, each with a recommendation, starting at Q58.
+- [x] Draft ADRs, marked Proposed.
+- [x] M2 split into thin build slices over sprints 10 and later.
+- [x] A one-page summary (`docs/research/collaboration/README.md`).
 
 ## Deferred (don't build)
 
