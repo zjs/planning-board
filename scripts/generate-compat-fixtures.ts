@@ -38,6 +38,8 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-11-before-loop-repair', commit: '6f0142d' },
   // The first build that can share: moves carry stamps (ADR 0004), and plans record their writer (meta.writer).
   { name: 'sprint-11', commit: 'd50c040' },
+  // Presence, new links, and the first changes file (ADR 0022).
+  { name: 'sprint-12', commit: '3043bc8' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;
@@ -75,6 +77,17 @@ try {
   let n = 0;
   const imported = csvImport.planFromDraft(draft, csvImport.defaultChoices(draft), (prefix) => prefix + ++n).plan;
   writeFileSync(outDir + '/' + name + '.import.plan.json', planJson.planFileText(imported));
+} catch (e) {
+  if (!String(e).includes('Cannot find module') && !String(e).includes('ERR_MODULE_NOT_FOUND')) throw e;
+}
+
+// From the versions that share by file (ADR 0022): the board as a changes file, sealed with a fixed key the
+// compatibility test knows (src/commands/compat.test.ts).
+try {
+  const changes = await import('./src/store/changesFile.ts');
+  const keys = await import('./src/store/keys.ts');
+  const secret = keys.toBase64Url(new Uint8Array(32).fill(7));
+  writeFileSync(outDir + '/' + name + '.changes.pbchanges', changes.writeChangesFile(s.doc, 'compat_changes_room_0001', keys.viewKeyOf(secret)));
 } catch (e) {
   if (!String(e).includes('Cannot find module') && !String(e).includes('ERR_MODULE_NOT_FOUND')) throw e;
 }

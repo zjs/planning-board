@@ -279,6 +279,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 12** (2026-10-08), the release pass's last step: sprint 12's plan file, imported plan and browser board open in every later build. So does the first changes file (`.pbchanges`, ADR 0022), sealed with a fixed key the test knows, which merges into an empty plan as the plan that version saved.
+
 - **Maintenance pass, 2026-10-08,** before planning sprint 12. Run in the background, read-only, with its fix applied in sprint 12, slice 0.
   - **Go:** the relay's toolchain went from 1.27.1 to 1.27.2. The declared `go 1.26` is still supported, and the WebSocket library is current.
   - **npm:** nothing to take; @noble/ciphers and @noble/hashes are current.

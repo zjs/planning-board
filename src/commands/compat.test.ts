@@ -11,6 +11,8 @@ import * as Y from 'yjs';
 import { compatSummary } from '../domain/__fixtures__/compat/summary.ts';
 import { LEVEL } from '../domain/model.ts';
 import { planFileText, readPlanFile } from '../domain/planJson.ts';
+import { openChangesFile, readChangesFile } from '../store/changesFile.ts';
+import { toBase64Url, viewKeyOf } from '../store/keys.ts';
 import { readPlan, schemaOf } from '../store/schema.ts';
 import { migrateV1 } from '../store/schemaV1.ts';
 import { createPlanStore, ensureBuiltIns, renameItem } from './store.ts';
@@ -33,7 +35,7 @@ function openBoard(file: string) {
 
 describe('boards stored by earlier versions', () => {
   it('has a board from every released version', () => {
-    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-11', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
+    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-11', 'sprint-12', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
   });
 
   for (const file of boards) {
@@ -52,6 +54,32 @@ describe('boards stored by earlier versions', () => {
       const saved = readPlanFile(planFileText(readPlan(store.doc)));
       expect(saved.ok).toBe(true);
       expect(schemaOf(store.doc)).toBe(2);
+    });
+  }
+});
+
+// Changes files (ADR 0022) from every version that writes them, sealed with the key the generator uses.
+const changesFiles = readdirSync(dir).filter((f) => f.endsWith('.changes.pbchanges')).sort();
+const changesKey = viewKeyOf(toBase64Url(new Uint8Array(32).fill(7)));
+
+describe('changes files written by earlier versions', () => {
+  it('has a changes file from every version since sprint 12', () => {
+    expect(changesFiles).toEqual(['sprint-12.changes.pbchanges']);
+  });
+
+  for (const file of changesFiles) {
+    const version = file.replace('.changes.pbchanges', '');
+    it(`${version}: merges into an empty plan as the plan that version saved to a file`, () => {
+      const read = readChangesFile(new Uint8Array(readFileSync(new URL(file, dir))));
+      if (typeof read === 'string') throw new Error(read);
+      expect(read.room).toBe('compat_changes_room_0001');
+      const update = openChangesFile(read, changesKey);
+      expect(update).not.toBeNull();
+      const store = createPlanStore();
+      Y.applyUpdate(store.doc, update!);
+      const fromFile = readPlanFile(readFileSync(new URL(`${version}.plan.json`, dir), 'utf8'));
+      if (!fromFile.ok) throw new Error(fromFile.summary);
+      expect(compatSummary(readPlan(store.doc))).toEqual(compatSummary(fromFile.plan));
     });
   }
 });
