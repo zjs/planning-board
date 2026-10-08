@@ -29,6 +29,7 @@ import {
   replacePlan,
   restoreCardState,
   watchPlanName,
+  whenShared,
   type Connection,
   type OpenPlan,
   type Presence,
@@ -60,7 +61,7 @@ import {
   type PlanId,
   type SharedPlan,
 } from '../commands/plans.ts';
-import { isNewerLink, joinFromLink, linkInHash, sharingConfirmed, startSharing } from '../commands/sharing.ts';
+import { isNewerLink, joinFromLink, linkInHash, renewLinks, retireReplaced, sharingConfirmed, startSharing } from '../commands/sharing.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
   chain,
@@ -161,7 +162,8 @@ const opening = new Map<PlanId, Promise<OpenPlan>>();
 const openedShared = new Map<PlanId, string>();
 const sharedKey = (shared: SharedPlan | undefined) => {
   if (!shared) return '';
-  const { pending: _, ...rest } = shared;
+  // Confirming a share, or retiring old rooms, changes nothing about the connection.
+  const { pending: _, replaces: __, ...rest } = shared;
   return JSON.stringify(rest);
 };
 function openPlan(id: PlanId): Promise<OpenPlan> {
@@ -236,6 +238,8 @@ export interface PlanActions {
   share: (relay: string) => void;
   /** The open shared plan's relay has a new address. */
   moveRelay: (relay: string) => void;
+  /** Give the open shared plan new links, cutting off the old ones (Q62). */
+  renewLinks: () => void;
   /** Make a new plan holding `content`, and switch to it. `prepare` sets its viewer state first. */
   make: (name: string, content: Plan, start?: PlanStart, prepare?: (id: PlanId) => void) => void;
   open: (id: PlanId) => void;
@@ -262,6 +266,13 @@ export function App() {
   const [plans, setPlans] = useState(listPlans);
   const refresh = useCallback(() => setPlans(listPlans()), []);
   const current = useRef<PlanId | null>(null);
+  const [notice, setNoticeState] = useState<PlanNotice | null>(null);
+  const noticeRef = useRef<PlanNotice | null>(null);
+  const setNotice = useCallback((next: PlanNotice | null) => {
+    noticeRef.current = next;
+    setNoticeState(next);
+  }, []);
+
 
   const show = useCallback(
     async (id: PlanId, start: PlanStart | null = null) => {
@@ -285,11 +296,27 @@ export function App() {
           refresh();
         });
       }
+      // New links (Q62): once the new room holds the whole plan, the old links are cut off. Tried at every open
+      // until the relay has done it.
+      if (entry?.shared?.replaces?.length && plan.connection) {
+        const room = entry.shared.room;
+        void whenShared(plan.connection).then(async () => {
+          if (findPlan(id)?.shared?.room !== room) return;
+          const result = await retireReplaced(id);
+          refresh();
+          if (result === 'unsupported') {
+            setNotice({
+              text: 'This relay is too old to cut off the old links, so they still work. Ask whoever runs it to update it, then make new links again.',
+              expire: () => undefined,
+            });
+          }
+        });
+      }
       setSession({ plan, start });
       refresh();
       if (previous !== null && previous !== id) void closePlan(previous);
     },
-    [refresh],
+    [refresh, setNotice],
   );
   // Open a plan afresh, as it's now shared: sharing it, a share from another tab, or a relay that moved.
   const reopen = useCallback(
@@ -320,13 +347,6 @@ export function App() {
     const notice = joined?.notice ?? (elsewhere ? 'This link is for a plan on another computer. Ask for its share link.' : undefined);
     void show(id, notice ? { notice } : null);
   }, [show]);
-
-  const [notice, setNoticeState] = useState<PlanNotice | null>(null);
-  const noticeRef = useRef<PlanNotice | null>(null);
-  const setNotice = useCallback((next: PlanNotice | null) => {
-    noticeRef.current = next;
-    setNoticeState(next);
-  }, []);
 
   // The plan's name, as its document has it, follows renames from other tabs and other people.
   useEffect(() => {
@@ -452,6 +472,11 @@ export function App() {
       refresh();
       void reopen(id);
     },
+    renewLinks: () => {
+      if (!renewLinks(id)) return;
+      refresh();
+      void reopen(id);
+    },
     make,
     open: (other) => {
       retire();
@@ -544,12 +569,15 @@ function Workspace({
   const { plan, empty, canUndo, canRedo } = useSyncExternalStore(source.subscribe, source.getSnapshot);
   // A view link, or a plan a newer build has written, which can turn up with the relay's first catch-up.
   useConnection(connection);
-  const readOnly: ReadOnlyReason | null = openedReadOnly ?? (store.readOnly ? 'newer-build' : null);
+  // A link replaced while the plan is open (Q62) says so, whatever else it was.
+  const readOnly: ReadOnlyReason | null = connection?.retired ? 'replaced' : (openedReadOnly ?? (store.readOnly ? 'newer-build' : null));
   const canEdit = readOnly === null;
   const readOnlyText =
     readOnly === 'view-link'
       ? 'You opened this plan with a view link, so you can look but not change it.'
-      : 'A newer version of Planning Board has changed this plan, so this one only shows it. Open the app from the relay’s address for the newer version.';
+      : readOnly === 'replaced'
+        ? 'This plan was given new links, so this one can only show it. Ask whoever shared it for the new link. Anything you changed that wasn’t shared stays on this computer.'
+        : 'A newer version of Planning Board has changed this plan, so this one only shows it. Open the app from the relay’s address for the newer version.';
   const [choice, setChoice] = useState(() => loadViewChoice(planId));
   useEffect(() => saveViewChoice(planId, choice), [planId, choice]);
   // Groups expanded in place (Q33, ADR 0013). Viewer state, remembered per plan (ADR 0021).
@@ -1641,6 +1669,7 @@ function Workspace({
             store={store}
             connection={connection}
             viewOnly={readOnly === 'view-link'}
+            replaced={readOnly === 'replaced'}
             hasLocal={!empty}
             onOpen={() => setSharing(true)}
           />
@@ -1962,6 +1991,7 @@ function Workspace({
           connection={connection}
           onShare={planActions.share}
           onMoveRelay={planActions.moveRelay}
+          onRenewLinks={planActions.renewLinks}
           onSaveFile={savePlanFile}
           onClose={() => setSharing(false)}
         />

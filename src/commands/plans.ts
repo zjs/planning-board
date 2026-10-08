@@ -35,6 +35,12 @@ export interface SharedPlan {
   viewKey: string;
   /** Shared, but the relay hasn't confirmed the room yet: a crash mid-share retries. */
   pending?: boolean;
+  /**
+   * Rooms this plan was shared through before it was given new links (Q62),
+   * with their edit secrets, until the relay has retired them. Retried each
+   * time the plan opens, so a crash part-way still cuts the old links off.
+   */
+  replaces?: { room: string; secret: string }[];
 }
 
 /** The board a browser had before it kept several plans. Its database and viewer state keep their old names. */

@@ -18,7 +18,7 @@ export const Frame = {
   Error: 0x87,
 } as const;
 
-export const HelloFlag = { Create: 1, Replay: 2 } as const;
+export const HelloFlag = { Create: 1, Replay: 2, Retire: 4 } as const;
 
 /** Error codes the relay sends (relay/PROTOCOL.md). */
 export const RelayError = {
@@ -34,6 +34,7 @@ export const RelayError = {
   BadFrame: 10,
   HelloFirst: 11,
   Internal: 12,
+  Replaced: 13,
 } as const;
 
 export class FrameWriter {

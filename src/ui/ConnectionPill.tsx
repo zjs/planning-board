@@ -12,12 +12,15 @@ export function ConnectionPill({
   store,
   connection,
   viewOnly,
+  replaced,
   hasLocal,
   onOpen,
 }: {
   store: PlanStore;
   connection: Connection;
   viewOnly: boolean;
+  /** The link was replaced (Q62). */
+  replaced: boolean;
   hasLocal: boolean;
   onOpen: () => void;
 }) {
@@ -34,8 +37,9 @@ export function ConnectionPill({
     status,
     problem,
     viewOnly,
+    replaced,
     // Counted only while it can be more than a moment's worth: while live, changes go as they're made.
-    unshared: status === 'live' || viewOnly ? 0 : unsharedChanges(store, connection),
+    unshared: (status === 'live' && !replaced) || viewOnly ? 0 : unsharedChanges(store, connection),
     lastLive: connection.lastLive,
     lostAt: connection.lostAt,
     openedAt: connection.openedAt,

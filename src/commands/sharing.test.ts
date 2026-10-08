@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { Frame, FrameReader, FrameWriter, HelloFlag } from '../store/frames.ts';
 import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
+import type { RelaySocket } from '../store/relay.ts';
 import { addPlan, findPlan, findShared, markDeleted } from './plans.ts';
-import { joinFromLink, linksFor, parseShareLink, relayAddress, sharingConfirmed, startSharing } from './sharing.ts';
+import { joinFromLink, linksFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
 
 // The plan list falls back to memory here, as it does in a browser that won't give localStorage.
 const relay = 'http://192.168.1.23:8787';
@@ -30,6 +32,72 @@ describe('sharing a plan', () => {
     expect(links.edit).not.toContain('localhost');
     expect(parseShareLink(new URL(links.edit!).hash)).toMatchObject({ room: shared.room, secret: shared.secret });
     expect(parseShareLink(new URL(links.view).hash)).toEqual({ room: shared.room, viewKey: shared.viewKey });
+  });
+});
+
+/** A relay that retires whatever room it's asked to, or is unreachable for the rooms in `down`. */
+function retiringRelay(down = new Set<string>()) {
+  const retired: string[] = [];
+  const open = (url: string): RelaySocket => {
+    const room = url.split('/rooms/')[1]!;
+    const socket: RelaySocket = {
+      onopen: null,
+      onmessage: null,
+      onclose: null,
+      close: () => undefined,
+      send: (frame) => {
+        const r = new FrameReader(frame);
+        r.uint();
+        r.bytes();
+        r.uint();
+        if (r.uint() & HelloFlag.Retire) retired.push(room);
+        queueMicrotask(() => socket.onmessage?.(new FrameWriter(Frame.Synced).uint(0).uint(0).bytes(new Uint8Array(16)).uint(1).uint(1).uint(1).done()));
+      },
+    };
+    queueMicrotask(() => (down.has(room) ? socket.onclose?.() : socket.onopen?.()));
+    return socket;
+  };
+  return { open, retired };
+}
+
+describe('making new links (Q62)', () => {
+  it('moves the plan to a new room, and retires the old one once it can', async () => {
+    const entry = addPlan('Billing revamp');
+    const first = startSharing(entry.id, relay);
+    sharingConfirmed(entry.id, first);
+    const renewed = renewLinks(entry.id)!;
+    expect(renewed.room).not.toBe(first.room);
+    expect(renewed.secret).not.toBe(first.secret);
+    expect(findPlan(entry.id)?.shared).toMatchObject({ relay, pending: true, replaces: [{ room: first.room, secret: first.secret }] });
+    // Nothing is retired before the new room is confirmed.
+    const { open, retired } = retiringRelay();
+    expect(await retireReplaced(entry.id, open)).toBe('retired');
+    expect(retired).toEqual([]);
+    sharingConfirmed(entry.id, findPlan(entry.id)!.shared!);
+    expect(await retireReplaced(entry.id, open)).toBe('retired');
+    expect(retired).toEqual([first.room]);
+    expect(findPlan(entry.id)?.shared?.replaces).toBeUndefined();
+    expect(findPlan(entry.id)?.shared?.room).toBe(renewed.room);
+  });
+
+  it('keeps an old room it couldn’t reach, to try again, and a view link can’t make new links', async () => {
+    const entry = addPlan('Q3 roadmap');
+    const first = startSharing(entry.id, relay);
+    sharingConfirmed(entry.id, first);
+    renewLinks(entry.id);
+    sharingConfirmed(entry.id, findPlan(entry.id)!.shared!);
+    const second = findPlan(entry.id)!.shared!;
+    // Made new links again before the first old room was retired: both are kept.
+    renewLinks(entry.id);
+    sharingConfirmed(entry.id, findPlan(entry.id)!.shared!);
+    expect(findPlan(entry.id)?.shared?.replaces?.map((r) => r.room)).toEqual([first.room, second.room]);
+    const { open, retired } = retiringRelay(new Set([first.room]));
+    expect(await retireReplaced(entry.id, open)).toBe('failed');
+    expect(retired).toEqual([second.room]);
+    expect(findPlan(entry.id)?.shared?.replaces?.map((r) => r.room)).toEqual([first.room]);
+
+    const viewer = joinFromLink(aLink(false), relay);
+    expect(renewLinks(viewer.entry.id)).toBeNull();
   });
 });
 

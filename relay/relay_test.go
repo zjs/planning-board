@@ -116,6 +116,7 @@ type synced struct {
 	epoch      []byte
 	self       uint64
 	canWrite   bool
+	retired    bool
 }
 
 type got struct {
@@ -133,7 +134,7 @@ func (c *client) hello(tok []byte, after, flags uint64) ([]got, synced) {
 		kind, r := c.recv()
 		switch kind {
 		case FrameSynced:
-			s := synced{head: r.Uint(), upto: r.Uint(), epoch: r.Bytes(), self: r.Uint(), canWrite: r.Uint() == 1}
+			s := synced{head: r.Uint(), upto: r.Uint(), epoch: r.Bytes(), self: r.Uint(), canWrite: r.Uint() == 1, retired: r.Uint() == 1}
 			return out, s
 		case FrameSnapshotOut, FrameUpdateOut:
 			seq, at, data := r.Uint(), r.Uint(), r.Bytes()
@@ -144,6 +145,13 @@ func (c *client) hello(tok []byte, after, flags uint64) ([]got, synced) {
 			c.t.Fatalf("unexpected frame %x before synced", kind)
 		}
 	}
+}
+
+// helloError sends a hello the relay should refuse, and returns the code.
+func (c *client) helloError(tok []byte, flags uint64) uint64 {
+	c.t.Helper()
+	c.send(NewFrame(FrameHello).Uint(ProtocolVersion).Bytes(tok).Uint(0).Uint(flags).Done())
+	return c.expectError()
 }
 
 // expectError reads frames until an error frame, and returns its code.
@@ -341,6 +349,110 @@ func TestRoomsSurviveARestartWithTheirEpoch(t *testing.T) {
 	got, after := b.hello(token, 0, 0)
 	if len(got) != 2 || after.head != 2 || !bytes.Equal(before.epoch, after.epoch) {
 		t.Fatalf("after a restart: %+v %+v", got, after)
+	}
+}
+
+func TestRetiredRoomsCanBeReadButNotChanged(t *testing.T) {
+	dir := t.TempDir()
+	cfg, _ := testConfig(t, dir)
+	srv := serve(t, cfg)
+	a := dial(t, srv)
+	a.hello(token, 0, HelloCreate)
+	a.update(1, "one")
+	a.ack()
+	viewer := dial(t, srv)
+	viewer.hello(nil, 0, 0)
+
+	// Retiring takes the write token: a view link can't.
+	if code := dial(t, srv).helloError(nil, HelloRetire); code != ErrReadOnly {
+		t.Fatalf("retire without the token: %d", code)
+	}
+	if code := dial(t, srv).helloError([]byte("not-the-token"), HelloRetire); code != ErrReadOnly {
+		t.Fatalf("retire with the wrong token: %d", code)
+	}
+
+	// Whoever made new links retires the old room once; everyone connected is told.
+	b := dial(t, srv)
+	_, s := b.hello(token, 0, HelloRetire)
+	if !s.retired || !s.canWrite {
+		t.Fatalf("retiring connection: %+v", s)
+	}
+	if code := a.expectError(); code != ErrReplaced {
+		t.Fatalf("writer told %d", code)
+	}
+	if code := viewer.expectError(); code != ErrReplaced {
+		t.Fatalf("viewer told %d", code)
+	}
+
+	// Writes are refused, with the change's ref; snapshots are ignored.
+	a.update(7, "two")
+	kind, r := a.recv()
+	if code, _, ref := r.Uint(), r.Bytes(), r.Uint(); kind != FrameError || code != ErrReplaced || ref != 7 {
+		t.Fatalf("update to a retired room: %x %d ref %d", kind, code, ref)
+	}
+	a.send(NewFrame(FrameSnapshot).Uint(1).Bytes([]byte("snap")).Done())
+	// Presence isn't forwarded: the viewer gets the next thing sent, not the presence.
+	a.send(NewFrame(FrameEphemeral).Bytes([]byte("here")).Done())
+	b.send(NewFrame(FrameEphemeral).Bytes([]byte("also here")).Done())
+	a.update(8, "three")
+	if kind, r := a.recv(); kind != FrameError || r.Uint() != ErrReplaced {
+		t.Fatal("a second update wasn't refused")
+	}
+	a.conn.Close(websocket.StatusNormalClosure, "")
+	if kind, _ := viewer.recv(); kind != FrameLeft {
+		t.Fatalf("viewer got %x, not the writer leaving", kind)
+	}
+
+	// After a restart, the room is still retired, still readable, and creating it again doesn't revive it.
+	srv.Close()
+	srv = serve(t, cfg)
+	got, s := dial(t, srv).hello(token, 0, HelloCreate)
+	if len(got) != 1 || got[0].data != "one" || !s.retired || s.head != 1 {
+		t.Fatalf("after a restart: %+v %+v", got, s)
+	}
+}
+
+func TestARestoredRelayGivesEveryRoomANewEpoch(t *testing.T) {
+	dir := t.TempDir()
+	cfg, _ := testConfig(t, dir)
+	srv := serve(t, cfg)
+	a := dial(t, srv)
+	_, before := a.hello(token, 0, HelloCreate)
+	a.update(1, "one")
+	a.ack()
+	srv.Close()
+
+	cfg.Restored = true
+	srv = serve(t, cfg)
+	got, after := dial(t, srv).hello(token, 0, 0)
+	if bytes.Equal(before.epoch, after.epoch) || len(got) != 1 || after.head != 1 {
+		t.Fatalf("after a restore: %+v %+v", got, after)
+	}
+}
+
+func TestASprint11DataFolderStillOpens(t *testing.T) {
+	// testdata/sprint-11-data was written by sprint 11's relay: a room with a snapshot, a log, and a kept segment.
+	dir := t.TempDir()
+	if err := os.CopyFS(dir, os.DirFS(filepath.Join("testdata", "sprint-11-data"))); err != nil {
+		t.Fatal(err)
+	}
+	cfg, _ := testConfig(t, dir)
+	srv := serve(t, cfg)
+	c := dial(t, srv)
+	got, s := c.hello(token, 0, 0)
+	if len(got) != 2 || got[0].kind != FrameSnapshotOut || got[0].data != "snapshot-to-2" || got[1].data != "three" {
+		t.Fatalf("caught up with %+v", got)
+	}
+	if s.head != 3 || s.upto != 2 || !s.canWrite || s.retired {
+		t.Fatalf("synced %+v", s)
+	}
+	all, _ := dial(t, srv).hello(nil, 0, HelloReplay)
+	if len(all) != 3 || all[0].data != "one" || all[2].data != "three" {
+		t.Fatalf("replay %+v", all)
+	}
+	c.update(1, "four")
+	if _, seq, _ := c.ack(); seq != 4 {
+		t.Fatalf("next seq %d", seq)
 	}
 }
 

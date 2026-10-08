@@ -2,7 +2,8 @@ package main
 
 // A room on disk (ADR 0017): one directory per shared plan, holding
 //
-//   room.json        when it was made, the hash of its write token, its epoch
+//   room.json        when it was made, the hash of its write token, its epoch,
+//                    and when its links were replaced, if they were
 //   snapshot.json    the latest snapshot a client uploaded, if any
 //   log.jsonl        every update since that snapshot, one per line
 //   segments/        updates a snapshot replaced, kept 30 days so a bad
@@ -36,6 +37,9 @@ type roomMeta struct {
 	TokenHash string `json:"tokenHash"`
 	Epoch     string `json:"epoch"`
 	Created   int64  `json:"created"`
+	// Retired is when the room's links were replaced (Q62), in Unix
+	// milliseconds, or 0. A retired room is read-only for good.
+	Retired int64 `json:"retired,omitempty"`
 }
 
 type entry struct {
@@ -86,6 +90,45 @@ func (room *Room) canWrite(token []byte) bool {
 	got := sha256.Sum256(token)
 	return subtle.ConstantTimeCompare(want, got[:]) == 1
 }
+
+// retire marks the room's links replaced, durably. Call with room.mu held.
+// Retiring again changes nothing.
+func (room *Room) retire(now time.Time) error {
+	if room.meta.Retired != 0 {
+		return nil
+	}
+	meta := room.meta
+	meta.Retired = now.UnixMilli()
+	b, _ := json.Marshal(meta)
+	if err := writeAtomic(filepath.Join(room.dir, "room.json"), b); err != nil {
+		return err
+	}
+	room.meta = meta
+	return nil
+}
+
+// newEpoch gives a room on disk a new epoch, after a restore from a backup:
+// boards that see it start their cursor again, and send what the room is missing.
+func newEpoch(dir string) error {
+	path := filepath.Join(dir, "room.json")
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	var meta roomMeta
+	if err := json.Unmarshal(b, &meta); err != nil {
+		return err
+	}
+	epoch := make([]byte, 16)
+	if _, err := rand.Read(epoch); err != nil {
+		return err
+	}
+	meta.Epoch = hex.EncodeToString(epoch)
+	b, _ = json.Marshal(meta)
+	return writeAtomic(path, b)
+}
+
+func (room *Room) retired() bool { return room.meta.Retired != 0 }
 
 func isRoom(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, "room.json"))

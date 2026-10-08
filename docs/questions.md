@@ -517,6 +517,7 @@ Entry format:
 - Recommendation: (a). It's the only access control end-to-end encryption allows cheaply, and it needs no accounts. Mockup: artboard 7.
 - Status: answered 2026-10-08: (a). "Can edit" and "Can view" links, and "Make new links" to revoke. M2 sprint 11.
   - Can edit and Can view links built in sprint 11, slice 3 (ADR 0018, amended). "Make new links" comes in sprint 12.
+  - "Make new links" built in sprint 12, slice 3 (ADR 0018, amended). It's in the Share dialog, behind a second step that says what happens to the old links. The plan moves to a new room, and once the new room has all of it, the relay retires the old one. People on an old link keep the plan as it was, read-only, and the pill says **Link replaced**. On a relay older than sprint 12, the app warns that old links still work.
 
 ### Q63: History: what's kept, and for how long
 - Context: Requirements 31 and 32, and the PM's priority for sprint 9: knowing who changed what. Yjs records no lasting authors, so history is our own log, kept in its own encrypted document beside the board's. Names are self-chosen and times come from each person's clock, so it's a courtesy, not an audit trail.

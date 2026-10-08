@@ -15,7 +15,9 @@ Planning Board is running.
   Shared plans are kept, encrypted, in /Users/you/Downloads/planning-board-data
 ```
 
-Colleagues on the same network open the "On your network" address. Shared plans are kept in `planning-board-data`, next to the program. Copying that folder is a backup, at any moment.
+Colleagues on the same network open the "On your network" address. Shared plans are kept in `planning-board-data`, next to the program. Copying that folder is a backup, at any moment; after restoring one, start the relay once with `-restored`.
+
+Running it for a team, behind HTTPS, with upgrades and backups, or as a pilot on a laptop: [`docs/hosting.md`](../docs/hosting.md).
 
 **On a Mac,** the program isn't signed yet, so macOS refuses to open it. In Terminal, in the folder you unpacked it to:
 
@@ -34,7 +36,7 @@ xattr -d com.apple.quarantine planning-board-relay
 docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board -public-url https://plans.example.com
 ```
 
-Put it behind your company's reverse proxy for HTTPS, and pass `-trust-forwarded` so it sees each person's address rather than the proxy's.
+Put it behind your company's reverse proxy for HTTPS, and pass `-trust-forwarded` so it sees each person's address rather than the proxy's. [`docs/hosting.md`](../docs/hosting.md) has Caddy, nginx and systemd examples.
 
 ## Options
 
@@ -56,6 +58,7 @@ Put it behind your company's reverse proxy for HTTPS, and pass `-trust-forwarded
 | `-trust-forwarded` | off | Behind a proxy, read `X-Forwarded-For` and `X-Forwarded-Proto`. |
 | `-static` | | Serve the app from this directory's `index.html` instead of the built-in one. |
 | `-announce` | on | Print the addresses colleagues can open. |
+| `-restored` | off | Start once with this after restoring the data folder from a backup: every shared plan gets a new epoch, so boards send whatever the backup is missing. |
 
 ## What it can and can't see
 

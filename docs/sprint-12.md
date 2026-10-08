@@ -30,8 +30,8 @@ The engineering plan is `docs/plans/sprint-12-plan.md`.
 
 ### 3. New links, and hosting (Q62, Q64 e)
 
-- [ ] Make new links: old links turn read-only and say why; people who had them keep what they saw.
-- [ ] Hosting docs: a server behind HTTPS, upgrades, backup and restore, and a pilot on a laptop.
+- [x] Make new links: old links turn read-only and say why; people who had them keep what they saw.
+- [x] Hosting docs: a server behind HTTPS, upgrades, backup and restore, and a pilot on a laptop.
 
 ### 4. Changes by file (Q64 f, Q72)
 

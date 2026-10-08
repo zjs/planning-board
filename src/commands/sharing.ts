@@ -2,7 +2,8 @@
 // board sees it: who you are, which relay, making links, and opening one.
 
 import { newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type ShareLink } from '../store/keys.ts';
-import { addSharedPlan, findShared, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
+import { retireRoom, type OpenSocket, type RetireResult } from '../store/relay.ts';
+import { addSharedPlan, findPlan, findShared, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
 
 export { isNewerLink, parseShareLink, type ShareLink } from '../store/keys.ts';
 
@@ -124,6 +125,46 @@ export function startSharing(id: PlanId, relay: string): SharedPlan {
   const shared: SharedPlan = { relay, room, secret: s, viewKey: viewKeyOf(s), pending: true };
   setShared(id, shared);
   return shared;
+}
+
+/**
+ * Give a shared plan new links (Q62, requirement 33): a new room and secret,
+ * on the same relay, remembering the old room until the relay has retired
+ * it. The caller reopens the plan, which uploads it to the new room; once
+ * it's all there, `retireReplaced` cuts the old links off. Only an edit link
+ * can do this. Returns the plan's new sharing, or null.
+ */
+export function renewLinks(id: PlanId): SharedPlan | null {
+  const old = findPlan(id)?.shared;
+  if (!old?.secret) return null;
+  const { room, secret } = newRoom();
+  const s = toBase64Url(secret);
+  // A share that never reached the relay has nothing to retire.
+  const replaces = [...(old.replaces ?? []), ...(old.pending ? [] : [{ room: old.room, secret: old.secret }])];
+  const shared: SharedPlan = { relay: old.relay, room, secret: s, viewKey: viewKeyOf(s), pending: true, replaces };
+  setShared(id, shared);
+  return shared;
+}
+
+/**
+ * Retire the rooms a plan's old links pointed at. Each one retired is
+ * forgotten; one the relay can't reach now is tried again next time. Says
+ * whether the relay is too old to retire rooms, which leaves old links working.
+ */
+export async function retireReplaced(id: PlanId, open?: OpenSocket): Promise<RetireResult> {
+  const shared = findPlan(id)?.shared;
+  if (!shared?.replaces?.length || shared.pending) return 'retired';
+  const results = await Promise.all(shared.replaces.map((old) => retireRoom({ relay: shared.relay, ...old, ...(open ? { open } : {}) })));
+  const left = shared.replaces.filter((_, i) => results[i] === 'failed');
+  // Sharing may have changed meanwhile, in another tab: only what this call retired is taken off.
+  const now = findPlan(id)?.shared;
+  if (now && now.room === shared.room) {
+    const done = new Set(shared.replaces.filter((_, i) => results[i] !== 'failed').map((r) => r.room));
+    const { replaces: _, ...rest } = now;
+    const still = (now.replaces ?? []).filter((r) => !done.has(r.room));
+    setShared(id, still.length > 0 ? { ...rest, replaces: still } : rest);
+  }
+  return results.includes('unsupported') ? 'unsupported' : left.length > 0 ? 'failed' : 'retired';
 }
 
 /** The relay confirmed the room. */

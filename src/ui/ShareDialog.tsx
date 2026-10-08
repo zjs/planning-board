@@ -26,7 +26,7 @@ export function useConnection(connection: Connection | null): {
 } {
   const key = useSyncExternalStore(
     (listener) => connection?.subscribe(listener) ?? (() => undefined),
-    () => (connection ? `${connection.status}|${String(connection.canWrite)}|${connection.problem?.code ?? ''}` : ''),
+    () => (connection ? `${connection.status}|${String(connection.canWrite)}|${connection.problem?.code ?? ''}|${String(connection.retired)}` : ''),
   );
   if (!connection || key === '') return NO_CONNECTION;
   return { status: connection.status, problem: connection.problem, canWrite: connection.canWrite };
@@ -78,6 +78,7 @@ export function ShareDialog({
   connection,
   onShare,
   onMoveRelay,
+  onRenewLinks,
   onSaveFile,
   onClose,
 }: {
@@ -88,6 +89,8 @@ export function ShareDialog({
   onShare: (relay: string) => void;
   /** A shared plan's relay has a new address, such as a laptop on another network. */
   onMoveRelay: (relay: string) => void;
+  /** Make new links, cutting off the old ones (Q62). */
+  onRenewLinks: () => void;
   onSaveFile: () => void;
   onClose: () => void;
 }) {
@@ -100,6 +103,8 @@ export function ShareDialog({
   // The relay's address as others reach it, for the links.
   const [publicRelay, setPublicRelay] = useState<string | null>(null);
   const { status, problem: refused } = useConnection(connection);
+  const [renewing, setRenewing] = useState(false);
+  const replaced = connection?.retired === true;
 
   useEffect(() => {
     let live = true;
@@ -167,15 +172,19 @@ export function ShareDialog({
   }
 
   if (shared) {
-    const links = publicRelay === null || shared.pending ? null : linksFor(shared, appForLinks(publicRelay), publicRelay);
+    const links = publicRelay === null || shared.pending || replaced ? null : linksFor(shared, appForLinks(publicRelay), publicRelay);
     return (
       <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
-        {refused ? (
+        {replaced ? (
+          <p className="share-problem" role="alert" data-testid="share-replaced">
+            This plan was given new links, so the one you opened can only show it. Ask whoever shared it for the new link.
+          </p>
+        ) : refused ? (
           <p className="share-problem" role="alert">
             The relay refused this plan: {refused.message}
           </p>
         ) : status !== 'live' && (shared.pending || publicRelay === null) ? (
-          <p role="status">Sharing…</p>
+          <p role="status">{shared.replaces?.length ? 'Making new links…' : 'Sharing…'}</p>
         ) : null}
         {links && (
           <>
@@ -200,7 +209,38 @@ export function ShareDialog({
             )}
           </>
         )}
-        {shared.secret && (
+        {links?.edit && !renewing && (
+          <div className="share-renew">
+            <button type="button" onClick={() => setRenewing(true)} data-testid="renew-links">
+              Make new links…
+            </button>
+          </div>
+        )}
+        {renewing && (
+          <div className="share-renew" role="group" aria-label="Make new links">
+            <p>
+              Both links stop working. Anyone who opens them sees the plan as it was, and can’t change it; people who had
+              them keep what they already saw. Send the new links to everyone who should still have the plan.
+            </p>
+            <div className="dialog-actions">
+              <button type="button" onClick={() => setRenewing(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary"
+                data-testid="renew-confirm"
+                onClick={() => {
+                  setRenewing(false);
+                  onRenewLinks();
+                }}
+              >
+                Make new links
+              </button>
+            </div>
+          </div>
+        )}
+        {shared.secret && !replaced && (
           <details className="share-move">
             <summary>The relay moved?</summary>
             <form

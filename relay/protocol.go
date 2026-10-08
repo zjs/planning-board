@@ -45,6 +45,10 @@ const (
 	// HelloReplay asks for every update the relay still keeps, ignoring the
 	// snapshot: for a client that couldn't read the snapshot.
 	HelloReplay uint64 = 1 << 1
+	// HelloRetire marks the room's links replaced (Q62), with the hello's
+	// write token: from then on it can be read but not changed, and
+	// presence isn't forwarded. Whoever made new links sends it once.
+	HelloRetire uint64 = 1 << 2
 )
 
 // Error codes, in FrameError.
@@ -61,6 +65,7 @@ const (
 	ErrBadFrame       uint64 = 10 // a frame the relay can't parse
 	ErrHelloFirst     uint64 = 11 // anything but hello before the hello
 	ErrInternal       uint64 = 12 // the relay couldn't store something
+	ErrReplaced       uint64 = 13 // the room's links were replaced: it's read-only for good
 )
 
 var errShort = errors.New("frame ends early")

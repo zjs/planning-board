@@ -55,7 +55,7 @@ What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). Wh
 
 The relay is one program, with the app inside. Download the archive for your computer from the [`relay-latest` release](https://github.com/zjs/planning-board/releases/tag/relay-latest), unpack it, and run `planning-board-relay`. It prints two addresses: one for this computer, and one colleagues on your network can open. Open it, and **Share** a plan from there.
 
-For a server, there's a container: `docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board`. Options, Mac and Windows notes, and what the relay can and can't see are in [`relay/README.md`](relay/README.md).
+For a server, there's a container: `docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board`. Options, Mac and Windows notes, and what the relay can and can't see are in [`relay/README.md`](relay/README.md). HTTPS behind a proxy, upgrades, backups, and a pilot on a laptop are in [`docs/hosting.md`](docs/hosting.md).
 
 ## Other ways to run it
 

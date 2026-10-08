@@ -78,8 +78,8 @@ export function createPlanStore(doc: Y.Doc = new Y.Doc()): PlanStore {
   return { doc, undoManager, readOnly: false };
 }
 
-/** Why a plan opened read-only, if it did. */
-export type ReadOnlyReason = 'view-link' | 'newer-build';
+/** Why a plan is read-only, if it is: opened with a view link, written by a newer build, or its link was replaced (Q62). */
+export type ReadOnlyReason = 'view-link' | 'newer-build' | 'replaced';
 
 /** One plan, open: its store, whether it's saving, its relay connection if it's shared, and how to close it (ADR 0021). */
 export interface OpenPlan {
@@ -147,6 +147,12 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN, shared?: SharedPlan
   // What arrives from the relay may come from a newer build: then this copy only reads. Checked before the
   // board hears of the change, since this listener was added first.
   connection?.subscribe(() => {
+    // A link that was replaced says so, whatever else it was (Q62).
+    if (connection.retired && readOnly !== 'replaced') {
+      readOnly = 'replaced';
+      opened.readOnly = readOnly;
+      store.readOnly = true;
+    }
     if (readOnly === null && writtenByNewer(store.doc)) {
       readOnly = 'newer-build';
       opened.readOnly = readOnly;
@@ -154,6 +160,20 @@ export async function openPlanStore(id: PlanId = FIRST_PLAN, shared?: SharedPlan
     }
   });
   return opened;
+}
+
+/** Resolves once the relay holds everything on this computer: after sharing, before old links are retired. */
+export function whenShared(connection: Connection): Promise<void> {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (connection.status !== 'live' || connection.unshared() !== null) return false;
+      stop();
+      resolve();
+      return true;
+    };
+    const stop = connection.subscribe(() => void check());
+    check();
+  });
 }
 
 /**

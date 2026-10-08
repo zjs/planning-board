@@ -51,4 +51,9 @@ describe('the connection pill', () => {
     expect(at({ status: 'refused', problem: { code: 3, message: 'unknown room' } })).toMatchObject({ label: 'Not on the relay', canRecreate: true });
     expect(at({ status: 'refused', viewOnly: true, problem: { code: 3, message: 'unknown room' } }).canRecreate).toBe(false);
   });
+
+  it('says a link was replaced, and what of yours stays here (Q62)', () => {
+    expect(at({ replaced: true, problem: { code: 13, message: 'replaced' } })).toMatchObject({ label: 'Link replaced', tone: 'problem' });
+    expect(at({ replaced: true, unshared: 3 }).detail).toBe('3 changes not shared yet: they stay here');
+  });
 });
