@@ -27,7 +27,7 @@ Research documents go in `docs/research/collaboration/`, and spikes in `spikes/`
 
 ### 1. Prior art
 
-- [ ] How about a dozen tools and research projects handle merging, offline work, presence, history and encryption, side by side, and what each choice cost them (`prior-art.md`).
+- [x] How about a dozen tools and research projects handle merging, offline work, presence, history and encryption, side by side, and what each choice cost them (`prior-art.md`).
 
 ### 2. Merges on our own schema
 
