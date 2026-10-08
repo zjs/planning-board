@@ -28,6 +28,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - **An inspector** for editing any card's properties, description, group, and links without pivoting, for one card or many.
 - **Your own properties,** such as Team, and editing any property's values (rename, move, reorder, delete).
 - **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, "Blocks" links become dependencies, and "Relates" links become related links.
+- **Several plans in one browser:** a scratch plan beside the real one, listed in the File menu and named in the toolbar. Opening a file, importing and loading the sample each make a new plan, so nothing you're working on is overwritten. The same plan open in two tabs stays in step as you edit.
 - **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
 
 **Not yet**
@@ -35,8 +36,8 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - Component contention (too much work landing on one component at once), and a panel listing every conflict.
 - Reordering cards by hand within a cell.
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
-- An import replaces the board. Updating a board from a fresh export isn't built.
-- One person at a time. Live collaboration comes later, through a relay that only ever sees encrypted data. Its design is in [`docs/research/collaboration/`](docs/research/collaboration/README.md).
+- Updating a plan from a fresh Jira export: each import is a new plan.
+- Sharing a plan with other people. Live collaboration is being built now, through a relay that only ever sees encrypted data ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)). Its design is in [`docs/research/collaboration/`](docs/research/collaboration/README.md).
 
 What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). What's coming is in [`docs/backlog.md`](docs/backlog.md), and decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).
 

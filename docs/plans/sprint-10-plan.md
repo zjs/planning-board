@@ -1,6 +1,6 @@
 # Sprint 10: engineering plan
 
-Status: **approved 2026-10-08.** Scope is in `docs/sprint-10.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
+Status: **approved 2026-10-08; built 2026-10-08.** Sprint 10's compatibility fixtures follow in the next PR. Scope is in `docs/sprint-10.md`. This doc covers how engineering delivers it. The review process is unchanged from sprint 0 (`docs/plans/sprint-0-plan.md`, "Quality and review process").
 
 ## Context
 

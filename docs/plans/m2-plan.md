@@ -16,7 +16,7 @@ It's five sprints. Each ends in something the PM can use, and the first two are 
 
 ## Sprint 10: foundations, still single-user
 
-What it proves: the board is ready to be shared, and nothing a single user does changes.
+What it proves: the board is ready to be shared, and nothing a single user does changes. Built on 2026-10-08 (`docs/sprint-10.md`); the plan diff moved to sprint 13.
 
 | # | Slice | You can do this afterwards |
 |---|---|---|
@@ -31,9 +31,9 @@ What it proves: two people on two computers share a plan, end to end encrypted, 
 | # | Slice | You can do this afterwards |
 |---|---|---|
 | 1 | **The relay, for real** (ADR 0017): it moves from `spikes/` to `relay/`, with binary frames, write tokens, quotas, an origin check and relay receive times, Go tests in CI, and a container image | Run one container on a company machine, or on your own laptop for a pilot (Q64 e). |
-| 2 | **Share and join** (ADR 0018, Q62, requirement 33): the Share dialog, edit and view-only links, your name on the board | Share a plan, and open it on another computer. |
+| 2 | **Share and join** (ADR 0018, Q62, requirement 33): the Share dialog, edit and view-only links, your name on the board; replacing a shared plan for everyone from a file, as a separate, warned choice (Q58) | Share a plan, and open it on another computer. |
 | 3 | **The connection pill, and offline** (Q59, requirement 35): live, reconnecting, offline with a count, view-only | Go off the VPN, keep working, come back, and converge. |
-| 4 | **Loop repair** (ADR 0004) and the merge harness's scenarios as store tests | Two people nesting cards inside each other's at once leaves one nest, not two loose cards. |
+| 4 | **Loop repair** (ADR 0004), with L8 in the store's merge tests (the other scenarios became store tests in sprint 10) | Two people nesting cards inside each other's at once leaves one nest, not two loose cards. |
 
 ## Sprint 12: seeing each other
 

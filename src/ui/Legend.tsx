@@ -139,10 +139,15 @@ export function Legend({ onClose }: { onClose: () => void }) {
         <section>
           <h3>Plans and properties</h3>
           <dl>
+            <dt>File › Your plans</dt>
+            <dd>
+              Keep several plans in this browser, and switch between them. Double-click the plan's name, top left, to
+              rename it.
+            </dd>
             <dt>File › Save plan, Open plan</dt>
-            <dd>A plan as one file, to move between browsers or send to someone.</dd>
+            <dd>A plan as one file, to move between browsers or send to someone. Opening one makes a new plan.</dd>
             <dt>File › Import CSV</dt>
-            <dd>From a Jira export. It replaces the board, and cards keep their Jira keys.</dd>
+            <dd>From a Jira export, as a new plan. Cards keep their Jira keys.</dd>
             <dt>
               Inspect, <kbd>{keys.inspect}</kbd>
             </dt>
@@ -179,7 +184,10 @@ export function Legend({ onClose }: { onClose: () => void }) {
           </dl>
         </section>
       </div>
-      <p className="legend-foot">Everything saves in this browser as you go. Save to a file to take it somewhere else.</p>
+      <p className="legend-foot">
+        Everything saves in this browser as you go, and the same plan open in two tabs stays in step. Save to a file
+        to take it somewhere else.
+      </p>
       <p className="legend-foot">
         Build {BUILD} ·{' '}
         <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
