@@ -135,6 +135,8 @@ Beside the board, a panel lists:
 
 **Question:** Q62, access.
 
+**Since then:** sprint 10 brought several plans per browser, and the PM chose (Q68) that Share turns the plan you're on into the shared plan, rather than making a copy.
+
 ## 8. Open, Import and New on a shared plan (artboard 8)
 
 **The design:**
