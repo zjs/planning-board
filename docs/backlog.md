@@ -35,7 +35,7 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); both await acceptance. Sprint 12, seeing each other, is next. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
+**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); both await acceptance. Sprint 12, seeing each other, is under way ([`docs/sprint-12.md`](sprint-12.md)). Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
 
 ### H. Arranging and moving cards
 
@@ -249,6 +249,7 @@ Sprints 3 to 8 await the PM's acceptance and one combined tester session, which 
 - **Sprint 9: design collaboration** ([`docs/sprint-9.md`](sprint-9.md)) finished on 2026-10-08: prior art, merge experiments on our own schema, an encrypted relay and sync spike on the real board, presence and history, eight mockups, draft ADRs 0016–0020, Q58–Q65, and an M2 build plan (theme M). The app didn't change.
 - **Sprint 10: M2's foundations** ([`docs/sprint-10.md`](sprint-10.md)) shipped on 2026-10-08: schema 2 (ADR 0016), several plans per browser (Q66, Q67, ADR 0021), and two tabs of one plan in sync. Demo: [`docs/demos/sprint-10.md`](demos/sprint-10.md).
 - **Sprint 11: the relay** ([`docs/sprint-11.md`](sprint-11.md)) shipped on 2026-10-08: the relay for real, as downloads and a container (Q69); loop repair (ADR 0004); share and join, with Can edit and Can view links (Q62, Q68, Q70); and the connection pill, with offline work (Q59). Demo: [`docs/demos/sprint-11.md`](demos/sprint-11.md).
+- **Sprint 12: seeing each other** ([`docs/sprint-12.md`](sprint-12.md)), started 2026-10-08: presence and the driver (Q71), collisions, making new links and hosting docs, and changes by file (Q72).
 - **Later candidates:**
   - **Component contention and the conflicts panel** (requirements 17–20):
     - the panel follows the view (Q40);
@@ -277,6 +278,12 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
+
+- **Maintenance pass, 2026-10-08,** before planning sprint 12. Run in the background, read-only, with its fix applied in sprint 12, slice 0.
+  - **Go:** the relay's toolchain went from 1.27.1 to 1.27.2. The declared `go 1.26` is still supported, and the WebSocket library is current.
+  - **npm:** nothing to take; @noble/ciphers and @noble/hashes are current.
+  - **Still blocked:** TypeScript 7 (typescript-eslint 8.71.1 still requires TypeScript below 6.1) and the `braces` advisory (no patched release).
+  - **Elsewhere:** CI actions are on their current majors, all on node24; the Node 26 plan holds; no open issues.
 
 - **Compatibility fixtures for sprint 11** (2026-10-08), the release pass's last step: the first build that can share, whose moves carry stamps for loop repair and whose plans record their writer, opens in every later build. The generator now transforms old builds' TypeScript rather than only stripping it, since sprint 11's `relay.ts` used a parameter property; the current one no longer does.
 
