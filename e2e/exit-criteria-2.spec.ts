@@ -38,11 +38,8 @@ test('sprint 2 exit criteria', async ({ page }) => {
   test.setTimeout(60_000);
   await openApp(page);
 
-  // 1. Save the plan to a file, reset the board, open the file, and get the identical plan back.
+  // 1. Save the plan to a file, open the file, and get the identical plan back (as a new plan since sprint 10).
   const saved = await save(page);
-  page.once('dialog', (d) => void d.accept());
-  await page.getByTestId('file-menu').click();
-  await page.getByRole('menuitem', { name: 'Reset board' }).click();
   await page.getByTestId('open-plan-input').setInputFiles({ name: 'plan.json', mimeType: 'application/json', buffer: Buffer.from(saved) });
   await expect(page.getByTestId('notice')).toContainText('Opened “plan.json”');
   expect(await save(page)).toBe(saved);

@@ -278,6 +278,18 @@ describe('readPlanFile', () => {
     expect(readPlanFile(JSON.stringify(base())).ok).toBe(true);
   });
 
+  it("keeps the plan's name, which older readers ignore (ADR 0021)", () => {
+    const plan = readPlanFile(JSON.stringify(base()));
+    if (!plan.ok) throw new Error('should open');
+    expect(plan.name).toBeUndefined();
+    const text = planFileText(plan.plan, 'Q3 roadmap');
+    expect(Object.keys(JSON.parse(text) as object).slice(0, 3)).toEqual(['format', 'version', 'name']);
+    const named = readPlanFile(text);
+    expect(named.ok && named.name).toBe('Q3 roadmap');
+    expect(parsePlanJson(JSON.parse(text)).ok).toBe(true);
+    expect(planFileText(plan.plan)).not.toContain('"name": "Q3');
+  });
+
   it('explains text that is not JSON, or not a plan', () => {
     const notJson = readPlanFile('{ nope');
     expect(!notJson.ok && notJson.summary).toBe("This isn't a plan file: its text isn't valid JSON.");
@@ -293,7 +305,7 @@ describe('readPlanFile', () => {
 
   it('counts the problems in a broken plan and lists every one', () => {
     const broken = readPlanFile(JSON.stringify(base({ items: [{ id: 'a', title: 'A', parent: 'ghost', externalKey: 7 } as never] })));
-    expect(!broken.ok && broken.summary).toBe('This plan file has 2 problems, so it wasn\'t opened. The board is unchanged.');
+    expect(!broken.ok && broken.summary).toBe('This plan file has 2 problems, so it wasn\'t opened.');
     expect(!broken.ok && broken.details).toEqual(['items[0].externalKey: must be a string', 'item "a": unknown parent "ghost"']);
   });
 });

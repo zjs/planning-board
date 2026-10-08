@@ -1,7 +1,17 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 
 export type MenuEntry =
-  | { label: string; onSelect: () => void; disabled?: boolean; title?: string }
+  | {
+      label: string;
+      onSelect: () => void;
+      disabled?: boolean;
+      title?: string;
+      /** Tells entries with the same label apart, such as two plans with one name. */
+      key?: string;
+      /** The one in use, such as the open plan. */
+      current?: boolean;
+    }
+  | { heading: string }
   | 'divider';
 
 /**
@@ -59,11 +69,17 @@ export function Menu({ label, entries, testId }: { label: string; entries: MenuE
           {entries.map((entry, i) =>
             entry === 'divider' ? (
               <div key={i} className="menu-divider" role="separator" />
+            ) : 'heading' in entry ? (
+              <div key={i} className="menu-heading" role="presentation">
+                {entry.heading}
+              </div>
             ) : (
               <button
-                key={entry.label}
+                key={entry.key ?? entry.label}
                 type="button"
                 role="menuitem"
+                className={entry.current ? 'current' : undefined}
+                aria-current={entry.current ? 'true' : undefined}
                 disabled={entry.disabled}
                 title={entry.title}
                 onClick={() => {

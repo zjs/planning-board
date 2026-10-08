@@ -77,8 +77,8 @@ test('sprint 1 exit criteria', async ({ page }) => {
   await expect(card(page, 'custom-roles').locator('.card-title')).toHaveText('Custom roles');
   await expect(page.locator('.card', { hasText: 'Role audit trail' })).toHaveCount(0);
   await expect(page.locator('.card', { hasText: 'Role management' })).toHaveCount(0);
-  // Only loading the sample plan is left to undo.
-  await expect(undo).toBeEnabled();
+  // Nothing is left to undo: the sample is a plan of its own, not an edit (ADR 0021).
+  await expect(undo).toBeDisabled();
 
   await page.reload();
   await page.getByTestId('board').waitFor();

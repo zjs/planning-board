@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { JIRA_EXPORT } from '../src/domain/__fixtures__/jira-export.ts';
-import { foldAll, openApp } from './app.ts';
+import { foldAll, openApp, switchPlan } from './app.ts';
 
 // CSV import (requirement 28): map the columns, check the preview, import.
 
@@ -10,7 +10,7 @@ async function chooseCsv(page: Page, name: string, text: string) {
   await page.getByTestId('import-csv-input').setInputFiles({ name, mimeType: 'text/csv', buffer: Buffer.from(text) });
 }
 
-test('Jira columns are recognized, the preview shows the first rows, and the import replaces the board', async ({ page }) => {
+test('Jira columns are recognized, the preview shows the first rows, and the import is a plan of its own', async ({ page }) => {
   await openApp(page);
   await page.getByTestId('file-menu').click();
   await expect(page.getByRole('menuitem', { name: 'Import CSV (Jira export)…' })).toBeVisible();
@@ -44,7 +44,8 @@ test('Jira columns are recognized, the preview shows the first rows, and the imp
   await expect(page.locator('.card.group .attr.key')).toHaveText('PAY-1');
   await expect(page.getByTestId('axis-y').locator('option', { hasText: 'Status' })).toHaveCount(1);
 
-  await page.getByTestId('notice').getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByTestId('plan-name')).toHaveText('jira');
+  await switchPlan(page, 'Sample plan');
   await expect(page.locator('.card[data-item="tenant-data-deletion-gdpr"]').first()).toBeVisible();
 });
 

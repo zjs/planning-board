@@ -6,6 +6,7 @@
 // state, remembered per browser.
 
 import { itemValues, SIZE, SYSTEM, type Plan } from '../domain/model.ts';
+import { FIRST_PLAN, type PlanId } from '../commands/plans.ts';
 
 export type StepId = 'dump' | 'area' | 'sort' | 'view' | 'group';
 
@@ -65,6 +66,25 @@ export function saveGuide(state: GuideState): void {
     localStorage.setItem(KEY, state);
   } catch {
     // The guide is a convenience: without storage it runs again next time.
+  }
+}
+
+const PLAN_KEY = 'planning-board:guide-plan';
+
+/** The plan the guide runs in (ADR 0021). A browser whose guide started before plans existed ran it in the first plan. */
+export function loadGuidePlan(): PlanId {
+  try {
+    return localStorage.getItem(PLAN_KEY) ?? FIRST_PLAN;
+  } catch {
+    return FIRST_PLAN;
+  }
+}
+
+export function saveGuidePlan(plan: PlanId): void {
+  try {
+    localStorage.setItem(PLAN_KEY, plan);
+  } catch {
+    // A convenience only.
   }
 }
 

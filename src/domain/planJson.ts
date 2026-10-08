@@ -52,6 +52,8 @@ export interface ItemJson {
 export interface PlanJson {
   format: typeof PLAN_FORMAT;
   version: typeof PLAN_VERSION;
+  /** The plan's name (ADR 0021). Added in sprint 10; older readers ignore it. */
+  name?: string;
   properties: PropertyJson[];
   items: ItemJson[];
   /** [prerequisite, dependent] pairs: the first must come before the second. */
@@ -470,13 +472,20 @@ function itemToJson(plan: Plan, item: Item, parent: ItemId | null): ItemJson {
   };
 }
 
-/** The text of a saved plan file. */
-export function planFileText(plan: Plan): string {
-  return JSON.stringify(planToJson(plan), null, 2) + "\n";
+/** The text of a saved plan file, with the plan's name when it has one. */
+export function planFileText(plan: Plan, name?: string): string {
+  const { format, version, ...rest } = planToJson(plan);
+  const json: PlanJson = { format, version, ...(name ? { name } : {}), ...rest };
+  return JSON.stringify(json, null, 2) + "\n";
 }
 
 export type PlanFileResult =
-  | { ok: true; plan: Plan }
+  | {
+      ok: true;
+      plan: Plan;
+      /** The plan's name, if the file has one (ADR 0021). */
+      name?: string;
+    }
   | {
       ok: false;
       /** One sentence saying what's wrong, for someone who didn't write the file. */
@@ -513,11 +522,14 @@ export function readPlanFile(text: string): PlanFileResult {
   }
   const result = parsePlanJson(json);
   // A file saved before a built-in property existed gets it, with no values (ADR 0005).
-  if (result.ok) return { ok: true, plan: withBuiltIns(result.plan) };
+  if (result.ok) {
+    const name = isString(json.name) && json.name.trim() !== "" ? json.name.trim() : undefined;
+    return { ok: true, plan: withBuiltIns(result.plan), ...(name ? { name } : {}) };
+  }
   const n = result.errors.length;
   return {
     ok: false,
-    summary: `This plan file has ${n === 1 ? "a problem" : `${n} problems`}, so it wasn't opened. The board is unchanged.`,
+    summary: `This plan file has ${n === 1 ? "a problem" : `${n} problems`}, so it wasn't opened.`,
     details: result.errors,
   };
 }

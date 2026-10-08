@@ -26,6 +26,7 @@ import {
 import { wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
+import { FIRST_PLAN, planDatabase, type PlanId } from './plans.ts';
 
 export type { PersistenceStatus };
 import {
@@ -33,10 +34,12 @@ import {
   dependencyKey,
   isEmpty,
   itemToY,
+  planNameOf,
   propertyToY,
   readPlan,
   relatedKey,
   root,
+  setPlanName,
   valueNodeToY,
   writeItemValues,
   writePlan,
@@ -60,12 +63,53 @@ export function createPlanStore(doc: Y.Doc = new Y.Doc()): PlanStore {
   return { doc, undoManager };
 }
 
-/** Create a store backed by browser storage. Resolves once saved content is loaded. */
-export async function openPlanStore(): Promise<{ store: PlanStore; persistence: PersistenceStatus }> {
+/** One plan, open: its store, whether it's saving, and how to close it (ADR 0021). */
+export interface OpenPlan {
+  id: PlanId;
+  store: PlanStore;
+  persistence: PersistenceStatus;
+  close: () => Promise<void>;
+}
+
+/** Open one of the browser's plans, backed by its own database. Resolves once saved content is loaded. */
+export async function openPlanStore(id: PlanId = FIRST_PLAN): Promise<OpenPlan> {
   const store = createPlanStore();
-  const persistence = await persist(store.doc);
+  const { status, close } = await persist(store.doc, planDatabase(id));
   ensureBuiltIns(store);
-  return { store, persistence };
+  return {
+    id,
+    store,
+    persistence: status,
+    close: async () => {
+      store.undoManager.destroy();
+      await close();
+    },
+  };
+}
+
+/** The plan's name as its document keeps it (ADR 0021), if it has one. */
+export function planName(store: PlanStore): string | null {
+  return planNameOf(store.doc);
+}
+
+/** Name the plan in its document. Not an undo step. */
+export function namePlan(store: PlanStore, name: string): void {
+  setPlanName(store.doc, name);
+}
+
+/** Whether the plan has no properties and no cards: nothing would be lost in replacing it. */
+export function isEmptyPlan(store: PlanStore): boolean {
+  return isEmpty(store.doc);
+}
+
+/**
+ * Fill a new plan (Q66): a file, an import, the sample, or a blank plan.
+ * It isn't an undo step: the plan didn't exist before, so there's nothing
+ * to go back to but deleting it.
+ */
+export function startPlan(store: PlanStore, plan: Plan): void {
+  store.doc.transact(() => writePlan(store.doc, plan));
+  store.undoManager.clear();
 }
 
 /**
@@ -106,9 +150,14 @@ export function importPlan(
   choices: ValueChoices,
   quarterOrder: readonly string[],
 ): ImportResult {
-  const result = planFromDraft(draft, choices, randomId, quarterOrder);
+  const result = importedPlan(draft, choices, quarterOrder);
   loadPlan(store, result.plan);
   return result;
+}
+
+/** The plan an import makes, with new IDs, for a plan of its own (Q66). */
+export function importedPlan(draft: Draft, choices: ValueChoices, quarterOrder: readonly string[]): ImportResult {
+  return planFromDraft(draft, choices, randomId, quarterOrder);
 }
 
 /** Empty the board completely. Undoable. */

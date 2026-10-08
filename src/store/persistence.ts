@@ -5,7 +5,7 @@ import { migrateV1 } from './schemaV1.ts';
 
 export type PersistenceStatus = 'saved' | 'unavailable';
 
-/** One plan for now; scenarios will each get their own name (ADR 0003). */
+/** The first plan's database (ADR 0021). Other plans are named by `planDatabase` (src/store/plans.ts). */
 export const DB_NAME = `planning-board:v${SCHEMA_VERSION}:default`;
 /** Where builds before schema 2 kept the board (ADR 0016). Read once to migrate, and never written. */
 export const V1_DB_NAME = 'planning-board:v1:default';
@@ -47,20 +47,44 @@ async function migrateFromV1(doc: Y.Doc): Promise<void> {
   await provider.destroy();
 }
 
+/** A plan's board kept in IndexedDB, and how to stop keeping it there. */
+export interface Persisted {
+  status: PersistenceStatus;
+  /** Detach from the database, so it can be dropped or opened by another document. */
+  close: () => Promise<void>;
+}
+
+const nothingToClose = async () => {};
+
 /**
- * Keep `doc` in IndexedDB. Resolves once stored content is loaded, or with
- * 'unavailable' if the browser won't give us IndexedDB (some browsers
- * restrict it for files opened from disk). Then the board still works,
- * but changes won't survive a reload, and the UI says so.
+ * Keep `doc` in IndexedDB, in the database `name`. Resolves once stored
+ * content is loaded, or with 'unavailable' if the browser won't give us
+ * IndexedDB (some browsers restrict it for files opened from disk). Then
+ * the board still works, but changes won't survive a reload, and the UI
+ * says so. Only the first plan's database migrates a version 1 board.
  */
-export async function persist(doc: Y.Doc): Promise<PersistenceStatus> {
+export async function persist(doc: Y.Doc, name: string = DB_NAME): Promise<Persisted> {
   try {
-    if (typeof indexedDB === 'undefined') return 'unavailable';
-    const provider = await load(DB_NAME, doc);
-    if (!provider) return 'unavailable';
-    await migrateFromV1(doc);
-    return 'saved';
+    if (typeof indexedDB === 'undefined') return { status: 'unavailable', close: nothingToClose };
+    const provider = await load(name, doc);
+    if (!provider) return { status: 'unavailable', close: nothingToClose };
+    if (name === DB_NAME) await migrateFromV1(doc);
+    return { status: 'saved', close: () => provider.destroy() };
   } catch {
-    return 'unavailable';
+    return { status: 'unavailable', close: nothingToClose };
   }
+}
+
+/** Delete a database for good. Waits while another tab still has it open, without failing. */
+export function dropDatabase(name: string): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      const request = indexedDB.deleteDatabase(name);
+      request.onsuccess = request.onerror = () => resolve();
+      // Blocked by another tab: it goes when that tab lets go. Don't hold the caller up.
+      request.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
 }

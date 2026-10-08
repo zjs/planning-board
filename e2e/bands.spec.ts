@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { APP_URL, card, dragTo, foldAll, openApp, pickAxes, reveal } from './app.ts';
+import { asEarlierBrowser, card, dragTo, foldAll, openApp, pickAxes, reveal } from './app.ts';
 
 // Nested axes (Q34, ADR 0012) folded and unfolded (Q43, ADR 0013): one axis choice per property,
 // parent bands folded by default, a lane per parent, and folding instead of zoom.
@@ -84,14 +85,12 @@ test('Time: quarter bands, a "no release" column per quarter, and folding a quar
 });
 
 test('a view saved by an earlier build carries over: "System (component)" opens unfolded', async ({ page }) => {
-  await openApp(page);
-  await page.evaluate(() => {
-    localStorage.removeItem('planning-board:folding');
-    localStorage.setItem('planning-board:view', JSON.stringify({ x: 'sequence', y: 'system:1', yWithin: 'billing' }));
-    localStorage.setItem('planning-board:collapsed', JSON.stringify({ system: ['data'] }));
-    localStorage.setItem('planning-board:zoom', JSON.stringify(['eu-data-residency']));
+  // A browser a sprint 4 build used, with its board as sprint 8 left it (the board is now the browser's first plan).
+  await asEarlierBrowser(page, [...readFileSync(new URL('../src/domain/__fixtures__/compat/sprint-8.board.yjs', import.meta.url))], {
+    'planning-board:view': JSON.stringify({ x: 'sequence', y: 'system:1', yWithin: 'billing' }),
+    'planning-board:collapsed': JSON.stringify({ system: ['data'] }),
+    'planning-board:zoom': JSON.stringify(['eu-data-residency']),
   });
-  await page.goto(APP_URL);
   await page.getByTestId('board').waitFor();
   await expect(page.getByTestId('axis-y')).toHaveValue('system');
   // Unfolded, except the band it had collapsed; the lane zoom and group zoom are dropped.

@@ -23,7 +23,10 @@ import { isOrderKey } from '../domain/sequence.ts';
 export const SCHEMA_VERSION = 2;
 
 export const root = (doc: Y.Doc) => ({
-  /** `schema`: the layout version, 2. A document without it is empty, or version 1 (src/store/schemaV1.ts). */
+  /**
+   * `schema`: the layout version, 2. A document without it is empty, or version 1 (src/store/schemaV1.ts).
+   * `name`: the plan's name (ADR 0021). Not part of undo.
+   */
   meta: doc.getMap<unknown>('meta'),
   properties: doc.getMap<Y.Map<unknown>>('properties'),
   items: doc.getMap<Y.Map<unknown>>('items'),
@@ -37,6 +40,18 @@ export function schemaOf(doc: Y.Doc): 0 | 1 | 2 {
   const r = root(doc);
   if (r.meta.get('schema') === 2) return 2;
   return r.properties.size > 0 || r.items.size > 0 ? 1 : 0;
+}
+
+/** The plan's name, as kept in its document, if it has one. */
+export function planNameOf(doc: Y.Doc): string | null {
+  const name = root(doc).meta.get('name');
+  return typeof name === 'string' && name.trim() !== '' ? name : null;
+}
+
+/** Name the plan. It's not an edit to the board, so undo leaves it alone. */
+export function setPlanName(doc: Y.Doc, name: string): void {
+  const meta = root(doc).meta;
+  if (meta.get('name') !== name) doc.transact(() => meta.set('name', name));
 }
 
 /** Whether the board has no properties and no cards, deleted ones aside. */
