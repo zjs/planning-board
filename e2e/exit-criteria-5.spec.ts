@@ -36,7 +36,6 @@ test('sprint 5 exit criteria', async ({ page }) => {
 
   // 1. A plan file saved by an earlier build opens, and saves again with nothing lost.
   const old = JSON.parse(await readFile(OLD_PLAN, 'utf8')) as PlanFile;
-  page.once('dialog', (d) => void d.accept());
   await page.getByTestId('open-plan-input').setInputFiles(OLD_PLAN.pathname);
   await expect(notice(page)).toContainText('Opened “sprint-2.plan.json”');
   const saved = await save(page);
@@ -45,7 +44,6 @@ test('sprint 5 exit criteria', async ({ page }) => {
   );
   expect(saved.dependencies).toHaveLength(old.dependencies.length);
   // Back to this build's sample, with levels.
-  page.once('dialog', (d) => void d.accept());
   await page.getByTestId('file-menu').click();
   await page.getByRole('menuitem', { name: 'Load sample plan' }).click();
   // The sample opens on Roadmap since sprint 7 (Q52); these steps were written for Sequence.

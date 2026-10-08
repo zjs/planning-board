@@ -59,7 +59,6 @@ test('sprint 7 exit criteria', async ({ page }) => {
   await guide(page).getByRole('button', { name: 'Done' }).click();
 
   // 3. The sample opens on Roadmap, and a view is one click away.
-  page.once('dialog', (d) => void d.accept());
   await page.getByTestId('file-menu').click();
   await page.getByRole('menuitem', { name: 'Load sample plan' }).click();
   await expect(page.getByTestId('preset-roadmap')).toHaveAttribute('aria-pressed', 'true');
