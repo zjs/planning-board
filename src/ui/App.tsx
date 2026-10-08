@@ -26,7 +26,11 @@ import {
   isEmptyPlan,
   namePlan,
   planName,
+  replacePlan,
+  watchPlanName,
+  type Connection,
   type OpenPlan,
+  type ReadOnlyReason,
   type PersistenceStatus,
   type PlanStore,
 } from '../commands/store.ts';
@@ -39,6 +43,7 @@ import {
   forgetPlan,
   hashFor,
   isPlanListKey,
+  listIsSaved,
   listPlans,
   markDeleted,
   nameFromFile,
@@ -48,9 +53,12 @@ import {
   touchPlan,
   unmarkDeleted,
   UNTITLED,
+  setShared,
   type PlanEntry,
   type PlanId,
+  type SharedPlan,
 } from '../commands/plans.ts';
+import { isNewerLink, joinFromLink, linkInHash, shareOffered, sharingConfirmed, startSharing, myName } from '../commands/sharing.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
   chain,
@@ -119,6 +127,7 @@ import { PlanName } from './PlanName.tsx';
 import { Inspector } from './Inspector.tsx';
 import { ViewBar } from './ViewBar.tsx';
 import { PropertiesPanel } from './PropertiesPanel.tsx';
+import { ShareDialog, useConnection } from './ShareDialog.tsx';
 import { capturePositions, playFrom, type Positions } from './motion.ts';
 import { keyNames } from './platform.ts';
 import { isCellTarget, isIntoTarget, isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
@@ -136,21 +145,61 @@ function samplePlan(): Plan {
   return result.plan;
 }
 
+// The address the page was opened with, read before anything can replace it: a share link's key is in it.
+const initialHash = typeof location === 'undefined' ? '' : location.hash;
+
 // Plans are opened once per page and plan, outside React, so StrictMode's
 // double effects don't attach two storage providers to the same database.
 const opening = new Map<PlanId, Promise<OpenPlan>>();
+// How each open plan was shared when it was opened, to notice another tab sharing it.
+const openedShared = new Map<PlanId, string>();
+const sharedKey = (shared: SharedPlan | undefined) => {
+  if (!shared) return '';
+  const { pending: _, ...rest } = shared;
+  return JSON.stringify(rest);
+};
 function openPlan(id: PlanId): Promise<OpenPlan> {
   let open = opening.get(id);
   if (!open) {
-    open = openPlanStore(id);
+    const shared = findPlan(id)?.shared;
+    open = openPlanStore(id, shared);
     opening.set(id, open);
+    openedShared.set(id, sharedKey(shared));
   }
   return open;
 }
 function closePlan(id: PlanId): Promise<void> {
   const open = opening.get(id);
   opening.delete(id);
+  openedShared.delete(id);
   return open ? open.then((p) => p.close()) : Promise.resolve();
+}
+
+/** The relay a link with none named belongs to: the one that served this page. */
+function relayOfPage(): string | null {
+  return location.protocol.startsWith('http') ? new URL('.', location.href).href.replace(/\/$/, '') : null;
+}
+
+/** Open a share link in this browser: the plan it names, and a notice when that needs saying. */
+function joinLink(hash: string): { id: PlanId; notice?: string } | { notice: string } | null {
+  const link = linkInHash(hash);
+  if (!link) {
+    if (isNewerLink(hash)) return { notice: 'This link is from a newer version of Planning Board. Open it from the relay’s own address, which has the newer app.' };
+    return null;
+  }
+  const here = relayOfPage();
+  if (link.relay === undefined && here === null) return { notice: 'This link doesn’t say which relay its plan is on. Ask for the link again.' };
+  const joined = joinFromLink(link, link.relay ?? here!);
+  switch (joined.kind) {
+    case 'mismatch':
+      return { notice: 'This link’s key doesn’t match the shared plan you already have, so it wasn’t opened.' };
+    case 'already-editing':
+      return { id: joined.entry.id, notice: 'You can already edit this plan, so it opened as before.' };
+    case 'upgraded':
+      return { id: joined.entry.id, notice: 'You can edit this plan now.' };
+    default:
+      return { id: joined.entry.id };
+  }
 }
 
 /** Show a plan's link in the address bar without adding a step to Back. */
@@ -175,6 +224,12 @@ export interface PlanStart {
 export interface PlanActions {
   plans: PlanEntry[];
   name: string;
+  /** How the open plan is shared, if it is. */
+  shared: SharedPlan | null;
+  /** Share the open plan through a relay: it becomes the shared plan (Q68). */
+  share: (relay: string) => void;
+  /** The open shared plan's relay has a new address. */
+  moveRelay: (relay: string) => void;
   /** Make a new plan holding `content`, and switch to it. `prepare` sets its viewer state first. */
   make: (name: string, content: Plan, start?: PlanStart, prepare?: (id: PlanId) => void) => void;
   open: (id: PlanId) => void;
@@ -185,7 +240,8 @@ export interface PlanActions {
 /** A notice the App shows across plans: a deleted plan, with its Undo. */
 interface PlanNotice {
   text: string;
-  undo: () => void;
+  /** Absent for a notice that only says something. */
+  undo?: () => void;
   /** Called once the Undo can no longer be used. */
   expire: () => void;
 }
@@ -211,13 +267,31 @@ export function App() {
       const named = planName(plan.store);
       const entry = findPlan(id);
       if (named !== null && entry && named !== entry.name) renamePlan(id, named);
-      else if (named === null && entry) namePlan(plan.store, entry.name);
-      showHash(id);
+      // A shared plan's name comes with its first sync; writing ours first would rename it for everyone.
+      else if (named === null && entry && !entry.shared) namePlan(plan.store, entry.name);
+      // A link's key stays in the address bar only when this browser can't keep the plan list.
+      if (listIsSaved() || !linkInHash(location.hash)) showHash(id);
+      // Sharing, or a share that stopped part-way: once the relay has the room, it's shared for good.
+      if (entry?.shared?.pending && plan.connection) {
+        const pending = entry.shared;
+        void plan.connection.whenSynced.then(() => {
+          if (findPlan(id)?.shared?.room === pending.room) sharingConfirmed(id, pending);
+          refresh();
+        });
+      }
       setSession({ plan, start });
       refresh();
       if (previous !== null && previous !== id) void closePlan(previous);
     },
     [refresh],
+  );
+  // Open a plan afresh, as it's now shared: sharing it, a share from another tab, or a relay that moved.
+  const reopen = useCallback(
+    async (id: PlanId) => {
+      await closePlan(id);
+      if (current.current === id) await show(id);
+    },
+    [show],
   );
 
   const started = useRef(false);
@@ -229,31 +303,16 @@ export function App() {
       forgetPlan(id);
       void dropPlanDatabase(id);
     }
-    const linked = planFromHash(location.hash);
-    const id = (linked !== null ? findPlan(linked)?.id : undefined) ?? listPlans()[0]?.id ?? addPlan(UNTITLED).id;
-    void show(id);
-  }, [show]);
-
-  // Another tab made, renamed or deleted a plan. If it deleted this one, open the one used last instead.
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (!isPlanListKey(e.key)) return;
-      refresh();
-      const id = current.current;
-      if (id !== null && !findPlan(id)) void show(listPlans()[0]?.id ?? addPlan(UNTITLED).id);
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [refresh, show]);
-
-  // A link to another plan, pasted into the address bar, opens it.
-  useEffect(() => {
-    const onHash = () => {
-      const id = planFromHash(location.hash);
-      if (id !== null && id !== current.current && findPlan(id)) void show(id);
-    };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    const joined = joinLink(initialHash);
+    const linked = planFromHash(initialHash);
+    const elsewhere = linked !== null && !findPlan(linked);
+    const id =
+      (joined && 'id' in joined ? joined.id : undefined) ??
+      (linked !== null ? findPlan(linked)?.id : undefined) ??
+      listPlans()[0]?.id ??
+      addPlan(UNTITLED).id;
+    const notice = joined?.notice ?? (elsewhere ? 'This link is for a plan on another computer. Ask for its share link.' : undefined);
+    void show(id, notice ? { notice } : null);
   }, [show]);
 
   const [notice, setNoticeState] = useState<PlanNotice | null>(null);
@@ -262,6 +321,47 @@ export function App() {
     noticeRef.current = next;
     setNoticeState(next);
   }, []);
+
+  // The plan's name, as its document has it, follows renames from other tabs and other people.
+  useEffect(() => {
+    if (!session) return;
+    const id = session.plan.id;
+    return watchPlanName(session.plan.store, (name) => {
+      if (findPlan(id)?.name === name) return;
+      renamePlan(id, name);
+      refresh();
+    });
+  }, [session, refresh]);
+
+  // Another tab made, renamed or deleted a plan. If it deleted this one, open the one used last instead.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (!isPlanListKey(e.key)) return;
+      refresh();
+      const id = current.current;
+      if (id !== null && !findPlan(id)) void show(listPlans()[0]?.id ?? addPlan(UNTITLED).id);
+      // Shared in another tab, or its relay moved: connect here too.
+      else if (id !== null && sharedKey(findPlan(id)?.shared) !== openedShared.get(id)) void reopen(id);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [refresh, show, reopen]);
+
+  // A link to another plan, pasted into the address bar, opens it.
+  useEffect(() => {
+    const onHash = () => {
+      const joined = joinLink(location.hash);
+      if (joined) {
+        if ('id' in joined) void show(joined.id, joined.notice ? { notice: joined.notice } : null);
+        else setNotice({ text: joined.notice, expire: () => undefined });
+        return;
+      }
+      const id = planFromHash(location.hash);
+      if (id !== null && id !== current.current && findPlan(id)) void show(id);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [show, setNotice]);
   // A notice replaced, or run out, can't be undone any more.
   const retire = useCallback(() => {
     const old = noticeRef.current;
@@ -280,7 +380,8 @@ export function App() {
         const old = current.current;
         const oldPlan = old !== null ? await openPlan(old) : null;
         // An untouched empty plan is replaced rather than kept (ADR 0021): a first visit leaves no litter.
-        const replace = old !== null && oldPlan !== null && isEmptyPlan(oldPlan.store) && !findPlan(old)?.named;
+        const oldEntry = old !== null ? findPlan(old) : null;
+        const replace = old !== null && oldPlan !== null && isEmptyPlan(oldPlan.store) && !oldEntry?.named && !oldEntry?.shared;
         const entry = addPlan(name);
         const plan = await openPlan(entry.id);
         startPlan(plan.store, content);
@@ -301,14 +402,18 @@ export function App() {
   const remove = useCallback(() => {
     const id = current.current;
     if (id === null) return;
-    const name = findPlan(id)?.name ?? UNTITLED;
+    const entry = findPlan(id);
+    const name = entry?.name ?? UNTITLED;
     retire();
     markDeleted(id);
     void (async () => {
       const next = listPlans()[0] ?? addPlan(UNTITLED);
       await show(next.id);
       setNotice({
-        text: `Deleted “${name}”`,
+        // A shared plan goes from this browser only. Its keys go with it, so say what that costs.
+        text: entry?.shared
+          ? `Deleted “${name}” from this browser. Others still have it${entry.shared.secret ? '; open its Can edit link to get it back' : ''}.`
+          : `Deleted “${name}”`,
         undo: () => {
           unmarkDeleted(id);
           void show(id);
@@ -324,9 +429,23 @@ export function App() {
 
   if (!session) return <div className="loading">Loading…</div>;
   const id = session.plan.id;
+  const entry = plans.find((p) => p.id === id);
   const actions: PlanActions = {
     plans,
-    name: plans.find((p) => p.id === id)?.name ?? UNTITLED,
+    name: entry?.name ?? UNTITLED,
+    shared: entry?.shared ?? null,
+    share: (relay) => {
+      startSharing(id, relay);
+      refresh();
+      void reopen(id);
+    },
+    moveRelay: (relay) => {
+      const shared = findPlan(id)?.shared;
+      if (!shared) return;
+      setShared(id, { ...shared, relay });
+      refresh();
+      void reopen(id);
+    },
     make,
     open: (other) => {
       retire();
@@ -346,22 +465,26 @@ export function App() {
         planId={id}
         store={session.plan.store}
         persistence={session.plan.persistence}
+        connection={session.plan.connection}
+        readOnly={session.plan.readOnly}
         start={session.start}
         planActions={actions}
       />
       {notice && (
         <div className="notice" role="status" data-testid="plan-notice">
           {notice.text}
-          <button
-            type="button"
-            onClick={() => {
-              const undoing = notice;
-              setNotice(null);
-              undoing.undo();
-            }}
-          >
-            Undo
-          </button>
+          {notice.undo && (
+            <button
+              type="button"
+              onClick={() => {
+                const undoing = notice;
+                setNotice(null);
+                undoing.undo?.();
+              }}
+            >
+              Undo
+            </button>
+          )}
         </div>
       )}
     </>
@@ -393,17 +516,29 @@ function Workspace({
   planId,
   store,
   persistence,
+  connection,
+  readOnly: openedReadOnly,
   start,
   planActions,
 }: {
   planId: PlanId;
   store: PlanStore;
   persistence: PersistenceStatus;
+  connection: Connection | null;
+  readOnly: ReadOnlyReason | null;
   start: PlanStart | null;
   planActions: PlanActions;
 }) {
   const source = useMemo(() => snapshotSource(store), [store]);
   const { plan, empty, canUndo, canRedo } = useSyncExternalStore(source.subscribe, source.getSnapshot);
+  // A view link, or a plan a newer build has written, which can turn up with the relay's first catch-up.
+  useConnection(connection);
+  const readOnly: ReadOnlyReason | null = openedReadOnly ?? (store.readOnly ? 'newer-build' : null);
+  const canEdit = readOnly === null;
+  const readOnlyText =
+    readOnly === 'view-link'
+      ? 'You opened this plan with a view link, so you can look but not change it.'
+      : 'A newer version of Planning Board has changed this plan, so this one only shows it. Open the app from the relay’s address for the newer version.';
   const [choice, setChoice] = useState(() => loadViewChoice(planId));
   useEffect(() => saveViewChoice(planId, choice), [planId, choice]);
   // Groups expanded in place (Q33, ADR 0013). Viewer state, remembered per plan (ADR 0021).
@@ -525,7 +660,8 @@ function Workspace({
       ),
     [layout],
   );
-  const editing = editingState?.kind === 'rename' && !renamable.has(editingState.card.itemId) ? null : editingState;
+  const editing =
+    !canEdit || (editingState?.kind === 'rename' && !renamable.has(editingState.card.itemId)) ? null : editingState;
   // A new plan's first notice says where it came from, such as the file it was opened from.
   const [notice, setNotice] = useState<Notice | null>(() => (start?.notice ? { text: start.notice } : null));
   // Deleted or undone items drop out of the selection.
@@ -1015,9 +1151,11 @@ function Workspace({
     (...args: Parameters<typeof startDrag>) => {
       const focused = document.activeElement;
       if (focused instanceof HTMLElement && focused !== document.body && !scrollRef.current?.contains(focused)) focused.blur();
-      startDrag(...args);
+      // A view-only plan's cards are selected, never moved.
+      const [e, card, title, draggable = true] = args;
+      startDrag(e, card, title, canEdit && draggable);
     },
-    [startDrag],
+    [startDrag, canEdit],
   );
   // While a card in a group is dragged, a strip moves it up one level.
   const draggedParent = drag ? (plan.items[drag.card.itemId]?.parent ?? null) : null;
@@ -1136,9 +1274,18 @@ function Workspace({
       const focus = e.target instanceof Element ? e.target : null;
       if (focus?.closest('input, textarea, select, [role="menu"], [role="dialog"]')) return;
       if (dragging || editing) return;
+      // On a plan this computer can't change, the keys that would change it say why instead.
+      const refuse = () => {
+        e.preventDefault();
+        setNotice({ text: readOnlyText });
+      };
       if (e.metaKey || e.ctrlKey) {
         if (e.altKey) return;
         const key = e.key.toLowerCase();
+        if (!canEdit && (key === 'z' || key === 'y' || key === 'g')) {
+          refuse();
+          return;
+        }
         if (key === 'z' && !e.shiftKey) undo(store);
         else if ((key === 'z' && e.shiftKey) || key === 'y') redo(store);
         // ⌘G is also the browser's "find next", so it's always claimed here.
@@ -1160,6 +1307,10 @@ function Workspace({
       if (e.key === '/' && !e.altKey && !empty) {
         e.preventDefault();
         openFind();
+        return;
+      }
+      if (!canEdit && e.code === 'KeyL' && !e.shiftKey) {
+        refuse();
         return;
       }
       if (e.key.toLowerCase() === 'l' && !e.altKey && !e.shiftKey) {
@@ -1186,6 +1337,10 @@ function Workspace({
       }
       // Enter and Delete on a focused button belong to the button.
       if (focus?.closest('button, a')) return;
+      if (!canEdit && (e.key === 'Delete' || e.key === 'Backspace' || e.key === 'Enter')) {
+        if (selected.size > 0 || selectedLinks.size > 0) refuse();
+        return;
+      }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedLinks.size > 0) {
           e.preventDefault();
@@ -1229,6 +1384,8 @@ function Workspace({
     findOpen,
     openFind,
     clearFind,
+    canEdit,
+    readOnlyText,
   ]);
 
   // A card's actions (Q54): right-click a card, or its "⋯". The menu acts on the selection; a card that isn't in it
@@ -1245,7 +1402,7 @@ function Workspace({
     const one = ids.length === 1 ? ids[0]! : null;
     const groups = ids.filter((id) => counts.has(id));
     const collapsible = ids.some((id) => collapseTarget(id) !== null);
-    return [
+    const entries: ContextEntry[] = [
       {
         label: 'Rename',
         shortcut: 'Enter',
@@ -1281,6 +1438,11 @@ function Workspace({
       'divider',
       { label: ids.length > 1 ? `Delete ${ids.length} cards` : 'Delete', shortcut: keys.delete, onSelect: deleteSelection },
     ];
+    // Looking stays: inspecting, expanding and collapsing change nothing in the plan.
+    const looks = new Set(['Inspect', 'Expand', 'Collapse']);
+    return canEdit
+      ? entries
+      : entries.map((entry) => (typeof entry === 'string' || looks.has(entry.label) ? entry : { ...entry, disabled: true, title: readOnlyText }));
   };
 
   // Each of these makes a new plan, and nothing is overwritten (Q66).
@@ -1323,6 +1485,21 @@ function Workspace({
       return;
     }
     setImporting({ fileName: file.name, table });
+  };
+
+  // Sharing (requirements 30 and 33): the dialog, and replacing a shared plan from a file (Q58).
+  const [sharing, setSharing] = useState(false);
+  const offerShare = shareOffered() || planActions.shared !== null;
+  const replaceInput = useRef<HTMLInputElement>(null);
+  const [replacing, setReplacing] = useState(false);
+  const replaceFromFile = async (file: File) => {
+    const opened = readPlanFile(await file.text());
+    if (!opened.ok) {
+      setFileProblem({ name: file.name, summary: opened.summary, details: opened.details });
+      return;
+    }
+    replacePlan(store, opened.plan);
+    setNotice({ text: `Replaced the shared plan with “${file.name}” for everyone`, step: store.undoManager.undoStack.at(-1) });
   };
 
   const noticeLatest = useCallback(
@@ -1369,6 +1546,27 @@ function Workspace({
           disabled: empty && planActions.plans.length <= 1,
           title: 'Delete this plan from this browser. You can undo it for a few seconds.',
         },
+        ...(offerShare
+          ? ([
+              'divider',
+              {
+                label: planActions.shared ? 'Share links…' : 'Share…',
+                onSelect: () => setSharing(true),
+                disabled: empty && !planActions.shared,
+                title: 'Share this plan with a link, through a relay',
+              },
+              ...(planActions.shared?.secret
+                ? [
+                    {
+                      label: 'Replace this shared plan from a file…',
+                      onSelect: () => setReplacing(true),
+                      disabled: !canEdit,
+                      title: 'Everyone with the link sees the file’s plan instead',
+                    },
+                  ]
+                : []),
+            ] satisfies MenuEntry[])
+          : []),
         'divider',
         { heading: 'Your plans' },
         ...yourPlans,
@@ -1380,12 +1578,18 @@ function Workspace({
     <div className="app" data-plan-db={planDatabase(planId)}>
       <header className="toolbar">
         <PlanName name={planActions.name} onRename={planActions.rename} />
+        {planActions.shared && (
+          <span className="shared-chip" data-testid="shared-chip" title={readOnly ? readOnlyText : 'Shared through a relay'}>
+            {readOnly === 'view-link' ? 'View only' : 'Shared'}
+            {myName() !== null && <span className="me-chip"> · {myName()}</span>}
+          </span>
+        )}
         <div className="actions">
           <button
             type="button"
             className="icon"
             onClick={() => undo(store)}
-            disabled={!canUndo}
+            disabled={!canEdit || !canUndo}
             aria-label="Undo"
             title={`Undo (${keys.undo})`}
           >
@@ -1395,7 +1599,7 @@ function Workspace({
             type="button"
             className="icon"
             onClick={() => redo(store)}
-            disabled={!canRedo}
+            disabled={!canEdit || !canRedo}
             aria-label="Redo"
             title={`Redo (${keys.redo})`}
           >
@@ -1405,7 +1609,7 @@ function Workspace({
           <button
             type="button"
             onClick={groupSelection}
-            disabled={selected.size === 0}
+            disabled={!canEdit || selected.size === 0}
             title={`Group the selected cards (${keys.group})`}
           >
             Group
@@ -1413,7 +1617,7 @@ function Workspace({
           <button
             type="button"
             onClick={ungroupSelection}
-            disabled={selectedGroups.length === 0}
+            disabled={!canEdit || selectedGroups.length === 0}
             title={`Ungroup the selected groups (${keys.ungroup})`}
           >
             Ungroup
@@ -1437,13 +1641,24 @@ function Workspace({
           <button
             type="button"
             onClick={linkSelection}
-            disabled={pendingFrom === null && selected.size === 0}
+            disabled={!canEdit || (pendingFrom === null && selected.size === 0)}
             aria-pressed={pendingFrom !== null}
             title={`Link the selected cards: the first selected comes before the second (${keys.link})`}
           >
             Link
           </button>
           <span className="divider" />
+          {offerShare && (
+            <button
+              type="button"
+              onClick={() => setSharing(true)}
+              disabled={empty && !planActions.shared}
+              data-testid="share-button"
+              title="Share this plan with a link"
+            >
+              Share
+            </button>
+          )}
           {fileMenu}
           <button
             type="button"
@@ -1478,6 +1693,11 @@ function Workspace({
         </div>
       </header>
       {!empty && <ViewBar plan={plan} choice={shown} onChange={pivot} foldAll={{ x: foldAll('x'), y: foldAll('y') }} />}
+      {readOnly !== null && (
+        <div className="banner" role="status" data-testid="read-only-banner">
+          {readOnlyText}
+        </div>
+      )}
       {persistence === 'unavailable' && (
         <div className="banner" role="status">
           This browser isn't letting the board save, so changes will be lost when you reload. Chrome and Edge are
@@ -1591,6 +1811,7 @@ function Workspace({
           levelNames={levelNames}
           found={found}
           pivoting={pivoting}
+          readOnly={!canEdit}
         />
         {guide === 'running' && (
           // A column beside the board, not over it, so it never hides a card a step asks you to drag.
@@ -1609,6 +1830,7 @@ function Workspace({
           />
         )}
         {panel === 'inspector' && (
+          <fieldset className="panel-fence" disabled={!canEdit}>
           <Inspector
             store={store}
             plan={plan}
@@ -1620,8 +1842,10 @@ function Workspace({
             onMove={onInspectorMove}
             onAddInside={addInside}
           />
+          </fieldset>
         )}
         {panel === 'properties' && (
+          <fieldset className="panel-fence" disabled={!canEdit}>
           <PropertiesPanel
             store={store}
             plan={plan}
@@ -1629,6 +1853,7 @@ function Workspace({
             onShowAsRows={(property) => pivot(chooseAxis(shown, 'y', property))}
             onNotice={noticeLatest}
           />
+          </fieldset>
         )}
         </div>
       )}
@@ -1658,6 +1883,53 @@ function Workspace({
         />
       )}
       {legendOpen && <Legend onClose={closeLegend} />}
+      {sharing && (
+        <ShareDialog
+          planName={planActions.name}
+          shared={planActions.shared}
+          connection={connection}
+          onShare={planActions.share}
+          onMoveRelay={planActions.moveRelay}
+          onSaveFile={savePlanFile}
+          onClose={() => setSharing(false)}
+        />
+      )}
+      {replacing && (
+        <Dialog title="Replace this shared plan?" onClose={() => setReplacing(false)} testId="replace-shared">
+          <p>
+            Everyone with this plan’s link will see the file’s plan instead of this one, as soon as they’re connected. You
+            can undo it, as one step, while this page is open.
+          </p>
+          <p>To open a file without changing the shared plan, use Open plan file…, which makes a new plan.</p>
+          <div className="dialog-actions">
+            <button type="button" onClick={() => setReplacing(false)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => {
+                setReplacing(false);
+                replaceInput.current?.click();
+              }}
+            >
+              Choose a file…
+            </button>
+          </div>
+        </Dialog>
+      )}
+      <input
+        ref={replaceInput}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        data-testid="replace-plan-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (file) void replaceFromFile(file);
+        }}
+      />
       <input
         ref={openInput}
         type="file"

@@ -31,10 +31,10 @@ The engineering plan is `docs/plans/sprint-11-plan.md`.
 
 ### 3. Share and join (ADR 0018)
 
-- [ ] Share asks your name once, and a relay address when the app wasn't opened from one, then gives a Can edit and a Can view link.
-- [ ] Opening a link adds the plan to File › Your plans, or opens it if it's already there. The key leaves the address bar once it's saved.
-- [ ] A view link shows the plan and its changes, and nothing on the board can change it.
-- [ ] Replace this shared plan from a file, as a separate, warned choice (Q58).
+- [x] Share asks your name once, and a relay address when the app wasn't opened from one, then gives a Can edit and a Can view link.
+- [x] Opening a link adds the plan to File › Your plans, or opens it if it's already there. The key leaves the address bar once it's saved.
+- [x] A view link shows the plan and its changes, and nothing on the board can change it.
+- [x] Replace this shared plan from a file, as a separate, warned choice (Q58).
 
 ### 4. The connection pill, and offline (Q59)
 

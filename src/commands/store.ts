@@ -27,7 +27,8 @@ import { loopRepairs, wouldCreateCycle } from '../domain/tree.ts';
 import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 import { syncTabs } from '../store/tabs.ts';
-import { FIRST_PLAN, planDatabase, type PlanId } from './plans.ts';
+import { indexedDbSyncStore, memorySyncStore, RelayProvider } from '../store/relay.ts';
+import { FIRST_PLAN, planDatabase, syncDatabase, type PlanId, type SharedPlan } from './plans.ts';
 
 export type { PersistenceStatus };
 import {
@@ -47,6 +48,7 @@ import {
   valueNodeToY,
   writeItemValues,
   writePlan,
+  writtenByNewer,
 } from '../store/schema.ts';
 
 /** Marks edits made through commands, so undo tracks them and not loads from storage. */
@@ -55,6 +57,12 @@ const LOCAL_ORIGIN = { source: 'local-command' };
 export interface PlanStore {
   doc: Y.Doc;
   undoManager: Y.UndoManager;
+  /**
+   * A plan opened with a view link, or written by a newer build: nothing on
+   * this computer changes it. Every write path checks this one flag, so a
+   * button left enabled by mistake still can't write (sprint 11).
+   */
+  readOnly: boolean;
 }
 
 export function createPlanStore(doc: Y.Doc = new Y.Doc()): PlanStore {
@@ -64,38 +72,78 @@ export function createPlanStore(doc: Y.Doc = new Y.Doc()): PlanStore {
     // Every command is its own undo step, however quickly they follow each other.
     captureTimeout: 0,
   });
-  return { doc, undoManager };
+  return { doc, undoManager, readOnly: false };
 }
 
-/** One plan, open: its store, whether it's saving, and how to close it (ADR 0021). */
+/** Why a plan opened read-only, if it did. */
+export type ReadOnlyReason = 'view-link' | 'newer-build';
+
+/** One plan, open: its store, whether it's saving, its relay connection if it's shared, and how to close it (ADR 0021). */
 export interface OpenPlan {
   id: PlanId;
   store: PlanStore;
   persistence: PersistenceStatus;
+  /** The relay connection, for a shared plan (ADR 0017). */
+  connection: Connection | null;
+  readOnly: ReadOnlyReason | null;
   close: () => Promise<void>;
 }
 
-/** Open one of the browser's plans, backed by its own database. Resolves once saved content is loaded. */
-export async function openPlanStore(id: PlanId = FIRST_PLAN): Promise<OpenPlan> {
+/** A shared plan's connection to its relay, as the board sees it. */
+export type Connection = RelayProvider;
+export type { ConnectionStatus, RelayProblem } from '../store/relay.ts';
+
+/**
+ * Open one of the browser's plans, backed by its own database. Resolves once
+ * saved content is loaded. A shared plan also connects to its relay, which
+ * goes on catching up in the background.
+ */
+export async function openPlanStore(id: PlanId = FIRST_PLAN, shared?: SharedPlan): Promise<OpenPlan> {
   const store = createPlanStore();
   const { status, close } = await persist(store.doc, planDatabase(id));
+  let readOnly: ReadOnlyReason | null = shared && !shared.secret ? 'view-link' : writtenByNewer(store.doc) ? 'newer-build' : null;
+  store.readOnly = readOnly !== null;
   ensureBuiltIns(store);
   // The same plan open in another tab follows along (sprint 10, slice 3).
   const stopTabs = syncTabs(store.doc, planDatabase(id));
   // A loop two tabs made at once, or one left in storage, is settled now and whenever one appears (ADR 0004).
   repairLoops(store);
   const stopLoops = watchLoops(store);
-  return {
+  const connection = shared
+    ? new RelayProvider({
+        doc: store.doc,
+        relay: shared.relay,
+        room: shared.room,
+        viewKey: shared.viewKey,
+        ...(shared.secret ? { secret: shared.secret } : {}),
+        ...(shared.pending ? { create: true } : {}),
+        sync: typeof indexedDB === 'undefined' ? memorySyncStore() : indexedDbSyncStore(syncDatabase(id)),
+      })
+    : null;
+  const opened: OpenPlan = {
     id,
     store,
     persistence: status,
+    connection,
+    readOnly,
     close: async () => {
+      connection?.destroy();
       stopLoops();
       stopTabs();
       store.undoManager.destroy();
       await close();
     },
   };
+  // What arrives from the relay may come from a newer build: then this copy only reads. Checked before the
+  // board hears of the change, since this listener was added first.
+  connection?.subscribe(() => {
+    if (readOnly === null && writtenByNewer(store.doc)) {
+      readOnly = 'newer-build';
+      opened.readOnly = readOnly;
+      store.readOnly = true;
+    }
+  });
+  return opened;
 }
 
 /** The plan's name as its document keeps it (ADR 0021), if it has one. */
@@ -103,8 +151,29 @@ export function planName(store: PlanStore): string | null {
   return planNameOf(store.doc);
 }
 
+/** Call `listener` whenever the plan's name changes in its document: renamed here, in another tab, or by someone else. */
+export function watchPlanName(store: PlanStore, listener: (name: string) => void): () => void {
+  const meta = root(store.doc).meta;
+  const observer = (event: Y.YMapEvent<unknown>) => {
+    const name = planNameOf(store.doc);
+    if (event.keysChanged.has('name') && name !== null) listener(name);
+  };
+  meta.observe(observer);
+  return () => meta.unobserve(observer);
+}
+
+/**
+ * Replace a shared plan's content with another plan, such as a backup from a
+ * file (Q58). Unlike `startPlan`, it's one undo step, and everyone sharing
+ * the plan sees the change.
+ */
+export function replacePlan(store: PlanStore, plan: Plan): void {
+  edit(store, () => writePlan(store.doc, plan));
+}
+
 /** Name the plan in its document. Not an undo step. */
 export function namePlan(store: PlanStore, name: string): void {
+  if (store.readOnly) return;
   setPlanName(store.doc, name);
 }
 
@@ -119,6 +188,7 @@ export function isEmptyPlan(store: PlanStore): boolean {
  * to go back to but deleting it.
  */
 export function startPlan(store: PlanStore, plan: Plan): void {
+  if (store.readOnly) return;
   store.doc.transact(() => writePlan(store.doc, plan));
   store.undoManager.clear();
 }
@@ -130,7 +200,7 @@ export function startPlan(store: PlanStore, plan: Plan): void {
  * empty. Returns whether anything was added.
  */
 export function ensureBuiltIns(store: PlanStore): boolean {
-  if (isEmpty(store.doc)) return false;
+  if (store.readOnly || isEmpty(store.doc)) return false;
   const plan = readPlan(store.doc);
   const missing = Object.values(withBuiltIns(plan).properties).filter((p) => !plan.properties[p.id]);
   if (missing.length === 0) return false;
@@ -150,6 +220,8 @@ const REPAIR_ORIGIN = { source: 'loop-repair' };
  * Outside undo. Returns how many cards moved.
  */
 export function repairLoops(store: PlanStore): number {
+  // A view-only copy leaves repairs to those who can write; its board stays readable meanwhile (ADR 0004).
+  if (store.readOnly) return 0;
   const repairs = loopRepairs(readTree(store.doc));
   if (repairs.size === 0) return 0;
   const items = root(store.doc).items;
@@ -190,6 +262,7 @@ function moveItems(store: PlanStore, moves: Iterable<readonly [ItemId, ItemId | 
 }
 
 function edit(store: PlanStore, change: () => void): void {
+  if (store.readOnly) return;
   store.doc.transact(change, LOCAL_ORIGIN);
 }
 
@@ -677,11 +750,11 @@ export function removeRelatedLinks(store: PlanStore, links: readonly Related[]):
 }
 
 export function undo(store: PlanStore): void {
-  store.undoManager.undo();
+  if (!store.readOnly) store.undoManager.undo();
 }
 
 export function redo(store: PlanStore): void {
-  store.undoManager.redo();
+  if (!store.readOnly) store.undoManager.redo();
 }
 
 export interface StoreSnapshot {

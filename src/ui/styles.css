@@ -2514,3 +2514,85 @@ button.link:hover {
 .zoom-into.open .zoom-chevron {
   opacity: 1;
 }
+
+/* A shared plan, beside its name in the toolbar (sprint 11). The connection pill takes its place in slice 4. */
+.shared-chip {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Disables every control in a side panel on a plan this computer can't change, without changing its layout. */
+.panel-fence {
+  display: contents;
+}
+
+.share-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.share-field input {
+  padding: 6px 8px;
+}
+
+.share-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.share-problem {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+
+.share-link {
+  margin-top: 12px;
+}
+
+.share-link label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.share-link-label {
+  font-weight: 600;
+}
+
+.share-link-hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.share-link-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.share-link-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.share-move {
+  margin-top: 12px;
+}
+
+.share-move summary {
+  cursor: pointer;
+  color: var(--muted);
+}

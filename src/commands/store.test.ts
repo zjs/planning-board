@@ -45,6 +45,9 @@ import {
   resetPlan,
   snapshotSource,
   undo,
+  namePlan,
+  planName,
+  startPlan,
 } from './store.ts';
 
 const timeBySystem: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
@@ -718,5 +721,34 @@ describe('ensureBuiltIns', () => {
     expect(readPlan(store.doc).properties[LEVEL]).toMatchObject({ name: 'Level' });
     expect(store.undoManager.canUndo()).toBe(false);
     expect(ensureBuiltIns(store)).toBe(false);
+  });
+});
+
+describe('a read-only plan (sprint 11)', () => {
+  it('refuses every kind of write, and still takes changes from elsewhere', () => {
+    const store = createPlanStore();
+    loadPlan(store, plan(item('a', { title: 'Alpha', values: { [TIME]: ['q1'], [SYSTEM]: ['pay'] } }), item('b', { title: 'Beta' })));
+    const before = JSON.stringify(readPlan(store.doc));
+    store.readOnly = true;
+    createItem(store, timeBySystem, { x: 'q1', y: 'pay' }, 'Gamma');
+    dropCard(store, timeBySystem, { itemId: 'a', x: 'q1', y: 'pay' }, { x: 'q2', y: 'pay' });
+    renameItem(store, 'a', 'Renamed');
+    deleteItems(store, ['b']);
+    moveToParent(store, ['b'], 'a');
+    loadPlan(store, blankPlan());
+    resetPlan(store);
+    startPlan(store, blankPlan());
+    undo(store);
+    redo(store);
+    namePlan(store, 'Taken over');
+    expect(JSON.stringify(readPlan(store.doc))).toBe(before);
+    expect(planName(store)).toBeNull();
+
+    // Someone with the edit link changes it, and the change shows here.
+    const writer = createPlanStore();
+    Y.applyUpdate(writer.doc, Y.encodeStateAsUpdate(store.doc));
+    renameItem(writer, 'a', 'Alpha, renamed elsewhere');
+    Y.applyUpdate(store.doc, Y.encodeStateAsUpdate(writer.doc, Y.encodeStateVector(store.doc)));
+    expect(readPlan(store.doc).items['a']?.title).toBe('Alpha, renamed elsewhere');
   });
 });

@@ -60,7 +60,13 @@ jobs:
           done
           exit 1
 
-      - name: End-to-end tests (against dist/index.html over file://)
+      # The sharing tests (e2e/relay/) run against a real relay, which Playwright starts with `go run`.
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: relay/go.sum
+
+      - name: End-to-end tests (dist/index.html over file://, and served by a relay)
         run: npm run e2e
 
       # Named for its commit, and uploaded unzipped, so the download is the app itself: open it in a browser.

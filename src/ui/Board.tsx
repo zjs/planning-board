@@ -87,6 +87,8 @@ interface Props {
   onBoxSelect: (ids: ItemId[]) => void;
   /** Cards are gliding to a new view (ADR 0015): lines wait until they arrive. */
   pivoting?: boolean;
+  /** A plan this computer can't change (a view link): no adding or renaming from the headers. */
+  readOnly?: boolean;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
   /** Open a card's actions at a point on screen (Q54): right-click, or its "⋯". */
@@ -240,6 +242,7 @@ export const Board = memo(function Board({
   mismatches,
   found,
   pivoting = false,
+  readOnly = false,
 }: Props) {
   /**
    * A lane header. On a nested axis, a parent's own lane reads "No
@@ -247,11 +250,14 @@ export const Board = memo(function Board({
    * unfolds it, a bigger target than the band's ▸ (ADR 0013).
    */
   // A header being typed into (Q55): a value's new name, or a new value under `key` (null: the top level).
-  const [headerEdit, setHeaderEdit] = useState<{
+  const [headerEdit, setHeaderEditState] = useState<{
     which: "x" | "y";
     mode: "rename" | "add";
     key: string | null;
   } | null>(null);
+  const setHeaderEdit = (edit: typeof headerEdit) => {
+    if (!readOnly || edit === null) setHeaderEditState(edit);
+  };
   const editingHeader = (
     which: "x" | "y",
     mode: "rename" | "add",
@@ -277,7 +283,7 @@ export const Board = memo(function Board({
   /** "+ Add area", or the field for naming one. */
   const addControl = (which: "x" | "y", parent: string | null) => {
     const level = newLevelName(which, parent);
-    if (level === null) return null;
+    if (level === null || readOnly) return null;
     if (editingHeader(which, "add", parent)) {
       return (
         <HeaderField
@@ -389,7 +395,8 @@ export const Board = memo(function Board({
     if (
       property?.kind === "select" &&
       Object.keys(property.values).length === 0 &&
-      level !== null
+      level !== null &&
+      !readOnly
     ) {
       const where = which === "y" ? "at the bottom left" : "at the top right";
       return (
