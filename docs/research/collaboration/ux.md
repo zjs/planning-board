@@ -47,7 +47,9 @@ Three principles run through all of it. Each follows from what the earlier slice
 
 **Question:** Q60, collisions.
 
-## 3. Following the driver (artboard 3)
+## 3. Following the driver (artboard 3; not in M2)
+
+_The PM left following out of M2 (Q61, 2026-10-08). This section stays as the design to start from if it comes back._
 
 **The design:**
 - The driver chooses "Ask everyone to follow me".
@@ -110,10 +112,10 @@ Beside the board, a panel lists:
 - **An Activity feed for the whole plan,** grouped by day, filterable by person, with Restore on deletions.
 - **A History tab in the inspector** for one card.
 - "Last changed by" in the inspector, and on the card only while you hover it, so the board doesn't gain another badge.
-- A footnote: kept for 90 days, and names are the ones people chose.
+- A footnote: names are the ones people chose. History is kept forever, with times in each viewer's time zone (Q63).
 
 **Why it looks this way:**
-- History needs our own log, in a document of its own so it can be pruned. Logging in the board's document tripled its size (`presence-and-history.md`).
+- History needs our own log, in a document of its own so it never slows the board. Logging in the board's document tripled its size (`presence-and-history.md`).
 - Grouped, readable entries follow Patchwork's finding that a diff people can read beats one they have to approve (`prior-art.md`, §2).
 - The footnote is the honest version of attribution with no accounts.
 

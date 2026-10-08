@@ -1,6 +1,6 @@
 # 0018: Keys, links and access
 
-Status: Proposed (sprint 9). The product side is Q62.
+Status: Accepted (sprint 9). The product side is Q62, answered (a) on 2026-10-08.
 
 ## Context
 

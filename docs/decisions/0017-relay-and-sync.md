@@ -1,6 +1,6 @@
 # 0017: Sync through a relay that reads nothing
 
-Status: Proposed (sprint 9). Shaped by the spike in `spikes/relay/` and `spikes/sync-client/`. The evidence is in `docs/research/collaboration/relay-and-sync.md`.
+Status: Accepted (sprint 9; M2's plan approved by the PM, 2026-10-08). Shaped by the spike in `spikes/relay/` and `spikes/sync-client/`. The evidence is in `docs/research/collaboration/relay-and-sync.md`.
 
 ## Context
 
@@ -24,9 +24,10 @@ Requirements 30–31, and the architecture rule that the relay only ever sees en
 - binary frames;
 - a size limit per message;
 - an origin check;
-- per-room quotas and rate limits, configurable for a public relay (Q64).
+- per-room quotas and rate limits, configurable for a public relay (Q64);
+- the relay's own receive time beside each sequence number. It's metadata the relay already has, and history uses it to correct wrongly set clocks (ADR 0020).
 
-**Self-hosting:** one Go binary serves the app's single HTML file and the relay, and keeps each room as a log and a snapshot under one data directory. A container image is that binary, the HTML file and a volume.
+**Self-hosting:** one Go binary serves the app's single HTML file and the relay, and keeps each room as a log and a snapshot under one data directory. A container image is that binary, the HTML file and a volume. The same binary on one person's laptop is a pilot, before a company commits to hosting it (Q64).
 
 ## Alternatives
 
