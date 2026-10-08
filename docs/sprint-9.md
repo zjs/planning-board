@@ -31,8 +31,8 @@ Research documents go in `docs/research/collaboration/`, and spikes in `spikes/`
 
 ### 2. Merges on our own schema
 
-- [ ] A harness that runs about 25 two-person scenarios through the app's real commands, syncs them, and records what the board shows afterwards (`spikes/merge-scenarios/`).
-- [ ] For each surprise, a reading and the smallest fix (`merge-scenarios.md`).
+- [x] A harness that runs about 25 two-person scenarios through the app's real commands, syncs them, and records what the board shows afterwards (`spikes/merge-scenarios/`).
+- [x] For each surprise, a reading and the smallest fix (`merge-scenarios.md`).
 
 ### 3. A relay and encrypted sync
 
