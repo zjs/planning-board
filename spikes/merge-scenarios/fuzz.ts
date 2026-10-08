@@ -76,12 +76,12 @@ export interface FuzzResult {
   cards: number;
 }
 
-/** Raw document entries for a single-valued property holding more than one value. */
+/** Cards whose raw document holds more than one value for a single-valued property. Schema 2: one key can hold only one. */
 export function multiValued(store: PlanStore, property: string): number {
   let n = 0;
   store.doc.getMap<Y.Map<unknown>>('items').forEach((item) => {
-    const set = (item.get('values') as Y.Map<Y.Map<true>> | undefined)?.get(property);
-    if (set && set.size > 1) n++;
+    const keys = [...item.keys()].filter((k) => k === `v\u001f${property}` || k.startsWith(`v\u001f${property}\u001f`));
+    if (keys.length > 1) n++;
   });
   return n;
 }

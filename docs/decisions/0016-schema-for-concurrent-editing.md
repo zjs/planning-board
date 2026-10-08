@@ -1,6 +1,6 @@
 # 0016: A document schema for concurrent editing
 
-Status: Accepted (sprint 9; M2's plan approved by the PM, 2026-10-08). To be built before any sync code, in sprint 10, slice 1. Amends ADR 0006.
+Status: Accepted (sprint 9; M2's plan approved by the PM, 2026-10-08). Built in sprint 10, slice 1. Amends ADR 0006.
 
 ## Context
 
@@ -43,3 +43,13 @@ One schema version, `SCHEMA_VERSION` 2, with these changes. Each was tried on ba
 - **Every reader goes through `readPlan`,** which already exists, and that's where the "deleted" rule lives.
 - **The single-user app benefits too:** undoing a delete becomes a flip of the mark, not a rebuild of the subtree.
 - **This is the last schema change that's cheap.** Once boards are shared, the schema is on many people's computers at once.
+
+## Implementation notes (sprint 10, slice 1)
+
+- **Keys.** Value keys use the unit separator, `\u001f`, which can't appear in an ID typed or imported by a person: `v␟time` holds a single value, and `v␟system␟billing` is `true` for each multi value. Whether a property is multi-valued is read from the property when a card is written, and is fixed when the property is made.
+- **Reading is forgiving.** `readPlan` (`src/store/schema.ts`) ignores a key of the wrong kind for its property, a value that's deleted or unknown, and every card that's deleted or under a deleted group. The ancestor walk stops at a loop of parents (ADR 0004).
+- **Links aren't removed on delete.** Deleting a card leaves its dependencies and related links in the document, hidden by the reader, so undo, and anyone else's concurrent link, bring them back with the card. Removing a link is still an explicit command.
+- **`meta.schema` is 2.** A document with content and no mark is version 1. The version 1 reader lives in `src/store/schemaV1.ts`, used only to migrate.
+- **Migration in the browser.** The board now lives in `planning-board:v2:default`. When that database is empty and `planning-board:v1:default` holds a board, the board is read with the version 1 reader and written once, outside undo. The version 1 database is never written: an older build opened from disk afterwards finds the board as it was before the upgrade, and none of the later changes.
+- **Compatibility.** The fixture from the last version 1 build is `sprint-9` (commit `a5bc057`). Every browser-board fixture opens through the migration in `src/commands/compat.test.ts`, and `e2e/migration.spec.ts` upgrades a sprint 8 board in a real browser.
+- **The merge scenarios are store tests** (`src/commands/merge.test.ts`): L1 and L18 in both client orders, L2, L8, L9, L11 and O4, L12, L14, L16, U1, U2, and random edits that must converge without a single-valued property ever holding two values. Rerunning sprint 9's harness against schema 2: random edits leave no card with two quarters or two sizes (10 and 1 before), and no card stranded by a deleted group (14 before). L8, loops of parents, stays for ADR 0004's repair, and O2 and O3, replacing a shared board, for several plans per browser (Q58).

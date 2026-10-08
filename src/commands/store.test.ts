@@ -556,7 +556,8 @@ describe('editing values (requirement 27)', () => {
     const store = storeWith(item('a', { values: { [SYSTEM]: ['id/sso'] } }));
     expect(deleteValue(store, SYSTEM, 'id')).toEqual({ cards: 1, parent: null });
     expect(Object.keys(values(store, SYSTEM)).sort()).toEqual(['pay', 'pay/ledger']);
-    expect(readPlan(store.doc).items['a']!.values[SYSTEM]).toEqual([]);
+    // No values and an empty list mean the same (model.ts); schema 2 stores neither.
+    expect(readPlan(store.doc).items['a']!.values[SYSTEM] ?? []).toEqual([]);
   });
 
   it('renames a level', () => {

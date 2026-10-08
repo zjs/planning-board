@@ -162,7 +162,7 @@ export async function storageSettled(page: Page) {
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const open = indexedDB.open('planning-board:v1:default');
+        const open = indexedDB.open('planning-board:v2:default');
         open.onerror = () => reject(new Error(`Couldn't open storage: ${String(open.error)}`));
         open.onsuccess = () => {
           const db = open.result;

@@ -9,7 +9,7 @@ import { basePlan, canonical, pair, plan } from './harness.ts';
 import { fuzz } from './fuzz.ts';
 import { scenarios, type Verdict } from './scenarios.ts';
 
-const OUT = fileURLToPath(new URL('../../docs/research/collaboration/merge-results.md', import.meta.url));
+const OUT = process.env.MERGE_RESULTS_OUT ?? fileURLToPath(new URL('../../docs/research/collaboration/merge-results.md', import.meta.url));
 
 interface Row {
   id: string;

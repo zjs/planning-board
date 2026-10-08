@@ -8,7 +8,7 @@ import { hasLink, hasRelated, linkProblem, relatedProblem } from '../domain/depe
 import { planGroup, planUngroup, sharedValues } from '../domain/groups.ts';
 import { planValueEdit, type ValueEdit } from '../domain/inspector.ts';
 import { cleanTitle, deletionOf, nextRank, valuesForChild, valuesForNewItem } from '../domain/items.ts';
-import type { Dependency, ItemId, Plan, PropertyId, Related, SelectProperty, ValueId, ValueNode } from '../domain/model.ts';
+import type { Dependency, ItemId, Plan, PropertyId, Related, SelectProperty, ValueId } from '../domain/model.ts';
 import { relatedPair } from '../domain/model.ts';
 import { planDrop, planDrops, type DropMode, type DropTarget } from '../domain/move.ts';
 import {
@@ -28,7 +28,19 @@ import type { CardRef, ViewSpec } from '../domain/view.ts';
 import { persist, type PersistenceStatus } from '../store/persistence.ts';
 
 export type { PersistenceStatus };
-import { dependencyKey, isEmpty, itemToY, propertyToY, readPlan, relatedKey, root, valueSet, writePlan } from '../store/schema.ts';
+import {
+  clearItemValues,
+  dependencyKey,
+  isEmpty,
+  itemToY,
+  propertyToY,
+  readPlan,
+  relatedKey,
+  root,
+  valueNodeToY,
+  writeItemValues,
+  writePlan,
+} from '../store/schema.ts';
 
 /** Marks edits made through commands, so undo tracks them and not loads from storage. */
 const LOCAL_ORIGIN = { source: 'local-command' };
@@ -120,7 +132,7 @@ export function dropCard(
   if (!change || !item) return false;
   edit(store, () => {
     if (change.sequence !== undefined) item.set('sequence', change.sequence);
-    for (const [property, next] of Object.entries(change.values)) writeValues(item, property, next);
+    for (const [property, next] of Object.entries(change.values)) writeValues(store, item, property, next);
   });
   return true;
 }
@@ -146,34 +158,32 @@ export function dropCards(
       const item = items.get(id);
       if (!item) continue;
       if (change.sequence !== undefined) item.set('sequence', change.sequence);
-      for (const [property, next] of Object.entries(change.values)) writeValues(item, property, next);
+      for (const [property, next] of Object.entries(change.values)) writeValues(store, item, property, next);
     }
   });
   return changes.length;
 }
 
-/** Set one property's values on an item. Call inside a transaction. */
-function writeValues(item: Y.Map<unknown>, property: PropertyId, next: readonly ValueId[]): void {
-  let values = item.get('values') as Y.Map<Y.Map<true>> | undefined;
-  if (!values) {
-    values = new Y.Map();
-    item.set('values', values);
-  }
-  const set = values.get(property);
-  if (!set) {
-    values.set(property, valueSet(next));
-    return;
-  }
-  // Apply as a set difference, so a concurrent edit to another value survives.
-  for (const id of [...set.keys()]) if (!next.includes(id)) set.delete(id);
-  for (const id of next) if (!set.has(id)) set.set(id, true);
+/** Whether a property holds several values on a card (fixed when the property is made). */
+function isMulti(store: PlanStore, property: PropertyId): boolean {
+  return root(store.doc).properties.get(property)?.get('multi') === true;
+}
+
+/** Set one property's values on an item, writing only what changed (ADR 0016). Call inside a transaction. */
+function writeValues(store: PlanStore, item: Y.Map<unknown>, property: PropertyId, next: readonly ValueId[]): void {
+  writeItemValues(item, property, isMulti(store, property), next);
+}
+
+/** Mark a card deleted (ADR 0016): readers hide it and everything inside it, and undo clears the mark. */
+function tombstone(item: Y.Map<unknown> | undefined): void {
+  item?.set('deleted', true);
 }
 
 function writeCardChanges(store: PlanStore, property: PropertyId, cards: readonly CardValueChange[]): void {
   const items = root(store.doc).items;
   for (const { item, values } of cards) {
     const map = items.get(item);
-    if (map) writeValues(map, property, values);
+    if (map) writeValues(store, map, property, values);
   }
 }
 
@@ -209,7 +219,7 @@ export function createItem(
   const id = newItemId();
   const rank = nextRank(plan);
   edit(store, () =>
-    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, rank, values })),
+    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, rank, values }, plan)),
   );
   return id;
 }
@@ -227,7 +237,7 @@ export function createChild(store: PlanStore, view: ViewSpec, parent: ItemId, ti
   const id = newItemId();
   const rank = nextRank(plan);
   edit(store, () =>
-    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, rank, values })),
+    root(store.doc).items.set(id, itemToY({ id, title: clean, description: '', parent, sequence, rank, values }, plan)),
   );
   return id;
 }
@@ -262,18 +272,19 @@ export function setDescription(store: PlanStore, id: ItemId, text: string): bool
 }
 
 /**
- * Delete cards, everything inside any groups among them, and every
- * dependency touching those (questions.md Q17). One undo step restores all
- * of it. Returns how many cards were deleted.
+ * Delete cards and everything inside any groups among them (questions.md
+ * Q17). Cards are marked deleted rather than removed (ADR 0016), so an edit
+ * someone makes to one at the same moment survives, and a card added to a
+ * deleted group hides with it. Links to deleted cards stay stored and
+ * hidden, and come back with the cards. One undo step restores all of it.
+ * Returns how many cards were deleted.
  */
 export function deleteItems(store: PlanStore, ids: Iterable<ItemId>): number {
   const doomed = deletionOf(readPlan(store.doc), ids);
   if (doomed.items.length === 0) return 0;
   const r = root(store.doc);
   edit(store, () => {
-    for (const dep of doomed.dependencies) r.dependencies.delete(dependencyKey(dep));
-    for (const link of doomed.related) r.related.delete(relatedKey(link));
-    for (const id of doomed.items) r.items.delete(id);
+    for (const id of doomed.items) tombstone(r.items.get(id));
   });
   return doomed.items.length;
 }
@@ -301,7 +312,7 @@ export function groupItems(store: PlanStore, ids: Iterable<ItemId>): { group: It
   const id = newItemId();
   const { sequence, values } = sharedValues(plan, grouping.members);
   edit(store, () => {
-    items.set(id, itemToY({ id, title: NEW_GROUP_TITLE, description: '', parent: grouping.parent, sequence, rank: nextRank(plan), values }));
+    items.set(id, itemToY({ id, title: NEW_GROUP_TITLE, description: '', parent: grouping.parent, sequence, rank: nextRank(plan), values }, plan));
     for (const member of grouping.members) items.get(member)?.set('parent', id);
   });
   return { group: id, created: true };
@@ -322,7 +333,7 @@ export function ungroupItems(store: PlanStore, ids: Iterable<ItemId>): ItemId[] 
     for (const dep of ungroup.added) r.dependencies.set(dependencyKey(dep), { from: dep.from, to: dep.to });
     for (const link of ungroup.relatedRemoved) r.related.delete(relatedKey(link));
     for (const link of ungroup.relatedAdded) r.related.set(relatedKey(link), { a: link.a, b: link.b });
-    for (const group of ungroup.groups) r.items.delete(group);
+    for (const group of ungroup.groups) tombstone(r.items.get(group));
   });
   return ungroup.moves.map((m) => m.item);
 }
@@ -393,17 +404,17 @@ export function deleteProperty(store: PlanStore, id: PropertyId): number | null 
   if (isBuiltIn(id) || !plan.properties[id]) return null;
   const affected = cardsWithProperty(plan, id);
   edit(store, () => {
-    r.items.forEach((item) => (item.get('values') as Y.Map<unknown> | undefined)?.delete(id));
+    r.items.forEach((item) => clearItemValues(item, id));
     r.properties.delete(id);
   });
   return affected.length;
 }
 
-/** The Yjs map of a select property's values. */
-function valuesMap(store: PlanStore, property: PropertyId): Y.Map<Omit<ValueNode, 'id'>> | null {
+/** The Yjs map of a select property's values: one map per value (ADR 0016). */
+function valuesMap(store: PlanStore, property: PropertyId): Y.Map<Y.Map<unknown>> | null {
   const map = root(store.doc).properties.get(property);
   const values = map?.get('values');
-  return values instanceof Y.Map ? (values as Y.Map<Omit<ValueNode, 'id'>>) : null;
+  return values instanceof Y.Map ? (values as Y.Map<Y.Map<unknown>>) : null;
 }
 
 /**
@@ -425,7 +436,7 @@ export function addValue(
   if (valueLabelProblem(property, label, parent) !== null) return null;
   const id = randomId('v');
   const node = { label: cleanTitle(label)!, parent, order: orderAtEnd(property, parent) };
-  edit(store, () => values.set(id, node));
+  edit(store, () => values.set(id, valueNodeToY(node)));
   return id;
 }
 
@@ -437,7 +448,7 @@ export function renameValue(store: PlanStore, propertyId: PropertyId, valueId: V
   const clean = cleanTitle(label);
   if (property?.kind !== 'select' || !values || !node || clean === null || clean === node.label) return false;
   if (valueLabelProblem(property, clean, node.parent, valueId) !== null) return false;
-  edit(store, () => values.set(valueId, { label: clean, parent: node.parent, order: node.order }));
+  edit(store, () => values.get(valueId)?.set('label', clean));
   return true;
 }
 
@@ -449,7 +460,7 @@ export function reorderValue(store: PlanStore, propertyId: PropertyId, valueId: 
   const node = property.values[valueId];
   const order = reorderKey(property, valueId, direction);
   if (!node || order === null) return false;
-  edit(store, () => values.set(valueId, { label: node.label, parent: node.parent, order }));
+  edit(store, () => values.get(valueId)?.set('order', order));
   return true;
 }
 
@@ -466,7 +477,9 @@ export function moveValue(store: PlanStore, propertyId: PropertyId, valueId: Val
   const node = property?.kind === 'select' ? property.values[valueId] : undefined;
   if (!move || !values || !node) return false;
   edit(store, () => {
-    values.set(valueId, { label: node.label, parent, order: move.order });
+    const map = values.get(valueId);
+    map?.set('parent', parent);
+    map?.set('order', move.order);
     writeCardChanges(store, propertyId, move.cards);
   });
   return true;
@@ -487,7 +500,8 @@ export function deleteValue(
   if (!deletion || !values) return null;
   edit(store, () => {
     writeCardChanges(store, propertyId, deletion.cards);
-    for (const id of deletion.removed) values.delete(id);
+    // Marked, not removed (ADR 0016): a card someone tags with it meanwhile reads as untagged, and undo brings it back.
+    for (const id of deletion.removed) values.get(id)?.set('deleted', true);
   });
   return { cards: deletion.cards.length, parent: deletion.parent };
 }
