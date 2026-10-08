@@ -171,6 +171,23 @@ export function Legend({ onClose }: { onClose: () => void }) {
             </dd>
             <dt>View only</dt>
             <dd>A plan opened with its Can view link: you see changes as they happen, and can’t make any.</dd>
+            <dt>Who’s here</dt>
+            <dd>
+              The avatars beside it. Others’ pointers and selections show on the same cards in your own view. Click the
+              avatars to drive, or to show only the driver’s pointer, or nobody’s.
+            </dd>
+            <dt>Moving the same card</dt>
+            <dd>
+              A card someone is dragging says so, and where to. If two of you drop it, the later drop wins, and each of
+              you is told, with a way back.
+            </dd>
+            <dt>Make new links</dt>
+            <dd>In the links, to cut off the old ones. Anyone with an old link keeps the plan as it was, read-only.</dd>
+            <dt>Share by file</dt>
+            <dd>
+              Where no relay is allowed. <strong>File › Send changes</strong> makes an encrypted file to email;{' '}
+              <strong>Merge changes…</strong> takes one someone sent you.
+            </dd>
           </dl>
         </section>
         <section>

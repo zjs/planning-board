@@ -1,6 +1,6 @@
 # Sprint 12: engineering plan
 
-Status: **approved 2026-10-08.** Scope is in `docs/sprint-12.md`. This doc covers how engineering delivers it.
+Status: **approved 2026-10-08; built 2026-10-08,** all six slices, slice 4 included. Scope is in `docs/sprint-12.md`. This doc covers how engineering delivers it.
 
 ## Context
 

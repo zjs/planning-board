@@ -39,7 +39,7 @@ The engineering plan is `docs/plans/sprint-12-plan.md`.
 
 ### 5. Tester-ready
 
-- [ ] A demo note and session script (`docs/demos/sprint-12.md`), exit-criteria tests, the cheat sheet, the README, and the release pass.
+- [x] A demo note and session script (`docs/demos/sprint-12.md`), exit-criteria tests, the cheat sheet, the README, and the release pass.
 
 ## Deferred (don't build)
 

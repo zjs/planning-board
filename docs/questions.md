@@ -510,6 +510,7 @@ Entry format:
   - **Names:** chosen once per browser, and asked for the first time someone shares or joins.
 - Recommendation: (a), (c) and (e). The spike showed card-anchored presence works across pivots, and following a view, not just a scroll position, is what a pivoting board needs. Mockups: artboards 1 and 3.
 - Status: answered 2026-10-08: (a), (c) and (f). Card-anchored pointers, selections and drags, avatars, and the cursor setting (Everyone, Driver only, None). No following. M2 sprint 12.
+  - Built in sprint 12, slices 1 and 2 (ADR 0019, amended). Avatars sit beside the connection pill, one per person however many tabs they have. Clicking them opens a menu with I'm driving, your name, and **Pointers to show**. A pointer sits on the same card, at the same spot, in each person's own view. A selection outlines every copy of a card in its person's color. A card that's off screen, or inside a collapsed group, shows nothing. The cursor setting quiets pointers only: avatars and selections always show. It's kept per browser.
 
 ### Q62: Who can open a shared plan
 - Context: Requirement 30, the fixed rule that the relay never reads plan content, and the out-of-scope list (no accounts or permissions). The link is the key. Sprint 9's relay accepted an update from someone holding the wrong key, because it can't tell. Write tokens fix that, and also make view-only links possible.
@@ -571,6 +572,7 @@ Entry format:
 
     If the PM doesn't want to run a hosted relay at all, sprint 14's slice drops, and the public build offers (d), (e) and (f).
   - It becomes requirement 37 and an amendment to ADR 0017.
+  - (e) and (f) built in sprint 12: `docs/hosting.md` covers a pilot on a laptop and moving it to a server (slice 3), and changes by file is ADR 0022 (slice 4).
 
 ### Q66: What Open, Import and New do on a plan that isn't shared
 - Context: Requirement 34 and Q58 cover shared plans: Open, Import and New blank plan make a new plan, so nobody overwrites a shared board. Sprint 10 brings several plans per browser before anything is shared, so local plans need a rule too. Today these replace the board after asking (Q26, Q51).
@@ -612,6 +614,7 @@ Entry format:
 - Options: (a) claimed by clicking "I'm driving", one at a time, a new claim taking over; (b) whoever shared the plan, always; (c) drop "Driver only", leaving Everyone and None.
 - Recommendation: (a). It suits a live session, where whoever is presenting changes, and needs no server.
 - Status: answered 2026-10-08: (a). Everyone sees who's driving, and with nobody driving, "Driver only" shows no pointers. Sprint 12, slice 1.
+  - Built in sprint 12, slice 1. A claim is a number one higher than any seen, so every browser works out the same driver with no server. A ring marks the driver's avatar, and the menu says who's driving. Stopping, leaving, or 10 seconds of silence ends a claim.
 
 ### Q72: How a changes file's key travels
 - Context: Requirement 37 and Q64 (f). A changes file is encrypted with the plan's key, for companies where no relay is allowed, but someone has to get the key the first time.
