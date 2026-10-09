@@ -1686,6 +1686,43 @@ kbd {
   color: var(--muted);
 }
 
+/* A card's history in the inspector, and who last changed it (requirement 36). */
+.inspector-changed {
+  margin: 2px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.inspector-history {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.inspector-history h3 {
+  margin: 10px 0 4px;
+  font-size: 13px;
+}
+
+.inspector-history ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inspector-history li {
+  padding: 3px 0;
+}
+
+.inspector-history time {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-who {
+  font-weight: 600;
+}
+
 /* Activity (requirement 36): who changed what, by day, in your time zone. */
 .activity-filter {
   display: flex;

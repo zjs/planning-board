@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authors, entriesForItem, groupBursts, parseEntry, shownTime, type HistoryEntry } from './history.ts';
+import { authors, entriesForItem, groupBursts, lastChanges, parseEntry, shownTime, type HistoryEntry } from './history.ts';
 
 const minute = 60_000;
 const entry = (id: string, by: string, at: number, changes: HistoryEntry['changes'] = [{ kind: 'sequence', item: 'tax', from: null, to: 'a0' }]): HistoryEntry => ({
@@ -65,6 +65,8 @@ describe('history entries (ADR 0020)', () => {
       ['2', 1],
       ['1', 1],
     ]);
+    expect(lastChanges(entries, t).get('tax')).toEqual({ by: 'a', name: 'Ada', at: 3 * minute });
+    expect(lastChanges(entries, t).get('other')).toEqual({ by: 'b', name: 'Bo', at: 2 * minute });
     expect(authors(entries)).toEqual([
       { by: 'a', name: 'Ada' },
       { by: 'b', name: 'Bo' },

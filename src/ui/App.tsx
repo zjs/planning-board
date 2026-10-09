@@ -62,7 +62,7 @@ import {
   type SharedPlan,
 } from '../commands/plans.ts';
 import { isNewerLink, joinFromLink, linkInHash, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
-import { openPlanWithHistory, recordShared, type History } from '../commands/history.ts';
+import { openPlanWithHistory, recordShared, type History, type HistoryEntry } from '../commands/history.ts';
 import { CHANGES_FILE_EXTENSION, changesFileFor, changesTarget, describeMerge, mergeChanges } from '../commands/changesFile.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
@@ -139,6 +139,9 @@ import { watchCollisions, type CollisionWatch } from '../commands/collisions.ts'
 import { ShareDialog, useConnection } from './ShareDialog.tsx';
 import { ActivityPanel } from './ActivityPanel.tsx';
 import { useHistory } from './useHistory.ts';
+import { useNow } from './useNow.ts';
+import { lastChanges, shownTime } from '../domain/history.ts';
+import { formatWhen } from '../domain/time.ts';
 import { myPresenceId } from '../commands/presence.ts';
 import { capturePositions, playFrom, type Positions } from './motion.ts';
 import { keyNames } from './platform.ts';
@@ -1613,6 +1616,17 @@ function Workspace({
   const [fileProblem, setFileProblem] = useState<FileProblem | null>(null);
   const openInput = useRef<HTMLInputElement>(null);
   const historyView = useHistory(history);
+  // "Last changed by Ada, 10:42" in each card's tooltip (requirement 36), with no new badge on the board.
+  const historyNow = useNow();
+  const cardNotes = useMemo(() => {
+    const me = myPresenceId();
+    const notes = new Map<ItemId, string>();
+    const time = (e: HistoryEntry) => shownTime(e, historyView.clocks.get(e.by));
+    for (const [id, last] of lastChanges(historyView.entries, time)) {
+      notes.set(id, `Last changed by ${last.by === me ? 'you' : last.name}, ${formatWhen(last.at, historyNow)}`);
+    }
+    return notes;
+  }, [historyView, historyNow]);
   const savePlanFile = () => downloadText(datedFileName(fileSlug(planActions.name), 'json'), planFileText(plan, planActions.name));
   // Changes by file (ADR 0022): the whole board, sealed, to send; and a file someone sent, to merge.
   const mergeInput = useRef<HTMLInputElement>(null);
@@ -1980,6 +1994,7 @@ function Workspace({
           </div>
         )}
         <Board
+          cardNotes={cardNotes}
           plan={plan}
           view={view}
           layout={layout}
@@ -2053,6 +2068,7 @@ function Workspace({
             onNotice={noticeLatest}
             onMove={onInspectorMove}
             onAddInside={addInside}
+            history={{ entries: historyView.entries, clocks: historyView.clocks, me: myPresenceId() }}
           />
           </fieldset>
         )}
