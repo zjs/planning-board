@@ -91,16 +91,22 @@ function propertyChanges(before: Plan, after: Plan): Change[] {
   return out;
 }
 
-function linkChanges(before: Plan, after: Plan): Change[] {
+/**
+ * Links made and removed. A link to a card that was deleted, or restored, in
+ * the same change comes and goes with the card, so it isn't listed: restoring
+ * the card brings its links back.
+ */
+function linkChanges(before: Plan, after: Plan, cameAndWent: ReadonlySet<ItemId>): Change[] {
   const out: Change[] = [];
+  const quiet = (a: ItemId, b: ItemId) => cameAndWent.has(a) || cameAndWent.has(b);
   const dep = (d: { from: string; to: string }) => `${d.from}>${d.to}`;
   const rel = (r: { a: string; b: string }) => `${r.a}~${r.b}`;
   const deps = [new Set(before.dependencies.map(dep)), new Set(after.dependencies.map(dep))] as const;
   const rels = [new Set(before.related.map(rel)), new Set(after.related.map(rel))] as const;
-  for (const d of after.dependencies) if (!deps[0].has(dep(d))) out.push({ kind: 'linked', from: d.from, to: d.to });
-  for (const d of before.dependencies) if (!deps[1].has(dep(d))) out.push({ kind: 'unlinked', from: d.from, to: d.to });
-  for (const r of after.related) if (!rels[0].has(rel(r))) out.push({ kind: 'linked', from: r.a, to: r.b, related: true });
-  for (const r of before.related) if (!rels[1].has(rel(r))) out.push({ kind: 'unlinked', from: r.a, to: r.b, related: true });
+  for (const d of after.dependencies) if (!deps[0].has(dep(d)) && !quiet(d.from, d.to)) out.push({ kind: 'linked', from: d.from, to: d.to });
+  for (const d of before.dependencies) if (!deps[1].has(dep(d)) && !quiet(d.from, d.to)) out.push({ kind: 'unlinked', from: d.from, to: d.to });
+  for (const r of after.related) if (!rels[0].has(rel(r)) && !quiet(r.a, r.b)) out.push({ kind: 'linked', from: r.a, to: r.b, related: true });
+  for (const r of before.related) if (!rels[1].has(rel(r)) && !quiet(r.a, r.b)) out.push({ kind: 'unlinked', from: r.a, to: r.b, related: true });
   return out;
 }
 
@@ -136,7 +142,8 @@ export function planDiff(before: Plan, after: Plan, seen: ReadonlySet<ItemId> = 
     out.push({ kind: 'restored', item: item.id, title: item.title, ...(inside.length > 0 ? { with: inside } : {}) });
   }
   out.push(...deletions(before, after));
-  out.push(...linkChanges(before, after));
+  const gone = Object.keys(before.items).filter((id) => !after.items[id]);
+  out.push(...linkChanges(before, after, new Set([...gone, ...back])));
   return out;
 }
 

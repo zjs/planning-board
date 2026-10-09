@@ -27,6 +27,7 @@ import {
   planName,
   replacePlan,
   restoreCardState,
+  restoreItems,
   watchPlanName,
   whenShared,
   type Connection,
@@ -136,6 +137,9 @@ import { ConnectionPill } from './ConnectionPill.tsx';
 import { usePresence } from './usePresence.ts';
 import { watchCollisions, type CollisionWatch } from '../commands/collisions.ts';
 import { ShareDialog, useConnection } from './ShareDialog.tsx';
+import { ActivityPanel } from './ActivityPanel.tsx';
+import { useHistory } from './useHistory.ts';
+import { myPresenceId } from '../commands/presence.ts';
 import { capturePositions, playFrom, type Positions } from './motion.ts';
 import { keyNames } from './platform.ts';
 import { isCellTarget, isIntoTarget, isParentTarget, useCardDrag, type BoardTarget } from './useCardDrag.ts';
@@ -704,8 +708,8 @@ function Workspace({
   // A clicked line's links, ready for Delete. Viewer state, like the selection.
   const [selectedLinks, setSelectedLinks] = useState<ReadonlySet<string>>(() => new Set());
   // One side panel at a time: Properties, or the card inspector (Q35), which follows the selection.
-  const [panel, setPanel] = useState<'properties' | 'inspector' | null>(null);
-  const togglePanel = useCallback((which: 'properties' | 'inspector') => setPanel((open) => (open === which ? null : which)), []);
+  const [panel, setPanel] = useState<'properties' | 'inspector' | 'activity' | null>(null);
+  const togglePanel = useCallback((which: 'properties' | 'inspector' | 'activity') => setPanel((open) => (open === which ? null : which)), []);
   // The add modifier only means something on an axis that holds several values.
   const isMulti = (axis: AxisSpec) => {
     const property = plan.properties[axis.property];
@@ -1608,6 +1612,7 @@ function Workspace({
   // Plan files (requirement 29, ADR 0005).
   const [fileProblem, setFileProblem] = useState<FileProblem | null>(null);
   const openInput = useRef<HTMLInputElement>(null);
+  const historyView = useHistory(history);
   const savePlanFile = () => downloadText(datedFileName(fileSlug(planActions.name), 'json'), planFileText(plan, planActions.name));
   // Changes by file (ADR 0022): the whole board, sealed, to send; and a file someone sent, to merge.
   const mergeInput = useRef<HTMLInputElement>(null);
@@ -1731,6 +1736,7 @@ function Workspace({
               },
             ] satisfies MenuEntry[])
           : []),
+        { label: 'Activity', onSelect: () => setPanel('activity'), title: 'Who changed what on this plan, and when' },
         'divider',
         { heading: 'Your plans' },
         ...yourPlans,
@@ -1768,7 +1774,7 @@ function Workspace({
             </button>
           </span>
         )}
-        {presenceView && <Avatars view={presenceView} />}
+        {presenceView && <Avatars view={presenceView} onActivity={() => setPanel('activity')} />}
         <div className="actions">
           <button
             type="button"
@@ -1860,6 +1866,15 @@ function Workspace({
             title="Add properties such as Team, and edit their values"
           >
             Properties
+          </button>
+          <button
+            type="button"
+            onClick={() => togglePanel('activity')}
+            aria-pressed={panel === 'activity'}
+            title="Who changed what on this plan, and when"
+            data-testid="activity-button"
+          >
+            Activity
           </button>
           <span className="divider" />
           {!empty && <FindButton open={findOpen} onClick={() => (findOpen ? clearFind() : openFind())} />}
@@ -2040,6 +2055,21 @@ function Workspace({
             onAddInside={addInside}
           />
           </fieldset>
+        )}
+        {panel === 'activity' && (
+          <ActivityPanel
+            plan={plan}
+            entries={historyView.entries}
+            earlier={historyView.earlier}
+            clocks={historyView.clocks}
+            me={myPresenceId()}
+            canEdit={canEdit}
+            onClose={() => setPanel(null)}
+            onReveal={revealCard}
+            onRestore={(change) => {
+              if (restoreItems(store, [change.item, ...(change.with ?? [])]) > 0) noticeLatest(`Restored “${change.title}”`);
+            }}
+          />
         )}
         {panel === 'properties' && (
           <fieldset className="panel-fence" disabled={!canEdit}>
