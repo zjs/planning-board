@@ -31,6 +31,7 @@ import { persist, type PersistenceStatus } from '../store/persistence.ts';
 import { syncTabs } from '../store/tabs.ts';
 import { PresenceChannel } from '../store/presence.ts';
 import { indexedDbSyncStore, memorySyncStore, RelayProvider } from '../store/relay.ts';
+import type { History } from './history.ts';
 import { FIRST_PLAN, planDatabase, syncDatabase, type PlanId, type SharedPlan } from './plans.ts';
 
 export type { PersistenceStatus };
@@ -91,6 +92,8 @@ export interface OpenPlan {
   /** Who else is on it, for a shared plan (ADR 0019). */
   presence: Presence | null;
   readOnly: ReadOnlyReason | null;
+  /** Who changed what (ADR 0020), opened after the board by `openPlanWithHistory`. */
+  history?: History;
   close: () => Promise<void>;
 }
 
@@ -305,6 +308,17 @@ function moveItems(store: PlanStore, moves: Iterable<readonly [ItemId, ItemId | 
     const item = items.get(id);
     if (item) moveItem(item, parent, counter, store.doc.clientID);
   }
+}
+
+/**
+ * What made a transaction on this computer, for history (ADR 0020): one of
+ * this person's commands, an undo, a redo, or null for anything else (other
+ * people's changes, other tabs, files, repairs).
+ */
+export function ownChange(store: PlanStore, origin: unknown): 'command' | 'undo' | 'redo' | null {
+  if (origin === LOCAL_ORIGIN) return 'command';
+  if (origin !== store.undoManager) return null;
+  return store.undoManager.redoing ? 'redo' : 'undo';
 }
 
 function edit(store: PlanStore, change: () => void): void {

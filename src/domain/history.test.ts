@@ -7,7 +7,6 @@ const entry = (id: string, by: string, at: number, changes: HistoryEntry['change
   id,
   by,
   name: by === 'a' ? 'Ada' : 'Bo',
-  color: '#123456',
   at,
   changes,
 });
@@ -21,14 +20,20 @@ describe('history entries (ADR 0020)', () => {
     expect(parseEntry({ ...good, at: 'yesterday' })).toBeNull();
     expect(parseEntry({ ...good, changes: [{ kind: 'exploded' }] })).toBeNull();
     expect(parseEntry({ ...good, changes: [{ kind: 'renamed', item: 4 }] })).toBeNull();
+    const values = { ...good, changes: [{ kind: 'values', item: 'tax', property: 'time', from: ['q1'], to: [] }] };
+    expect(parseEntry(values)).toEqual(values);
+    expect(parseEntry({ ...good, changes: [{ kind: 'values', item: 'tax', property: 'time', from: 'q1', to: [] }] })).toBeNull();
+    const group = { ...good, changes: [{ kind: 'group', item: 'tax', from: null, to: 'epic' }] };
+    expect(parseEntry(group)).toEqual(group);
     expect(parseEntry({ ...good, name: 'x'.repeat(200) })?.name).toHaveLength(60);
   });
 
-  it('shows the relay’s time when the author’s clock is more than a minute out', () => {
+  it('corrects an author’s clock that’s more than a minute out from the relay’s', () => {
     const e = entry('e1', 'a', 10 * minute);
     expect(shownTime(e)).toBe(10 * minute);
-    expect(shownTime(e, 10 * minute + 30_000)).toBe(10 * minute);
-    expect(shownTime(e, 70 * minute)).toBe(70 * minute);
+    expect(shownTime(e, 30_000)).toBe(10 * minute);
+    expect(shownTime(e, 60 * minute)).toBe(70 * minute);
+    expect(shownTime(e, -5 * minute)).toBe(5 * minute);
   });
 
   it('groups one person’s changes within five minutes of each other into a burst (Q74)', () => {
@@ -61,8 +66,8 @@ describe('history entries (ADR 0020)', () => {
       ['1', 1],
     ]);
     expect(authors(entries)).toEqual([
-      { by: 'a', name: 'Ada', color: '#123456' },
-      { by: 'b', name: 'Bo', color: '#123456' },
+      { by: 'a', name: 'Ada' },
+      { by: 'b', name: 'Bo' },
     ]);
   });
 });

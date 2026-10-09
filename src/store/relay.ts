@@ -162,6 +162,7 @@ export class RelayProvider {
   private create: boolean;
   private listeners = new Set<() => void>();
   private ephemeralListeners = new Set<(from: number, data: Uint8Array | null) => void>();
+  private clockListeners = new Set<(relayAt: number, localAt: number) => void>();
   private resolveSynced: () => void = () => {};
   private readonly key: Uint8Array;
   private readonly token: Uint8Array | null;
@@ -238,6 +239,16 @@ export class RelayProvider {
   onEphemeral(listener: (from: number, data: Uint8Array | null) => void): () => void {
     this.ephemeralListeners.add(listener);
     return () => void this.ephemeralListeners.delete(listener);
+  }
+
+  /**
+   * The relay's clock, each time it acknowledges a change of ours: when it
+   * received it, and this computer's time then. History uses the difference
+   * to put a wrongly set clock right (ADR 0020).
+   */
+  onRelayClock(listener: (relayAt: number, localAt: number) => void): () => void {
+    this.clockListeners.add(listener);
+    return () => void this.clockListeners.delete(listener);
   }
 
   /** Send presence, sealed, to everyone else in the room. Only while live: presence is never queued. */
@@ -425,6 +436,8 @@ export class RelayProvider {
       case Frame.Ack: {
         const ref = r.uint();
         const seq = r.uint();
+        const relayAt = r.uint();
+        for (const listener of this.clockListeners) listener(relayAt, this.now());
         const update = this.pending.get(ref);
         this.pending.delete(ref);
         if (update) this.apply(this.shadow, update);

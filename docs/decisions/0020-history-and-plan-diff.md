@@ -29,3 +29,38 @@ Requirements 23 and 31–32, and the PM's priority of knowing who changed what. 
 - **History grows without end,** at about 60 bytes per change: about 6 MB after 100,000 changes _(priors)_. If that ever matters, older entries can move to a snapshot of their own without being lost.
 - **Attribution is a courtesy.** Names are self-chosen. Times are as good as the relay's clock, or the author's, when offline work has no relay time yet.
 - **Scenario compare gets its diff and its markers built early,** as part of M2.
+
+## Amendment: as built in sprint 13, slices 1 and 2
+
+**The diff** is `planDiff(before, after, seen)` in `src/domain/diff.ts`. It reports:
+- cards added, deleted and restored;
+- renamed, described, and moved between groups or sequence columns;
+- values changed per property;
+- links made and removed;
+- properties and their values added, renamed, moved or deleted.
+
+It reports ids and values only, never words. A deleted group is one change, with the cards that went with it. A card that reappears is `restored` when `seen` says it existed before, as after an undo or a Restore. `describeChange` puts a change into words when it's shown, in today's names. `planChanges`, the cheap counter behind "7 changes not shared yet", stays as it is.
+
+**The history document** (`src/store/history.ts`) holds two maps:
+- `entries`: entry id → `{ v, id, by, name, at, via?, event?, changes }`. `by` is the stable per-browser id presence uses, and the author's color comes from it.
+- `clocks`: person → how far the relay's clock is ahead of theirs.
+
+**Recording** (`src/commands/history.ts`) listens for each transaction made by this person's commands, undos and redos, and diffs the plan before and after. Changes from the relay, other tabs, files and loop repairs aren't recorded, since whoever made them recorded them.
+
+**Measured on the sample plan** (151 cards, 1,000 commands):
+- about 1.4 ms per command;
+- about 190 bytes per entry, not 60, partly because the sample's card ids are long. Kept forever, that's about 19 MB after 100,000 changes. It still loads after the board, never before. If it ever matters, entries can be compacted or moved to a snapshot of their own.
+
+**Times:**
+- The relay's receive time isn't stamped on each entry.
+- Each acknowledged change tells the author how far the relay's clock is ahead of theirs. Once that's more than a minute, they write it to `clocks`, so their entries are shown corrected.
+- Work done offline keeps the time it was done, which a receive time wouldn't.
+
+**Where it lives:**
+- A plan only on this computer keeps a `local` history.
+- Sharing starts a `shared` history (Q73), with an opening "shared the plan" entry. The `local` one stays on the sharer's computer, read-only.
+- On a relay, the `shared` history has a room of its own, `<room>_h`, with the same keys. That way the board's snapshots never drop its updates.
+  - The history room is created by anyone with the edit link, so plans shared before this build gain one on first open.
+  - Making new links retires both rooms. History carries on into the new ones.
+- In a changes file, history fills the slot ADR 0022 left for it, sealed as kind `history-file`.
+- History stays out of plan files, as decided.

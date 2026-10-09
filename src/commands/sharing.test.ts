@@ -75,7 +75,7 @@ describe('making new links (Q62)', () => {
     expect(retired).toEqual([]);
     sharingConfirmed(entry.id, findPlan(entry.id)!.shared!);
     expect(await retireReplaced(entry.id, open)).toBe('retired');
-    expect(retired).toEqual([first.room]);
+    expect(retired).toEqual([first.room, `${first.room}_h`]);
     expect(findPlan(entry.id)?.shared?.replaces).toBeUndefined();
     expect(findPlan(entry.id)?.shared?.room).toBe(renewed.room);
   });
@@ -93,7 +93,8 @@ describe('making new links (Q62)', () => {
     expect(findPlan(entry.id)?.shared?.replaces?.map((r) => r.room)).toEqual([first.room, second.room]);
     const { open, retired } = retiringRelay(new Set([first.room]));
     expect(await retireReplaced(entry.id, open)).toBe('failed');
-    expect(retired).toEqual([second.room]);
+    expect(retired).toEqual(expect.arrayContaining([second.room, `${second.room}_h`]));
+    expect(retired).not.toContain(first.room);
     expect(findPlan(entry.id)?.shared?.replaces?.map((r) => r.room)).toEqual([first.room]);
 
     const viewer = joinFromLink(aLink(false), relay);

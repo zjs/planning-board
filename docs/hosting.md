@@ -77,6 +77,8 @@ server {
 }
 ```
 
+**Rooms.** Each shared plan uses two rooms on the relay, one for the board and one for its history (ADR 0020), so `-max-rooms` counts both.
+
 **Checking it.** `https://plans.example.com/healthz` says `ok`, and `/config` names the public address. Open the address, load the sample, and **Share**: the pill should say **Live**.
 
 **Pages hosted elsewhere.** The app on GitHub Pages can use your relay by default. To let another host's copy of the app use it, add that host with `-allow-origin`.
