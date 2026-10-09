@@ -26,3 +26,12 @@ Runtime dependencies introduced: `react`, `react-dom`, `fractional-indexing` (or
 - One HTML file is the whole app: easy to attach to a PR, email to a tester, or host later on Pages unchanged.
 - The file grows with every dependency. Watch it; above ~1 MB, revisit.
 - When typescript-eslint supports TS 7, upgrade (faster typecheck, same code).
+
+## Amendment (2026-10-09): third-party notices travel inside the file
+
+The packages bundled into the file are MIT, apart from one CC0, and MIT asks for its copyright and permission notice to be kept with every copy. The minified build dropped the comments that carried them. So a small Vite plugin (`scripts/notices.ts`) lists every package the build actually bundles, read from the bundle's own module ids rather than from `package.json`, so a dependency that isn't bundled isn't listed and one that is can't be missed. It puts each package's license text into the page as a plain-text `<script type="text/plain" id="third-party-notices">`, which isn't run. The cheat sheet shows it under **Open-source licenses**, and the relay prints it with `-licenses` (ADR 0017, amended).
+
+- A bundled package with no license file fails the build, so a new dependency can't arrive without its notice.
+- It costs about 16 KB, which is under 3% of the file.
+- The dev server has no bundle, so the cheat sheet says the licenses are in the built app.
+- Alternatives: `rollup-plugin-license` does the same, but it's a new dependency for about 60 lines of code. A separate `NOTICES` file beside the page wouldn't travel with the single file someone emails or saves.

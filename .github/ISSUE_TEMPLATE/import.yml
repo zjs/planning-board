@@ -39,4 +39,4 @@ body:
     id: build
     attributes:
       label: Build
-      description: Shown at the bottom of the help panel (**? Help**).
+      description: Shown at the bottom of the cheat sheet (the **?** button in the toolbar).

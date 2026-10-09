@@ -279,8 +279,21 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **`braces` advisory (GHSA-vfj7-8cjw-p6xm).** `npm audit` reports three high-severity findings, all one advisory in `braces`, which reaches the build through `vite-plugin-singlefile` and `micromatch`. No patched `braces` exists yet, and audit's only fix is a downgrade to `vite-plugin-singlefile` 0.9. It runs only at build time, on the project's own globs, so nothing in the app or its users' plans can reach it. Take the fix when a patched release ships (maintenance pass, 2026-10-07; still none on 2026-10-09, braces 3.0.3).
 - **Node 26 in CI.** CI and the docs use Node 22, which reaches end of life on 2027-04-30. Node 24 moves to maintenance on 2026-10-20, and Node 26 becomes Active LTS on 2026-10-28 (nodejs/Release, checked 2026-10-08). Skip 24: move CI and `CLAUDE.md` to Node 26 in a maintenance pass after 2026-10-28, and check the build and tests on it.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
-
 **Done**
+
+- **Third-party notices, and which relay is running** (2026-10-09), a housekeeping slice before sprint 14, from the user docs review:
+  - **Notices:** the app's build lists every package it bundles, with its license text, inside the page; the cheat sheet shows them under **Open-source licenses**, and a bundled package with no license file fails the build (ADR 0001, amended). The relay embeds the notices for Go and its modules, prints them with the app's using `-licenses`, and each download carries them as `THIRD-PARTY-NOTICES.txt`; a test fails if `go.mod` names a module they don't (ADR 0017, amended).
+  - **Builds:** the relay names its build, such as `3d350aa (2026-10-09)`, with `-version`, at start-up and in `/config`, and the cheat sheet shows it beside the app's on a shared plan. CI checks the Linux download names its commit. `docs/hosting.md` now says how to check, rather than "a relay built after October 2026".
+  - **Also:** `relay/relay`, a 10 MB Linux binary committed by accident in sprint 12, slice 3, is gone from the tree, and hand-built relays are ignored. It stays in the history, since `main`'s history isn't rewritten.
+
+- **User-facing docs review, 2026-10-09,** after sprint 13, at the PM's request. Every doc a stranger reads, read as its reader:
+  - **SECURITY.md** still said the app has no server and makes no network requests, which stopped being true with the relay in sprint 11. It now says what's encrypted, what's in scope, and never to paste a share link.
+  - **The relay's README** ships alone in each download, and its links to `docs/hosting.md` and `PROTOCOL.md` were relative, so they led nowhere. They're absolute now, and the download carries `LICENSE`. It also said how to update, and stopped citing requirement and ADR numbers.
+  - **docs/hosting.md** said "a relay from sprint 12 or later", which nobody running one can check, and that the GitHub Pages app can use any relay, when it can use only an HTTPS one.
+  - **The README** said dependency highlights were still a goal, and that "since you were away" was being built. Its 18 "Works today" items are now grouped as alone, together, and in and out.
+  - **CONTRIBUTING and the issue templates** pointed at a "? Help" button and a "Time (release)" choice that no longer exist, had no "from a relay" way of opening the app, and didn't warn against pasting share links.
+  - **The cheat sheet** didn't say what the number on a group's ⚠ counts.
+  - **To keep it this way:** `docs/housekeeping.md` lists every user-facing doc, its reader and what makes it stale; the definition of done and the release pass point at that list; and `scripts/user-docs.test.ts`, in `npm run check`, fails on broken links, relative links in the relay's README, and sprint, question or requirement numbers in these docs.
 
 - **Compatibility fixtures for sprint 13** (2026-10-09), the release pass's last step: sprint 13's plan file, imported plan, browser board and changes file open in every later build. So does its history: the first history document, and a changes file carrying it, whose entries all read and say something.
 

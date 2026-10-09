@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for trying Planning Board. Please don't paste anything from a real, confidential roadmap here: describe the shape of the problem with made-up titles instead.
+        Thanks for trying Planning Board. Please don't paste anything from a real, confidential roadmap here: describe the shape of the problem with made-up titles instead. **Don't paste a share link either:** anyone with it can open the plan.
   - type: textarea
     id: steps
     attributes:
@@ -13,7 +13,7 @@ body:
       description: The steps, starting from an empty board or the sample plan if you can.
       placeholder: |
         1. Loaded the sample plan
-        2. Switched Rows to Time (release)
+        2. Switched to the Roadmap view
         3. Dragged "Credit notes" onto …
     validations:
       required: true
@@ -27,7 +27,7 @@ body:
     id: build
     attributes:
       label: Build
-      description: Shown at the bottom of the help panel (**? Help**), e.g. "Build 3d350aa".
+      description: Shown at the bottom of the cheat sheet (the **?** button in the toolbar), e.g. "Build 3d350aa". On a shared plan, include the relay's build beside it.
     validations:
       required: true
   - type: input
@@ -44,6 +44,7 @@ body:
       options:
         - The hosted page
         - A downloaded index.html, opened from disk
+        - From a relay (downloaded, or a container)
         - npm run dev
     validations:
       required: true

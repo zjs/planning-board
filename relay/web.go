@@ -50,17 +50,19 @@ func serveApp(static string) http.HandlerFunc {
 	}
 }
 
-// relayInfo is what /config tells the app: the protocol this relay speaks,
-// and the address to put in share links, so a link made on the relay's own
-// computer doesn't say "localhost" when colleagues need its network address.
+// relayInfo is what /config tells the app: the protocol this relay speaks;
+// the address to put in share links, so a link made on the relay's own
+// computer doesn't say "localhost" when colleagues need its network address;
+// and its build, which the cheat sheet shows for a shared plan.
 type relayInfo struct {
 	Protocol  int    `json:"protocol"`
 	PublicURL string `json:"publicUrl"`
+	Build     string `json:"build"`
 }
 
 func serveConfig(publicURL string, trustForwarded bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		info := relayInfo{Protocol: ProtocolVersion, PublicURL: publicURL}
+		info := relayInfo{Protocol: ProtocolVersion, PublicURL: publicURL, Build: buildName()}
 		if info.PublicURL == "" {
 			info.PublicURL = requestURL(req, trustForwarded)
 		}

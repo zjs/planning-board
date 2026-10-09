@@ -66,7 +66,7 @@ jobs:
             --prerelease \
             --target "$SHA" \
             --title "Relay (latest main)" \
-            --notes "The Planning Board relay, with the app inside, built from ${SHA}. Download the archive for your computer, unpack it, and run planning-board-relay. See relay/README.md."
+            --notes "The Planning Board relay, with the app inside, built from ${SHA}. It's rebuilt from every change to main, so this is always the newest. Download the archive for your computer, unpack it, and run planning-board-relay. Mac, Windows and container steps: https://github.com/zjs/planning-board/blob/main/relay/README.md. Running it for a team: https://github.com/zjs/planning-board/blob/main/docs/hosting.md."
 
   container:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'

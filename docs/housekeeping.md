@@ -4,7 +4,7 @@ Status: **proposed 2026-10-02**, awaiting the PM (questions.md Q49). The first p
 
 The repo is public, and it's read by three audiences who each notice different rot:
 
-- **Strangers** read the README and the help panel. They notice claims that are no longer true.
+- **Strangers** read the README, the help panel, and the relay's docs if they run one. They notice claims that are no longer true, and words they can't look up. The full list is in [User-facing docs](#user-facing-docs), below.
 - **The PM** reads the backlog, questions and demo notes. They notice tenses that lie ("lands in sprint 5" after it shipped) and answers that a later decision quietly overturned.
 - **The build** depends on packages and CI actions that age on their own, whether or not anyone touches the code.
 
@@ -17,9 +17,10 @@ Part of the slice's own PR, checked during self-review. Nothing here waits for a
 - [ ] The sprint doc's checkboxes for the slice are ticked.
 - [ ] Every question the slice settles or builds has a "Built in …" note, and any earlier answer it overturns has a "Superseded by …" note.
 - [ ] A new or changed gesture is in the help panel (`src/ui/Legend.tsx`).
+- [ ] A change someone outside the project would notice is in the user-facing doc that describes it ([the list](#user-facing-docs)): a feature, a renamed control or view, a relay flag or a line it prints, a new way to open or share the app. A renamed label is searched for in all of them, issue templates included.
 - [ ] A change to the plan file or the Yjs document adds a compatibility fixture from the commit before it (ADR 0005).
 - [ ] A significant implementation choice has an ADR, or an amendment to one, and the ADR index lists it.
-- [ ] A new runtime dependency is recorded in an ADR.
+- [ ] A new runtime dependency is recorded in an ADR. Its license notice comes with it: the app's build lists bundled packages on its own, and a new or upgraded Go module needs `npm run notices:relay`.
 - [ ] The PR body has a demo note: what to click, what should happen, and known gaps.
 
 ## 2. When a sprint closes: the release pass
@@ -27,7 +28,7 @@ Part of the slice's own PR, checked during self-review. Nothing here waits for a
 Part of the sprint's last slice ("tester-ready"), so `main` is tidy before the PM accepts it.
 
 - [ ] **Compatibility fixtures:** add the sprint's last commit to `VERSIONS` and run `npm run compat:fixtures`. Do it after the merge, in the next PR.
-- [ ] **README:** "Works today" and "Not yet" match the build, read as someone who has never seen the project.
+- [ ] **User-facing docs:** read each one in [the list](#user-facing-docs) as its reader, who has never seen the project. The README's "Works today" and "Not yet" match the build, and anything the list says goes stale on the sprint's kind of change is checked.
 - [ ] **Help panel:** read top to bottom, as a tester on their first visit. Is every gesture on the board there, and is everything there still true?
 - [ ] **Backlog:** shipped themes move under "Shipped themes", with "Lands" lines in the past tense. "Sprints" says what's awaiting acceptance.
 - [ ] **Questions:** statuses that name a future sprint still point at the right one.
@@ -44,6 +45,22 @@ Done at the start of sprint planning, so its findings can be scheduled with ever
 - [ ] The backlog's Housekeeping list: anything done since the last pass moves to Done, and anything stuck says why.
 - [ ] GitHub issues: every new one is answered, and its feedback is in the backlog.
 
+## User-facing docs
+
+Read by people who know nothing of our sprints, questions or ADRs. Each is written for its reader, refers to a version by what it does or a date (never "sprint 12"), and links an ADR only as "how this works", for anyone who wants the reasoning.
+
+| Doc | Reader | Goes stale when |
+|---|---|---|
+| `README.md` | Someone deciding whether to try it, from a link or word of mouth | Anything ships; "Not yet" changes; a way to open or run the app changes |
+| Help panel (`src/ui/Legend.tsx`) | Someone using the board | A gesture, control or word on the board changes |
+| `relay/README.md`, also in each relay download | Whoever runs a relay, often with only the download | A flag, a default, or what it prints changes; anything it links moves |
+| `docs/hosting.md` | IT, or a pilot user running it for a team | Deploying, upgrading, backups, HTTPS, or what needs a newer relay |
+| `SECURITY.md` | A security researcher, or a reviewer at a company | What leaves the browser changes: sharing, a new file type, a new service |
+| `CONTRIBUTING.md` and `.github/ISSUE_TEMPLATE/` | Someone reporting a problem | A control they're told to find is renamed or moved; a new way to open the app |
+| The release notes in `.github/workflows/release.yml` | Someone on the relay download page | What's in the download, or where its docs live |
+
+`npm run check` runs `scripts/user-docs.test.ts`, which fails on the mechanical part of this: a link inside the repo that doesn't resolve, a relative link in the relay's README (which ships without the repo around it), and sprint, question or requirement numbers in any of these. Whether a doc is still true and clear needs a reader.
+
 ## 4. When feedback arrives: intake
 
 Already defined at the top of [`backlog.md`](backlog.md): feedback goes into a theme, decisions it needs go into `questions.md`, and a sprint doc schedules it. Do it the same day, while the context is fresh.
@@ -53,11 +70,12 @@ Already defined at the top of [`backlog.md`](backlog.md): feedback goes into a t
 Done by CI on every push:
 
 - The compatibility gate (ADR 0005).
+- The user-facing docs' links, and keeping our internal numbering out of them.
 - The exit criteria of every sprint, end to end.
 
 Can't be automated, because each needs a reader:
 
-- Reading the README and help panel with fresh eyes.
+- Reading the user-facing docs with fresh eyes.
 - Tidying tenses and supersessions.
 - Judging a major upgrade.
 

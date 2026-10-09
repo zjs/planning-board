@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { checkRelay } from '../commands/sharing.ts';
+import { thirdPartyNotices } from '../notices.ts';
 import { keyNames } from './platform.ts';
 
 /** Where feedback goes. A plain link: nothing is sent unless someone follows it. */
@@ -11,8 +14,11 @@ export const BUILD = import.meta.env.VITE_BUILD_COMMIT?.slice(0, 7) || 'local';
  * never by itself: a first-time visitor learns from the guided start and
  * from the board, and comes here to look something up.
  */
-export function Legend({ onClose }: { onClose: () => void }) {
+export function Legend({ onClose, relay = null }: { onClose: () => void; relay?: string | null }) {
   const keys = keyNames();
+  const [licenses, setLicenses] = useState(false);
+  const relayBuild = useRelayBuild(relay);
+  if (licenses) return <Licenses onBack={() => setLicenses(false)} onClose={onClose} />;
   return (
     <aside className="legend" aria-label="Cheat sheet" data-testid="legend">
       <header>
@@ -215,7 +221,10 @@ export function Legend({ onClose }: { onClose: () => void }) {
             <dt>
               <span className="mismatch">⚠</span> markers
             </dt>
-            <dd>A card that doesn’t fit its group: dated outside it, larger, in another area, or at its level or above.</dd>
+            <dd>
+              A card that doesn’t fit its group: dated outside it, larger, in another area, or at its level or above. On
+              a group, “⚠ 3” counts what’s wrong inside it, red lines included. Point at it to see what.
+            </dd>
             <dt>Undo, redo, cancel</dt>
             <dd>
               <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.
@@ -227,12 +236,58 @@ export function Legend({ onClose }: { onClose: () => void }) {
         Everything saves in this browser as you go, and the same plan open in two tabs stays in step. Save to a file
         to take it somewhere else, or share it.
       </p>
-      <p className="legend-foot">
-        Build {BUILD} ·{' '}
+      <p className="legend-foot" data-testid="legend-builds">
+        Build {BUILD}
+        {relayBuild && <> · Relay {relayBuild}</>} ·{' '}
         <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
           Feedback and bug reports
-        </a>
+        </a>{' '}
+        ·{' '}
+        <button type="button" className="link" onClick={() => setLicenses(true)}>
+          Open-source licenses
+        </button>
       </p>
+    </aside>
+  );
+}
+
+/**
+ * The build of the relay a shared plan goes through, from its /config, so a
+ * report about sharing names both builds. A relay from before builds were
+ * named says nothing, and a relay that can't be reached shows nothing.
+ */
+function useRelayBuild(relay: string | null): string | null {
+  const [build, setBuild] = useState<string | null>(null);
+  useEffect(() => {
+    if (relay === null) return;
+    let live = true;
+    void checkRelay(relay).then((info) => {
+      if (live && info) setBuild(info.build ?? 'unnamed (an older relay)');
+    });
+    return () => {
+      live = false;
+    };
+  }, [relay]);
+  return relay === null ? null : build;
+}
+
+/** The licenses of the software inside the app, as the build listed them (ADR 0001, amended). */
+function Licenses({ onBack, onClose }: { onBack: () => void; onClose: () => void }) {
+  const text = thirdPartyNotices();
+  return (
+    <aside className="legend" aria-label="Open-source licenses" data-testid="licenses">
+      <header>
+        <h2>Open-source licenses</h2>
+        <span>
+          <button type="button" className="link" onClick={onBack}>
+            Back to the cheat sheet
+          </button>
+          <button type="button" onClick={onClose} aria-label="Close help">
+            ✕
+          </button>
+        </span>
+      </header>
+      <pre className="legend-licenses">{text ?? 'The licenses are listed in the built app. This one was started with npm run dev.'}</pre>
     </aside>
   );
 }

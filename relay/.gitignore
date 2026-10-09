@@ -1,0 +1,4 @@
+# Programs built here by hand (relay/README.md); CI builds the downloads.
+/relay
+/planning-board-relay
+/planning-board-relay.exe

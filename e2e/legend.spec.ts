@@ -29,9 +29,24 @@ test('help stays closed until asked for, and opens from the toolbar as a cheat s
     'https://github.com/zjs/planning-board/issues/new/choose',
   );
   await expect(legend).toContainText(/Build (local|[0-9a-f]{7})/);
+  // Not shared, so there's no relay to name.
+  await expect(legend.getByTestId('legend-builds')).not.toContainText('Relay');
 
   await page.getByRole('button', { name: 'Close help' }).click();
   await expect(legend).toHaveCount(0);
+});
+
+test('the cheat sheet lists the licenses of the software inside the build', async ({ page }) => {
+  await openApp(page, { keepHelp: true });
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page.getByRole('button', { name: 'Open-source licenses' }).click();
+  const licenses = page.getByTestId('licenses');
+  await expect(licenses).toContainText('Planning Board is licensed under the Apache License 2.0');
+  for (const name of ['react', 'yjs', '@noble/ciphers']) await expect(licenses).toContainText(`== ${name} `);
+  await expect(licenses).toContainText('Permission is hereby granted, free of charge');
+
+  await page.getByRole('button', { name: 'Back to the cheat sheet' }).click();
+  await expect(page.getByTestId('legend')).toBeVisible();
 });
 
 test('the empty board leads with a blank plan, and help doesn’t cover it', async ({ page }) => {
