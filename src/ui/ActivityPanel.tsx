@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { HistoryEntry } from '../commands/history.ts';
 import { describeChange, titlesFrom } from '../domain/describe.ts';
 import { changedItems, type Change } from '../domain/diff.ts';
 import { authors, groupBursts, shownTime, type Burst } from '../domain/history.ts';
 import type { ItemId, Plan } from '../domain/model.ts';
 import { colorFor } from '../domain/presence.ts';
+import { useNow } from './useNow.ts';
 import { dayHeading, dayKey, formatWhen, timeOfDay } from '../domain/time.ts';
 
 interface Props {
@@ -30,12 +31,7 @@ interface Props {
  */
 export function ActivityPanel({ plan, entries, earlier, clocks, me, canEdit, onClose, onReveal, onRestore }: Props) {
   const [person, setPerson] = useState('');
-  // "Today" and "10:42" move on while the panel is open.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
+  const now = useNow();
   const time = (e: HistoryEntry) => shownTime(e, clocks.get(e.by));
   const titles = useMemo(() => titlesFrom([...earlier, ...entries].flatMap((e) => e.changes)), [entries, earlier]);
   const people = useMemo(() => authors([...entries, ...earlier]), [entries, earlier]);

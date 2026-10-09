@@ -129,3 +129,18 @@ export function authors(entries: readonly HistoryEntry[]): { by: string; name: s
   }
   return [...latest.values()].map((e) => ({ by: e.by, name: e.name })).sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/** Who last changed each card, and when (shown time): for "Last changed by Ada, 10:42". */
+export function lastChanges(entries: readonly HistoryEntry[], time: (e: HistoryEntry) => number): Map<ItemId, { by: string; name: string; at: number }> {
+  const out = new Map<ItemId, { by: string; name: string; at: number }>();
+  for (const entry of entries) {
+    const at = time(entry);
+    for (const change of entry.changes) {
+      for (const item of changedItems(change)) {
+        const known = out.get(item);
+        if (!known || at > known.at) out.set(item, { by: entry.by, name: entry.name, at });
+      }
+    }
+  }
+  return out;
+}

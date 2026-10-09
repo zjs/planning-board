@@ -14,6 +14,8 @@ interface Props {
   /** The group this card is shown for, when several groups' children share the board (Q33). */
   /** Values of properties that aren't on an axis (requirement 4). */
   attributes: CardAttribute[];
+  /** A line for the tooltip, under the title: who last changed the card, and when (requirement 36). */
+  note?: string | undefined;
   /** A one-line chip: title and child count only (holding lanes, when chosen). */
   compact?: boolean;
   /** Part of the viewer's selection. Every copy of a selected item shows it. */
@@ -54,6 +56,7 @@ interface Props {
 
 export function Card({
   item,
+  note,
   childCount,
   areaIndex,
   areaTitle,
@@ -99,7 +102,7 @@ export function Card({
       data-item={item.id}
       data-area={areaIndex ?? 'none'}
       data-weight={levelWeight > 0 ? Math.min(levelWeight, 2) : undefined}
-      title={editing ? undefined : viaChildren ? `${item.title} (via cards inside it)` : item.title}
+      title={editing ? undefined : `${viaChildren ? `${item.title} (via cards inside it)` : item.title}${note ? `\n${note}` : ''}`}
       aria-selected={selected ?? false}
       onPointerDown={editing ? undefined : onPointerDown}
       onDoubleClick={editing ? undefined : onDoubleClick}

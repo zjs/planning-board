@@ -36,7 +36,7 @@ The engineering plan is `docs/plans/sprint-13-plan.md`.
 
 ### 4. A card's history
 
-- [ ] A History section in the inspector, and "Last changed by" under the title and in the card's tooltip.
+- [x] A History section in the inspector, and "Last changed by" under the title and in the card's tooltip.
 
 ### 5. Tester-ready
 

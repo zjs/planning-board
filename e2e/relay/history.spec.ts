@@ -63,6 +63,15 @@ test('who changed what: Activity names the person and the time, and restores a d
   await ada.getByTestId('activity-button').click();
   await expect(ada.getByTestId('activity')).toContainText('Bo restored “Passwordless login”, and 3 cards inside');
 
+  // A card's own history, in the inspector: who last changed it, and each change.
+  await bo.getByTestId('activity').getByRole('button', { name: 'Close activity' }).click();
+  await reveal(card(bo, 'sso-enforcement-per-workspace').first());
+  await card(bo, 'sso-enforcement-per-workspace').first().click();
+  await bo.getByRole('button', { name: 'Inspect' }).click();
+  await expect(bo.getByTestId('last-changed')).toContainText(`Last changed by Ada, ${expected}`);
+  await expect(bo.getByTestId('card-history')).toContainText('Ada renamed “SSO enforcement per workspace” to “SSO enforcement, per workspace”');
+  await expect(card(bo, 'sso-enforcement-per-workspace').first()).toHaveAttribute('title', /Last changed by Ada/);
+
   // Filter to one person.
   await ada.getByTestId('activity-person').selectOption({ label: 'Bo' });
   await expect(rows(ada)).toHaveCount(1);

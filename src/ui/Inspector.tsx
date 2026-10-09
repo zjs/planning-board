@@ -5,7 +5,12 @@ import { ownLinks, selectionValues, type FieldValue, type ValueEdit } from '../d
 import type { Dependency, ItemId, Plan, SelectProperty, ValueId } from '../domain/model.ts';
 import { propertiesInOrder } from '../domain/properties.ts';
 import { ancestry, canNest } from '../domain/tree.ts';
+import type { HistoryEntry } from '../commands/history.ts';
+import { describeChange, titlesFrom } from '../domain/describe.ts';
+import { entriesForItem, shownTime } from '../domain/history.ts';
+import { formatWhen } from '../domain/time.ts';
 import { keyNames } from './platform.ts';
+import { useNow } from './useNow.ts';
 
 interface Props {
   store: PlanStore;
@@ -23,6 +28,8 @@ interface Props {
   onMove: (ids: ItemId[], parent: ItemId | null) => void;
   /** Add a card inside this one, expand it, and start naming the new card. */
   onAddInside: (id: ItemId) => void;
+  /** The plan's history (requirement 36), for a card's History and "Last changed by". */
+  history?: { entries: readonly HistoryEntry[]; clocks: ReadonlyMap<string, number>; me: string };
 }
 
 /**
@@ -30,7 +37,7 @@ interface Props {
  * cards, editable without pivoting, plus a single card's title,
  * description, Jira key and links. Edits apply to every selected card.
  */
-export function Inspector({ store, plan, selected, mismatches, onClose, onReveal, onNotice, onMove, onAddInside }: Props) {
+export function Inspector({ store, plan, selected, mismatches, onClose, onReveal, onNotice, onMove, onAddInside, history }: Props) {
   const ids = selected.filter((id) => plan.items[id]);
   const single = ids.length === 1 ? plan.items[ids[0]!]! : null;
   const properties = propertiesInOrder(plan).filter((p): p is SelectProperty => p.kind === 'select');
@@ -49,6 +56,7 @@ export function Inspector({ store, plan, selected, mismatches, onClose, onReveal
       {single && (
         <>
           <TitleField key={`${single.id}:${single.title}`} store={store} id={single.id} title={single.title} />
+          {history && <LastChanged history={history} id={single.id} />}
           {(single.externalKey || single.parent !== null) && (
             <p className="inspector-meta">
               {single.externalKey && <span className="attr key">{single.externalKey}</span>}
@@ -98,6 +106,7 @@ export function Inspector({ store, plan, selected, mismatches, onClose, onReveal
         </p>
       )}
       {single && <Links store={store} plan={plan} id={single.id} onReveal={onReveal} onNotice={onNotice} />}
+      {single && history && <CardHistory history={history} plan={plan} id={single.id} />}
     </aside>
   );
 }
@@ -409,6 +418,50 @@ function Links({
               </button>
             </li>
           ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+type HistoryProps = { history: NonNullable<Props['history']> };
+const who = (history: HistoryProps['history'], entry: HistoryEntry) => (entry.by === history.me ? 'You' : entry.name);
+
+/** "Last changed by Ada, 10:42", under the title (requirement 36). */
+function LastChanged({ history, id }: HistoryProps & { id: ItemId }) {
+  const now = useNow();
+  const time = (e: HistoryEntry) => shownTime(e, history.clocks.get(e.by));
+  const [last] = entriesForItem(history.entries, id, time);
+  if (!last) return null;
+  return (
+    <p className="inspector-changed" data-testid="last-changed">
+      Last changed by {who(history, last)}, {formatWhen(time(last), now)}
+    </p>
+  );
+}
+
+/** A card's own history, newest first, in the same words as Activity. */
+function CardHistory({ history, plan, id }: HistoryProps & { plan: Plan; id: ItemId }) {
+  const now = useNow();
+  const time = (e: HistoryEntry) => shownTime(e, history.clocks.get(e.by));
+  const entries = entriesForItem(history.entries, id, time);
+  const titles = titlesFrom(history.entries.flatMap((e) => e.changes));
+  return (
+    <section className="inspector-history" data-testid="card-history">
+      <h3>History</h3>
+      {entries.length === 0 ? (
+        <p className="panel-hint">No changes recorded yet.</p>
+      ) : (
+        <ul>
+          {entries.flatMap((entry) =>
+            entry.changes.map((change, i) => (
+              <li key={`${entry.id}:${i}`}>
+                <span className="history-who">{who(history, entry)}</span> {describeChange(change, plan, (t) => titles.get(t))}
+                {entry.via && <span className="activity-via"> ({entry.via})</span>}
+                <time dateTime={new Date(time(entry)).toISOString()}>{formatWhen(time(entry), now)}</time>
+              </li>
+            )),
+          )}
         </ul>
       )}
     </section>

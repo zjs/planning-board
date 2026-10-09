@@ -93,6 +93,8 @@ interface Props {
   readOnly?: boolean;
   /** Everyone else on a shared plan, drawn where their cards are in this view (ADR 0019). */
   presence?: PresenceView | null;
+  /** A tooltip line per card: who last changed it, and when (requirement 36). */
+  cardNotes?: ReadonlyMap<ItemId, string>;
   /** Group mismatch markers (requirements 13, 18). */
   mismatches: Mismatches;
   /** Open a card's actions at a point on screen (Q54): right-click, or its "⋯". */
@@ -204,6 +206,7 @@ function bandCells(
  * only when the drop target changes.
  */
 export const Board = memo(function Board({
+  cardNotes,
   plan,
   view,
   layout,
@@ -481,6 +484,7 @@ export const Board = memo(function Board({
       <Card
         key={`${frame ? `${frame.itemId}>` : ""}${ref.itemId}|${ref.x}|${ref.y}|${ref.via ?? ""}`}
         item={item}
+        note={cardNotes?.get(ref.itemId)}
         compact={chip}
         childCount={counts.get(ref.itemId) ?? 0}
         areaIndex={areas.get(ref.itemId)?.index ?? null}
