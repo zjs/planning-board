@@ -11,7 +11,6 @@ import {
   groupItems,
   importedPlan,
   moveToParent,
-  openPlanStore,
   redo,
   removeDependencies,
   removeDependency,
@@ -62,6 +61,7 @@ import {
   type SharedPlan,
 } from '../commands/plans.ts';
 import { isNewerLink, joinFromLink, linkInHash, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
+import { openPlanWithHistory, recordShared, type History } from '../commands/history.ts';
 import { CHANGES_FILE_EXTENSION, changesFileFor, changesTarget, describeMerge, mergeChanges } from '../commands/changesFile.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
 import {
@@ -171,7 +171,7 @@ function openPlan(id: PlanId): Promise<OpenPlan> {
   let open = opening.get(id);
   if (!open) {
     const shared = findPlan(id)?.shared;
-    open = openPlanStore(id, shared);
+    open = openPlanWithHistory(id, shared);
     opening.set(id, open);
     openedShared.set(id, sharedKey(shared));
   }
@@ -332,6 +332,17 @@ export function App() {
     [show],
   );
 
+  // A plan just shared opens its shared history, which starts with "shared the plan" (Q73).
+  const startSharedHistory = useCallback(
+    async (id: PlanId) => {
+      await reopen(id);
+      const plan = await openPlan(id);
+      await plan.history?.ready;
+      if (plan.history) recordShared(plan.history.doc);
+    },
+    [reopen],
+  );
+
   const started = useRef(false);
   useEffect(() => {
     if (started.current) return;
@@ -447,7 +458,7 @@ export function App() {
       }
       const { entry, file: changes } = target;
       const opened = await openPlan(entry.id);
-      const result = mergeChanges(opened.store, entry.shared!, changes);
+      const result = mergeChanges(opened.store, entry.shared!, changes, opened.history?.doc);
       if (current.current !== entry.id) await show(entry.id);
       say(
         result.kind === 'merged'
@@ -498,7 +509,7 @@ export function App() {
     share: (relay) => {
       startSharing(id, relay);
       refresh();
-      void reopen(id);
+      void startSharedHistory(id);
     },
     moveRelay: (relay) => {
       const shared = findPlan(id)?.shared;
@@ -515,6 +526,7 @@ export function App() {
     shareByFile: () => {
       startSharingByFile(id);
       refresh();
+      void startSharedHistory(id);
     },
     mergeChanges: (file) => void mergeFile(file),
     make,
@@ -538,6 +550,7 @@ export function App() {
         persistence={session.plan.persistence}
         connection={session.plan.connection}
         presence={session.plan.presence}
+        history={session.plan.history ?? null}
         readOnly={session.plan.readOnly}
         start={session.start}
         planActions={actions}
@@ -592,6 +605,7 @@ function Workspace({
   persistence,
   connection,
   presence,
+  history,
   readOnly: openedReadOnly,
   start,
   planActions,
@@ -601,6 +615,7 @@ function Workspace({
   persistence: PersistenceStatus;
   connection: Connection | null;
   presence: Presence | null;
+  history: History | null;
   readOnly: ReadOnlyReason | null;
   start: PlanStart | null;
   planActions: PlanActions;
@@ -1600,7 +1615,7 @@ function Workspace({
   const byFile = sharedPlan !== null && sharedPlan.relay === undefined;
   const sendChanges = () => {
     if (!sharedPlan) return;
-    downloadBytes(datedFileName(`${fileSlug(planActions.name)}-changes`, CHANGES_FILE_EXTENSION), changesFileFor(store, sharedPlan));
+    downloadBytes(datedFileName(`${fileSlug(planActions.name)}-changes`, CHANGES_FILE_EXTENSION), changesFileFor(store, sharedPlan, history?.doc));
   };
   const openPlanFile = async (file: File) => {
     const opened = readPlanFile(await file.text());

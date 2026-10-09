@@ -20,14 +20,14 @@ The engineering plan is `docs/plans/sprint-13-plan.md`.
 
 ### 1. The plan diff, and times (ADR 0020)
 
-- [ ] `planDiff` in `src/domain/`: cards added, deleted, restored, renamed, moved between groups or sequence columns, changed per property, and links, all as ids and values.
-- [ ] Changes in words, times in each viewer's time zone, and bursts grouped.
+- [x] `planDiff` in `src/domain/`: cards added, deleted, restored, renamed, moved between groups or sequence columns, changed per property, and links, all as ids and values.
+- [x] Changes in words, times in each viewer's time zone, and bursts grouped.
 
 ### 2. History (ADR 0020, Q63, Q73)
 
-- [ ] Every local change and undo is recorded, in a history document per plan, kept forever.
-- [ ] It syncs across tabs, through the relay in a room of its own, and in changes files. Times use the relay's clock where the author's is off by more than a minute.
-- [ ] Sharing starts a new history; what came before stays on the sharer's computer.
+- [x] Every local change and undo is recorded, in a history document per plan, kept forever.
+- [x] It syncs across tabs, through the relay in a room of its own, and in changes files. Times use the relay's clock where the author's is off by more than a minute.
+- [x] Sharing starts a new history; what came before stays on the sharer's computer.
 
 ### 3. Activity (Q74)
 

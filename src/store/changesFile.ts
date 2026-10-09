@@ -3,7 +3,7 @@
 // email or a shared drive. The key travels separately, in the plan's link
 // (Q72), so a file on its own can't be read.
 //
-//   magic "PBCH" · version · room · sealed board · history (empty until sprint 13)
+//   magic "PBCH" · version · room · sealed board · sealed history (or empty)
 
 import * as Y from 'yjs';
 import { FrameReader, FrameWriter } from './frames.ts';
@@ -17,14 +17,18 @@ const MAGIC = new TextEncoder().encode('PBCH');
 export interface ChangesFile {
   room: string;
   board: Uint8Array;
+  /** The plan's history (ADR 0020), sealed; empty from builds before sprint 13, or a plan with none. */
+  history: Uint8Array;
 }
 
 export type ChangesFileProblem = 'not-a-changes-file' | 'newer-version';
 
-/** The whole of `doc`, as a changes file for `room`, sealed with the plan's key (base64url). */
-export function writeChangesFile(doc: Y.Doc, room: string, viewKey: string): Uint8Array {
-  const board = seal(fromBase64Url(viewKey), room, 'file', Y.encodeStateAsUpdate(doc));
-  const body = new FrameWriter(CHANGES_FILE_VERSION).bytes(new TextEncoder().encode(room)).bytes(board).bytes(new Uint8Array()).done();
+/** The whole of `doc`, and of its history if given, as a changes file for `room`, sealed with the plan's key (base64url). */
+export function writeChangesFile(doc: Y.Doc, room: string, viewKey: string, history?: Y.Doc): Uint8Array {
+  const key = fromBase64Url(viewKey);
+  const board = seal(key, room, 'file', Y.encodeStateAsUpdate(doc));
+  const sealedHistory = history ? seal(key, room, 'history-file', Y.encodeStateAsUpdate(history)) : new Uint8Array();
+  const body = new FrameWriter(CHANGES_FILE_VERSION).bytes(new TextEncoder().encode(room)).bytes(board).bytes(sealedHistory).done();
   const out = new Uint8Array(MAGIC.length + body.length);
   out.set(MAGIC);
   out.set(body, MAGIC.length);
@@ -39,7 +43,8 @@ export function readChangesFile(bytes: Uint8Array): ChangesFile | ChangesFilePro
     if (r.kind !== CHANGES_FILE_VERSION) return r.kind > CHANGES_FILE_VERSION ? 'newer-version' : 'not-a-changes-file';
     const room = new TextDecoder().decode(r.bytes());
     const board = r.bytes();
-    return { room, board };
+    const history = r.more() ? r.bytes() : new Uint8Array();
+    return { room, board, history };
   } catch {
     return 'not-a-changes-file';
   }
@@ -49,6 +54,16 @@ export function readChangesFile(bytes: Uint8Array): ChangesFile | ChangesFilePro
 export function openChangesFile(file: ChangesFile, viewKey: string): Uint8Array | null {
   try {
     return unseal(fromBase64Url(viewKey), file.room, 'file', file.board);
+  } catch {
+    return null;
+  }
+}
+
+/** Open a changes file's history with the plan's key, as one Yjs update; null if it has none, or the key doesn't open it. */
+export function openChangesHistory(file: ChangesFile, viewKey: string): Uint8Array | null {
+  if (file.history.length === 0) return null;
+  try {
+    return unseal(fromBase64Url(viewKey), file.room, 'history-file', file.history);
   } catch {
     return null;
   }

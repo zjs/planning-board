@@ -21,8 +21,8 @@ import { sha256 } from '@noble/hashes/sha2.js';
 /** The format of links and sealed messages. A change bumps it, and older builds refuse what they can't read. */
 export const KEY_VERSION = 1;
 
-/** What a sealed message is: one change, the whole plan, presence, or the board in a changes file (sprint 12, ADR 0022). */
-export type SealedKind = 'update' | 'snapshot' | 'presence' | 'file';
+/** What a sealed message is: one change, the whole plan, presence, or the board or its history in a changes file (ADR 0022, ADR 0020). */
+export type SealedKind = 'update' | 'snapshot' | 'presence' | 'file' | 'history-file';
 
 export function randomBytes(n: number): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(n));

@@ -20,6 +20,8 @@ export interface PlanEntry {
   deletedAt?: number;
   /** Shared through a relay (ADR 0018): where, and the keys from its link. */
   shared?: SharedPlan;
+  /** Drafted here before it was shared, so this computer keeps its history from before (Q73). */
+  drafted?: boolean;
 }
 
 /**
@@ -158,6 +160,11 @@ export function addPlan(name: string, store = defaultStore(), now = Date.now()):
   return entry;
 }
 
+/** Remember that a plan was drafted here before it was shared: its earlier history stays on this computer (Q73). */
+export function markDrafted(id: PlanId, store = defaultStore()): void {
+  update(store, id, (e) => ({ ...e, drafted: true }));
+}
+
 /** Make a plan shared, or change how it's shared: keys, relay, or that the relay confirmed it. */
 export function setShared(id: PlanId, shared: SharedPlan, store = defaultStore()): void {
   update(store, id, (e) => ({ ...e, shared }));
@@ -218,7 +225,21 @@ export function expiredDeletes(store = defaultStore(), now = Date.now(), graceMs
 
 /** Delete a plan's board for good. */
 export function dropPlanDatabase(id: PlanId): Promise<void> {
-  return Promise.all([dropDatabase(planDatabase(id)), dropDatabase(syncDatabase(id))]).then(() => undefined);
+  const names = [planDatabase(id), syncDatabase(id), historyDatabase(id, 'local'), historyDatabase(id, 'shared'), historySyncDatabase(id)];
+  return Promise.all(names.map(dropDatabase)).then(() => undefined);
+}
+
+/**
+ * A plan's history (ADR 0020): `local` while it's only on this computer, and
+ * `shared` from the moment it's shared, which starts afresh (Q73).
+ */
+export function historyDatabase(id: PlanId, generation: 'local' | 'shared'): string {
+  return `planning-board:v${SCHEMA_VERSION}:history:${id}:${generation}`;
+}
+
+/** What the relay is known to hold of a shared plan's history. */
+export function historySyncDatabase(id: PlanId): string {
+  return `planning-board:v${SCHEMA_VERSION}:history-sync:${id}`;
 }
 
 /** The small database where a shared plan keeps what the relay is known to hold (src/store/relay.ts). */

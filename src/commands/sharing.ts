@@ -2,8 +2,9 @@
 // board sees it: who you are, which relay, making links, and opening one.
 
 import { newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type ShareLink } from '../store/keys.ts';
+import { historyRoom } from '../store/history.ts';
 import { retireRoom, type OpenSocket, type RetireResult } from '../store/relay.ts';
-import { addSharedPlan, findPlan, findShared, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
+import { addSharedPlan, findPlan, findShared, markDrafted, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
 
 export { isNewerLink, parseShareLink, type ShareLink } from '../store/keys.ts';
 
@@ -123,6 +124,7 @@ export function startSharing(id: PlanId, relay: string): SharedPlan {
   const { room, secret } = newRoom();
   const s = toBase64Url(secret);
   const shared: SharedPlan = { relay, room, secret: s, viewKey: viewKeyOf(s), pending: true };
+  if (!findPlan(id)?.shared) markDrafted(id);
   setShared(id, shared);
   return shared;
 }
@@ -161,7 +163,12 @@ export async function retireReplaced(id: PlanId, open?: OpenSocket): Promise<Ret
   const shared = findPlan(id)?.shared;
   const relay = shared?.relay;
   if (!shared?.replaces?.length || shared.pending || relay === undefined) return 'retired';
-  const results = await Promise.all(shared.replaces.map((old) => retireRoom({ relay, ...old, ...(open ? { open } : {}) })));
+  // Each old room, and its history's room beside it (ADR 0020), which a relay that never had it counts as retired.
+  const retire = (room: string, secret: string) => retireRoom({ relay, room, secret, ...(open ? { open } : {}) });
+  const both = (a: RetireResult, b: RetireResult): RetireResult => (a === 'failed' || b === 'failed' ? 'failed' : a === 'unsupported' ? 'unsupported' : b);
+  const results = await Promise.all(
+    shared.replaces.map(async (old) => both(await retire(old.room, old.secret), await retire(historyRoom(old.room), old.secret))),
+  );
   const left = shared.replaces.filter((_, i) => results[i] === 'failed');
   // Sharing may have changed meanwhile, in another tab: only what this call retired is taken off.
   const now = findPlan(id)?.shared;
@@ -183,6 +190,7 @@ export function startSharingByFile(id: PlanId): SharedPlan {
   const { room, secret } = newRoom();
   const s = toBase64Url(secret);
   const shared: SharedPlan = { room, secret: s, viewKey: viewKeyOf(s) };
+  if (!findPlan(id)?.shared) markDrafted(id);
   setShared(id, shared);
   return shared;
 }
