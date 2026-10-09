@@ -35,7 +35,7 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); all three await acceptance. Sprint 13, history, is under way ([`docs/sprint-13.md`](sprint-13.md)). Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
+**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four await acceptance. Sprint 14, since you were away, is next. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
 
 ### H. Arranging and moving cards
 
@@ -236,7 +236,7 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 
 ## Sprints
 
-Sprints 3 to 8 await the PM's acceptance and one combined tester session, which opens with a cold start (`docs/demos/sprint-5-session.md`). Sprints 9 to 12 await the PM's acceptance too: sprints 10 to 12 on their builds (`docs/demos/sprint-10.md`, `docs/demos/sprint-11.md`, `docs/demos/sprint-12.md`).
+Sprints 3 to 8 await the PM's acceptance and one combined tester session, which opens with a cold start (`docs/demos/sprint-5-session.md`). Sprints 9 to 13 await the PM's acceptance too: sprints 10 to 13 on their builds (`docs/demos/sprint-10.md` to `docs/demos/sprint-13.md`).
 
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
@@ -250,7 +250,7 @@ Sprints 3 to 8 await the PM's acceptance and one combined tester session, which 
 - **Sprint 10: M2's foundations** ([`docs/sprint-10.md`](sprint-10.md)) shipped on 2026-10-08: schema 2 (ADR 0016), several plans per browser (Q66, Q67, ADR 0021), and two tabs of one plan in sync. Demo: [`docs/demos/sprint-10.md`](demos/sprint-10.md).
 - **Sprint 11: the relay** ([`docs/sprint-11.md`](sprint-11.md)) shipped on 2026-10-08: the relay for real, as downloads and a container (Q69); loop repair (ADR 0004); share and join, with Can edit and Can view links (Q62, Q68, Q70); and the connection pill, with offline work (Q59). Demo: [`docs/demos/sprint-11.md`](demos/sprint-11.md).
 - **Sprint 12: seeing each other** ([`docs/sprint-12.md`](sprint-12.md)) shipped on 2026-10-08: presence and the driver (Q61, Q71, ADR 0019), drag intent and collisions (Q60), making new links (Q62) and hosting docs (`docs/hosting.md`), and changes by file (Q64 f, Q72, ADR 0022). Demo and session script: [`docs/demos/sprint-12.md`](demos/sprint-12.md).
-- **Sprint 13: history** ([`docs/sprint-13.md`](sprint-13.md)), started 2026-10-09: the plan diff (ADR 0020), a history document per plan, Activity with Restore (Q74), and a card's history; history on a shared plan starts at the share (Q73).
+- **Sprint 13: history** ([`docs/sprint-13.md`](sprint-13.md)) shipped on 2026-10-09: the plan diff (ADR 0020), a history document per plan, Activity with Restore (Q74), and a card's history; history on a shared plan starts at the share (Q73). Demo: [`docs/demos/sprint-13.md`](demos/sprint-13.md).
 - **Later candidates:**
   - **Component contention and the conflicts panel** (requirements 17–20):
     - the panel follows the view (Q40);

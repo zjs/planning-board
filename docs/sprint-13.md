@@ -40,7 +40,7 @@ The engineering plan is `docs/plans/sprint-13-plan.md`.
 
 ### 5. Tester-ready
 
-- [ ] A demo note (`docs/demos/sprint-13.md`), exit-criteria tests, the cheat sheet, the README, and the release pass.
+- [x] A demo note (`docs/demos/sprint-13.md`), exit-criteria tests, the cheat sheet, the README, and the release pass.
 
 ## Deferred (don't build)
 

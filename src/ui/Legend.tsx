@@ -183,6 +183,11 @@ export function Legend({ onClose }: { onClose: () => void }) {
             </dd>
             <dt>Make new links</dt>
             <dd>In the links, to cut off the old ones. Anyone with an old link keeps the plan as it was, read-only.</dd>
+            <dt>Activity</dt>
+            <dd>
+              Who changed what, and when, in your time zone. Restore brings back anything deleted. A card’s own history is
+              in the inspector, and its tooltip says who changed it last.
+            </dd>
             <dt>Share by file</dt>
             <dd>
               Where no relay is allowed. <strong>File › Send changes</strong> makes an encrypted file to email;{' '}
