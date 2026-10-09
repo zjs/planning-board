@@ -15,7 +15,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 13 (history) is built and awaits the PM's acceptance on its build: the plan diff, a history document per plan, Activity with Restore, and a card's history (ADR 0020, amended). Its demo note is `docs/demos/sprint-13.md`, and its compatibility fixtures follow in the next PR. Next is sprint 14, since you were away, which starts in plan mode after the maintenance pass. The rest of M2 is `docs/plans/m2-plan.md`: sprint 14.
+Sprint 13 (history) is built and awaits the PM's acceptance on its build: the plan diff, a history document per plan, Activity with Restore, and a card's history (ADR 0020, amended). Its demo note is `docs/demos/sprint-13.md`. Next is sprint 14, since you were away, which starts in plan mode after the maintenance pass. The rest of M2 is `docs/plans/m2-plan.md`: sprint 14.
 
 Sprint 12 (seeing each other: presence and the driver, drag intent and collisions, making new links with hosting docs in `docs/hosting.md`, and changes by file, ADR 0022) is built and awaits the PM's acceptance on its build (`docs/demos/sprint-12.md`).
 

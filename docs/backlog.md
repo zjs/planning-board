@@ -280,6 +280,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 13** (2026-10-09), the release pass's last step: sprint 13's plan file, imported plan, browser board and changes file open in every later build. So does its history: the first history document, and a changes file carrying it, whose entries all read and say something.
+
 - **Maintenance pass, 2026-10-09,** before planning sprint 13. Run in the background, read-only. Nothing to take:
   - **npm:** only TypeScript is behind, and 7 is still blocked (typescript-eslint 8.71.1 still requires TypeScript below 6.1); @noble/ciphers and @noble/hashes are current. The `braces` advisory still has no patched release.
   - **CI actions:** all eleven are on their latest majors, on node24.
