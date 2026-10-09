@@ -2720,6 +2720,7 @@ button.link:hover {
   white-space: nowrap;
 }
 
+/* Like the dependency lines, it covers the whole board, so it must not take `.board > *`'s background. */
 .board > svg.presence-layer {
   position: absolute;
   top: 0;
@@ -2727,6 +2728,7 @@ button.link:hover {
   pointer-events: none;
   z-index: 6;
   overflow: visible;
+  background: none;
 }
 
 .presence-selection {
