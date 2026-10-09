@@ -166,6 +166,7 @@ jobs:
           mkdir -p out/planning-board-relay
           (cd relay && go build -trimpath -ldflags="-s -w" -o "../out/planning-board-relay/$exe" .)
           cp relay/README.md out/planning-board-relay/README.md
+          cp LICENSE out/planning-board-relay/LICENSE
           name="planning-board-relay-$GOOS-$GOARCH"
           if [ "$GOOS" = windows ]; then
             (cd out && zip -qr "../$name.zip" planning-board-relay)

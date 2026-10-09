@@ -65,6 +65,7 @@ Entry format:
   - **Automation.** (c) Dependabot for npm and GitHub Actions, monthly, with minor and patch updates grouped into one PR. (d) A scheduled routine that runs the maintenance pass and opens a PR. (e) Neither, for now.
 - Recommendation: (a), because each kind of rot is cheapest to fix when it's caused. Also (c): it catches security fixes between sprints, and its PRs go through the same CI and merge-on-green as engineering's. Skip (d) while sprints follow each other closely.
 - Status: open. The 2026-10-02 pass followed (a)'s checklists, and `CLAUDE.md` points to them as a proposal.
+  - 2026-10-09: a review of the user-facing docs found them drifting where no checklist looked: `SECURITY.md` and the relay's docs, which only the README's line covered. (a) gains a list of user-facing docs, each with its reader and what makes it stale, used by the definition of done and the release pass, and a test in `npm run check` for broken links and internal numbering in them.
 
 ### Q54: Making actions findable
 - Context: The backlog's theme K. These are reachable only by a key or an invisible gesture:

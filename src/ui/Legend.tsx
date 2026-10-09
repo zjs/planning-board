@@ -215,7 +215,10 @@ export function Legend({ onClose }: { onClose: () => void }) {
             <dt>
               <span className="mismatch">⚠</span> markers
             </dt>
-            <dd>A card that doesn’t fit its group: dated outside it, larger, in another area, or at its level or above.</dd>
+            <dd>
+              A card that doesn’t fit its group: dated outside it, larger, in another area, or at its level or above. On
+              a group, “⚠ 3” counts what’s wrong inside it, red lines included. Point at it to see what.
+            </dd>
             <dt>Undo, redo, cancel</dt>
             <dd>
               <kbd>{keys.undo}</kbd>, <kbd>{keys.redo}</kbd>, <kbd>Esc</kbd> during a drag.

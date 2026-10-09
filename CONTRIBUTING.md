@@ -6,11 +6,11 @@ Thanks for looking. Planning Board is early, and it's built in the open.
 
 [Open an issue](https://github.com/zjs/planning-board/issues/new/choose) for:
 
-- **Something broken.** Include the build shown at the bottom of the help panel (**? Help**), and your browser.
+- **Something broken.** Include the build shown at the bottom of the cheat sheet (the **?** button in the toolbar), your browser, and how you opened the app: the hosted page, a file, or from a relay.
 - **An import problem.** Paste your CSV's header row. It holds only column names, and it's usually enough to fix detection.
 - **Ideas and feedback,** especially from PMs, EMs, and tech leads who plan multi-component releases. What would you need before you'd bring this to a planning meeting?
 
-Please don't paste or attach real roadmap data. Made-up titles are fine for describing a problem.
+Please don't paste or attach real roadmap data, or a share link: anyone with a link can open its plan. Made-up titles are fine for describing a problem. Security problems go to [private reporting](SECURITY.md) instead.
 
 Feedback from issues and user sessions is collected in [`docs/backlog.md`](docs/backlog.md), grouped into themes, so you can see where it went.
 

@@ -8,6 +8,6 @@ export default defineConfig({
   plugins: [react(), viteSingleFile()],
   base: './',
   test: {
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
   },
 });
