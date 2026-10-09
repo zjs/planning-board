@@ -274,11 +274,25 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Open**
 
-- **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
+- **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac. The repository review (2026-10-09) ranks it higher: the technical visitors most likely to find the project are likelier than most to use Firefox _(priors)_.
 - **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02; still blocked on 2026-10-09, typescript-eslint 8.71.1).
 - **`braces` advisory (GHSA-vfj7-8cjw-p6xm).** `npm audit` reports three high-severity findings, all one advisory in `braces`, which reaches the build through `vite-plugin-singlefile` and `micromatch`. No patched `braces` exists yet, and audit's only fix is a downgrade to `vite-plugin-singlefile` 0.9. It runs only at build time, on the project's own globs, so nothing in the app or its users' plans can reach it. Take the fix when a patched release ships (maintenance pass, 2026-10-07; still none on 2026-10-09, braces 3.0.3).
 - **Node 26 in CI.** CI and the docs use Node 22, which reaches end of life on 2027-04-30. Node 24 moves to maintenance on 2026-10-20, and Node 26 becomes Active LTS on 2026-10-28 (nodejs/Release, checked 2026-10-08). Skip 24: move CI and `CLAUDE.md` to Node 26 in a maintenance pass after 2026-10-28, and check the build and tests on it.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
+- **The repository review, 2026-10-09** ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md)), at the PM's request: how the repo reads to a technical stranger. Decisions are Q75–Q78, plus Q49's automation.
+  - **For the PM, in Settings:**
+    - the About box: a description, the Pages link, and topics;
+    - "Automatically delete head branches", and deleting the nine old branches;
+    - a ruleset on `main` that requires CI's `check` and `relay-test` and blocks force-pushes;
+    - checking that private vulnerability reporting is on.
+  - **For engineering, one housekeeping slice once Q75–Q77 are answered:**
+    - "How this is built" and "How it's tested" in the README, and a CI badge;
+    - a `docs/README.md` map;
+    - readable CI job names, and a step summary with test counts;
+    - Pages deploying the file CI tested, not a rebuild;
+    - checksums, build attestations, and SHA-pinned third-party actions for the relay release;
+    - a "Reviewed" section in the PR body, in the definition of done.
+  - **Started:** commit subjects say what changed, with the sprint in brackets at the end.
 **Done**
 
 - **Third-party notices, and which relay is running** (2026-10-09), a housekeeping slice before sprint 14, from the user docs review:
