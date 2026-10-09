@@ -11,7 +11,9 @@ import * as Y from 'yjs';
 import { compatSummary } from '../domain/__fixtures__/compat/summary.ts';
 import { LEVEL } from '../domain/model.ts';
 import { planFileText, readPlanFile } from '../domain/planJson.ts';
-import { openChangesFile, readChangesFile } from '../store/changesFile.ts';
+import { openChangesFile, openChangesHistory, readChangesFile } from '../store/changesFile.ts';
+import { readEntries } from '../store/history.ts';
+import { describeChange } from '../domain/describe.ts';
 import { toBase64Url, viewKeyOf } from '../store/keys.ts';
 import { readPlan, schemaOf } from '../store/schema.ts';
 import { migrateV1 } from '../store/schemaV1.ts';
@@ -35,7 +37,7 @@ function openBoard(file: string) {
 
 describe('boards stored by earlier versions', () => {
   it('has a board from every released version', () => {
-    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-11', 'sprint-12', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
+    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-11', 'sprint-12', 'sprint-13', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
   });
 
   for (const file of boards) {
@@ -64,7 +66,7 @@ const changesKey = viewKeyOf(toBase64Url(new Uint8Array(32).fill(7)));
 
 describe('changes files written by earlier versions', () => {
   it('has a changes file from every version since sprint 12', () => {
-    expect(changesFiles).toEqual(['sprint-12.changes.pbchanges']);
+    expect(changesFiles).toEqual(['sprint-12.changes.pbchanges', 'sprint-13.changes.pbchanges']);
   });
 
   for (const file of changesFiles) {
@@ -80,6 +82,37 @@ describe('changes files written by earlier versions', () => {
       const fromFile = readPlanFile(readFileSync(new URL(`${version}.plan.json`, dir), 'utf8'));
       if (!fromFile.ok) throw new Error(fromFile.summary);
       expect(compatSummary(readPlan(store.doc))).toEqual(compatSummary(fromFile.plan));
+    });
+  }
+});
+
+// History documents (ADR 0020) from every version that records them: every entry reads, and says something.
+const histories = readdirSync(dir).filter((f) => f.endsWith('.history.yjs')).sort();
+
+describe('history written by earlier versions', () => {
+  it('has a history from every version since sprint 13', () => {
+    expect(histories).toEqual(['sprint-13.history.yjs']);
+  });
+
+  for (const file of histories) {
+    const version = file.replace('.history.yjs', '');
+    it(`${version}: every entry reads, in words, alone and in that version's changes file`, () => {
+      const doc = new Y.Doc();
+      Y.applyUpdate(doc, new Uint8Array(readFileSync(new URL(file, dir))));
+      const entries = readEntries(doc);
+      expect(entries.length).toBeGreaterThanOrEqual(2);
+      const plan = readPlan(openBoard(`${version}.board.yjs`).doc);
+      for (const entry of entries) {
+        expect(entry.name).toBe('Compat');
+        for (const change of entry.changes) expect(describeChange(change, plan)).not.toMatch(/undefined/);
+      }
+      const read = readChangesFile(new Uint8Array(readFileSync(new URL(`${version}.changes.pbchanges`, dir))));
+      if (typeof read === 'string') throw new Error(read);
+      const update = openChangesHistory(read, changesKey);
+      expect(update).not.toBeNull();
+      const merged = new Y.Doc();
+      Y.applyUpdate(merged, update!);
+      expect(readEntries(merged).map((e) => e.id).sort()).toEqual(entries.map((e) => e.id).sort());
     });
   }
 });

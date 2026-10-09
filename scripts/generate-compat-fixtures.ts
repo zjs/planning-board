@@ -40,6 +40,8 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-11', commit: 'd50c040' },
   // Presence, new links, and the first changes file (ADR 0022).
   { name: 'sprint-12', commit: '3043bc8' },
+  // The first history document, and the first changes file with history in it (ADR 0020).
+  { name: 'sprint-13', commit: 'd979a16' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;
@@ -81,13 +83,34 @@ try {
   if (!String(e).includes('Cannot find module') && !String(e).includes('ERR_MODULE_NOT_FOUND')) throw e;
 }
 
-// From the versions that share by file (ADR 0022): the board as a changes file, sealed with a fixed key the
-// compatibility test knows (src/commands/compat.test.ts).
+// From the versions that record history (ADR 0020): a history document, made by a few commands on a copy of the
+// board (a rename, deleting a group, and undoing it), so the board above stays as the plan file says.
+let history: Y.Doc | undefined;
+try {
+  const recording = await import('./src/commands/history.ts');
+  const copy = store.createPlanStore();
+  store.loadPlan(copy, plan);
+  history = new Y.Doc();
+  recording.watchHistory(copy, history, () => ({ by: 'compat-author', name: 'Compat' }), () => Date.UTC(2026, 9, 9, 12));
+  const ids = Object.keys(plan.items);
+  store.renameItem(copy, ids[0], plan.items[ids[0]].title + ' (renamed)');
+  const group = Object.values(plan.items).find((i) => Object.values(plan.items).some((c) => c.parent === i.id));
+  if (group) {
+    store.deleteItems(copy, [group.id]);
+    store.undo(copy);
+  }
+  writeFileSync(outDir + '/' + name + '.history.yjs', Y.encodeStateAsUpdate(history));
+} catch (e) {
+  if (!String(e).includes('Cannot find module') && !String(e).includes('ERR_MODULE_NOT_FOUND')) throw e;
+}
+
+// From the versions that share by file (ADR 0022): the board as a changes file, with its history where the version
+// has one, sealed with a fixed key the compatibility test knows (src/commands/compat.test.ts).
 try {
   const changes = await import('./src/store/changesFile.ts');
   const keys = await import('./src/store/keys.ts');
   const secret = keys.toBase64Url(new Uint8Array(32).fill(7));
-  writeFileSync(outDir + '/' + name + '.changes.pbchanges', changes.writeChangesFile(s.doc, 'compat_changes_room_0001', keys.viewKeyOf(secret)));
+  writeFileSync(outDir + '/' + name + '.changes.pbchanges', changes.writeChangesFile(s.doc, 'compat_changes_room_0001', keys.viewKeyOf(secret), history));
 } catch (e) {
   if (!String(e).includes('Cannot find module') && !String(e).includes('ERR_MODULE_NOT_FOUND')) throw e;
 }
