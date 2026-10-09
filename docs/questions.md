@@ -636,3 +636,4 @@ Entry format:
 - Options: (a) one person's consecutive changes within 5 minutes of each other form one row ("Ada made 30 changes, 10:40–10:45"), which opens to show each, with Restore still on each deletion; (b) one row per change.
 - Recommendation: (a).
 - Status: answered 2026-10-09: (a). Sprint 13, slice 3.
+  - Built in sprint 13, slice 3. A row is one person's changes with no more than 5 minutes between neighbours. It reads "Ada made 4 changes, 10:40–10:45", and opens to show each one, with Restore on deletions. A single change is a row of its own, in words. "Shared the plan" always stands alone.

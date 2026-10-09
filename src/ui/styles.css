@@ -1686,6 +1686,108 @@ kbd {
   color: var(--muted);
 }
 
+/* Activity (requirement 36): who changed what, by day, in your time zone. */
+.activity-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+  color: var(--muted);
+}
+
+.activity-section {
+  margin: 16px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.activity-day h4 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.activity-day ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-row {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.activity-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  cursor: default;
+}
+
+summary.activity-head {
+  cursor: pointer;
+}
+
+.activity-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  align-self: center;
+}
+
+.activity-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-head time {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-row details ul {
+  margin: 4px 0 2px 14px;
+}
+
+.activity-change {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 0;
+}
+
+.activity-change button.link {
+  cursor: pointer;
+}
+
+.activity-via {
+  color: var(--muted);
+}
+
+.activity-restore,
+.activity-show {
+  flex: none;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.activity-show {
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.activity-note {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .property {
   border-top: 1px solid var(--border);
   padding: 8px 0;

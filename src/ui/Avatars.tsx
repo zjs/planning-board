@@ -19,7 +19,7 @@ const SETTINGS: { value: CursorSetting; label: string }[] = [
  * drive, to choose whose pointers show, and to change your name. It stays
  * narrow, so the toolbar keeps to one row.
  */
-export function Avatars({ view }: { view: PresenceView }) {
+export function Avatars({ view, onActivity }: { view: PresenceView; onActivity?: () => void }) {
   const [naming, setNaming] = useState(false);
   const name = myName() ?? 'You';
   const me: Pick<Person, 'id' | 'name' | 'color'> = { id: view.me, name, color: colorFor(view.me).hex };
@@ -83,6 +83,7 @@ export function Avatars({ view }: { view: PresenceView }) {
             title: view.driving ? 'Hand back the lead' : 'Take the lead: with Driver only, others see just your pointer',
           },
           { label: myName() ? 'Change your name…' : 'Add your name…', onSelect: () => setNaming(true) },
+          ...(onActivity ? [{ label: 'Activity', onSelect: onActivity, title: 'Who changed what on this plan, and when' }] : []),
           'divider',
           { heading: 'Pointers to show' },
           ...SETTINGS.map((setting) => ({

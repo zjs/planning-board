@@ -436,6 +436,21 @@ function writeValues(store: PlanStore, item: Y.Map<unknown>, property: PropertyI
 }
 
 /** Mark a card deleted (ADR 0016): readers hide it and everything inside it, and undo clears the mark. */
+/**
+ * Bring back deleted cards (requirement 36, Activity's Restore): a delete is a
+ * tombstone (ADR 0016), so restoring takes it away, and each card comes back
+ * as it was, where it was. Returns how many came back. One undo step.
+ */
+export function restoreItems(store: PlanStore, ids: Iterable<ItemId>): number {
+  const items = root(store.doc).items;
+  const doomed = [...ids].map((id) => items.get(id)).filter((m): m is Y.Map<unknown> => m?.get('deleted') === true);
+  if (doomed.length === 0) return 0;
+  edit(store, () => {
+    for (const item of doomed) item.delete('deleted');
+  });
+  return store.readOnly ? 0 : doomed.length;
+}
+
 function tombstone(item: Y.Map<unknown> | undefined): void {
   item?.set('deleted', true);
 }

@@ -31,8 +31,8 @@ The engineering plan is `docs/plans/sprint-13-plan.md`.
 
 ### 3. Activity (Q74)
 
-- [ ] A feed for the whole plan: by day, newest first, filterable by person, with bursts grouped, and a footnote on what attribution means.
-- [ ] Clicking a change shows the card; Restore brings back a deleted card and everything deleted with it.
+- [x] A feed for the whole plan: by day, newest first, filterable by person, with bursts grouped, and a footnote on what attribution means.
+- [x] Clicking a change shows the card; Restore brings back a deleted card and everything deleted with it.
 
 ### 4. A card's history
 

@@ -34,9 +34,15 @@ describe('the plan diff (ADR 0020)', () => {
     ]);
   });
 
-  it('reports a deleted group once, with the cards that went with it', () => {
-    expect(planDiff(base(), without(base(), 'epic', 'story', 'sub'))).toEqual([
-      { kind: 'deleted', item: 'epic', title: 'Passwordless login', with: ['story', 'sub'] },
+  it('reports a deleted group once, with the cards that went with it, and their links with them', () => {
+    const before = base();
+    before.dependencies = [{ from: 'story', to: 'tax' }];
+    before.related = [{ a: 'epic', b: 'tax' }];
+    // Links to deleted cards drop out of a plan's snapshot, and come back with them.
+    const after = { ...without(before, 'epic', 'story', 'sub'), dependencies: [], related: [] };
+    expect(planDiff(before, after)).toEqual([{ kind: 'deleted', item: 'epic', title: 'Passwordless login', with: ['story', 'sub'] }]);
+    expect(planDiff(after, before, new Set(['epic', 'story', 'sub']))).toEqual([
+      { kind: 'restored', item: 'epic', title: 'Passwordless login', with: ['story', 'sub'] },
     ]);
   });
 

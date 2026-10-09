@@ -8,7 +8,8 @@ import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
 import { RELAY_ORIGIN } from '../store/relay.ts';
 import { changesFileFor, mergeChanges, type ChangesFile } from './changesFile.ts';
 import { readClocks, readEntries, recordClock, recordShared, watchHistory, type Author } from './history.ts';
-import { createPlanStore, deleteItems, dropCard, editCardValues, loadPlan, redo, renameItem, undo, type PlanStore } from './store.ts';
+import { readPlan } from '../store/schema.ts';
+import { createPlanStore, deleteItems, dropCard, editCardValues, loadPlan, redo, renameItem, restoreItems, undo, type PlanStore } from './store.ts';
 
 const roadmap: ViewSpec = { x: { property: TIME, level: 0 }, y: { property: SYSTEM, level: 0 } };
 const ada: Author = { by: 'ada-id', name: 'Ada' };
@@ -54,6 +55,19 @@ describe('recording history (ADR 0020)', () => {
     redo(store);
     expect(kinds(history)).toEqual(['command deleted', 'undo restored', 'redo deleted']);
     expect(readEntries(history).find((e) => e.via === 'undo')!.changes).toEqual([{ kind: 'restored', item: 'epic', title: 'Passwordless login', with: ['story'] }]);
+  });
+
+  it('restores a deleted group, with everything inside it, as one undo step that history records', () => {
+    const { store, history } = setup();
+    deleteItems(store, ['epic']);
+    const deleted = readEntries(history)[0]!.changes[0]!;
+    expect(deleted).toMatchObject({ kind: 'deleted', item: 'epic', with: ['story'] });
+    expect(restoreItems(store, ['epic', 'story'])).toBe(2);
+    expect(Object.keys(readPlan(store.doc).items).sort()).toEqual(['epic', 'story', 'tax']);
+    expect(kinds(history)).toEqual(['command deleted', 'command restored']);
+    expect(restoreItems(store, ['epic'])).toBe(0);
+    undo(store);
+    expect(readPlan(store.doc).items.epic).toBeUndefined();
   });
 
   it('never records changes that came from someone else, and stops when asked', () => {
