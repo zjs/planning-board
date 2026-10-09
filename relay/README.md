@@ -43,7 +43,7 @@ Put it behind your company's reverse proxy for HTTPS, and pass `-trust-forwarded
 
 ## Updating
 
-Stop it, replace the program (or pull the new image), and start it again with the same data folder. Boards that were open reconnect on their own. The `relay-latest` release is rebuilt from every change to the project, so the newest download is always the one to use; [`docs/hosting.md`](https://github.com/zjs/planning-board/blob/main/docs/hosting.md#upgrading) has the details.
+`planning-board-relay -version` says which build you have, such as `build 3d350aa (2026-10-09)`; so do its start-up message and `/config`. To update, stop it, replace the program (or pull the new image), and start it again with the same data folder. Boards that were open reconnect on their own. The `relay-latest` release is rebuilt from every change to the project, so the newest download is always the one to use; [`docs/hosting.md`](https://github.com/zjs/planning-board/blob/main/docs/hosting.md#upgrading) has the details.
 
 ## Options
 
@@ -65,6 +65,8 @@ Stop it, replace the program (or pull the new image), and start it again with th
 | `-trust-forwarded` | off | Behind a proxy, read `X-Forwarded-For` and `X-Forwarded-Proto`. |
 | `-static` | | Serve the app from this directory's `index.html` instead of the built-in one. |
 | `-announce` | on | Print the addresses colleagues can open. |
+| `-version` | | Print which build this is, and stop. |
+| `-licenses` | | Print the licenses of the open-source software inside, and stop. |
 | `-restored` | off | Start once with this after restoring the data folder from a backup: every shared plan gets a new epoch, so boards send whatever the backup is missing. |
 
 ## What it can and can't see
@@ -85,4 +87,4 @@ Without `relay/web/index.html`, the program serves a page saying how to add the 
 
 ## License
 
-Apache 2.0, in `LICENSE` beside this file. The source is at <https://github.com/zjs/planning-board>.
+Apache 2.0, in `LICENSE` beside this file. The open-source software inside it, and inside the app it serves, is listed with its licenses in `THIRD-PARTY-NOTICES.txt`, which `-licenses` also prints (in a container: `docker run --rm ghcr.io/zjs/planning-board -licenses`). The source is at <https://github.com/zjs/planning-board>.

@@ -159,14 +159,23 @@ jobs:
           GOOS: ${{ matrix.target.os }}
           GOARCH: ${{ matrix.target.arch }}
           CGO_ENABLED: '0'
+          # The build -version, /config and the cheat sheet name: the same commit the app inside names.
+          BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           cp app/*.html relay/web/index.html
           exe=planning-board-relay
           if [ "$GOOS" = windows ]; then exe=$exe.exe; fi
           mkdir -p out/planning-board-relay
-          (cd relay && go build -trimpath -ldflags="-s -w" -o "../out/planning-board-relay/$exe" .)
+          build_date=$(git log -1 --format=%cs)
+          (cd relay && go build -trimpath -ldflags="-s -w -X main.buildCommit=$BUILD_COMMIT -X main.buildDate=$build_date" -o "../out/planning-board-relay/$exe" .)
           cp relay/README.md out/planning-board-relay/README.md
           cp LICENSE out/planning-board-relay/LICENSE
+          # The same notices -licenses prints, as a file beside the program. Run for this computer, not the target.
+          (cd relay && GOOS= GOARCH= go run . -licenses) > out/planning-board-relay/THIRD-PARTY-NOTICES.txt
+          grep -q '== yjs ' out/planning-board-relay/THIRD-PARTY-NOTICES.txt
+          if [ "$GOOS/$GOARCH" = linux/amd64 ]; then
+            "out/planning-board-relay/$exe" -version | tee /dev/stderr | grep -q "build ${BUILD_COMMIT::7} ($build_date)"
+          fi
           name="planning-board-relay-$GOOS-$GOARCH"
           if [ "$GOOS" = windows ]; then
             (cd out && zip -qr "../$name.zip" planning-board-relay)

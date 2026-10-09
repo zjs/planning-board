@@ -2136,7 +2136,7 @@ function Workspace({
           onClose={closeCardMenu}
         />
       )}
-      {legendOpen && <Legend onClose={closeLegend} />}
+      {legendOpen && <Legend onClose={closeLegend} relay={sharedPlan?.relay ?? null} />}
       {sharing && (
         <ShareDialog
           planName={planActions.name}

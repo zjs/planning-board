@@ -20,7 +20,7 @@ Part of the slice's own PR, checked during self-review. Nothing here waits for a
 - [ ] A change someone outside the project would notice is in the user-facing doc that describes it ([the list](#user-facing-docs)): a feature, a renamed control or view, a relay flag or a line it prints, a new way to open or share the app. A renamed label is searched for in all of them, issue templates included.
 - [ ] A change to the plan file or the Yjs document adds a compatibility fixture from the commit before it (ADR 0005).
 - [ ] A significant implementation choice has an ADR, or an amendment to one, and the ADR index lists it.
-- [ ] A new runtime dependency is recorded in an ADR.
+- [ ] A new runtime dependency is recorded in an ADR. Its license notice comes with it: the app's build lists bundled packages on its own, and a new or upgraded Go module needs `npm run notices:relay`.
 - [ ] The PR body has a demo note: what to click, what should happen, and known gaps.
 
 ## 2. When a sprint closes: the release pass

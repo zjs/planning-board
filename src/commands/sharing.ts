@@ -51,6 +51,8 @@ export interface RelayInfo {
   protocol: number;
   /** The address to put in share links. */
   publicUrl: string;
+  /** Which build of the relay this is, such as "3d350aa (2026-10-09)". Relays from before 2026-10-09 don't say. */
+  build?: string;
 }
 
 async function fetchConfig(url: string): Promise<RelayInfo | null> {
@@ -60,7 +62,8 @@ async function fetchConfig(url: string): Promise<RelayInfo | null> {
     const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
     if (!response.ok) return null;
     const info = (await response.json()) as Partial<RelayInfo>;
-    return typeof info.protocol === 'number' && typeof info.publicUrl === 'string' ? { protocol: info.protocol, publicUrl: info.publicUrl } : null;
+    if (typeof info.protocol !== 'number' || typeof info.publicUrl !== 'string') return null;
+    return { protocol: info.protocol, publicUrl: info.publicUrl, ...(typeof info.build === 'string' ? { build: info.build } : {}) };
   } catch {
     return null;
   } finally {

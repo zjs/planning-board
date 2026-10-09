@@ -4,7 +4,7 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-frontend-and-build.md) | React + Vite, one self-contained HTML file | Accepted |
+| [0001](0001-frontend-and-build.md) | React + Vite, one self-contained HTML file, carrying its third-party notices | Accepted |
 | [0002](0002-rendering.md) | DOM with CSS grid; SVG overlay for lines later | Accepted |
 | [0003](0003-scenario-representation.md) | One Yjs document per scenario, diffed by item ID | Accepted |
 | [0004](0004-group-tree.md) | Parent pointers, with deterministic cycle repair for M2 | Accepted |
@@ -20,7 +20,7 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0014](0014-find-dims-not-filters.md) | Find dims, it doesn't filter: matching on word starts, an overlay on the finished layout, a bar opened with / | Accepted |
 | [0015](0015-views-and-motion.md) | Built-in views as viewer state, in a view bar; pivots animate with FLIP, respecting reduced motion | Accepted |
 | [0016](0016-schema-for-concurrent-editing.md) | Schema 2 for concurrent editing: flat value keys, one value for single-valued properties, tombstones, values as maps | Accepted |
-| [0017](0017-relay-and-sync.md) | Sync through a relay that reads nothing: numbered encrypted updates, a shadow document, snapshots made by clients, write tokens | Accepted |
+| [0017](0017-relay-and-sync.md) | Sync through a relay that reads nothing: numbered encrypted updates, a shadow document, snapshots made by clients, write tokens; a relay that names its build and prints its licenses | Accepted |
 | [0018](0018-keys-and-links.md) | Keys and links: a secret in the fragment, edit and view-only links, new links to revoke | Accepted |
 | [0019](0019-presence.md) | Presence anchored to cards, not to the screen | Accepted |
 | [0020](0020-history-and-plan-diff.md) | One plan diff for scenario compare, history and "since you were away"; history in its own document | Accepted |

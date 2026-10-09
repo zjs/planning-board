@@ -80,6 +80,7 @@ npm run build        # dist/index.html, the single-file app
 npm run e2e          # Playwright tests against dist/index.html (build first); with Go installed, also against a relay
 npm run seed         # regenerate the sample plan, src/seed/sample-plan.json
 npm run sample:jira  # regenerate the sample Jira export, docs/samples/jira-export.csv
+npm run notices:relay  # regenerate the relay's license notices, after changing its Go modules
 npm run compat:fixtures  # save fixtures from a newly released build (ADR 0005)
 (cd relay && go test -race ./...)  # the relay's tests
 ```
@@ -97,4 +98,4 @@ npm run compat:fixtures  # save fixtures from a newly released build (ADR 0005)
 
 ## License
 
-[Apache 2.0](LICENSE)
+[Apache 2.0](LICENSE). The open-source software inside the app is listed with its licenses in the cheat sheet, under **Open-source licenses**, and the relay's in each download.

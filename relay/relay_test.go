@@ -711,7 +711,7 @@ func TestTheRelayServesTheAppAndItsConfig(t *testing.T) {
 	defer res.Body.Close()
 	var info relayInfo
 	json.NewDecoder(res.Body).Decode(&info)
-	if info.Protocol != ProtocolVersion || info.PublicURL == "" || res.Header.Get("Access-Control-Allow-Origin") != "*" {
+	if info.Protocol != ProtocolVersion || info.PublicURL == "" || info.Build != buildName() || res.Header.Get("Access-Control-Allow-Origin") != "*" {
 		t.Fatalf("config: %+v %v", info, res.Header)
 	}
 	if res, _ := http.Get(srv.URL + "/elsewhere"); res.StatusCode != http.StatusNotFound {

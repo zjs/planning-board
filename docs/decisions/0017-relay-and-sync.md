@@ -74,3 +74,10 @@ The relay is `relay/`, a Go module (Go 1.26, built with 1.27), grown from the sp
 - **Releases:** after CI passes on `main`, the downloads for Mac, Linux and Windows go to the rolling `relay-latest` release, and a multi-arch image to `ghcr.io/zjs/planning-board` (Q69). Pages deploys only after CI passes too.
 
 **The threat model, stated plainly.** The relay can't read what it stores. When it also serves the app, whoever runs it could serve an altered app that reads the key from the link, which is the trust any website asks for. Over plain `http`, someone on the network could do the same. So a relay protects what's stored, not the network or the operator. Run it yourself, or have the company run it. For sprint 14's public relay, links can name the app and the relay separately (ADR 0018), so the relay never serves the code.
+
+## Amendment (2026-10-09): which relay, and what's inside it
+
+Someone running a relay couldn't tell which build it was. The program said nothing about itself, and `docs/hosting.md` could only say which features need a newer relay in terms of sprints. Now:
+
+- **The relay names its build:** the short commit and its date, such as `3d350aa (2026-10-09)`, set by CI with `-ldflags -X`. A relay built in a checkout without those flags names the commit Go records, and anything else says `dev`. `-version` prints it, the start-up message says it, and `/config` returns it as `build`, which is a new optional field that older apps ignore. The cheat sheet shows it for a shared plan ("Build abc1234 · Relay def5678"), so a report about sharing names both builds. A relay older than this says nothing, and the cheat sheet calls it "an older relay".
+- **Its licenses:** the program embeds the notices for Go's standard library and every module it's built with (`relay/third_party_notices.txt`, regenerated with `npm run notices:relay`). `-licenses` prints them, followed by the notices of the app it serves, read from the app's page (ADR 0001, amended). Each download carries the same text as `THIRD-PARTY-NOTICES.txt`, and the container prints it with `-licenses`. A test fails if `go.mod` names a module the notices don't.

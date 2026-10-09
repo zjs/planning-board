@@ -27,7 +27,7 @@ body:
     id: build
     attributes:
       label: Build
-      description: Shown at the bottom of the cheat sheet (the **?** button in the toolbar), e.g. "Build 3d350aa".
+      description: Shown at the bottom of the cheat sheet (the **?** button in the toolbar), e.g. "Build 3d350aa". On a shared plan, include the relay's build beside it.
     validations:
       required: true
   - type: input

@@ -1400,6 +1400,12 @@ p.guide-how {
   color: var(--accent);
 }
 
+.legend-licenses {
+  margin: 8px 0 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 kbd {
   padding: 0 4px;
   border: 1px solid var(--border);

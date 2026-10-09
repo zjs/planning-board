@@ -35,7 +35,19 @@ func main() {
 	trustForwarded := flag.Bool("trust-forwarded", false, "behind a proxy, use X-Forwarded-For and X-Forwarded-Proto")
 	announce := flag.Bool("announce", true, "print the addresses colleagues can open")
 	restored := flag.Bool("restored", false, "after restoring the data from a backup, start once with this: boards then send whatever the backup is missing")
+	version := flag.Bool("version", false, "print which build this is, and stop")
+	showLicenses := flag.Bool("licenses", false, "print the licenses of the open-source software inside, and stop")
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("Planning Board relay, build %s, protocol %d\n", buildName(), ProtocolVersion)
+		return
+	}
+	if *showLicenses {
+		app, _ := appPage(*static)
+		fmt.Print(licenses(app))
+		return
+	}
 
 	cfg := DefaultConfig(*data)
 	cfg.MaxMessage, cfg.MaxRoom, cfg.MaxData, cfg.MaxRooms = *maxMessage, *maxRoom, *maxData, *maxRooms
@@ -77,6 +89,8 @@ func main() {
 	}
 	if *announce {
 		printAddresses(listener.Addr(), *publicURL, *data)
+	} else {
+		log.Printf("Planning Board relay, build %s, listening on %s", buildName(), listener.Addr())
 	}
 	server := &http.Server{Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	log.Fatal(server.Serve(listener))
@@ -97,7 +111,7 @@ func printAddresses(addr net.Addr, publicURL, data string) {
 	if tcp, ok := addr.(*net.TCPAddr); ok {
 		port = fmt.Sprint(tcp.Port)
 	}
-	fmt.Println("Planning Board is running.")
+	fmt.Printf("Planning Board is running (build %s).\n", buildName())
 	if publicURL != "" {
 		fmt.Printf("  Open: %s\n", publicURL)
 	} else {

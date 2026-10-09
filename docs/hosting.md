@@ -79,7 +79,7 @@ server {
 
 **Rooms.** Each shared plan uses two rooms on the relay, one for the board and one for its history, so `-max-rooms` counts both: the default of 1000 is about 500 shared plans.
 
-**Checking it.** `https://plans.example.com/healthz` says `ok`, and `/config` names the public address. Open the address, load the sample, and **Share**: the pill should say **Live**.
+**Checking it.** `https://plans.example.com/healthz` says `ok`, and `/config` names the public address and the relay's build. Open the address, load the sample, and **Share**: the pill should say **Live**.
 
 **Pages hosted elsewhere.** People usually open the app from the relay's own address, but the public copy on GitHub Pages can use your relay too, if the relay is on HTTPS: a page served over HTTPS can't reach a plain `http` relay, except one on the same computer. To let another host's copy of the app use it, add that host with `-allow-origin`.
 
@@ -89,7 +89,9 @@ Stop the relay, replace the program or pull the new image, and start it again. B
 
 A relay and an app built at different times work together as long as they speak the same protocol version (`relay/PROTOCOL.md`). If they don't, the pill says **Can't use the relay**, and its message says which one to update. Since the relay serves the app, people who open it from the relay's address always get a matching build.
 
-New features sometimes need both. For example, **Make new links** cuts off old links only on a relay built after it was added (October 2026). On an older relay, the app warns that old links still work, so upgrade the relay before relying on it. The `relay-latest` release and the container's `latest` tag are rebuilt from every change, so upgrading means taking the newest.
+New features sometimes need both. For example, **Make new links** cuts off old links only on a relay new enough to retire them. On an older relay, the app warns that old links still work, so upgrade the relay before relying on it. The `relay-latest` release and the container's `latest` tag are rebuilt from every change, so upgrading means taking the newest.
+
+**Which build.** `planning-board-relay -version` names the build you have, such as `build 3d350aa (2026-10-09)`: the commit it was built from, and that commit's date. The start-up message and `/config` say the same, and the app's cheat sheet shows it beside the app's own build on a shared plan. A relay that says nothing about its build was built before 2026-10-09; upgrade it.
 
 ### Backup and restore
 
