@@ -532,6 +532,7 @@ Entry format:
   - Beyond the minimum, engineering's default: the relay stamps each update with the time it received it, which it already knows. That puts a wrongly set laptop clock right, and it reveals nothing about the plan.
   - Kept forever means the history document grows without end, at about 60 bytes per change: about 6 MB after 100,000 changes _(priors)_. It loads after the board, never before, so it can't slow opening a plan, and its snapshots keep catching up fast. ADR 0020, amended.
   - Built in sprint 13, slice 2. Measured on the sample plan, an entry is about 190 bytes, not 60, partly because the sample's card ids are long: about 19 MB after 100,000 changes. It still loads after the board. If it ever matters, entries can be compacted later without losing any.
+  - Activity built in sprint 13, slice 3, and a card's history and "Last changed by" in slice 4. Times show in each viewer's time zone; a clock more than a minute off the relay's is corrected.
 
 ### Q65: M2's scope, as the research reshapes it
 - Context: Requirements 30–32 and the M2 milestone. Sprint 9 found that M2 needs more than requirements 30–32 say, if collaboration is to be trusted. The candidates, all recommended:
@@ -630,6 +631,7 @@ Entry format:
 - Options: (a) history on the shared plan starts at the share, with one opening entry, and the drafting history stays on the sharer's computer; (b) the whole history travels with the share; (c) the Share dialog asks, off by default.
 - Recommendation: (a). Nobody sees ideas the sharer deleted and never meant to show.
 - Status: answered 2026-10-09: (a). Sprint 13, slice 2.
+  - Built in sprint 13, slice 2. Sharing switches the plan to a fresh shared history, opening with "Ada shared the plan". The drafting history stays on the sharer's computer, and Activity shows it there under "Before sharing · only on this computer".
 
 ### Q74: A burst of changes in Activity
 - Context: Requirement 36. Dragging 30 cards into quarters over five minutes is 30 changes, and a busy session is hundreds a day.

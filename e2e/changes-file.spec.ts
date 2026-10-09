@@ -67,4 +67,9 @@ test('share by file: send changes both ways with no relay, and a file without it
   await expect(card(ada, id).first()).toContainText('SSO enforcement, per workspace');
   await merge(ada, back);
   await expect(ada.getByTestId('plan-notice')).toContainText('Merged: nothing new in that file.');
+
+  // History travels in the file (ADR 0020): Ada's Activity names Bo's change, and her own share.
+  await ada.getByTestId('activity-button').click();
+  await expect(ada.getByTestId('activity')).toContainText('Bo renamed “SSO enforcement per workspace” to “SSO enforcement, per workspace”');
+  await expect(ada.getByTestId('activity')).toContainText('You shared the plan');
 });

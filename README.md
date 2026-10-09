@@ -33,6 +33,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - **Several plans in one browser:** a scratch plan beside the real one, listed in the File menu and named in the toolbar. Opening a file, importing and loading the sample each make a new plan, so nothing you're working on is overwritten. The same plan open in two tabs stays in step as you edit.
 - **Share a plan** through a relay you run: **Share** gives a Can edit and a Can view link. Edits show up on everyone's board as they're made. Work offline whenever you like: the board counts what isn't shared yet, and shares it when you're back. **Make new links** cuts off the old ones.
 - **See each other** on a shared plan: an avatar per person, and their pointers and selections on the same cards in your own view, whatever view each of you is in. Someone can drive, and pointers can be quieted to the driver's or nobody's. A card someone is dragging says so, and when two people drop the same card, both are told, each with a way back.
+- **Who changed what:** Activity lists every change to a plan, by day and by person, in your own time zone, and brings back anything deleted. A card's history is in the inspector. History is kept forever, in its own encrypted document beside the plan.
 - **Share by file** where no relay is allowed: the plan travels as encrypted files, by email or a shared drive, and each person merges what the others send.
 - **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
 
@@ -42,7 +43,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - Reordering cards by hand within a cell.
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
 - Updating a plan from a fresh Jira export: each import is a new plan.
-- History of who changed what, and seeing what others changed while you were away. These are being built now ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)).
+- Seeing what others changed while you were away. It's being built now ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)).
 - A hosted relay to share through without running your own.
 
 What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). What's coming is in [`docs/backlog.md`](docs/backlog.md), and decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).
