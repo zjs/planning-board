@@ -59,7 +59,7 @@ Dragging writes values (the core bet), but some arranging is still awkward: the 
 
 ### D. Small fixes
 
-No decision needed: each one goes into the next sprint. None is waiting right now; the table keeps the ones that shipped.
+No decision needed: each one goes into the next sprint. The table keeps the ones that shipped.
 
 | Item | Source | Lands |
 |---|---|---|
@@ -67,6 +67,8 @@ No decision needed: each one goes into the next sprint. None is waiting right no
 | Put the Rows dropdown to the left of Columns, closer to the row headers. | PM testing, 2026-10-01 | Shipped in sprint 3, slice 1 |
 | Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
 | Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
+| On a shared plan, the board went blank for everyone else once a second person joined. The layer that draws pointers covered the board, with the board's background color. | PM testing of sprint 12, 2026-10-09 | Fixed 2026-10-09 |
+| Opening a share link never asks for a name, as Q61 says it should, so the person shows as "S" (Someone) to others and "Y" (You) to themselves until they name themselves from the avatar menu. | Engineering, 2026-10-09, from the same test | Next sprint 13 slice |
 
 ## Shipped themes
 
@@ -290,6 +292,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
   - **CONTRIBUTING and the issue templates** pointed at a "? Help" button and a "Time (release)" choice that no longer exist, had no "from a relay" way of opening the app, and didn't warn against pasting share links.
   - **The cheat sheet** didn't say what the number on a group's ⚠ counts.
   - **To keep it this way:** `docs/housekeeping.md` lists every user-facing doc, its reader and what makes it stale; the definition of done and the release pass point at that list; and `scripts/user-docs.test.ts`, in `npm run check`, fails on broken links, relative links in the relay's README, and sprint, question or requirement numbers in these docs.
+
+- **Compatibility fixtures for sprint 13** (2026-10-09), the release pass's last step: sprint 13's plan file, imported plan, browser board and changes file open in every later build. So does its history: the first history document, and a changes file carrying it, whose entries all read and say something.
 
 - **Maintenance pass, 2026-10-09,** before planning sprint 13. Run in the background, read-only. Nothing to take:
   - **npm:** only TypeScript is behind, and 7 is still blocked (typescript-eslint 8.71.1 still requires TypeScript below 6.1); @noble/ciphers and @noble/hashes are current. The `braces` advisory still has no patched release.

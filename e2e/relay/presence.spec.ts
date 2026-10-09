@@ -37,6 +37,12 @@ test('see who is here, and what they point at and select, in your own view', asy
   await expect(avatars(bo)).toHaveCount(2);
   await expect(avatars(ada)).toHaveCount(2);
   await expect(avatars(ada).nth(1)).toHaveAttribute('data-person', 'Bo');
+  // The layer presence draws on covers the whole board, so it has to be see-through: an opaque one hid the board
+  // from everyone the moment a second person arrived.
+  for (const page of [ada, bo]) {
+    await expect(page.getByTestId('presence-layer')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(page.getByTestId('board').getByText('SSO enforcement per workspace').first()).toBeVisible();
+  }
 
   // Different views: Ada on the sample's Roadmap, Bo by Size and Level.
   await pickAxes(bo, 'size', 'level');
