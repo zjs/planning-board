@@ -20,8 +20,8 @@ The engineering plan is `docs/plans/sprint-13-plan.md`.
 
 ### 1. The plan diff, and times (ADR 0020)
 
-- [ ] `planDiff` in `src/domain/`: cards added, deleted, restored, renamed, moved between groups or sequence columns, changed per property, and links, all as ids and values.
-- [ ] Changes in words, times in each viewer's time zone, and bursts grouped.
+- [x] `planDiff` in `src/domain/`: cards added, deleted, restored, renamed, moved between groups or sequence columns, changed per property, and links, all as ids and values.
+- [x] Changes in words, times in each viewer's time zone, and bursts grouped.
 
 ### 2. History (ADR 0020, Q63, Q73)
 
