@@ -622,3 +622,16 @@ Entry format:
 - Recommendation: (a). A forwarded or misfiled attachment is unreadable, and nothing new has to be remembered.
 - Status: answered 2026-10-08: (a). Sprint 12, slice 4 (ADR 0022).
   - Built in sprint 12, slice 4. **Share › No relay allowed? Share by file** gives one Can edit link, with `file=1`. Opening it makes an empty plan that waits for a file. **File › Send changes** downloads the whole plan, sealed, as `.pbchanges`, and **File › Merge changes…** finds the file's plan by its room and merges it outside undo. A file with no link here, or sealed with another key, is refused with a reason. Engineering's default: there's no view link for a plan shared by file, since without a relay nothing can stop someone with the key from writing a file.
+  - PM, 2026-10-09: no view link is needed for plans shared by file.
+
+### Q73: History from before a plan was shared
+- Context: Requirement 36 and Q63. Every plan records history, shared or not. When someone shares a plan they've drafted alone, its history so far could travel with it, including the titles of cards deleted while drafting.
+- Options: (a) history on the shared plan starts at the share, with one opening entry, and the drafting history stays on the sharer's computer; (b) the whole history travels with the share; (c) the Share dialog asks, off by default.
+- Recommendation: (a). Nobody sees ideas the sharer deleted and never meant to show.
+- Status: answered 2026-10-09: (a). Sprint 13, slice 2.
+
+### Q74: A burst of changes in Activity
+- Context: Requirement 36. Dragging 30 cards into quarters over five minutes is 30 changes, and a busy session is hundreds a day.
+- Options: (a) one person's consecutive changes within 5 minutes of each other form one row ("Ada made 30 changes, 10:40–10:45"), which opens to show each, with Restore still on each deletion; (b) one row per change.
+- Recommendation: (a).
+- Status: answered 2026-10-09: (a). Sprint 13, slice 3.

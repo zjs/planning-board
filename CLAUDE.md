@@ -15,7 +15,9 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 12 (seeing each other) is built and awaits the PM's acceptance on its build: presence and the driver, drag intent and collisions, making new links with hosting docs (`docs/hosting.md`), and changes by file (ADR 0022). Its demo note and session script are `docs/demos/sprint-12.md`, and its compatibility fixtures follow in the next PR. Next is sprint 13, history, which starts in plan mode after the maintenance pass. The rest of M2 is `docs/plans/m2-plan.md`: sprints 13–14.
+Sprint 13 (history) is under way: the plan diff, a history document per plan, Activity with Restore, and a card's history. Its scope is in `docs/sprint-13.md`, and its slice plan in `docs/plans/sprint-13-plan.md`. The rest of M2 is `docs/plans/m2-plan.md`: sprint 14.
+
+Sprint 12 (seeing each other: presence and the driver, drag intent and collisions, making new links with hosting docs in `docs/hosting.md`, and changes by file, ADR 0022) is built and awaits the PM's acceptance on its build (`docs/demos/sprint-12.md`).
 
 Sprint 11 (the relay: the relay for real, loop repair, share and join, and the connection pill) is built and awaits the PM's acceptance on its build (`docs/demos/sprint-11.md`). The relay is Go, in `relay/`; `e2e/relay/` tests the app against it.
 

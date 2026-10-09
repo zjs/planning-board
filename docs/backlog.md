@@ -35,7 +35,7 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); all three await acceptance. Sprint 13, history, is next. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
+**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); all three await acceptance. Sprint 13, history, is under way ([`docs/sprint-13.md`](sprint-13.md)). Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
 
 ### H. Arranging and moving cards
 
@@ -250,6 +250,7 @@ Sprints 3 to 8 await the PM's acceptance and one combined tester session, which 
 - **Sprint 10: M2's foundations** ([`docs/sprint-10.md`](sprint-10.md)) shipped on 2026-10-08: schema 2 (ADR 0016), several plans per browser (Q66, Q67, ADR 0021), and two tabs of one plan in sync. Demo: [`docs/demos/sprint-10.md`](demos/sprint-10.md).
 - **Sprint 11: the relay** ([`docs/sprint-11.md`](sprint-11.md)) shipped on 2026-10-08: the relay for real, as downloads and a container (Q69); loop repair (ADR 0004); share and join, with Can edit and Can view links (Q62, Q68, Q70); and the connection pill, with offline work (Q59). Demo: [`docs/demos/sprint-11.md`](demos/sprint-11.md).
 - **Sprint 12: seeing each other** ([`docs/sprint-12.md`](sprint-12.md)) shipped on 2026-10-08: presence and the driver (Q61, Q71, ADR 0019), drag intent and collisions (Q60), making new links (Q62) and hosting docs (`docs/hosting.md`), and changes by file (Q64 f, Q72, ADR 0022). Demo and session script: [`docs/demos/sprint-12.md`](demos/sprint-12.md).
+- **Sprint 13: history** ([`docs/sprint-13.md`](sprint-13.md)), started 2026-10-09: the plan diff (ADR 0020), a history document per plan, Activity with Restore (Q74), and a card's history; history on a shared plan starts at the share (Q73).
 - **Later candidates:**
   - **Component contention and the conflicts panel** (requirements 17–20):
     - the panel follows the view (Q40);
@@ -272,12 +273,19 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 **Open**
 
 - **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac.
-- **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02; still blocked on 2026-10-07, typescript-eslint 8.71.1).
-- **`braces` advisory (GHSA-vfj7-8cjw-p6xm).** `npm audit` reports three high-severity findings, all one advisory in `braces`, which reaches the build through `vite-plugin-singlefile` and `micromatch`. No patched `braces` exists yet, and audit's only fix is a downgrade to `vite-plugin-singlefile` 0.9. It runs only at build time, on the project's own globs, so nothing in the app or its users' plans can reach it. Take the fix when a patched release ships (maintenance pass, 2026-10-07).
+- **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02; still blocked on 2026-10-09, typescript-eslint 8.71.1).
+- **`braces` advisory (GHSA-vfj7-8cjw-p6xm).** `npm audit` reports three high-severity findings, all one advisory in `braces`, which reaches the build through `vite-plugin-singlefile` and `micromatch`. No patched `braces` exists yet, and audit's only fix is a downgrade to `vite-plugin-singlefile` 0.9. It runs only at build time, on the project's own globs, so nothing in the app or its users' plans can reach it. Take the fix when a patched release ships (maintenance pass, 2026-10-07; still none on 2026-10-09, braces 3.0.3).
 - **Node 26 in CI.** CI and the docs use Node 22, which reaches end of life on 2027-04-30. Node 24 moves to maintenance on 2026-10-20, and Node 26 becomes Active LTS on 2026-10-28 (nodejs/Release, checked 2026-10-08). Skip 24: move CI and `CLAUDE.md` to Node 26 in a maintenance pass after 2026-10-28, and check the build and tests on it.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 
 **Done**
+
+- **Maintenance pass, 2026-10-09,** before planning sprint 13. Run in the background, read-only. Nothing to take:
+  - **npm:** only TypeScript is behind, and 7 is still blocked (typescript-eslint 8.71.1 still requires TypeScript below 6.1); @noble/ciphers and @noble/hashes are current. The `braces` advisory still has no patched release.
+  - **CI actions:** all eleven are on their latest majors, on node24.
+  - **Node:** the move to Node 26 after 2026-10-28 still holds.
+  - **Go:** go1.27.2 is the latest, `go 1.26` is still supported, and coder/websocket v1.8.15 is current.
+  - **Elsewhere:** no open issues.
 
 - **Compatibility fixtures for sprint 12** (2026-10-08), the release pass's last step: sprint 12's plan file, imported plan and browser board open in every later build. So does the first changes file (`.pbchanges`, ADR 0022), sealed with a fixed key the test knows, which merges into an empty plan as the plan that version saved.
 
