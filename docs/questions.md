@@ -670,6 +670,7 @@ Entry format:
 - Recommendation: (e) on these terms. Try (b) later if a sprint shows the fresh-session reviews find too little.
 - Status: answered 2026-10-10: (e), on these terms. First tried on the PR for the repository review itself.
   - The steps are in the definition of done (`docs/housekeeping.md`), the reviewer's instructions are in `docs/self-review.md`, and `CLAUDE.md`'s quality bar points to both.
+  - PM, 2026-10-10: the review can run alongside CI, rather than after it passes.
   - The pilot on that PR found 6 problems to fix and 4 nits, all in the review's own facts and the new process docs. Each was fixed before merging.
 
 ### Q78: Eleven sprints awaiting acceptance
@@ -677,5 +678,5 @@ Entry format:
 - Options: (a) an acceptance session soon, accepting or rejecting sprints 3–13 against their exit criteria, then accepting each sprint within a few days of its build; (b) split acceptance from the tester sessions: the PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions inform the backlog instead of gating; (c) keep the current process and stop saying "awaiting acceptance" in public docs.
 - Recommendation: (b), then (a) for the backlog of sprints. Acceptance by the PM's own use is what has happened in practice: the PM's testing found the blank-board bug in sprint 12. (c) hides the gap without closing it.
 - Status: answered 2026-10-10: "let's accept".
-  - Engineering's reading, as a reversible default: the PM accepts sprints 3–13 and the blank-plan slice now, and acceptance works as (b) from here on. The PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions feed the backlog instead of gating.
+  - Engineering's reading, which the PM confirmed the same day: the PM accepts sprints 3–13 and the blank-plan slice now, and acceptance works as (b) from here on. The PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions feed the backlog instead of gating.
   - Recorded in `CLAUDE.md`, the backlog and the sprint 11 plan.
