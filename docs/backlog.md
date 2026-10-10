@@ -280,7 +280,7 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Node 26 in CI.** CI and the docs use Node 22, which reaches end of life on 2027-04-30. Node 24 moves to maintenance on 2026-10-20, and Node 26 becomes Active LTS on 2026-10-28 (nodejs/Release, checked 2026-10-08). Skip 24: move CI and `CLAUDE.md` to Node 26 in a maintenance pass after 2026-10-28, and check the build and tests on it.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 - **The repository review, 2026-10-09** ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md)), at the PM's request: how the repo reads to a technical stranger. Decisions are Q75–Q78, plus Q49's automation.
-  - **For the PM, in Settings:** done 2026-10-10, as the PM reported. The description is the review's first option; the topics weren't mentioned.
+  - **For the PM, in Settings:** mostly done on 2026-10-10, as the self-review confirmed through GitHub's API. Still to do: the topics, and deleting the nine old branches, since automatic deletion only applies to PRs merged from now on _(recalled)_. Some may hold unmerged work, so each needs a look first.
     - the About box: a description, the Pages link, and topics;
     - "Automatically delete head branches", and deleting the nine old branches;
     - a ruleset on `main`: pull requests only, squash merges, CI's `check` and `relay-test` passing on an up-to-date branch, review threads resolved before merging, no force-pushes or deletion, and nobody on the bypass list, since engineering works under the PM's account;
@@ -295,6 +295,7 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
     - self-review on each PR (Q76), already in the definition of done, and first tried on this review's own PR;
     - versioned releases (Q77): `v0.N.0` at the end of each sprint, with notes from its demo note, checksums, build attestations and a version tag on the image, starting with `v0.13.0`.
   - **Started:** commit subjects say what changed, with the sprint in brackets at the end.
+
 **Done**
 
 - **Third-party notices, and which relay is running** (2026-10-09), a housekeeping slice before sprint 14, from the user docs review:

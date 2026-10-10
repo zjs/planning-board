@@ -39,7 +39,7 @@ If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log
 - CI runs typecheck, lint, and tests on every push.
 - `main` is always deployable. Every PR and every merge to `main` produces a self-contained single-file HTML build as a CI artifact that the PM can open and click through (see Q5 in `questions.md`), and every merge to `main` is published to GitHub Pages (Q31).
 - The repo is public (Q31). Never commit real roadmap data; samples are synthetic. Issues are welcome, but code PRs aren't being accepted yet (`CONTRIBUTING.md`).
-- Engineering merges its own PRs once CI is green and self-review is done (Q6). Self-review is posted on the PR as a review by a separate Claude session, and every finding is fixed or answered before merging (Q76; the steps are in `docs/housekeeping.md`). The PM accepts or rejects on the build, not the diff.
+- Engineering merges its own PRs once CI is green and self-review is done (Q6). Self-review has two parts: the author drives the build in a browser for any UI change, and a separate Claude session posts a review on the PR, whose findings are each fixed or answered before merging (Q76). The steps are in `docs/housekeeping.md`, and the reviewer's instructions in `docs/self-review.md`. The PM accepts or rejects on the build, not the diff.
 
 ## Working agreement
 

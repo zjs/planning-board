@@ -10,9 +10,9 @@ A technical visitor, such as an engineering lead weighing the tool for their tea
 
 What they find is good work that doesn't explain itself:
 
-- **The tool's honest story is invisible.** Every PR ends "🤖 Generated with Claude Code", and every commit is co-authored by Claude. The README never says so. A visitor works it out within a minute, and finding it out on their own reads as concealment. Hearing it up front reads as an experiment worth watching.
-- **Review is invisible.** 89 PRs, all opened and merged by the same account, typically 5–20 minutes after opening (just long enough for CI), with no reviews or comments on any of them. The averages over the last 50 commits are 19 files and about 1,800 inserted lines per merge. To an outsider, the process docs (definition of done, self-review) are claims with no trace.
-- **Nothing is accepted.** The README, backlog and `CLAUDE.md` all say that sprints 3–13 await the PM's acceptance. A stranger reads that as eleven sprints that nobody has signed off.
+- **The tool's honest story is invisible.** Every PR ends "🤖 Generated with Claude Code", and almost every commit is co-authored by Claude. The README never says so. A visitor works it out within a minute, and finding it out on their own reads as concealment. Hearing it up front reads as an experiment worth watching.
+- **Review is invisible.** 89 PRs, all opened and merged by the same account, typically within about 10 minutes of opening (median 5; just long enough for CI), with no reviews or comments on any of them. The averages over the last 50 commits are 19 files and about 1,800 inserted lines per merge. To an outsider, the process docs (definition of done, self-review) are claims with no trace.
+- **Nothing is accepted.** The backlog, `CLAUDE.md` and the sprint 11 plan all say that sprints 3–13 await the PM's acceptance. A stranger reads that as eleven sprints that nobody has signed off.
 - **There's nothing to pin.** The app's version is `0.0.0`. The only release is `relay-latest`, deleted and recreated on every merge, and the container image has `latest` plus a commit hash. There are no release notes beyond a git log written in sprint numbers.
 
 None of this calls for a change to how the code is built. It needs the process to show itself, plus a few settings and small CI changes.
@@ -60,6 +60,8 @@ The definition of done in `docs/housekeeping.md` asks for self-review, but nothi
 - **A "Reviewed" section in each PR body:** what the self-review checked, what it found and fixed, the risks, and what isn't covered by tests. This turns "trust me" into a record.
 - **An independent automated review** on each PR, posting findings that the PR answers before merging. It costs setup and some money per PR, so it's the PM's call.
 
+The PM chose a third form: self-review posted as a review on the PR, by a separate Claude session (Q76).
+
 ### 3. Close the acceptance gap, or rename it (Q78)
 
 Eleven sprints "await acceptance". It's a process risk as well as an appearance problem. Engineering is building M2 on foundations no one has accepted, and the combined tester session for sprints 3–8 hasn't happened. A stranger also can't tell "awaiting acceptance" from "unfinished".
@@ -83,13 +85,13 @@ Today the relay downloads have no checksums or provenance, and the release is re
 
 Two smaller things:
 
-- Merged commits carry Claude as co-author twice, once from the commit and once from GitHub's squash.
-- One branch, `claude/collaborative-editing-exploration-8uklmd`, carried sprints 11–13.
+- Co-author lines are inconsistent: most merged commits name Claude once, some three times, and a few not at all.
+- One branch, `claude/collaborative-editing-exploration-8uklmd`, carried sprints 9–13 (PRs #59–#88).
 
 ### 6. CI is sound, but you have to open it to see that
 
 - **One job does most of the work.** The `check` job runs typecheck, lint, unit tests, the build, and end-to-end tests. A red ✗ says "check", and the reader has to open the log to learn which step failed.
-- **The summary is thin.** It says only "Build ready", although CI knows more: 563 unit tests, 158 end-to-end tests, and the relay's tests.
+- **The summary is thin.** It says only "Build ready", although CI knows more: 591 unit tests, 160 end-to-end tests, and the relay's tests.
 - **The README has no CI badge,** the usual first signal that `main` is green _(priors)_.
 - **Pages rebuilds the app** instead of deploying the file CI tested, although its comment says it's "the same single file". `release.yml` reuses CI's build, and Pages should too, so what's tested is what's deployed.
 - **Actions are pinned to major versions** (`@v7`), including the third-party `docker/*` actions in a job that can push the container image. Pinning those to commit SHAs is common supply-chain advice _(recalled)_. Dependabot (Q49) would keep the pins current.
@@ -109,10 +111,10 @@ These are all one-click settings, so they're the PM's to do:
 
 ### 9. `docs/` is a decision log with no map
 
-`docs/` holds 15 sprint docs, 15 plans, 20 demo notes, a 642-line `questions.md`, and the research. That's valuable, and Q31 kept it public on purpose. But a newcomer can't tell which documents describe the system now and which are records of a sprint.
+`docs/` holds 14 sprint docs, 15 plans, 20 demo notes, a 642-line `questions.md`, and the research. That's valuable, and Q31 kept it public on purpose. But a newcomer can't tell which documents describe the system now and which are records of a sprint.
 
 - **A map:** a short `docs/README.md` that says where to start: requirements, the ADR index, `hosting.md`; then the process records.
-- **The code:** comments cite questions by number on 341 lines in `src/`. That's fine, as long as each comment also carries the gist, so it reads without opening `questions.md`. Fix them as they're touched; no sweep.
+- **The code:** 457 lines in `src/` cite questions by number, tests included (`git grep -E '\bQ[0-9]+\b' -- src`). That's fine, as long as each comment also carries the gist, so it reads without opening `questions.md`. Fix them as they're touched; no sweep.
 
 ### 10. Firefox and Safari, still
 
@@ -137,7 +139,7 @@ The private-repo habits that should change now that strangers read the record:
 - a `docs/README.md` map;
 - CI job names, a step summary with test counts, and Pages deploying CI's own file;
 - for the relay release: checksums, build attestations, and SHA-pinned third-party actions;
-- a "Reviewed" section in the PR body, added to the definition of done;
+- self-review on the PR. The PM chose a review posted by a separate Claude session over a section in the PR body (Q76; see the outcome below);
 - versioned releases, if Q77 says so.
 
 The commit subject style (finding 5) needs no decision, and starts with the next commit.
@@ -148,5 +150,5 @@ The commit subject style (finding 5) needs no decision, and starts with the next
 - **Q76:** self-review is posted on each PR by a separate Claude session, first tried on this review's own PR.
 - **Q77:** a version at the end of each sprint, starting with `v0.13.0`.
 - **Q78:** sprints 3–13 are accepted. From now on, the PM accepts a sprint on its build.
-- **Settings:** the PM set the description, the website link and both rulesets, and changed the other settings.
+- **Settings:** the PM set the description, the website link, both rulesets, automatic deletion of merged branches, and private vulnerability reporting. The self-review confirmed them through GitHub's API. The nine old branches and the topics are still to do.
 - **Left:** the engineering slice in the backlog's Housekeeping, and Q49's Dependabot.

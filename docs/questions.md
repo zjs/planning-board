@@ -643,7 +643,7 @@ Entry format:
   - Built in sprint 13, slice 3. A row is one person's changes with no more than 5 minutes between neighbours. It reads "Ada made 4 changes, 10:40–10:45", and opens to show each one, with Restore on deletions. A single change is a row of its own, in words. "Shared the plan" always stands alone.
 
 ### Q75: Saying how the project is built
-- Context: The repository review of 2026-10-09 ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md), finding 1). Every PR ends "Generated with Claude Code", every commit is co-authored by Claude, and `CLAUDE.md` sits at the root, but the README and CONTRIBUTING never say how the project is built. Technical visitors read the commit log and PRs before trying the app, and they'll work it out within a minute.
+- Context: The repository review of 2026-10-09 ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md), finding 1). Every PR ends "Generated with Claude Code", almost every commit is co-authored by Claude, and `CLAUDE.md` sits at the root, but the README and CONTRIBUTING never say how the project is built. Technical visitors read the commit log and PRs before trying the app, and they'll work it out within a minute.
 - Options: (a) a short "How this is built" section in the README, with a line in CONTRIBUTING: engineering is done by Claude Code, a human PM sets requirements and accepts on the build rather than the diff, CI gates every merge, and the decision log is public; (b) leave it to the PR footers and `CLAUDE.md`; (c) a separate document, linked from the README.
 - Also: every commit and PR ends with a `Claude-Session` link, which is private and leads nowhere for anyone else. Keep them, since they let the PM trace a change to the session that made it, and say in (a) what they are; or drop them.
 - Recommendation: (a), keeping the session links. Being told up front reads as a method; finding out reads as concealment _(priors)_. It's also the most interesting thing about the repo to a technical reader.
@@ -658,7 +658,7 @@ Entry format:
   - Engineering's default: the first release is `v0.13.0`, cut from `main` once the release workflow can do it, so people self-hosting have something to pin before sprint 14 ends. Earlier sprints aren't tagged after the fact.
 
 ### Q76: Making review visible
-- Context: The repository review (finding 2). All 89 PRs were opened and merged by one account, typically 5–20 minutes after opening, with no reviews or comments. The definition of done asks for self-review, but no PR shows it happened.
+- Context: The repository review (finding 2). All 89 PRs were opened and merged by one account, typically within about 10 minutes of opening (median 5), with no reviews or comments. The definition of done asks for self-review, but no PR shows it happened.
 - Options: (a) each PR body gains a "Reviewed" section: what self-review checked, what it found and fixed, the risks, and what tests don't cover; (b) an independent automated review on each PR, such as a review app with its own identity, that posts findings the PR answers before it merges; (c) both; (d) no change; (e) the PM's suggestion (2026-10-10): self-review leaves a review on the PR, like a normal review flow.
 - Engineering's take on (e): it's better than (a), with three conditions.
   - **Why it's better:** findings sit on the lines they're about, the fix commits follow them in the PR's history, and the PR reads as review, then fixes, then merge. A section in the body can only say all that happened.
@@ -669,10 +669,11 @@ Entry format:
   - **What it doesn't fix:** the author and the reviewer are the same model, under the same account. (b), a review app posting under its own identity, is the step that would make review independent. It can come later, on the same flow.
 - Recommendation: (e) on these terms. Try (b) later if a sprint shows the fresh-session reviews find too little.
 - Status: answered 2026-10-10: (e), on these terms. First tried on the PR for the repository review itself.
-  - The steps are in the definition of done (`docs/housekeeping.md`), and `CLAUDE.md`'s quality bar points to them.
+  - The steps are in the definition of done (`docs/housekeeping.md`), the reviewer's instructions are in `docs/self-review.md`, and `CLAUDE.md`'s quality bar points to both.
+  - The pilot on that PR found 6 problems to fix and 4 nits, all in the review's own facts and the new process docs. Each was fixed before merging.
 
 ### Q78: Eleven sprints awaiting acceptance
-- Context: The repository review (finding 3). The README, backlog and `CLAUDE.md` say sprints 3–13 await the PM's acceptance, and the combined tester session for sprints 3–8 hasn't run. A stranger reads that as eleven sprints nobody has signed off. It's also a real risk: M2 is being built on foundations no one has accepted.
+- Context: The repository review (finding 3). The backlog, `CLAUDE.md` and the sprint 11 plan say sprints 3–13 await the PM's acceptance, and the combined tester session for sprints 3–8 hasn't run. A stranger reads that as eleven sprints nobody has signed off. It's also a real risk: M2 is being built on foundations no one has accepted.
 - Options: (a) an acceptance session soon, accepting or rejecting sprints 3–13 against their exit criteria, then accepting each sprint within a few days of its build; (b) split acceptance from the tester sessions: the PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions inform the backlog instead of gating; (c) keep the current process and stop saying "awaiting acceptance" in public docs.
 - Recommendation: (b), then (a) for the backlog of sprints. Acceptance by the PM's own use is what has happened in practice: the PM's testing found the blank-board bug in sprint 12. (c) hides the gap without closing it.
 - Status: answered 2026-10-10: "let's accept".
