@@ -99,25 +99,19 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
-### Q75: Saying how the project is built
-- Context: The repository review of 2026-10-09 ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md), finding 1). Every PR ends "Generated with Claude Code", every commit is co-authored by Claude, and `CLAUDE.md` sits at the root, but the README and CONTRIBUTING never say how the project is built. Technical visitors read the commit log and PRs before trying the app, and they'll work it out within a minute.
-- Options: (a) a short "How this is built" section in the README, with a line in CONTRIBUTING: engineering is done by Claude Code, a human PM sets requirements and accepts on the build rather than the diff, CI gates every merge, and the decision log is public; (b) leave it to the PR footers and `CLAUDE.md`; (c) a separate document, linked from the README.
-- Also: every commit and PR ends with a `Claude-Session` link, which is private and leads nowhere for anyone else. Keep them, since they let the PM trace a change to the session that made it, and say in (a) what they are; or drop them.
-- Recommendation: (a), keeping the session links. Being told up front reads as a method; finding out reads as concealment _(priors)_. It's also the most interesting thing about the repo to a technical reader.
-- Status: open
 
 ### Q76: Making review visible
 - Context: The repository review (finding 2). All 89 PRs were opened and merged by one account, typically 5–20 minutes after opening, with no reviews or comments. The definition of done asks for self-review, but no PR shows it happened.
-- Options: (a) each PR body gains a "Reviewed" section: what self-review checked, what it found and fixed, the risks, and what tests don't cover; (b) an independent automated review on each PR, such as a second Claude session or a review app, that posts findings the PR answers before it merges; (c) both; (d) no change.
-- Recommendation: (a) now, since it costs nothing and turns a claim into a record. Try (b) on a sprint and keep it if its findings are worth the wait and the cost; that's the PM's call.
+- Options: (a) each PR body gains a "Reviewed" section: what self-review checked, what it found and fixed, the risks, and what tests don't cover; (b) an independent automated review on each PR, such as a review app with its own identity, that posts findings the PR answers before it merges; (c) both; (d) no change; (e) the PM's suggestion (2026-10-10): self-review leaves a review on the PR, like a normal review flow.
+- Engineering's take on (e): it's better than (a), with three conditions.
+  - **Why it's better:** findings sit on the lines they're about, the fix commits follow them in the PR's history, and the PR reads as review, then fixes, then merge. A section in the body can only say all that happened.
+  - **A fresh reviewer, not the author:** the review is done by a separate Claude session that reads only the diff and the repo, with no access to the author's reasoning, and is told to find problems. Re-reading your own work in the same context mostly confirms it _(priors)_.
+  - **Labeled as what it is:** GitHub won't let an author approve or request changes on their own PR _(recalled)_, and engineering's only GitHub identity is the PM's account. So the review is a "Comment" review that opens with "Self-review by a separate Claude session". It doesn't pose as a human or independent approval.
+  - **Findings get answers before merging:** each one is fixed in a commit or answered in its thread. The summary also says what was checked, the risks, and what tests don't cover, which is (a)'s content.
+  - **The cost:** a few minutes per PR. A docs-only or fixtures PR gets a one-paragraph review.
+  - **What it doesn't fix:** the author and the reviewer are the same model, under the same account. (b), a review app posting under its own identity, is the step that would make review independent. It can come later, on the same flow.
+- Recommendation: (e) on these terms. Try (b) later if a sprint shows the fresh-session reviews find too little.
 - Status: open
-
-### Q77: Versions and release notes
-- Context: The repository review (finding 4), and requirement 37. The app is version `0.0.0`. The relay's only release is `relay-latest`, replaced on every merge, and its image is tagged `latest` and by commit. Someone self-hosting for a team has nothing to pin, no notes on what changed, and no checksums to check a download against.
-- Options: (a) at the end of each sprint, tag a version (`v0.14.0` for sprint 14), with a GitHub Release whose notes come from the demo note: what's new, what's compatible, and upgrade steps. The release gets the relay downloads, `SHA256SUMS` and build attestations, and the image is tagged with the version too. `relay-latest` stays for anyone who wants the newest. (b) Date-based versions (`2026.10.09`) on the same terms; (c) keep rolling releases only.
-- Recommendation: (a). A sprint is already the unit the PM accepts and the compatibility fixtures are cut from, and semver's `0.x` says "early" honestly _(recalled)_. Tag at the end of the sprint, not on acceptance, since acceptance lags.
-- Status: open
-
 ### Q78: Eleven sprints awaiting acceptance
 - Context: The repository review (finding 3). The README, backlog and `CLAUDE.md` say sprints 3–13 await the PM's acceptance, and the combined tester session for sprints 3–8 hasn't run. A stranger reads that as eleven sprints nobody has signed off. It's also a real risk: M2 is being built on foundations no one has accepted.
 - Options: (a) an acceptance session soon, accepting or rejecting sprints 3–13 against their exit criteria, then accepting each sprint within a few days of its build; (b) split acceptance from the tester sessions: the PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions inform the backlog instead of gating; (c) keep the current process and stop saying "awaiting acceptance" in public docs.
@@ -666,3 +660,18 @@ Entry format:
 - Recommendation: (a).
 - Status: answered 2026-10-09: (a). Sprint 13, slice 3.
   - Built in sprint 13, slice 3. A row is one person's changes with no more than 5 minutes between neighbours. It reads "Ada made 4 changes, 10:40–10:45", and opens to show each one, with Restore on deletions. A single change is a row of its own, in words. "Shared the plan" always stands alone.
+
+### Q75: Saying how the project is built
+- Context: The repository review of 2026-10-09 ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md), finding 1). Every PR ends "Generated with Claude Code", every commit is co-authored by Claude, and `CLAUDE.md` sits at the root, but the README and CONTRIBUTING never say how the project is built. Technical visitors read the commit log and PRs before trying the app, and they'll work it out within a minute.
+- Options: (a) a short "How this is built" section in the README, with a line in CONTRIBUTING: engineering is done by Claude Code, a human PM sets requirements and accepts on the build rather than the diff, CI gates every merge, and the decision log is public; (b) leave it to the PR footers and `CLAUDE.md`; (c) a separate document, linked from the README.
+- Also: every commit and PR ends with a `Claude-Session` link, which is private and leads nowhere for anyone else. Keep them, since they let the PM trace a change to the session that made it, and say in (a) what they are; or drop them.
+- Recommendation: (a), keeping the session links. Being told up front reads as a method; finding out reads as concealment _(priors)_. It's also the most interesting thing about the repo to a technical reader.
+- Status: answered 2026-10-10: (a), keeping the session links.
+  - For the housekeeping slice: "How this is built" goes in the README after "Status: early preview", with a line in CONTRIBUTING. It says what the session links are, and that they're private.
+
+### Q77: Versions and release notes
+- Context: The repository review (finding 4), and requirement 37. The app is version `0.0.0`. The relay's only release is `relay-latest`, replaced on every merge, and its image is tagged `latest` and by commit. Someone self-hosting for a team has nothing to pin, no notes on what changed, and no checksums to check a download against.
+- Options: (a) at the end of each sprint, tag a version (`v0.14.0` for sprint 14), with a GitHub Release whose notes come from the demo note: what's new, what's compatible, and upgrade steps. The release gets the relay downloads, `SHA256SUMS` and build attestations, and the image is tagged with the version too. `relay-latest` stays for anyone who wants the newest. (b) Date-based versions (`2026.10.09`) on the same terms; (c) keep rolling releases only.
+- Recommendation: (a). A sprint is already the unit the PM accepts and the compatibility fixtures are cut from, and semver's `0.x` says "early" honestly _(recalled)_. Tag at the end of the sprint, not on acceptance, since acceptance lags.
+- Status: answered 2026-10-10: (a).
+  - Engineering's default: the first release is `v0.13.0`, cut from `main` once the release workflow can do it, so people self-hosting have something to pin before sprint 14 ends. Earlier sprints aren't tagged after the fact.

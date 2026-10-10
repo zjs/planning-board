@@ -285,13 +285,14 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
     - "Automatically delete head branches", and deleting the nine old branches;
     - a ruleset on `main` that requires CI's `check` and `relay-test` and blocks force-pushes;
     - checking that private vulnerability reporting is on.
-  - **For engineering, one housekeeping slice once Q75–Q77 are answered:**
+  - **For engineering, one housekeeping slice.** Q75 and Q77 were answered on 2026-10-10, and Q76 is waiting on the PM. The slice holds:
     - "How this is built" and "How it's tested" in the README, and a CI badge;
     - a `docs/README.md` map;
     - readable CI job names, and a step summary with test counts;
     - Pages deploying the file CI tested, not a rebuild;
     - checksums, build attestations, and SHA-pinned third-party actions for the relay release;
-    - a "Reviewed" section in the PR body, in the definition of done.
+    - self-review that shows on each PR, in the definition of done, in whatever form Q76 settles;
+    - versioned releases (Q77): `v0.N.0` at the end of each sprint, with notes from its demo note, checksums, build attestations and a version tag on the image, starting with `v0.13.0`.
   - **Started:** commit subjects say what changed, with the sprint in brackets at the end.
 **Done**
 
