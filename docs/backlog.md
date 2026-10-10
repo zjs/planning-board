@@ -283,12 +283,13 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
   - **For the PM, in Settings:**
     - the About box: a description, the Pages link, and topics;
     - "Automatically delete head branches", and deleting the nine old branches;
-    - a ruleset on `main` that requires CI's `check` and `relay-test` and blocks force-pushes;
+    - a ruleset on `main`: pull requests only, squash merges, CI's `check` and `relay-test` passing on an up-to-date branch, review threads resolved before merging, no force-pushes or deletion, and nobody on the bypass list, since engineering works under the PM's account;
+    - a ruleset on `v*` tags, once Q77's releases start, so a published version can't be moved or deleted. It mustn't cover `relay-latest`, which the release workflow replaces on every merge;
     - checking that private vulnerability reporting is on.
   - **For engineering, one housekeeping slice.** Q75 and Q77 were answered on 2026-10-10, and Q76 is waiting on the PM. The slice holds:
     - "How this is built" and "How it's tested" in the README, and a CI badge;
     - a `docs/README.md` map;
-    - readable CI job names, and a step summary with test counts;
+    - readable CI job names, and a step summary with test counts. The ruleset on `main` requires the `check` and `relay-test` checks by name, so a rename has to land together with the PM updating the ruleset, or every PR waits for a check that never reports;
     - Pages deploying the file CI tested, not a rebuild;
     - checksums, build attestations, and SHA-pinned third-party actions for the relay release;
     - self-review that shows on each PR, in the definition of done, in whatever form Q76 settles;
