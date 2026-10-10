@@ -22,6 +22,10 @@ Part of the slice's own PR, checked during self-review. Nothing here waits for a
 - [ ] A significant implementation choice has an ADR, or an amendment to one, and the ADR index lists it.
 - [ ] A new runtime dependency is recorded in an ADR. Its license notice comes with it: the app's build lists bundled packages on its own, and a new or upgraded Go module needs `npm run notices:relay`.
 - [ ] The PR body has a demo note: what to click, what should happen, and known gaps.
+- [ ] **Self-review is on the PR** (Q76), after CI is green and before merging:
+  - A separate Claude session reviews the diff. It reads only the PR, its diff and the repo, never the authoring session's reasoning, and is asked to find problems: bugs, missing tests, docs this checklist says to update, and claims in the PR body that the diff doesn't bear out.
+  - It posts one **Comment** review. GitHub doesn't let an author approve their own PR, and engineering works under the PM's account. The review opens with "Self-review by a separate Claude session", puts each finding inline on its line, and its summary says what was checked, the risks, and what tests don't cover. A docs-only or fixtures PR gets a one-paragraph review.
+  - Each finding is fixed in a commit or answered in its thread, then resolved. The `main` ruleset requires resolved threads before a merge.
 
 ## 2. When a sprint closes: the release pass
 

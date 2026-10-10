@@ -141,3 +141,12 @@ The private-repo habits that should change now that strangers read the record:
 - versioned releases, if Q77 says so.
 
 The commit subject style (finding 5) needs no decision, and starts with the next commit.
+
+## Outcome, 2026-10-10
+
+- **Q75:** the README will say how the project is built, keeping the session links.
+- **Q76:** self-review is posted on each PR by a separate Claude session, first tried on this review's own PR.
+- **Q77:** a version at the end of each sprint, starting with `v0.13.0`.
+- **Q78:** sprints 3–13 are accepted. From now on, the PM accepts a sprint on its build.
+- **Settings:** the PM set the description, the website link and both rulesets, and changed the other settings.
+- **Left:** the engineering slice in the backlog's Housekeeping, and Q49's Dependabot.

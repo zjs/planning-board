@@ -35,7 +35,7 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four await acceptance. Sprint 14, since you were away, is next. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
+**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four were accepted on 2026-10-10. Sprint 14, since you were away, is next. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
 
 ### H. Arranging and moving cards
 
@@ -84,7 +84,7 @@ A group's cards show in two ways. A collapsed group frames the cards that put it
 
 **Generalization:** a group on the board is always a frame: its header, and whichever of its cards show in that cell. Expanding and collapsing change which cells show its cards, not how they look. → [Q57](questions.md#q57-one-look-for-a-groups-cards)
 
-**Lands:** shipped in sprint 8, slice 1 ([`docs/sprint-8.md`](sprint-8.md)), which awaits the PM's acceptance. The PM chose frames for both, nesting three deep, on 2026-10-07.
+**Lands:** shipped in sprint 8, slice 1 ([`docs/sprint-8.md`](sprint-8.md)), accepted on 2026-10-10. The PM chose frames for both, nesting three deep, on 2026-10-07.
 
 ### F. Links other than "comes before"
 
@@ -96,7 +96,7 @@ Dependencies have one type: A comes before B (requirement 15). Plans also have l
 
 **Generalization:** a second kind of link that's undirected and never judged for order. It's not one of the typed dependencies that are out of scope (finish-to-start and the like), because it carries no ordering at all. → [Q44](questions.md#q44-related-to-links)
 
-**Lands:** shipped in sprint 8, slice 2 ([`docs/sprint-8.md`](sprint-8.md)), which awaits the PM's acceptance. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), again when find took sprint 6 (PM, 2026-10-03), and again when first-visit work took sprint 7 (PM, 2026-10-07).
+**Lands:** shipped in sprint 8, slice 2 ([`docs/sprint-8.md`](sprint-8.md)), accepted on 2026-10-10. It was agreed for the next sprint, then moved when sprint 5 became a cleanup sprint (PM, 2026-10-02), again when find took sprint 6 (PM, 2026-10-03), and again when first-visit work took sprint 7 (PM, 2026-10-07).
 
 ### K. First visit and discoverability
 
@@ -127,7 +127,7 @@ Every tester so far met the board after a demo. A stranger opening the public li
 - Preset views, and pivots that are clearer (Q52).
 - Laying out the board (folding an area's components) and showing more of the cards (expanding a group) keep separate words, with none shared (Q54).
 
-**Lands:** shipped in sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), which awaits the PM's acceptance. The combined session now opens with a cold start. Two calm items, explaining the area color and collapsible holding lanes, shipped in sprint 8, slice 3. Quieter markers come with the conflicts panel, a sprint 10 candidate. The command palette (Q54 b) waits for the session.
+**Lands:** shipped in sprint 7 ([`docs/sprint-7.md`](sprint-7.md)), accepted on 2026-10-10. The combined session now opens with a cold start. Two calm items, explaining the area color and collapsible holding lanes, shipped in sprint 8, slice 3. Quieter markers come with the conflicts panel, a sprint 10 candidate. The command palette (Q54 b) waits for the session.
 
 ### J. Starting from scratch
 
@@ -142,7 +142,7 @@ The board opened onto the sample plan, a plan file, or a Jira import. Nothing se
 - **A blank plan:** every built-in property and no cards. Areas and quarters belong to the plan, so they start empty.
 - **Typing cards one after another:** a brain dump is many short titles in a row. Enter after a new card's title starts the next one, on any board. → [Q51](questions.md#q51-starting-a-blank-plan)
 
-**Lands:** built 2026-10-03, as a slice before sprint 7. It awaits the PM's acceptance along with sprints 3–7.
+**Lands:** built 2026-10-03, as a slice before sprint 7. It was accepted along with sprints 3–13 on 2026-10-10.
 
 ### I. Finding cards
 
@@ -238,7 +238,7 @@ Sprint 4 added three ways to see more detail: zooming into a group or a lane, ex
 
 ## Sprints
 
-Sprints 3 to 8 await the PM's acceptance and one combined tester session, which opens with a cold start (`docs/demos/sprint-5-session.md`). Sprints 9 to 13 await the PM's acceptance too: sprints 10 to 13 on their builds (`docs/demos/sprint-10.md` to `docs/demos/sprint-13.md`).
+Sprints 3 to 13 and the blank-plan slice were accepted on 2026-10-10 (Q78). The combined tester session for sprints 3 to 8, which opens with a cold start (`docs/demos/sprint-5-session.md`), now feeds the backlog rather than gating acceptance.
 
 
 - **Sprint 3: dependencies** ([`docs/sprint-3.md`](sprint-3.md)) shipped on 2026-10-01: drawing links, showing them the Q14 way, and order highlights (requirements 15, 16, and 18), plus the small fixes in D and group renaming (Q36).
@@ -280,19 +280,19 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 - **Node 26 in CI.** CI and the docs use Node 22, which reaches end of life on 2027-04-30. Node 24 moves to maintenance on 2026-10-20, and Node 26 becomes Active LTS on 2026-10-28 (nodejs/Release, checked 2026-10-08). Skip 24: move CI and `CLAUDE.md` to Node 26 in a maintenance pass after 2026-10-28, and check the build and tests on it.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 - **The repository review, 2026-10-09** ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md)), at the PM's request: how the repo reads to a technical stranger. Decisions are Q75–Q78, plus Q49's automation.
-  - **For the PM, in Settings:**
+  - **For the PM, in Settings:** done 2026-10-10, as the PM reported. The description is the review's first option; the topics weren't mentioned.
     - the About box: a description, the Pages link, and topics;
     - "Automatically delete head branches", and deleting the nine old branches;
     - a ruleset on `main`: pull requests only, squash merges, CI's `check` and `relay-test` passing on an up-to-date branch, review threads resolved before merging, no force-pushes or deletion, and nobody on the bypass list, since engineering works under the PM's account;
     - a ruleset on `v*` tags, once Q77's releases start, so a published version can't be moved or deleted. It mustn't cover `relay-latest`, which the release workflow replaces on every merge;
     - checking that private vulnerability reporting is on.
-  - **For engineering, one housekeeping slice.** Q75 and Q77 were answered on 2026-10-10, and Q76 is waiting on the PM. The slice holds:
+  - **For engineering, one housekeeping slice.** Q75–Q78 were answered on 2026-10-10. The slice holds:
     - "How this is built" and "How it's tested" in the README, and a CI badge;
     - a `docs/README.md` map;
     - readable CI job names, and a step summary with test counts. The ruleset on `main` requires the `check` and `relay-test` checks by name, so a rename has to land together with the PM updating the ruleset, or every PR waits for a check that never reports;
     - Pages deploying the file CI tested, not a rebuild;
     - checksums, build attestations, and SHA-pinned third-party actions for the relay release;
-    - self-review that shows on each PR, in the definition of done, in whatever form Q76 settles;
+    - self-review on each PR (Q76), already in the definition of done, and first tried on this review's own PR;
     - versioned releases (Q77): `v0.N.0` at the end of each sprint, with notes from its demo note, checksums, build attestations and a version tag on the image, starting with `v0.13.0`.
   - **Started:** commit subjects say what changed, with the sprint in brackets at the end.
 **Done**

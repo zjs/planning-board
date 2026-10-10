@@ -99,25 +99,6 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
-
-### Q76: Making review visible
-- Context: The repository review (finding 2). All 89 PRs were opened and merged by one account, typically 5–20 minutes after opening, with no reviews or comments. The definition of done asks for self-review, but no PR shows it happened.
-- Options: (a) each PR body gains a "Reviewed" section: what self-review checked, what it found and fixed, the risks, and what tests don't cover; (b) an independent automated review on each PR, such as a review app with its own identity, that posts findings the PR answers before it merges; (c) both; (d) no change; (e) the PM's suggestion (2026-10-10): self-review leaves a review on the PR, like a normal review flow.
-- Engineering's take on (e): it's better than (a), with three conditions.
-  - **Why it's better:** findings sit on the lines they're about, the fix commits follow them in the PR's history, and the PR reads as review, then fixes, then merge. A section in the body can only say all that happened.
-  - **A fresh reviewer, not the author:** the review is done by a separate Claude session that reads only the diff and the repo, with no access to the author's reasoning, and is told to find problems. Re-reading your own work in the same context mostly confirms it _(priors)_.
-  - **Labeled as what it is:** GitHub won't let an author approve or request changes on their own PR _(recalled)_, and engineering's only GitHub identity is the PM's account. So the review is a "Comment" review that opens with "Self-review by a separate Claude session". It doesn't pose as a human or independent approval.
-  - **Findings get answers before merging:** each one is fixed in a commit or answered in its thread. The summary also says what was checked, the risks, and what tests don't cover, which is (a)'s content.
-  - **The cost:** a few minutes per PR. A docs-only or fixtures PR gets a one-paragraph review.
-  - **What it doesn't fix:** the author and the reviewer are the same model, under the same account. (b), a review app posting under its own identity, is the step that would make review independent. It can come later, on the same flow.
-- Recommendation: (e) on these terms. Try (b) later if a sprint shows the fresh-session reviews find too little.
-- Status: open
-### Q78: Eleven sprints awaiting acceptance
-- Context: The repository review (finding 3). The README, backlog and `CLAUDE.md` say sprints 3–13 await the PM's acceptance, and the combined tester session for sprints 3–8 hasn't run. A stranger reads that as eleven sprints nobody has signed off. It's also a real risk: M2 is being built on foundations no one has accepted.
-- Options: (a) an acceptance session soon, accepting or rejecting sprints 3–13 against their exit criteria, then accepting each sprint within a few days of its build; (b) split acceptance from the tester sessions: the PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions inform the backlog instead of gating; (c) keep the current process and stop saying "awaiting acceptance" in public docs.
-- Recommendation: (b), then (a) for the backlog of sprints. Acceptance by the PM's own use is what has happened in practice: the PM's testing found the blank-board bug in sprint 12. (c) hides the gap without closing it.
-- Status: open
-
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -675,3 +656,25 @@ Entry format:
 - Recommendation: (a). A sprint is already the unit the PM accepts and the compatibility fixtures are cut from, and semver's `0.x` says "early" honestly _(recalled)_. Tag at the end of the sprint, not on acceptance, since acceptance lags.
 - Status: answered 2026-10-10: (a).
   - Engineering's default: the first release is `v0.13.0`, cut from `main` once the release workflow can do it, so people self-hosting have something to pin before sprint 14 ends. Earlier sprints aren't tagged after the fact.
+
+### Q76: Making review visible
+- Context: The repository review (finding 2). All 89 PRs were opened and merged by one account, typically 5–20 minutes after opening, with no reviews or comments. The definition of done asks for self-review, but no PR shows it happened.
+- Options: (a) each PR body gains a "Reviewed" section: what self-review checked, what it found and fixed, the risks, and what tests don't cover; (b) an independent automated review on each PR, such as a review app with its own identity, that posts findings the PR answers before it merges; (c) both; (d) no change; (e) the PM's suggestion (2026-10-10): self-review leaves a review on the PR, like a normal review flow.
+- Engineering's take on (e): it's better than (a), with three conditions.
+  - **Why it's better:** findings sit on the lines they're about, the fix commits follow them in the PR's history, and the PR reads as review, then fixes, then merge. A section in the body can only say all that happened.
+  - **A fresh reviewer, not the author:** the review is done by a separate Claude session that reads only the diff and the repo, with no access to the author's reasoning, and is told to find problems. Re-reading your own work in the same context mostly confirms it _(priors)_.
+  - **Labeled as what it is:** GitHub won't let an author approve or request changes on their own PR _(recalled)_, and engineering's only GitHub identity is the PM's account. So the review is a "Comment" review that opens with "Self-review by a separate Claude session". It doesn't pose as a human or independent approval.
+  - **Findings get answers before merging:** each one is fixed in a commit or answered in its thread. The summary also says what was checked, the risks, and what tests don't cover, which is (a)'s content.
+  - **The cost:** a few minutes per PR. A docs-only or fixtures PR gets a one-paragraph review.
+  - **What it doesn't fix:** the author and the reviewer are the same model, under the same account. (b), a review app posting under its own identity, is the step that would make review independent. It can come later, on the same flow.
+- Recommendation: (e) on these terms. Try (b) later if a sprint shows the fresh-session reviews find too little.
+- Status: answered 2026-10-10: (e), on these terms. First tried on the PR for the repository review itself.
+  - The steps are in the definition of done (`docs/housekeeping.md`), and `CLAUDE.md`'s quality bar points to them.
+
+### Q78: Eleven sprints awaiting acceptance
+- Context: The repository review (finding 3). The README, backlog and `CLAUDE.md` say sprints 3–13 await the PM's acceptance, and the combined tester session for sprints 3–8 hasn't run. A stranger reads that as eleven sprints nobody has signed off. It's also a real risk: M2 is being built on foundations no one has accepted.
+- Options: (a) an acceptance session soon, accepting or rejecting sprints 3–13 against their exit criteria, then accepting each sprint within a few days of its build; (b) split acceptance from the tester sessions: the PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions inform the backlog instead of gating; (c) keep the current process and stop saying "awaiting acceptance" in public docs.
+- Recommendation: (b), then (a) for the backlog of sprints. Acceptance by the PM's own use is what has happened in practice: the PM's testing found the blank-board bug in sprint 12. (c) hides the gap without closing it.
+- Status: answered 2026-10-10: "let's accept".
+  - Engineering's reading, as a reversible default: the PM accepts sprints 3–13 and the blank-plan slice now, and acceptance works as (b) from here on. The PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions feed the backlog instead of gating.
+  - Recorded in `CLAUDE.md`, the backlog and the sprint 11 plan.

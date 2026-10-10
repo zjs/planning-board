@@ -15,17 +15,13 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 ## Current phase
 
-Sprint 13 (history) is built and awaits the PM's acceptance on its build: the plan diff, a history document per plan, Activity with Restore, and a card's history (ADR 0020, amended). Its demo note is `docs/demos/sprint-13.md`. Next is sprint 14, since you were away, which starts in plan mode after the maintenance pass. The rest of M2 is `docs/plans/m2-plan.md`: sprint 14.
+Sprints 3–13 and the blank-plan slice were accepted on 2026-10-10 (Q78). From now on, the PM accepts a sprint once they've used its build and found nothing blocking. Tester sessions feed the backlog rather than gating acceptance. The combined session for sprints 3–8, which opens with a cold start, is `docs/demos/sprint-5-session.md`. Tester feedback goes into `docs/backlog.md`.
 
-Sprint 12 (seeing each other: presence and the driver, drag intent and collisions, making new links with hosting docs in `docs/hosting.md`, and changes by file, ADR 0022) is built and awaits the PM's acceptance on its build (`docs/demos/sprint-12.md`).
+Next is sprint 14, since you were away, which starts in plan mode after the maintenance pass and the housekeeping slice from the repository review (`docs/reviews/2026-10-09-repo-hygiene.md`). The rest of M2 is `docs/plans/m2-plan.md`: sprint 14.
 
-Sprint 11 (the relay: the relay for real, loop repair, share and join, and the connection pill) is built and awaits the PM's acceptance on its build (`docs/demos/sprint-11.md`). The relay is Go, in `relay/`; `e2e/relay/` tests the app against it.
+What's built, for orientation: sprint 9 designed collaboration (summary in `docs/research/collaboration/README.md`; its spikes are in `spikes/`, out of lint, typecheck and CI). Sprints 10–13 built it: schema 2 and several plans per browser, the relay (Go, in `relay/`, with `e2e/relay/` testing the app against it), presence and changes by file, and history. Each sprint's demo note is `docs/demos/sprint-N.md`.
 
-Sprint 10 (M2's foundations: schema 2, several plans per browser, two tabs in sync) is built, and awaits the PM's acceptance on its build (`docs/demos/sprint-10.md`).
-
-Sprint 9 designed collaboration, and its summary is `docs/research/collaboration/README.md`. ADRs 0016–0020 are Accepted. The spikes are in `spikes/`, out of lint, typecheck and CI.
-
-Sprints 3–13 and the blank-plan slice (Q51) await the PM's acceptance. One combined tester session covers sprints 3–8, opening with a cold start (`docs/demos/sprint-5-session.md`). The review process is in `docs/plans/sprint-0-plan.md`. If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`. Tester feedback goes into `docs/backlog.md`.
+If `requirements.md` and a sprint doc conflict, the sprint doc wins for now; log the conflict in `questions.md`.
 
 ## Architecture rules
 
@@ -43,7 +39,7 @@ Sprints 3–13 and the blank-plan slice (Q51) await the PM's acceptance. One com
 - CI runs typecheck, lint, and tests on every push.
 - `main` is always deployable. Every PR and every merge to `main` produces a self-contained single-file HTML build as a CI artifact that the PM can open and click through (see Q5 in `questions.md`), and every merge to `main` is published to GitHub Pages (Q31).
 - The repo is public (Q31). Never commit real roadmap data; samples are synthetic. Issues are welcome, but code PRs aren't being accepted yet (`CONTRIBUTING.md`).
-- Engineering merges its own PRs once CI is green and self-review is done. The PM accepts or rejects on the build, not the diff (Q6).
+- Engineering merges its own PRs once CI is green and self-review is done (Q6). Self-review is posted on the PR as a review by a separate Claude session, and every finding is fixed or answered before merging (Q76; the steps are in `docs/housekeeping.md`). The PM accepts or rejects on the build, not the diff.
 
 ## Working agreement
 
