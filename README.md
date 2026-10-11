@@ -1,5 +1,7 @@
 # Planning Board
 
+[![CI](https://github.com/zjs/planning-board/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/zjs/planning-board/actions/workflows/ci.yml?query=branch%3Amain) [![Release](https://img.shields.io/github/v/release/zjs/planning-board)](https://github.com/zjs/planning-board/releases/latest)
+
 A planning whiteboard for product leadership on enterprise product lines: a place to shuffle, argue about, and reshape a release plan before any of it goes into Jira.
 
 Every roadmap item is a card with properties: sequence, system area and component, size, time, and your own (team, customer, …). Any two of them can be the board's rows and columns. Drag a card into a cell and it takes both values. Pivot to another pair, and the same cards rearrange: a sequencing brainstorm, a component map, and a quarterly plan are three views of one plan, not three documents. A dependency placed out of order is highlighted as something to argue about, never blocked as a rule.
@@ -42,7 +44,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 
 - **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, "Blocks" links become dependencies, and "Relates" links become related links.
 - **Several plans in one browser:** a scratch plan beside the real one, listed in the File menu and named in the toolbar. Opening a file, importing, starting a blank plan and loading the sample each make a new plan, so nothing you're working on is overwritten. The same plan open in two tabs stays in step as you edit.
-- **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
+- **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by earlier builds, so a plan you save keeps opening.
 
 **Not yet**
 
@@ -57,15 +59,38 @@ What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). Wh
 
 **Browsers:** automated tests run in Chromium (Chrome, Edge). Firefox and Safari haven't been checked thoroughly yet; reports are welcome. If the board says it can't save, the page is still usable, but changes won't survive a reload.
 
+## How this is built
+
+The code is written by [Claude Code](https://claude.com/claude-code), working as the engineering team. A human product manager writes the requirements, answers product questions, and accepts each round of work by using its build, not by reading the diff.
+
+Every change goes through a pull request. CI must pass, and a separate Claude session reviews the change and posts its findings on the pull request, each fixed or answered before it merges.
+
+Decisions are public: requirements, product questions with their answers, and architecture decision records are all in [`docs/`](docs/README.md).
+
+Commits end with a `Claude-Session` link to the session that made them. It's private, so it won't open for you, but it lets the product manager trace any change back to its conversation.
+
+## How it's tested
+
+CI runs on every pull request and every change to `main`, and nothing is published unless it passes.
+
+- **Unit tests** cover the model and every query over it (`src/domain/`), and every change a plan can go through (`src/commands/`): about 600 tests, in milliseconds.
+- **Old plans keep opening.** Plan files, changes files and browser boards saved by the build at the end of each round of work, and by the last build before each change to the format, are kept as fixtures. Every build must open each one with nothing lost.
+- **End-to-end tests** drive the built app in Chromium, opened from disk: each round of work's exit criteria, step by step. The sharing tests run several browsers against a real relay.
+- **The relay** has its own tests, run with Go's race detector.
+
+Each CI run's summary lists every step with its test counts, and links the build it made, which opens straight in a browser.
+
 ## Feedback
 
 [Open an issue](https://github.com/zjs/planning-board/issues/new/choose): something broken, an export that didn't import well, or what you'd need before using this for real. Please don't paste anything from a confidential roadmap. For an import problem, your file's header row is usually all that's needed. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Run your own relay
 
-The relay is one program, with the app inside. Download the archive for your computer from the [`relay-latest` release](https://github.com/zjs/planning-board/releases/tag/relay-latest), unpack it, and run `planning-board-relay`. It prints two addresses: one for this computer, and one colleagues on your network can open. Open the first, and **Share** a plan from there; the links it gives use the second. The relay is only for sharing: on your own, the hosted page or a downloaded file is all you need.
+The relay is one program, with the app inside. Download the archive for your computer from the [latest release](https://github.com/zjs/planning-board/releases/latest), unpack it, and run `planning-board-relay`. It prints two addresses: one for this computer, and one colleagues on your network can open. Open the first, and **Share** a plan from there; the links it gives use the second. The relay is only for sharing: on your own, the hosted page or a downloaded file is all you need.
 
-For a server, there's a container: `docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board`. Options, Mac and Windows notes, and what the relay can and can't see are in [`relay/README.md`](relay/README.md), which comes in the download too. HTTPS behind a proxy, upgrades, backups, and a pilot on a laptop are in [`docs/hosting.md`](docs/hosting.md).
+To pin a version rather than take the newest, use a [numbered release](https://github.com/zjs/planning-board/releases). Every release comes with `SHA256SUMS` and build attestations, so you can check a download came from this repository's CI; [`relay/README.md`](relay/README.md#checking-a-download) says how.
+
+For a server, there's a container: `docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board`, or `ghcr.io/zjs/planning-board:0.13.0` for a fixed version. Options, Mac and Windows notes, and what the relay can and can't see are in [`relay/README.md`](relay/README.md), which comes in the download too. HTTPS behind a proxy, upgrades, backups, and a pilot on a laptop are in [`docs/hosting.md`](docs/hosting.md).
 
 ## Other ways to run it
 

@@ -152,3 +152,4 @@ The commit subject style (finding 5) needs no decision, and starts with the next
 - **Q78:** sprints 3–13 are accepted. From now on, the PM accepts a sprint on its build.
 - **Settings:** the PM set the description, the website link, both rulesets, automatic deletion of merged branches, and private vulnerability reporting. The self-review confirmed them through GitHub's API. The nine old branches and the topics are still to do.
 - **Left:** the engineering slice in the backlog's Housekeeping, and Q49's Dependabot.
+- **2026-10-11:** the engineering slice is built, with Dependabot weekly. `v0.13.0` is the first numbered release.

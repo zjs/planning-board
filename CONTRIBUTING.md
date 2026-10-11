@@ -20,6 +20,8 @@ Code pull requests aren't being accepted yet, while the core design is still set
 
 ## How decisions are made
 
+The code is written by Claude Code, with a human product manager; the README's [How this is built](README.md#how-this-is-built) says how that works.
+
 - [`docs/requirements.md`](docs/requirements.md) is what the tool is for.
 - [`docs/questions.md`](docs/questions.md) lists open product questions and their answers. It's a good place to see whether something is already being discussed.
 - [`docs/decisions/`](docs/decisions/) holds short architecture decision records.

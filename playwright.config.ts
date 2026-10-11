@@ -29,7 +29,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // In CI, also a JSON report for the run's summary (scripts/ci-summary.ts).
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'reports/e2e.json' }]]
+    : 'list',
   use: {
     // Pivots animate (ADR 0015); tests measure cards where they settle. motion.spec.ts turns it back on.
     reducedMotion: 'reduce',

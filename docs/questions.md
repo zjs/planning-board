@@ -67,6 +67,7 @@ Entry format:
 - Status: open. The 2026-10-02 pass followed (a)'s checklists, and `CLAUDE.md` points to them as a proposal.
   - 2026-10-09: a review of the user-facing docs found them drifting where no checklist looked: `SECURITY.md` and the relay's docs, which only the README's line covered. (a) gains a list of user-facing docs, each with its reader and what makes it stale, used by the definition of done and the release pass, and a test in `npm run check` for broken links and internal numbering in them.
   - 2026-10-09: the repository review ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md), finding 6) makes (c) more pressing. Pinning the release workflow's third-party actions to commit SHAs is only practical with Dependabot keeping the pins current.
+  - Partly answered 2026-10-11: (c), but weekly rather than monthly. The PM chose it when engineering asked, while planning the housekeeping slice after sprint 13. Built in the housekeeping slice after sprint 13 (`.github/dependabot.yml`): npm, Go modules and GitHub Actions, with minor and patch updates grouped into one PR per ecosystem. TypeScript 7 is held back while typescript-eslint can't use it. The process itself, (a), is still a proposal.
 
 ### Q54: Making actions findable
 - Context: The backlog's theme K. These are reachable only by a key or an invisible gesture:
@@ -656,6 +657,7 @@ Entry format:
 - Recommendation: (a). A sprint is already the unit the PM accepts and the compatibility fixtures are cut from, and semver's `0.x` says "early" honestly _(recalled)_. Tag at the end of the sprint, not on acceptance, since acceptance lags.
 - Status: answered 2026-10-10: (a).
   - Engineering's default: the first release is `v0.13.0`, cut from `main` once the release workflow can do it, so people self-hosting have something to pin before sprint 14 ends. Earlier sprints aren't tagged after the fact.
+  - Built in the housekeeping slice after sprint 13 (ADR 0023). The version lives in `package.json`, and a merge that sets a new one publishes the release, with the notes from `docs/releases/`, `SHA256SUMS`, build attestations and a version tag on the image. The app and the relay keep naming their commit, not the version.
 
 ### Q76: Making review visible
 - Context: The repository review (finding 2). All 89 PRs were opened and merged by one account, typically within about 10 minutes of opening (median 5), with no reviews or comments. The definition of done asks for self-review, but no PR shows it happened.

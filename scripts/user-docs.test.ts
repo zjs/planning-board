@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -7,10 +7,16 @@ import { describe, expect, it } from 'vitest';
 // readers don't know our sprints, questions or requirement numbers, and the
 // relay's README also ships alone in its download.
 const root = resolve(import.meta.dirname, '..');
-const USER_DOCS = ['README.md', 'SECURITY.md', 'CONTRIBUTING.md', 'relay/README.md', 'docs/hosting.md'];
+// Release notes are published as the release's page, on their own (ADR 0023).
+const RELEASE_NOTES = readdirSync(join(root, 'docs/releases'))
+  .filter((f) => f.endsWith('.md'))
+  .map((f) => `docs/releases/${f}`);
+const USER_DOCS = ['README.md', 'SECURITY.md', 'CONTRIBUTING.md', 'relay/README.md', 'docs/hosting.md', ...RELEASE_NOTES];
+/** Read by people finding their way around the repo: their links must work, but they may cite our numbering. */
+const LINKED_DOCS = ['docs/README.md'];
 const TEMPLATES = ['bug.yml', 'feedback.yml', 'import.yml', 'config.yml'].map((f) => `.github/ISSUE_TEMPLATE/${f}`);
 /** Shipped beside the relay program, with none of the repo around it. */
-const SHIPPED_ALONE = ['relay/README.md'];
+const SHIPPED_ALONE = ['relay/README.md', ...RELEASE_NOTES];
 
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
 
@@ -35,7 +41,23 @@ function anchors(markdown: string): Set<string> {
 }
 
 describe('user-facing docs', () => {
-  for (const doc of USER_DOCS) {
+  it('the version in package.json has release notes', () => {
+    const { version } = JSON.parse(read('package.json')) as { version: string };
+    const notes = `docs/releases/v${version}.md`;
+    expect(existsSync(join(root, notes)), notes).toBe(true);
+    expect(read(notes).trim()).not.toBe('');
+  });
+
+  // A doc that tells people to pin a version names the current one; the release pass moves it on.
+  for (const doc of USER_DOCS.filter((d) => !RELEASE_NOTES.includes(d))) {
+    it(`${doc}: a pinned version is the current one`, () => {
+      const { version } = JSON.parse(read('package.json')) as { version: string };
+      const pinned = [...read(doc).matchAll(/planning-board:(\d+\.\d+\.\d+)/g)].map((m) => m[1]);
+      expect(pinned.filter((v) => v !== version)).toEqual([]);
+    });
+  }
+
+  for (const doc of [...USER_DOCS, ...LINKED_DOCS]) {
     it(`${doc}: every link inside the repo resolves`, () => {
       const broken = links(read(doc))
         .filter((target) => !/^[a-z]+:/i.test(target))

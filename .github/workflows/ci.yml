@@ -15,8 +15,10 @@ concurrency:
   # Every main commit keeps its build artifact; superseded branch pushes are cancelled.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# Check names are what the main ruleset requires: renaming a job means updating the ruleset in the same breath.
 jobs:
   check:
+    name: 'App: typecheck, lint, tests, build'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -30,21 +32,30 @@ jobs:
       - run: npm ci
 
       - name: Typecheck
+        id: typecheck
         run: npm run typecheck
 
+      # Each check runs whatever failed before it, so one red run names every problem.
       - name: Lint
+        id: lint
+        if: ${{ !cancelled() }}
         run: npm run lint
 
       - name: Unit tests
-        run: npm test
+        id: unit
+        if: ${{ !cancelled() }}
+        run: npm test -- --reporter=default --reporter=json --outputFile.json=reports/unit.json
 
       - name: Build single-file app
+        id: build
+        if: ${{ !cancelled() }}
         run: npm run build
         env:
           # The commit the build names in its help panel. On a pull request, the branch's head, not GitHub's merge commit.
           VITE_BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install Chromium for end-to-end tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         # An install takes under a minute, but an Ubuntu mirror that stops answering hangs apt until the job
         # times out (2026-10-07). Short apt timeouts let it move on to the next mirror. A stalled attempt is
         # retried, after stopping the apt-get it leaves behind, which otherwise holds the dpkg lock.
@@ -62,38 +73,45 @@ jobs:
 
       # The sharing tests (e2e/relay/) run against a real relay, which Playwright starts with `go run`.
       - uses: actions/setup-go@v7
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         with:
           go-version: '1.27.x'
           cache-dependency-path: relay/go.sum
 
       - name: End-to-end tests (dist/index.html over file://, and served by a relay)
+        id: e2e
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: npm run e2e
 
       # Named for its commit, and uploaded unzipped, so the download is the app itself: open it in a browser.
       - name: Name the build for its commit
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         env:
           BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         run: cp dist/index.html "planning-board-${BUILD_COMMIT}.html"
 
       - name: Attach build
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         uses: actions/upload-artifact@v7
         with:
           path: planning-board-${{ github.event.pull_request.head.sha || github.sha }}.html
           archive: false
           if-no-files-found: error
 
-      - name: Build summary
+      # Every step, how it went, the test counts, and the build to download (scripts/ci-summary.ts).
+      - name: Summary
+        if: ${{ !cancelled() }}
         env:
           BUILD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          {
-            echo "### Build ready"
-            echo
-            echo "Download **planning-board-${BUILD_COMMIT}.html** from the Artifacts section below, and open it in a browser."
-          } >> "$GITHUB_STEP_SUMMARY"
+          STEP_TYPECHECK: ${{ steps.typecheck.outcome }}
+          STEP_LINT: ${{ steps.lint.outcome }}
+          STEP_UNIT: ${{ steps.unit.outcome }}
+          STEP_BUILD: ${{ steps.build.outcome }}
+          STEP_E2E: ${{ steps.e2e.outcome }}
+        run: node scripts/ci-summary.ts >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Keep Playwright report on failure
-        if: failure()
+      - name: Keep the Playwright report
+        if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ github.event.pull_request.head.sha || github.sha }}
@@ -104,6 +122,7 @@ jobs:
 
   # The relay (ADR 0017): Go, in relay/. Its tests run beside the web checks.
   relay-test:
+    name: 'Relay: format, vet, tests'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -118,17 +137,51 @@ jobs:
           cache-dependency-path: relay/go.sum
 
       - name: Formatting
+        id: fmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
 
       - name: Vet
+        id: vet
+        if: ${{ !cancelled() }}
         run: go vet ./...
 
       - name: Tests
-        run: go test -race ./...
+        id: test
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          go test -race -v ./... 2>&1 | tee ../relay-tests.log
+
+      - name: Summary
+        if: ${{ !cancelled() }}
+        env:
+          STEP_FMT: ${{ steps.fmt.outcome }}
+          STEP_VET: ${{ steps.vet.outcome }}
+          STEP_TEST: ${{ steps.test.outcome }}
+        run: |
+          mark() { case "$1" in success) echo '✅';; failure) echo '❌';; *) echo '⏭️';; esac; }
+          passed=$(grep -c -- '--- PASS' ../relay-tests.log || true)
+          failed=$(grep -c -- '--- FAIL' ../relay-tests.log || true)
+          tests="$passed passed"
+          if [ "$failed" -gt 0 ]; then tests="$tests, $failed failed"; fi
+          {
+            if [ "$STEP_FMT" = success ] && [ "$STEP_VET" = success ] && [ "$STEP_TEST" = success ]; then
+              echo '### ✅ Relay: all checks passed'
+            else
+              echo '### ❌ Relay: a check failed'
+            fi
+            echo
+            echo '| Step | Result |'
+            echo '|---|---|'
+            echo "| $(mark "$STEP_FMT") Formatting | |"
+            echo "| $(mark "$STEP_VET") Vet | |"
+            echo "| $(mark "$STEP_TEST") Tests, with the race detector | $tests |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # The relay for each computer, with the app built above inside it (Q69). The downloads people use come from
   # the relay-latest release (release.yml); these are attached to every run, like the HTML file.
   relay-build:
+    name: Relay download (${{ matrix.target.os }}, ${{ matrix.target.arch }})
     needs: [check, relay-test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
