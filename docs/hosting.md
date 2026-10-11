@@ -13,10 +13,10 @@ Either a container:
 ```
 docker run -d --name planning-board --restart unless-stopped \
   -p 127.0.0.1:8787:8787 -v planning-board-data:/data \
-  ghcr.io/zjs/planning-board -public-url https://plans.example.com -trust-forwarded
+  ghcr.io/zjs/planning-board:0.13.0 -public-url https://plans.example.com -trust-forwarded
 ```
 
-Or the Linux download from the [`relay-latest` release](https://github.com/zjs/planning-board/releases/tag/relay-latest), under systemd, as `/etc/systemd/system/planning-board.service`:
+Or the Linux download from the [latest release](https://github.com/zjs/planning-board/releases/latest), under systemd, as `/etc/systemd/system/planning-board.service`:
 
 ```ini
 [Unit]
@@ -89,7 +89,9 @@ Stop the relay, replace the program or pull the new image, and start it again. B
 
 A relay and an app built at different times work together as long as they speak the same protocol version (`relay/PROTOCOL.md`). If they don't, the pill says **Can't use the relay**, and its message says which one to update. Since the relay serves the app, people who open it from the relay's address always get a matching build.
 
-New features sometimes need both. For example, **Make new links** cuts off old links only on a relay new enough to retire them. On an older relay, the app warns that old links still work, so upgrade the relay before relying on it. The `relay-latest` release and the container's `latest` tag are rebuilt from every change, so upgrading means taking the newest.
+New features sometimes need both. For example, **Make new links** cuts off old links only on a relay new enough to retire them. On an older relay, the app warns that old links still work, so upgrade the relay before relying on it.
+
+**Which version to run.** For a team, pin a numbered release: the image tag `ghcr.io/zjs/planning-board:0.13.0`, or that release's download. Upgrade by moving to the next one, after reading its notes. The `relay-latest` release and the container's `latest` tag follow every change to the project, which suits a pilot that wants the newest. Each release can be checked before you run it, by its checksum and build attestation ([how](https://github.com/zjs/planning-board/blob/main/relay/README.md#checking-a-download)).
 
 **Which build.** `planning-board-relay -version` names the build you have, such as `build 3d350aa (2026-10-09)`: the commit it was built from, and that commit's date. The start-up message and `/config` say the same, and the app's cheat sheet shows it beside the app's own build on a shared plan. A relay that says nothing about its build was built before 2026-10-09; upgrade it.
 

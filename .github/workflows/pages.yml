@@ -1,8 +1,9 @@
 name: Pages
 
 # Publishes the latest main as a hosted page, so anyone can try the app
-# without a GitHub login (questions.md Q5, Q31). It's the same single file
-# CI attaches to every run. Needs Settings › Pages › Source: GitHub Actions.
+# without a GitHub login (questions.md Q5, Q31). It's the very file the CI run
+# built and tested, never rebuilt here. Needs Settings › Pages › Source:
+# GitHub Actions. To redeploy, re-run a Pages run.
 
 # Only after CI passes on main, so a red build never reaches the public page.
 on:
@@ -10,7 +11,6 @@ on:
     workflows: [CI]
     types: [completed]
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,33 +22,30 @@ concurrency:
 
 jobs:
   build:
-    # Pages on a free plan needs a public repo; skip quietly until then.
-    if: >-
-      !github.event.repository.private &&
-      (github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
     steps:
-      - uses: actions/checkout@v7
+      - name: Fetch the app the CI run built and tested
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          name: planning-board-${{ github.event.workflow_run.head_sha }}.html
+          path: app
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Build single-file app
-        run: npm run build
-        env:
-          VITE_BUILD_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Lay it out as the site
+        run: |
+          mkdir site
+          cp app/*.html site/index.html
+          test -s site/index.html
 
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build

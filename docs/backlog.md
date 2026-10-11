@@ -286,15 +286,14 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
     - a ruleset on `main`: pull requests only, squash merges, CI's `check` and `relay-test` passing on an up-to-date branch, review threads resolved before merging, no force-pushes or deletion, and nobody on the bypass list, since engineering works under the PM's account;
     - a ruleset on `v*` tags, once Q77's releases start, so a published version can't be moved or deleted. It mustn't cover `relay-latest`, which the release workflow replaces on every merge;
     - checking that private vulnerability reporting is on.
-  - **For engineering, one housekeeping slice.** Q75–Q78 were answered on 2026-10-10. The slice holds:
-    - "How this is built" and "How it's tested" in the README, and a CI badge;
-    - a `docs/README.md` map;
-    - readable CI job names, and a step summary with test counts. The ruleset on `main` requires the `check` and `relay-test` checks by name, so a rename has to land together with the PM updating the ruleset, or every PR waits for a check that never reports;
-    - Pages deploying the file CI tested, not a rebuild;
-    - checksums, build attestations, and SHA-pinned third-party actions for the relay release;
-    - self-review on each PR (Q76), already in the definition of done, and first tried on this review's own PR;
-    - versioned releases (Q77): `v0.N.0` at the end of each sprint, with notes from its demo note, checksums, build attestations and a version tag on the image, starting with `v0.13.0`.
-  - **Started:** commit subjects say what changed, with the sprint in brackets at the end.
+  - **For engineering, one housekeeping slice:** built 2026-10-11, after Q75–Q78 were answered.
+    - The README has a CI badge, "How this is built" and "How it's tested", and `docs/README.md` maps `docs/`.
+    - CI's checks have readable names, and each run's summary lists every step with its test counts.
+    - Pages deploys the file CI tested.
+    - Versioned releases (Q77, ADR 0023) start with `v0.13.0`, with checksums, build attestations, a version tag on the image, and SHA-pinned third-party actions.
+    - Dependabot runs weekly (Q49).
+    - Self-review on each PR (Q76) is in the definition of done.
+  - **In use:** commit subjects say what changed, with the sprint in brackets at the end.
 
 **Done**
 
