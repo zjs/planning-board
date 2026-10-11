@@ -3,7 +3,8 @@ name: Pages
 # Publishes the latest main as a hosted page, so anyone can try the app
 # without a GitHub login (questions.md Q5, Q31). It's the very file the CI run
 # built and tested, never rebuilt here. Needs Settings › Pages › Source:
-# GitHub Actions. To redeploy, re-run a Pages run.
+# GitHub Actions. To redeploy, re-run the latest Pages run: an older one would
+# publish an older build, and CI keeps its artifacts for 90 days.
 
 # Only after CI passes on main, so a red build never reaches the public page.
 on:

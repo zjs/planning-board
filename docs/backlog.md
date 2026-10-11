@@ -283,7 +283,7 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
   - **For the PM, in Settings:** mostly done on 2026-10-10, as the self-review confirmed through GitHub's API. Still to do: the topics, and deleting the nine old branches, since automatic deletion only applies to PRs merged from now on _(recalled)_. Some may hold unmerged work, so each needs a look first.
     - the About box: a description, the Pages link, and topics;
     - "Automatically delete head branches", and deleting the nine old branches;
-    - a ruleset on `main`: pull requests only, squash merges, CI's `check` and `relay-test` passing on an up-to-date branch, review threads resolved before merging, no force-pushes or deletion, and nobody on the bypass list, since engineering works under the PM's account;
+    - a ruleset on `main`: pull requests only, squash merges, CI's two checks (named "App: typecheck, lint, tests, build" and "Relay: format, vet, tests" since 2026-10-11) passing on an up-to-date branch, review threads resolved before merging, no force-pushes or deletion, and nobody on the bypass list, since engineering works under the PM's account;
     - a ruleset on `v*` tags, once Q77's releases start, so a published version can't be moved or deleted. It mustn't cover `relay-latest`, which the release workflow replaces on every merge;
     - checking that private vulnerability reporting is on.
   - **For engineering, one housekeeping slice:** built 2026-10-11, after Q75–Q78 were answered.

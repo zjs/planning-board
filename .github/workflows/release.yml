@@ -12,6 +12,11 @@ name: Release the relay
 # - Every download has a checksum in SHA256SUMS and a build attestation, so
 #   anyone can check it came from this workflow (`gh attestation verify`).
 #
+# The image waits for the downloads job, which creates the version's tag, so a
+# version tag on the image never runs ahead of the release, and is never pushed
+# twice. If a run fails partway, use "Re-run failed jobs": it keeps the version
+# job's answer, where a new run would see the tag and skip the version.
+#
 # Third-party actions are pinned to commits; Dependabot keeps them current.
 
 on:
@@ -143,7 +148,7 @@ jobs:
             --notes-file "docs/releases/v$VERSION.md"
 
   container:
-    needs: version
+    needs: [version, downloads]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -190,7 +195,14 @@ jobs:
         run: |
           image="ghcr.io/${REPO,,}"
           tags="${image}:latest,${image}:sha-${SHA::12}"
-          if [ "$NEW" = true ]; then tags="${tags},${image}:${VERSION}"; fi
+          # A version tag, once pushed, never moves (ADR 0023).
+          if [ "$NEW" = true ]; then
+            if docker manifest inspect "${image}:${VERSION}" > /dev/null 2>&1; then
+              echo "${image}:${VERSION} already exists; leaving it as it is."
+            else
+              tags="${tags},${image}:${VERSION}"
+            fi
+          fi
           echo "image=${image}" >> "$GITHUB_OUTPUT"
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
 
@@ -209,3 +221,5 @@ jobs:
           subject-name: ${{ steps.names.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+          # Storage records need an organization's repository; this is a user's.
+          create-storage-record: false

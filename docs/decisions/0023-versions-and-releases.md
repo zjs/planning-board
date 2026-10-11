@@ -39,4 +39,5 @@ Nobody pushes a tag by hand, and what's released is exactly what CI tested on `m
 
 - **The release pass gains two steps,** the version and the notes. The notes are written for someone on the release page, with no sprint or question numbers, and the user-docs test checks them.
 - **The release path only runs on `main`,** since `workflow_run` doesn't fire on PRs. A mistake in it shows up as a failed release run after merge, without touching `main` or Pages.
+- **A run that fails partway is finished with "Re-run failed jobs",** which keeps the first job's answer. A fresh run would find the tag and skip the version. The image job runs after the downloads job, so the image's version tag can lag the release but never run ahead of it, and it's never pushed twice.
 - **Dependabot adds weekly PRs** for npm, Go modules and Actions, which go through CI and self-review like any PR. A Go module it adds needs `npm run notices:relay`, or `go test` fails.

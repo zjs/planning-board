@@ -67,7 +67,7 @@ Entry format:
 - Status: open. The 2026-10-02 pass followed (a)'s checklists, and `CLAUDE.md` points to them as a proposal.
   - 2026-10-09: a review of the user-facing docs found them drifting where no checklist looked: `SECURITY.md` and the relay's docs, which only the README's line covered. (a) gains a list of user-facing docs, each with its reader and what makes it stale, used by the definition of done and the release pass, and a test in `npm run check` for broken links and internal numbering in them.
   - 2026-10-09: the repository review ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md), finding 6) makes (c) more pressing. Pinning the release workflow's third-party actions to commit SHAs is only practical with Dependabot keeping the pins current.
-  - Partly answered 2026-10-11: (c), but weekly rather than monthly. Built in the housekeeping slice after sprint 13 (`.github/dependabot.yml`): npm, Go modules and GitHub Actions, with minor and patch updates grouped into one PR per ecosystem. TypeScript 7 is held back while typescript-eslint can't use it. The process itself, (a), is still a proposal.
+  - Partly answered 2026-10-11: (c), but weekly rather than monthly. The PM chose it when engineering asked, while planning the housekeeping slice after sprint 13. Built in the housekeeping slice after sprint 13 (`.github/dependabot.yml`): npm, Go modules and GitHub Actions, with minor and patch updates grouped into one PR per ecosystem. TypeScript 7 is held back while typescript-eslint can't use it. The process itself, (a), is still a proposal.
 
 ### Q54: Making actions findable
 - Context: The backlog's theme K. These are reachable only by a key or an invisible gesture:

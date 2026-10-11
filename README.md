@@ -44,7 +44,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 
 - **Import from Jira CSV** (Jira's "Export › CSV (all fields)"): map columns, then choose where components, versions, issue types, and story points go. Epics become groups, "Blocks" links become dependencies, and "Relates" links become related links.
 - **Several plans in one browser:** a scratch plan beside the real one, listed in the File menu and named in the toolbar. Opening a file, importing, starting a blank plan and loading the sample each make a new plan, so nothing you're working on is overwritten. The same plan open in two tabs stays in step as you edit.
-- **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by every earlier build, so a plan you save keeps opening.
+- **Plan files:** a versioned, readable JSON format ([ADR 0005](docs/decisions/0005-plan-file-format.md)). Every build is tested against plans saved by earlier builds, so a plan you save keeps opening.
 
 **Not yet**
 
@@ -74,7 +74,7 @@ Commits end with a `Claude-Session` link to the session that made them. It's pri
 CI runs on every pull request and every change to `main`, and nothing is published unless it passes.
 
 - **Unit tests** cover the model and every query over it (`src/domain/`), and every change a plan can go through (`src/commands/`): about 600 tests, in milliseconds.
-- **Old plans keep opening.** Plan files, changes files and browser boards saved by every earlier build are kept as fixtures, and every build must open each one with nothing lost.
+- **Old plans keep opening.** Plan files, changes files and browser boards saved by the build at the end of each round of work, and by the last build before each change to the format, are kept as fixtures. Every build must open each one with nothing lost.
 - **End-to-end tests** drive the built app in Chromium, opened from disk: each round of work's exit criteria, step by step. The sharing tests run several browsers against a real relay.
 - **The relay** has its own tests, run with Go's race detector.
 
