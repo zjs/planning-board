@@ -25,8 +25,8 @@ A model only says something about the code if it stays next to it and runs when 
 - **CI runs each broken variant too, and requires it to fail.** A config that shrinks below where it can find the bug then fails CI, rather than passing quietly. The state count also goes in the job summary.
 - **Every model is checked against a broken variant** before it's trusted: a mutation of the rule it's about, which must fail. Without that, a model too small to reach the bug passes as easily as a correct one. With three moves, the tree model passed a broken repair; it takes four moves to reach the failure.
 
-**What the first runs found,** while this was being decided. These come from local drafts of the models, which land in the repository with slices 2–4:
-- **The sync model found a bug** (the threat model's F10). A browser whose first catch-up is cut short before the relay's `synced` message has a cursor but no epoch, so after a restore it can't tell the room changed, and it misses the new room's first changes. The fix, starting again from nothing when there's a cursor but no epoch, passes the model, and is built with it.
+**What the first runs found,** while this was being decided. The protocol and sync models are in the repository from slices 2 and 3, and CI repeats their results; the tree model's come from a local draft until slice 4:
+- **The sync model found a bug** (the threat model's F10). A browser whose first catch-up is cut short before the relay's `synced` message has a cursor but no epoch, so after a restore it can't tell the room changed, and it misses the new room's first changes. The fix, starting again from nothing when there's a cursor but no epoch, passes the model (17,983,034 states), and the code as it was is one of its broken variants.
 - **It also shows why `-restored` matters.** Restoring a backup without it lets a browser keep believing the relay holds changes it lost, so they never reach anyone else.
 - **The tree model passes** with three moves (11,485 states, 7 seconds) and four (244,525 states, 2 minutes).
 - **The protocol model gives every expected result** in 0.09 seconds, including the one expected attack.
@@ -35,11 +35,11 @@ A model only says something about the code if it stays next to it and runs when 
 
 **Randomized schedules bridge the models and the code.** A seeded generator drives the real app and relay through what the models describe, and checks the same properties. A failing seed prints itself so it can be replayed. It needs no new dependency.
 
-**In CI:** a third job, "Formal: protocol, sync and grouping", which runs `npm run formal` (`scripts/formal.ts`). The protocol model is in it from sprint 14, slice 2; the sync and tree models join it in slices 3 and 4, and until then their results below come from local drafts.
+**In CI:** a third job, "Formal: protocol, sync and grouping", which runs `npm run formal` (`scripts/formal.ts`). The protocol model is in it from sprint 14, slice 2, and the sync model from slice 3; the tree model joins it in slice 4.
 - ProVerif 2.05 is built from its source tarball, `https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz`, pinned by SHA-256 `4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4`, with Ubuntu's `ocaml-nox`. That takes seconds.
-- TLC is `tla2tools.jar` from `https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar`, pinned by SHA-256 `0f56d6a813368c48008dfbecb23a73ab43a4a5e1bf09f026782a674aa9d4b3c9`, on the runner's Java. The 1.8.0 release may be rebuilt in place _(recalled)_. If so, the hash check fails with a message saying so, and the pin is updated after checking the new build gives the same results. Either way, a rebuild upstream never changes a run silently. The stable 1.7.4 was tried, and is far too slow: still running after 18 minutes on the three-move tree model, which 1.8.0 checks in 7 seconds.
-- Neither is cached: each run downloads and checks them, which takes seconds, so there's no cache to go stale.
-- `npm run formal` runs the same job locally, installing the tools into `formal/.tools/` on first use (`formal/README.md`).
+- TLC is `tla2tools.jar`, kept in the repository as `formal/tools/tla2tools.jar`, and checked against its SHA-256 `15d103b7e5617780bcc904c0af12f1ad242e2b345c0301136c5be4588f17edac` on every run, on the runner's Java. TLA+ publishes its tools only as builds replaced in place: the jar at `https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar` was rebuilt between two runs on the day this was written, and isn't on Maven Central. The one kept is the nightly 2026.10.15.145915. A pin on the download would fail at each rebuild, and building TLC from source in CI would take far longer than the models. The stable 1.7.4 was tried, and is far too slow: still running after 18 minutes on the three-move tree model, which 1.8's builds check in 7 seconds. Moving to a new build is a change of its own, made by replacing the jar and its hash and running every model.
+- ProVerif isn't cached: each run downloads and checks it, and builds it in seconds, so there's no cache to go stale.
+- `npm run formal` runs the same job locally, installing ProVerif into `formal/.tools/` on first use (`formal/README.md`). The whole job takes about 8 minutes on four cores.
 
 ## Alternatives
 

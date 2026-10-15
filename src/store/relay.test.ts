@@ -312,6 +312,36 @@ describe('syncing through a relay (ADR 0017)', () => {
     expect(cards(fresh)).toEqual({ a: 'A' });
   });
 
+  it('a first catch-up cut short before synced still notices a restore (F10, found by formal/tla/Sync.tla)', async () => {
+    const { relay, clock, room, make } = setup();
+    const alice = new Y.Doc();
+    alice.getMap('cards').set('a', 'A');
+    const a = make(alice, { create: true });
+    await settle(clock);
+    // Bob's first catch-up got update 1 and saved its cursor, but the connection dropped before synced, which
+    // carries the room's epoch: his record has a cursor and no epoch.
+    const bob = new Y.Doc();
+    bob.getMap('cards').set('a', 'A');
+    const sync = memorySyncStore();
+    sync.record = { room, cursor: 1, epoch: null, shadow: Y.encodeStateAsUpdate(bob) };
+    // Meanwhile the relay is restored from an older backup: same room, new epoch, nothing in it.
+    relay.down = true;
+    relay.cut();
+    await settle(clock);
+    alice.getMap('cards').set('b', 'B');
+    const old = relay.rooms.get(room)!;
+    relay.rooms.set(room, { ...old, epoch: crypto.getRandomValues(new Uint8Array(16)), head: 0, log: [], peers: new Set() });
+    relay.down = false;
+    await settle(clock);
+    // Alice notices the new epoch and sends everything again, as update 1 of the restored room.
+    expect(a.status).toBe('live');
+    expect(relay.rooms.get(room)!.head).toBe(1);
+    // Bob's cursor (1) is from the old room. Asking only for what comes after it would skip the new update 1.
+    make(bob, { sync });
+    await settle(clock);
+    expect(cards(bob)).toEqual({ a: 'A', b: 'B' });
+  });
+
   it('a room the relay has never heard of is refused, and can be made again from this copy', async () => {
     const { clock, make } = setup();
     const alice = new Y.Doc();

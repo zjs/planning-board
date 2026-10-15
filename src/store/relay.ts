@@ -408,8 +408,10 @@ export class RelayProvider {
         this.canWrite = r.uint() === 1;
         // A relay from before sprint 12 doesn't say.
         if (r.more() && r.uint() === 1) this.retired = true;
-        // A room replaced or restored from a backup: start again from what this copy has.
-        if ((this.epoch !== null && epoch !== this.epoch) || head < this.cursor) {
+        // A room replaced or restored from a backup: start again from what this copy has. So does a cursor with no
+        // epoch, left by a first catch-up cut short before synced: it can't say which room it counted in, and after
+        // a restore it would skip the new room's first updates (the threat model's F10, found by formal/tla/Sync.tla).
+        if ((this.epoch !== null && epoch !== this.epoch) || (this.epoch === null && this.cursor > 0) || head < this.cursor) {
           this.reset();
           this.epoch = epoch;
           this.reconnectNow();

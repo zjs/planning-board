@@ -183,7 +183,8 @@ jobs:
   formal:
     name: 'Formal: protocol, sync and grouping'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # The sync model takes about 8 minutes on the runner's four cores.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -197,6 +198,10 @@ jobs:
         run: |
           echo 'Acquire::http::Timeout "20"; Acquire::https::Timeout "20"; Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
           sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ocaml-nox
+
+      # TLC runs from formal/tools/tla2tools.jar on the runner's own Java.
+      - name: Java
+        run: java -version
 
       # Each model's results must match the ones recorded beside it, and each broken variant must be caught (ADR 0024).
       - name: Formal models

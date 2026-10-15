@@ -40,8 +40,8 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 3. Sync, offline included (TLA+)
 
-- [ ] The relay and its clients: offline work, crashes, reloads, restarts, restores and new links. Checked: everyone who reconnects converges, no offline edit is lost, nothing acknowledged is lost, and retired rooms and view links can't write.
-- [ ] A cursor with no epoch starts again from nothing (the threat model's F10), with a test.
+- [x] The relay and its clients: offline work, dropped connections, crashes, reloads and restores. Checked: everyone who reconnects converges, no change is lost, and nothing acknowledged is lost. Retired rooms and view links stay covered by the relay's Go tests, and Make new links by its end-to-end test.
+- [x] A cursor with no epoch starts again from nothing (the threat model's F10), with a test.
 
 ### 4. Loop repair, and the real code
 
