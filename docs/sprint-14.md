@@ -26,7 +26,7 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 ### 0. Setup, and a small fix
 
 - [ ] The maintenance pass recorded, and Dependabot's #93 merged.
-- [ ] Opening a share link with no name set asks for one (backlog D).
+- [x] Opening a share link with no name set asks for one (backlog D).
 
 ### 1. The threat model (Q79)
 

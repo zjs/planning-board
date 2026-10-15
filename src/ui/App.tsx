@@ -61,7 +61,7 @@ import {
   type PlanId,
   type SharedPlan,
 } from '../commands/plans.ts';
-import { isNewerLink, joinFromLink, linkInHash, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
+import { isNewerLink, joinFromLink, linkInHash, myName, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
 import { openPlanWithHistory, recordShared, type History, type HistoryEntry } from '../commands/history.ts';
 import { CHANGES_FILE_EXTENSION, changesFileFor, changesTarget, describeMerge, mergeChanges } from '../commands/changesFile.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
@@ -136,7 +136,7 @@ import { Avatars } from './Avatars.tsx';
 import { ConnectionPill } from './ConnectionPill.tsx';
 import { usePresence } from './usePresence.ts';
 import { watchCollisions, type CollisionWatch } from '../commands/collisions.ts';
-import { ShareDialog, useConnection } from './ShareDialog.tsx';
+import { NameForm, ShareDialog, useConnection } from './ShareDialog.tsx';
 import { ActivityPanel } from './ActivityPanel.tsx';
 import { useHistory } from './useHistory.ts';
 import { useNow } from './useNow.ts';
@@ -196,8 +196,15 @@ function relayOfPage(): string | null {
   return location.protocol.startsWith('http') ? new URL('.', location.href).href.replace(/\/$/, '') : null;
 }
 
-/** Open a share link in this browser: the plan it names, and a notice when that needs saying. */
-function joinLink(hash: string): { id: PlanId; notice?: string } | { notice: string } | null {
+/**
+ * Open a share link in this browser: the plan it names, and how to start it. It asks for your name, if this browser
+ * has none yet (Q61), and gives a notice when one needs saying.
+ */
+function joinLink(hash: string): { id: PlanId; start: PlanStart } | { notice: string } | null {
+  const opened = (id: PlanId, notice?: string): { id: PlanId; start: PlanStart } => ({
+    id,
+    start: { ...(notice ? { notice } : {}), ...(myName() === null ? { askName: true } : {}) },
+  });
   const link = linkInHash(hash);
   if (!link) {
     if (isNewerLink(hash)) return { notice: 'This link is from a newer version of Planning Board. Open it from the relay’s own address, which has the newer app.' };
@@ -210,11 +217,11 @@ function joinLink(hash: string): { id: PlanId; notice?: string } | { notice: str
     case 'mismatch':
       return { notice: 'This link’s key doesn’t match the shared plan you already have, so it wasn’t opened.' };
     case 'already-editing':
-      return { id: joined.entry.id, notice: 'You can already edit this plan, so it opened as before.' };
+      return opened(joined.entry.id, 'You can already edit this plan, so it opened as before.');
     case 'upgraded':
-      return { id: joined.entry.id, notice: 'You can edit this plan now.' };
+      return opened(joined.entry.id, 'You can edit this plan now.');
     default:
-      return { id: joined.entry.id };
+      return opened(joined.entry.id);
   }
 }
 
@@ -234,6 +241,8 @@ export interface PlanStart {
   typing?: boolean;
   /** A notice to show, such as what was opened. */
   notice?: string;
+  /** Ask for your name, as on opening a share link in a browser that has none yet (Q61). */
+  askName?: boolean;
 }
 
 /** What the App does with plans, for the board's menus and toolbar (ADR 0021). */
@@ -367,8 +376,8 @@ export function App() {
       (linked !== null ? findPlan(linked)?.id : undefined) ??
       listPlans()[0]?.id ??
       addPlan(UNTITLED).id;
-    const notice = joined?.notice ?? (elsewhere ? 'This link is for a plan on another computer. Ask for its share link.' : undefined);
-    void show(id, notice ? { notice } : null);
+    const notice = joined && 'notice' in joined ? joined.notice : elsewhere ? 'This link is for a plan on another computer. Ask for its share link.' : undefined;
+    void show(id, joined && 'id' in joined ? joined.start : notice ? { notice } : null);
   }, [show]);
 
   // The plan's name, as its document has it, follows renames from other tabs and other people.
@@ -401,7 +410,7 @@ export function App() {
     const onHash = () => {
       const joined = joinLink(location.hash);
       if (joined) {
-        if ('id' in joined) void show(joined.id, joined.notice ? { notice: joined.notice } : null);
+        if ('id' in joined) void show(joined.id, joined.start);
         else setNotice({ text: joined.notice, expire: () => undefined });
         return;
       }
@@ -1662,6 +1671,8 @@ function Workspace({
 
   // Sharing (requirements 30 and 33): the dialog, and replacing a shared plan from a file (Q58).
   const [sharing, setSharing] = useState(false);
+  // Opening a share link asks for your name once per browser (Q61), so others don't see "Someone".
+  const [askingName, setAskingName] = useState(() => start?.askName === true && myName() === null);
   const replaceInput = useRef<HTMLInputElement>(null);
   const [replacing, setReplacing] = useState(false);
   const replaceFromFile = async (file: File) => {
@@ -2137,6 +2148,17 @@ function Workspace({
         />
       )}
       {legendOpen && <Legend onClose={closeLegend} relay={sharedPlan?.relay ?? null} />}
+      {askingName && !sharing && (
+        <Dialog title="What should others call you?" onClose={() => setAskingName(false)} testId="name-dialog">
+          <NameForm
+            onNamed={() => {
+              setAskingName(false);
+              presenceView?.refresh();
+            }}
+            onSkip={() => setAskingName(false)}
+          />
+        </Dialog>
+      )}
       {sharing && (
         <ShareDialog
           planName={planActions.name}
