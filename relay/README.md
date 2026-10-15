@@ -8,7 +8,7 @@ You only need it to share. One person planning alone can use the [hosted page](h
 
 ## Download and run
 
-Download the archive for your computer from the [`relay-latest` release](https://github.com/zjs/planning-board/releases/tag/relay-latest), unpack it, and run `planning-board-relay`. It prints the addresses to open:
+Download the archive for your computer from the [latest release](https://github.com/zjs/planning-board/releases/latest), unpack it, and run `planning-board-relay`. (The [`relay-latest`](https://github.com/zjs/planning-board/releases/tag/relay-latest) release is rebuilt from every change, if you want the newest.) It prints the addresses to open:
 
 ```
 Planning Board is running.
@@ -36,14 +36,25 @@ xattr -d com.apple.quarantine planning-board-relay
 ## In a container
 
 ```
-docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board -public-url https://plans.example.com
+docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board:0.13.0 -public-url https://plans.example.com
 ```
+
+The tag is a version, which never changes; `latest` follows every change to the project.
 
 Put it behind your company's reverse proxy for HTTPS, and pass `-trust-forwarded` so it sees each person's address rather than the proxy's. [`docs/hosting.md`](https://github.com/zjs/planning-board/blob/main/docs/hosting.md) has Caddy, nginx and systemd examples.
 
 ## Updating
 
-`planning-board-relay -version` says which build you have, such as `build 3d350aa (2026-10-09)`; so do its start-up message and `/config`. To update, stop it, replace the program (or pull the new image), and start it again with the same data folder. Boards that were open reconnect on their own. The `relay-latest` release is rebuilt from every change to the project, so the newest download is always the one to use; [`docs/hosting.md`](https://github.com/zjs/planning-board/blob/main/docs/hosting.md#upgrading) has the details.
+`planning-board-relay -version` says which build you have, such as `build 3d350aa (2026-10-09)`; so do its start-up message and `/config`. To update, stop it, replace the program (or pull the new image), and start it again with the same data folder. Boards that were open reconnect on their own.
+
+Each numbered release's notes say what changed and anything to know before upgrading; the release names the commit its programs report. [`docs/hosting.md`](https://github.com/zjs/planning-board/blob/main/docs/hosting.md#upgrading) has the details.
+
+## Checking a download
+
+Every release has a `SHA256SUMS` file, and a build attestation for each download and for the image: a signed record that it was built by this project's release workflow, from a commit that passed its tests.
+
+- **The checksum,** in the folder you downloaded to: `sha256sum -c SHA256SUMS --ignore-missing`, or on a Mac, `shasum -a 256 -c SHA256SUMS --ignore-missing`.
+- **Where it was built,** with the [GitHub CLI](https://cli.github.com/): `gh attestation verify planning-board-relay-linux-amd64.tar.gz --repo zjs/planning-board`. For the image: `gh attestation verify oci://ghcr.io/zjs/planning-board:0.13.0 --repo zjs/planning-board`.
 
 ## Options
 
