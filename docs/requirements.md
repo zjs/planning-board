@@ -127,7 +127,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 - history;
 - fallbacks where a hosted relay isn't allowed: a relay on one person's computer, and changes by file.
 
-The relay is written in Go. The build plan is `docs/plans/m2-plan.md`, in five sprints.
+The relay is written in Go. The build plan is `docs/plans/m2-plan.md`, in six sprints.
 
 **Later.** Merging between scenarios, typed dependencies, Jira sync, and undo history that survives a reload.
 
@@ -145,7 +145,7 @@ flowchart LR
 
 - **Sync:** a CRDT library such as Yjs _(recalled: widely used for this, with a ready-made WebSocket relay)_.
 - **Persistence:** in M1, autosave to browser storage plus explicit save and open of a plan file. In M2, shared plans also persist as encrypted snapshots, so a plan survives everyone leaving. The file format is documented and versioned.
-- **Confidentiality:** sessions and snapshots are end-to-end encrypted, with the key in the URL fragment so the server never sees it _(recalled: Excalidraw's approach for shared links)_. The relay therefore can't read Yjs updates; it's a message broker and blob store.
+- **Confidentiality:** sessions and snapshots are end-to-end encrypted, with the key in the URL fragment so the server never sees it _(recalled: Excalidraw's approach for shared links)_. The relay therefore can't read Yjs updates; it's a message broker and blob store. Its operator can never read a plan's content from what the relay stores and forwards. A relay that also serves the app could serve an altered one, so how the app reaches people without passing through the operator is Q80. Which plans exist, who connects and when, and how large changes are stay visible to the operator, as an accepted limit (Q79).
 - **Tree integrity:** grouping uses a move operation that can't create cycles under concurrent edits. Concurrent tree moves are a known CRDT problem with published solutions _(recalled)_, and naive implementations get it wrong.
 - **Scale:** up to a few hundred items per plan, with a few dozen visible at once. Ordinary DOM or SVG rendering should be enough _(priors)_. Grouping and filtering keep views readable.
 - **Self-hosting:** one container image serving the static app, the relay, and snapshot storage on local disk. The same relay runs on one person's computer for a pilot (Q64).

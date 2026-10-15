@@ -100,6 +100,21 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
+### Q80: Keeping a relay's operator out of the app's code
+- Context: Requirement 30, Q79 and the backlog's theme N. Q79 put the app's code in scope: the operator must not be able to read a plan through app code the relay serves. Its option (e), a hash the app shows about itself, doesn't work, since an altered app would show the real hash. Facts that shape the choice:
+  - The relay always serves the app; `-static` only swaps in another file.
+  - Links send people to the relay's own copy of the app, unless the page and the relay are both https (ADR 0018).
+  - The app opened as a file from disk can already use a relay (`-allow-file-pages`).
+  - The release's `SHA256SUMS` and attestations cover only the relay downloads, not the app's HTML, and the Pages build isn't attested.
+  - Browsers have no built-in way to check a page against a published hash before running it _(recalled)_.
+  - On the hosted demo relay, the project is both the relay's operator and the app's publisher. Keeping the two apart protects strangers only as far as the published app can be checked against its public source, which needs the attestation above.
+- Options:
+  - (a) **The app never comes from the relay.** People open it from the public build, for an https relay, or from the release's HTML file, checked once against a published, attested hash, for any relay, including a laptop over plain http. The relay gains a mode that serves no app, and links name the app and the relay separately. Costs: a pilot's colleagues download and open a file instead of opening an address, and the release and the Pages build gain the app's checksum and attestation.
+  - (b) **The relay keeps serving the app, and trusting its operator is stated as the condition,** as ADR 0017 and the relay's README already say. Only the hosted demo relay uses (a).
+  - (c) **(b), plus a check outside the page:** fetch the page, for example with `curl`, and compare it with the published hash. It catches an operator who swaps the app for everyone. It misses one who serves the altered app only to the person they're after, so it promises more than it delivers _(priors)_.
+- Recommendation: (a), the default on the hosted demo relay and available on every relay, with (b) stated plainly for a relay that serves the app. Only (a) makes Q79's property true; (b) is where it isn't, and people choose it knowingly. A company's own relay is run by its IT, who already control the computers the app runs on _(priors)_. A pilot's laptop is run by one of the planners. (c) is left out, since a check that misses the targeted case invites false confidence.
+- Status: open. PM, 2026-10-15: decided after the threat model. Sprint 14's slice 1 rewrites this entry from its findings, and slice 5 builds the answer. Whatever the answer, the hosted demo relay serves no app (Q79), so a relay mode that serves no app and a checksum and attestation for the app's HTML are built anyway.
+
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -496,6 +511,7 @@ Entry format:
 - Recommendation: (a) now and (d) later. The connection pill says plainly what offline means ("7 changes not shared yet"). Mockups: artboards 4 and 5.
 - Status: answered 2026-10-08: (a). Offline is always allowed and merges automatically, and "Since you were away" shows what happened. (d), keeping offline changes as a scenario, waits for scenarios. M2: the connection pill in sprint 11, "Since you were away" in its own sprint (Q65).
   - The connection pill built in sprint 11, slice 4: Live, Reconnecting… after 3 seconds, and Offline with the number of cards not shared yet, louder after an hour or 25 cards ("Others may be changing the same cards").
+  - PM, 2026-10-15, planning sprint 14: "Since you were away" is a quiet offer. Changed cards get markers, and a notice says "12 changes by Ada and Bo since you were last here · Show". The panel opens by itself only when one of your own changes didn't stick. It moved to sprint 15, after the relay's threat model.
 
 ### Q60: Two people reaching for one card
 - Context: Requirements 2, 3 and 31. In a live session, two people can drag the same card within the same second. Today's schema leaves a single-valued property holding two values (L1 in `merge-results.md`). After the schema change, one value wins.
@@ -514,6 +530,7 @@ Entry format:
 - Recommendation: (a), (c) and (e). The spike showed card-anchored presence works across pivots, and following a view, not just a scroll position, is what a pivoting board needs. Mockups: artboards 1 and 3.
 - Status: answered 2026-10-08: (a), (c) and (f). Card-anchored pointers, selections and drags, avatars, and the cursor setting (Everyone, Driver only, None). No following. M2 sprint 12.
   - Built in sprint 12, slices 1 and 2 (ADR 0019, amended). Avatars sit beside the connection pill, one per person however many tabs they have. Clicking them opens a menu with I'm driving, your name, and **Pointers to show**. A pointer sits on the same card, at the same spot, in each person's own view. A selection outlines every copy of a card in its person's color. A card that's off screen, or inside a collapsed group, shows nothing. The cursor setting quiets pointers only: avatars and selections always show. It's kept per browser.
+  - Built in sprint 14, slice 0: opening a share link now asks for your name, as the entry says, when this browser has none yet. "Not now" skips it until the next share link this browser opens, and the avatar menu still names you later. Until then, people joining showed as "Someone".
 
 ### Q62: Who can open a shared plan
 - Context: Requirement 30, the fixed rule that the relay never reads plan content, and the out-of-scope list (no accounts or permissions). The link is the key. Sprint 9's relay accepted an update from someone holding the wrong key, because it can't tell. Write tokens fix that, and also make view-only links possible.
@@ -549,6 +566,7 @@ Entry format:
 - Options: (a) add these to the requirements as M2 items, with the build plan in `docs/plans/m2-plan.md`; (b) keep M2 at requirements 30–32, and leave the rest for later.
 - Recommendation: (a). Without "since you were away" and history, the PM's three priorities (live collisions, who changed what, offline divergence) are answered only by "it merges". The build plan is four sprints, each ending in something usable.
 - Status: answered 2026-10-08: (a), with "since you were away" and history as additional sprints. M2 is now five sprints (`docs/plans/m2-plan.md`): foundations, the relay, seeing each other, then history, then "since you were away". Following is out (Q61). The requirements gain 33–36.
+  - 2026-10-15: M2 is now six sprints. The PM put the relay's threat model and the hosted demo relay first, in sprint 14, and "since you were away" moved to sprint 15.
 
 ### Q64: A relay for the public demo
 - Context: Requirement 30, Q31, and Q52 and Q53 (optimize for strangers arriving from a public link). GitHub Pages can't run a relay. The PM left this for after the research (2026-10-08). The options are costed in `docs/research/collaboration/relay-and-sync.md`.
@@ -578,6 +596,7 @@ Entry format:
     If the PM doesn't want to run a hosted relay at all, sprint 14's slice drops, and the public build offers (d), (e) and (f).
   - It becomes requirement 37 and an amendment to ADR 0017.
   - (e) and (f) built in sprint 12: `docs/hosting.md` covers a pilot on a laptop and moving it to a server (slice 3), and changes by file is ADR 0022 (slice 4).
+  - PM, 2026-10-15: yes to (a). Engineering writes the relay changes, the privacy note and the deploy steps. The PM creates the host account and runs the first deploy. Sprint 14, slice 6.
 
 ### Q66: What Open, Import and New do on a plan that isn't shared
 - Context: Requirement 34 and Q58 cover shared plans: Open, Import and New blank plan make a new plan, so nobody overwrites a shared board. Sprint 10 brings several plans per browser before anything is shared, so local plans need a rule too. Today these replace the board after asking (Q26, Q51).
@@ -682,3 +701,26 @@ Entry format:
 - Status: answered 2026-10-10: "let's accept".
   - Engineering's reading, which the PM confirmed the same day: the PM accepts sprints 3–13 and the blank-plan slice now, and acceptance works as (b) from here on. The PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions feed the backlog instead of gating.
   - Recorded in `CLAUDE.md`, the backlog and the sprint 11 plan.
+
+### Q79: What "the relay operator can never read a plan" covers
+- Context: Requirements 30 and 37, the architecture rule that the relay only sees encrypted payloads, ADRs 0017 and 0018, and the backlog's theme N. On 2026-10-15 the PM asked for a threat model of the relay and its encryption, in a formal language like TLA+. The property has three readings, and the scope of the work depends on which is meant:
+  1. **Content:** card titles, values, links, people's names and history. Everything the relay stores or forwards is sealed in the browser, and engineering believes this reading holds.
+  2. **Code:** a relay that also serves the app could serve an altered app that reads the key from the link (ADR 0017). Links send people to the relay's own copy of the app, unless the page and the relay are both https (ADR 0018). So this covers every pilot on a laptop and most self-hosted relays. Closing it changes the architecture; a proof alone doesn't.
+  3. **Metadata:** which plans exist, who connects, from which address, when, and how large each change is. The relay sees all of this by design, and change sizes hint at how much a plan moved.
+- Options:
+  - **Scope:** (a) content only, with code and metadata stated as accepted limits; (b) content and code; (c) all three.
+  - **Code, if it's in scope:** (d) the app never comes from the relay. It's always opened from a published, attested build, and the relay carries only data. (e) The relay keeps serving the app, and the app shows its build's hash, so anyone can check it against the release's `SHA256SUMS` (Q77).
+  - **Tools:** (f) TLA+ for all of it; (g) a protocol verifier (ProVerif or Tamarin) for secrecy, and TLA+ for the relay's rooms and sync; (h) a written threat model with no formal spec.
+  - **When:** (i) before sprint 14's hosted demo relay; (j) after M2.
+- Recommendation: (b), (g) and (i).
+  - **(b):** reading 2 is the likeliest way an operator reads a plan. A threat model that leaves it out would certify the part that's already strongest. The hosted relay can have (d) at little cost, since the public build on Pages and an https relay already keep the app and the relay apart. A laptop pilot over plain http can't have (d), because an https page can only reach an https or `localhost` relay (Q70), so it gets (e). The threat model then says plainly what (e) leaves open: a check is only as good as the people who make it.
+  - **Metadata:** the relay's README and `SECURITY.md` already list it as visible. The threat model records it as an accepted limit, rather than adding padding or hiding addresses, which a relay can't do.
+  - **(g):** TLA+ is strong on concurrent state machines, but it has no built-in attacker or cryptography, so both would be written by hand. ProVerif and Tamarin are built to prove secrecy against an active network attacker _(recalled)_. The tools are engineering's choice, recorded in an ADR; they're listed here because the PM named TLA+.
+  - **(i):** the hosted relay makes the project itself the operator of strangers' plans. The written model plus the protocol proof is about a slice, and the TLA+ spec of the relay is another _(priors)_.
+- Status: answered 2026-10-15: (b), (g) and (i), as recommended.
+  - **What the property means:** the relay's operator can never read a plan's content, neither from what the relay stores and forwards, nor through app code the relay serves. Metadata stays visible, as an accepted limit the threat model writes down.
+  - **Code:** (d) for the hosted demo relay, and (e) wherever a relay serves the app, as on a pilot's laptop over plain http.
+    - Superseded by Q80, the same day. The PR's self-review found that (e) can't work as engineering described it: an altered app would show the real build's hash, so a hash the page shows about itself proves nothing against the operator. (d) also costs more than "little": the relay always serves the app, with no flag to turn that off, and the Pages build isn't attested. The rest of this answer stands.
+  - **Tools:** a protocol verifier for secrecy and TLA+ for the relay, with the choice between ProVerif and Tamarin made in an ADR.
+  - **When:** in sprint 14, before its hosted demo relay slice. Sprint 14's planning sets the slices.
+  - Sprint 14's planning (2026-10-15): the written model, a protocol proof, and TLA+ are slices 1–3. The PM widened the scope to collaboration correctness, offline work included. That adds slice 4, loop repair in TLA+ and random schedules run against the real code (`docs/plans/sprint-14-plan.md`).

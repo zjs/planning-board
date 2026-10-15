@@ -12,7 +12,7 @@ M2 is requirements 30–37, as sprint 9 reshaped them. The PM's answers (2026-10
 - **Q65:** history and "since you were away" as sprints of their own;
 - **Q64:** fallbacks where a hosted relay is blocked: the relay from a pilot's laptop, and changes by file. No WebRTC.
 
-It's five sprints. Each ends in something the PM can use, and the first two are worth shipping even if M2 stopped there.
+It's six sprints, since the PM put the relay's threat model and hosted relay before "since you were away" (2026-10-15). Each ends in something the PM can use, and the first two are worth shipping even if M2 stopped there.
 
 ## Sprint 10: foundations, still single-user
 
@@ -61,7 +61,22 @@ What it proves: anyone can find out who changed what, and when, in their own tim
 | 2 | **Activity:** a feed for the whole plan, by day, filterable by person, with Restore on deletions | See what happened this week, and restore a deleted group. |
 | 3 | **A card's history** in the inspector, and "last changed by" | See who moved this card to Q3, and when. |
 
-## Sprint 14: since you were away
+## Sprint 14: the relay, made safe to host
+
+What it proves: the relay's operator can't read a plan, and sharing and offline work behave as claimed, each checked formally in CI. Strangers can then share from the public build.
+
+The PM reordered M2 on 2026-10-15: security first, then "since you were away". The plan is `docs/plans/sprint-14-plan.md`.
+
+| # | Slice | You can do this afterwards |
+|---|---|---|
+| 1 | **The threat model** (Q79, the backlog's theme N), in words, with ADR 0024 for the tools | Read what an operator can and can't do. Answer Q80. |
+| 2 | **The protocol proof:** the operator can't read or forge content | See CI prove it. |
+| 3 | **TLA+: sync, offline included** | See CI check convergence, and that no offline edit is lost. |
+| 4 | **Loop repair in TLA+, and random schedules against the real code** | See CI check that nesting never leaves a cycle. |
+| 5 | **Keeping the operator out of the app** (Q80) | Use a relay that serves no app, from a checked build. |
+| 6 | **A hosted demo relay** (Q64 a): quotas, expiry after 30 idle days, rate limits, a privacy note | A stranger shares a plan from the public build. |
+
+## Sprint 15: since you were away
 
 What it proves: coming back to a shared plan, you know what happened, and nothing of yours is lost without a way back.
 
@@ -69,7 +84,8 @@ What it proves: coming back to a shared plan, you know what happened, and nothin
 |---|---|---|
 | 1 | **Change markers on the board,** built so that scenario compare (requirement 23) can reuse them | See which cards changed, and where a moved card was. |
 | 2 | **The panel** (Q59, requirement 35): others' changes, and yours that didn't stick, with "Use mine" and "Restore", and stepping through them on the board | Come back after a day, and step through what changed. |
-| 3 | **A hosted demo relay** (Q64 a): quotas, expiry after 30 idle days, rate limits, a privacy note. It's dropped if the PM decides not to run one | A stranger shares a plan from the public build. |
+
+It's a quiet offer (the PM, 2026-10-15): markers and a notice, "12 changes by Ada and Bo since you were last here · Show". The panel opens by itself only when one of your own changes didn't stick.
 
 ## Risks
 
@@ -77,4 +93,4 @@ What it proves: coming back to a shared plan, you know what happened, and nothin
 - **Presence across pivots is new.** No other tool does it, so the sprint 12 session matters more than usual.
 - **Testing needs more than one person.** The automated two-browser test from the spike carries over, but feel needs people.
 - **History kept forever grows forever.** It's about 6 MB after 100,000 changes _(priors)_, loaded after the board, so opening a plan stays fast. If it becomes a problem, older history can move to its own snapshot without losing anything.
-- **Contention and the conflicts panel wait five sprints.** They're independent of M2, and could be slotted in between sprints if the PM prefers.
+- **Contention and the conflicts panel wait six sprints.** They're independent of M2, and could be slotted in between sprints if the PM prefers.

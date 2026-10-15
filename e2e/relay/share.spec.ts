@@ -34,6 +34,19 @@ async function share(page: Page, name: string): Promise<{ edit: string; view: st
   return { edit, view };
 }
 
+/** Open a share link in a browser with no name yet: it asks for one (Q61), which `name` answers, or "Not now". */
+async function openLink(page: Page, link: string, name?: string) {
+  await page.goto(link);
+  const dialog = page.getByTestId('name-dialog');
+  if (name === undefined) {
+    await dialog.getByRole('button', { name: 'Not now' }).click();
+  } else {
+    await dialog.getByTestId('share-name').fill(name);
+    await dialog.getByRole('button', { name: 'Continue' }).click();
+  }
+  await expect(dialog).toHaveCount(0);
+}
+
 const id = 'sso-enforcement-per-workspace';
 
 test('share a plan, open its links on two other computers, and edit it together', async ({ browser }) => {
@@ -49,9 +62,10 @@ test('share a plan, open its links on two other computers, and edit it together'
   // The key leaves the address bar once it's saved.
   expect(new URL(ada.url()).hash).toMatch(/^#plan=/);
 
-  // Bo opens the edit link: the whole plan arrives, with its name.
+  // Bo opens the edit link, and is asked for a name: the whole plan arrives, with its name, and Ada sees Bo.
   const bo = await person(browser);
-  await bo.goto(links.edit);
+  await openLink(bo, links.edit, 'Bo');
+  await expect(ada.getByTestId('avatar').nth(1)).toHaveAttribute('data-person', 'Bo');
   await expect(bo.getByTestId('plan-name')).toHaveText('Sample plan');
   await expect(bo.getByText('SSO enforcement per workspace').first()).toBeVisible();
   expect(new URL(bo.url()).hash).toMatch(/^#plan=/);
@@ -64,9 +78,14 @@ test('share a plan, open its links on two other computers, and edit it together'
   await dragTo(bo, card(cell(bo, 'billing', 'q3'), id), cell(bo, 'billing', 'q4'));
   await expect(card(cell(ada, 'billing', 'q4'), id)).toBeVisible();
 
-  // Cy has the view link: the plan, live, and no way to change it.
+  // Cy has the view link, and skips giving a name: the plan, live, and no way to change it.
   const cy = await person(browser);
-  await cy.goto(links.view);
+  await openLink(cy, links.view);
+  // Not now holds until the next link: opened again, in another tab, it asks again.
+  const again = await cy.context().newPage();
+  await again.goto(links.view);
+  await expect(again.getByTestId('name-dialog')).toBeVisible();
+  await again.close();
   await expect(cy.getByTestId('read-only-banner')).toContainText('view link');
   await expect(cy.getByTestId('connection-state')).toHaveText('View only');
   await pickAxes(cy, 'time', 'system');
@@ -99,11 +118,13 @@ test('opening the edit link where only the view link was held lets you edit', as
   const links = await share(ada, 'Ada');
 
   const bo = await person(browser);
-  await bo.goto(links.view);
+  await openLink(bo, links.view, 'Bo');
   await expect(bo.getByTestId('read-only-banner')).toBeVisible();
+  // Named once, Bo isn't asked again.
   await bo.goto(links.edit);
   await bo.reload();
   await expect(bo.getByTestId('plan-name')).toHaveText('Sample plan');
+  await expect(bo.getByTestId('name-dialog')).toHaveCount(0);
   await expect(bo.getByTestId('read-only-banner')).toHaveCount(0);
   await expect(bo.getByTestId('connection-state')).toHaveText('Live');
   // Still one plan: the link opened the one Bo had.
@@ -116,7 +137,7 @@ test('replacing a shared plan from a file changes it for everyone, and undo puts
   await ada.locator('.empty-state').getByRole('button', { name: 'Load sample plan' }).click();
   const links = await share(ada, 'Ada');
   const bo = await person(browser);
-  await bo.goto(links.edit);
+  await openLink(bo, links.edit, 'Bo');
   await expect(bo.getByText('SSO enforcement per workspace').first()).toBeVisible();
 
   const file = {
@@ -145,7 +166,7 @@ test('offline: keep working, see what isn’t shared yet, and both boards match 
   await ada.locator('.empty-state').getByRole('button', { name: 'Load sample plan' }).click();
   const links = await share(ada, 'Ada');
   const bo = await person(browser);
-  await bo.goto(links.edit);
+  await openLink(bo, links.edit, 'Bo');
   await expect(bo.getByTestId('connection-state')).toHaveText('Live');
   await pickAxes(ada, 'time', 'system');
   await pickAxes(bo, 'time', 'system');

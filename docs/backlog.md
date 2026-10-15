@@ -35,7 +35,26 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four were accepted on 2026-10-10. Sprint 14, since you were away, is next. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
+**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four were accepted on 2026-10-10. Sprint 14 makes the relay safe to host ([`docs/sprint-14.md`](sprint-14.md), theme N), and sprint 15 is since you were away. Sprint 9 explored and planned M2 ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is six sprints (10–15, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, the relay made safe to host, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37). On 2026-10-15, the PM put the safe relay first.
+
+### N. Showing the relay can't read a plan
+
+The relay may never read plan content: it's an architecture rule, and ADRs 0017 and 0018, `SECURITY.md` and the relay's README all claim it. Nothing has checked that claim beyond the relay's and the app's own tests.
+
+**Feedback** (the PM, 2026-10-15):
+
+- *A threat model, formally.* "Can we queue a threat model analysis for the relay, including the encryption, using a formal language like TLA+? The operator of the relay should never be able to read the data."
+
+**Generalization:** a threat model treats the relay's operator as the attacker and checks each thing they control against the claim:
+
+- **What it stores and forwards:** updates, snapshots and presence, sealed with XChaCha20-Poly1305, with the room, the kind and a snapshot's `upto` bound in as additional data (ADR 0018).
+- **What it decides:** numbering, timestamps, epochs, retiring a room, and the write token it sees on every connection. That one is about writing, not reading: an operator who also holds a view link could write (ADR 0018).
+- **The code, when it serves the app:** it could serve an altered app that reads the key from the link (ADR 0017). Today that covers every pilot on a laptop and most self-hosted relays, and no proof about the protocol reaches it.
+- **Metadata:** which plans exist, who connects, from where and when, and how large each change is.
+
+Formal methods fit two parts. The first is secrecy and the binding of additional data under an active attacker, where a protocol verifier such as ProVerif or Tamarin is the usual tool. The second is the relay as a state machine: retiring, epochs and cursors after a restore, view links that can't write, and nothing acknowledged being lost. That's TLA+'s home ground. → [Q79](questions.md#q79-what-the-relay-operator-can-never-read-a-plan-covers)
+
+**Lands:** in sprint 14, before its hosted demo relay, which makes the project itself an operator for strangers' plans. The PM answered Q79 on 2026-10-15: the operator must never read a plan's content, either from what the relay stores and forwards or through app code it serves. Metadata is an accepted limit. How the app's code is kept out of the operator's hands is Q80, reopened after the answer's option (e) turned out not to work. → [Q80](questions.md#q80-keeping-a-relays-operator-out-of-the-apps-code) The work uses a protocol verifier for secrecy and TLA+ for the relay. Sprint 14 ([`docs/sprint-14.md`](sprint-14.md)) is planned around it, on 2026-10-15. The PM widened its scope to the correctness of collaboration, offline work included. Q80 is answered after the written model.
 
 ### H. Arranging and moving cards
 
@@ -68,7 +87,7 @@ No decision needed: each one goes into the next sprint. The table keeps the ones
 | Dependency lines are drawn over the pinned row and column headers when a card is scrolled under them, so a line seems to point at a header. They should be clipped to the scrolling area. | Engineering, 2026-10-01 | Shipped in sprint 4, slice 3 |
 | Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
 | On a shared plan, the board went blank for everyone else once a second person joined. The layer that draws pointers covered the board, with the board's background color. | PM testing of sprint 12, 2026-10-09 | Fixed 2026-10-09 |
-| Opening a share link never asks for a name, as Q61 says it should, so the person shows as "S" (Someone) to others and "Y" (You) to themselves until they name themselves from the avatar menu. | Engineering, 2026-10-09, from the same test | Next sprint 13 slice |
+| Opening a share link never asks for a name, as Q61 says it should, so the person shows as "S" (Someone) to others and "Y" (You) to themselves until they name themselves from the avatar menu. | Engineering, 2026-10-09, from the same test | Fixed in sprint 14, slice 0 |
 
 ## Shipped themes
 
@@ -253,6 +272,7 @@ Sprints 3 to 13 and the blank-plan slice were accepted on 2026-10-10 (Q78). The 
 - **Sprint 11: the relay** ([`docs/sprint-11.md`](sprint-11.md)) shipped on 2026-10-08: the relay for real, as downloads and a container (Q69); loop repair (ADR 0004); share and join, with Can edit and Can view links (Q62, Q68, Q70); and the connection pill, with offline work (Q59). Demo: [`docs/demos/sprint-11.md`](demos/sprint-11.md).
 - **Sprint 12: seeing each other** ([`docs/sprint-12.md`](sprint-12.md)) shipped on 2026-10-08: presence and the driver (Q61, Q71, ADR 0019), drag intent and collisions (Q60), making new links (Q62) and hosting docs (`docs/hosting.md`), and changes by file (Q64 f, Q72, ADR 0022). Demo and session script: [`docs/demos/sprint-12.md`](demos/sprint-12.md).
 - **Sprint 13: history** ([`docs/sprint-13.md`](sprint-13.md)) shipped on 2026-10-09: the plan diff (ADR 0020), a history document per plan, Activity with Restore (Q74), and a card's history; history on a shared plan starts at the share (Q73). Demo: [`docs/demos/sprint-13.md`](demos/sprint-13.md).
+- **Sprint 14: the relay, made safe to host** ([`docs/sprint-14.md`](sprint-14.md)), planned on 2026-10-15: a threat model of the relay (theme N, Q79), formal checks of the protocol, of sync with offline work, and of loop repair, keeping the operator out of the app's code (Q80), and a hosted demo relay (Q64 a). Since you were away follows in sprint 15.
 - **Later candidates:**
   - **Component contention and the conflicts panel** (requirements 17–20):
     - the panel follows the view (Q40);
@@ -275,8 +295,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 **Open**
 
 - **Check the app in Firefox and Safari.** Open since sprint 1, and it matters more now that the app is public. Needs a person at a Mac. The repository review (2026-10-09) ranks it higher: the technical visitors most likely to find the project are likelier than most to use Firefox _(priors)_.
-- **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02; still blocked on 2026-10-09, typescript-eslint 8.71.1).
-- **`braces` advisory (GHSA-vfj7-8cjw-p6xm).** `npm audit` reports three high-severity findings, all one advisory in `braces`, which reaches the build through `vite-plugin-singlefile` and `micromatch`. No patched `braces` exists yet, and audit's only fix is a downgrade to `vite-plugin-singlefile` 0.9. It runs only at build time, on the project's own globs, so nothing in the app or its users' plans can reach it. Take the fix when a patched release ships (maintenance pass, 2026-10-07; still none on 2026-10-09, braces 3.0.3).
+- **TypeScript 7.** Released, but typescript-eslint supports TypeScript only below 6.1 for now. Upgrade once it does; until then the project stays on 6.0 (housekeeping, 2026-10-02; still blocked on 2026-10-15: TypeScript 7.0.2 is out, and typescript-eslint 8.71.2 still requires TypeScript below 6.1).
+- **`braces` advisory (GHSA-vfj7-8cjw-p6xm).** `npm audit` reports three high-severity findings, all one advisory in `braces`, which reaches the build through `vite-plugin-singlefile` and `micromatch`. No patched `braces` exists yet, and audit's only fix is a downgrade to `vite-plugin-singlefile` 0.9. It runs only at build time, on the project's own globs, so nothing in the app or its users' plans can reach it. Take the fix when a patched release ships (maintenance pass, 2026-10-07; still none on 2026-10-15, braces 3.0.3).
 - **Node 26 in CI.** CI and the docs use Node 22, which reaches end of life on 2027-04-30. Node 24 moves to maintenance on 2026-10-20, and Node 26 becomes Active LTS on 2026-10-28 (nodejs/Release, checked 2026-10-08). Skip 24: move CI and `CLAUDE.md` to Node 26 in a maintenance pass after 2026-10-28, and check the build and tests on it.
 - **Session notes.** Fold in notes from the sprint 1 and 2 sessions, and from the combined sprint 3–6 session, as they arrive.
 - **The repository review, 2026-10-09** ([`reviews/2026-10-09-repo-hygiene.md`](reviews/2026-10-09-repo-hygiene.md)), at the PM's request: how the repo reads to a technical stranger. Decisions are Q75–Q78, plus Q49's automation.
@@ -296,6 +316,13 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
   - **In use:** commit subjects say what changed, with the sprint in brackets at the end.
 
 **Done**
+
+- **Maintenance pass, 2026-10-15,** before planning sprint 14. Read-only. Its one update, Dependabot's #93, merges on its own.
+  - **Dependabot:** one PR, #93, @types/node 26.6.4 → 26.6.5.
+  - **npm:** nothing else to take. TypeScript 7 and `braces` are still blocked.
+  - **CI actions:** all on current majors, and the Docker actions are pinned by SHA.
+  - **Node:** 22 is still supported, and the move to Node 26 after 2026-10-28 holds.
+  - **Elsewhere:** no open issues.
 
 - **Third-party notices, and which relay is running** (2026-10-09), a housekeeping slice before sprint 14, from the user docs review:
   - **Notices:** the app's build lists every package it bundles, with its license text, inside the page; the cheat sheet shows them under **Open-source licenses**, and a bundled package with no license file fails the build (ADR 0001, amended). The relay embeds the notices for Go and its modules, prints them with the app's using `-licenses`, and each download carries them as `THIRD-PARTY-NOTICES.txt`; a test fails if `go.mod` names a module they don't (ADR 0017, amended).
