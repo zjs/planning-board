@@ -69,6 +69,41 @@ function LinkField({ label, link, hint, testId }: { label: string; link: string;
 type RelayStep = { kind: 'looking' } | { kind: 'here'; info: RelayInfo } | { kind: 'ask' };
 
 /**
+ * Your name on shared plans (Q61), asked when you share a plan or open a
+ * share link, until this browser has one. `onSkip` offers "Not now", which
+ * leaves you unnamed until the next link, or until the avatar menu names you.
+ */
+export function NameForm({ onNamed, onSkip }: { onNamed: () => void; onSkip?: () => void }) {
+  const [name, setName] = useState(() => myName() ?? '');
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (name.trim() === '') return;
+        setMyName(name);
+        onNamed();
+      }}
+    >
+      <label className="share-field">
+        Your name
+        <input value={name} onChange={(e) => setName(e.target.value)} data-testid="share-name" autoComplete="name" />
+      </label>
+      <p className="share-note">Others sharing a plan with you see it. It’s kept in this browser only.</p>
+      <div className="dialog-actions">
+        {onSkip && (
+          <button type="button" onClick={onSkip}>
+            Not now
+          </button>
+        )}
+        <button type="submit" className="primary" disabled={name.trim() === ''}>
+          Continue
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/**
  * Share a plan (requirements 30 and 33, ADR 0018): your name, once per
  * browser; the relay; then the plan's Can edit and Can view links. A plan
  * that's already shared opens straight to its links.
@@ -101,7 +136,6 @@ export function ShareDialog({
   onSaveFile: () => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState(() => myName() ?? '');
   const [named, setNamed] = useState(() => myName() !== null);
   const [relayStep, setRelayStep] = useState<RelayStep>({ kind: 'looking' });
   const [typed, setTyped] = useState(() => rememberedRelay() ?? '');
@@ -155,25 +189,7 @@ export function ShareDialog({
   if (!named) {
     return (
       <Dialog title="Share this plan" onClose={onClose} testId="share-dialog">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (name.trim() === '') return;
-            setMyName(name);
-            setNamed(true);
-          }}
-        >
-          <label className="share-field">
-            Your name
-            <input value={name} onChange={(e) => setName(e.target.value)} data-testid="share-name" autoComplete="name" />
-          </label>
-          <p className="share-note">Others sharing a plan with you see it. It’s kept in this browser only.</p>
-          <div className="dialog-actions">
-            <button type="submit" className="primary" disabled={name.trim() === ''}>
-              Continue
-            </button>
-          </div>
-        </form>
+        <NameForm onNamed={() => setNamed(true)} />
       </Dialog>
     );
   }

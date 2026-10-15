@@ -26,7 +26,7 @@ Sprint 9 asked whether this board can be edited by several people at once, throu
    - one container to self-host.
 5. **History in its own encrypted document,** and one plan diff (ADR 0020) shared by history, "since you were away" and scenario compare.
 
-**The cost** is five sprints (sprints 10–14, [`m2-plan.md`](../../plans/m2-plan.md)). Sprint 10 is still single-user and worth having on its own: the schema, more than one plan per browser, and two tabs syncing.
+**The cost** is five sprints (sprints 10–14, [`m2-plan.md`](../../plans/m2-plan.md)). Sprint 10 is still single-user and worth having on its own: the schema, more than one plan per browser, and two tabs syncing. Since then, M2 became six sprints: on 2026-10-15 the PM put the relay's threat model and a hosted demo relay first, in sprint 14.
 
 ## What the PM decided (2026-10-08)
 
