@@ -54,7 +54,7 @@ The relay may never read plan content: it's an architecture rule, and ADRs 0017 
 
 Formal methods fit two parts. The first is secrecy and the binding of additional data under an active attacker, where a protocol verifier such as ProVerif or Tamarin is the usual tool. The second is the relay as a state machine: retiring, epochs and cursors after a restore, view links that can't write, and nothing acknowledged being lost. That's TLA+'s home ground. → [Q79](questions.md#q79-what-the-relay-operator-can-never-read-a-plan-covers)
 
-**Lands:** queued, not yet scheduled. It's a candidate to run before sprint 14's hosted demo relay, which makes the project itself an operator for strangers' plans.
+**Lands:** in sprint 14, before its hosted demo relay, which makes the project itself an operator for strangers' plans. The PM answered Q79 on 2026-10-15: the operator can never read a plan's content, neither from what the relay stores and forwards nor through app code it serves. Metadata is an accepted limit. The work uses a protocol verifier for secrecy and TLA+ for the relay. Sprint 14's planning sets the slices.
 
 ### H. Arranging and moving cards
 

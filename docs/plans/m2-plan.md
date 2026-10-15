@@ -71,6 +71,8 @@ What it proves: coming back to a shared plan, you know what happened, and nothin
 | 2 | **The panel** (Q59, requirement 35): others' changes, and yours that didn't stick, with "Use mine" and "Restore", and stepping through them on the board | Come back after a day, and step through what changed. |
 | 3 | **A hosted demo relay** (Q64 a): quotas, expiry after 30 idle days, rate limits, a privacy note. It's dropped if the PM decides not to run one | A stranger shares a plan from the public build. |
 
+Before slice 3, a threat model of the relay (Q79, the backlog's theme N): a written model, a protocol verifier for secrecy, and a TLA+ spec of the relay. Sprint 14's planning decides how it splits into slices.
+
 ## Risks
 
 - **The schema migration is the riskiest step,** since it touches every saved board. The compatibility gate (ADR 0005) exists for this, and the migration ships alone in sprint 10, slice 1.

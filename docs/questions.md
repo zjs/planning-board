@@ -99,23 +99,6 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
-### Q79: What "the relay operator can never read a plan" covers
-- Context: Requirements 30 and 37, the architecture rule that the relay only sees encrypted payloads, ADRs 0017 and 0018, and the backlog's theme N. On 2026-10-15 the PM asked for a threat model of the relay and its encryption, in a formal language like TLA+. The property has three readings, and the scope of the work depends on which is meant:
-  1. **Content:** card titles, values, links, people's names and history. Everything the relay stores or forwards is sealed in the browser, and engineering believes this reading holds.
-  2. **Code:** a relay that also serves the app could serve an altered app that reads the key from the link (ADR 0017). Links send people to the relay's own copy of the app, unless the page and the relay are both https (ADR 0018). So this covers every pilot on a laptop and most self-hosted relays. Closing it changes the architecture; a proof alone doesn't.
-  3. **Metadata:** which plans exist, who connects, from which address, when, and how large each change is. The relay sees all of this by design, and change sizes hint at how much a plan moved.
-- Options:
-  - **Scope:** (a) content only, with code and metadata stated as accepted limits; (b) content and code; (c) all three.
-  - **Code, if it's in scope:** (d) the app never comes from the relay. It's always opened from a published, attested build, and the relay carries only data. (e) The relay keeps serving the app, and the app shows its build's hash, so anyone can check it against the release's `SHA256SUMS` (Q77).
-  - **Tools:** (f) TLA+ for all of it; (g) a protocol verifier (ProVerif or Tamarin) for secrecy, and TLA+ for the relay's rooms and sync; (h) a written threat model with no formal spec.
-  - **When:** (i) before sprint 14's hosted demo relay; (j) after M2.
-- Recommendation: (b), (g) and (i).
-  - **(b):** reading 2 is the likeliest way an operator reads a plan. A threat model that leaves it out would certify the part that's already strongest. The hosted relay can have (d) at little cost, since the public build on Pages and an https relay already keep the app and the relay apart. A laptop pilot over plain http can't have (d), because an https page can only reach an https or `localhost` relay (Q70), so it gets (e). The threat model then says plainly what (e) leaves open: a check is only as good as the people who make it.
-  - **Metadata:** the relay's README and `SECURITY.md` already list it as visible. The threat model records it as an accepted limit, rather than adding padding or hiding addresses, which a relay can't do.
-  - **(g):** TLA+ is strong on concurrent state machines, but it has no built-in attacker or cryptography, so both would be written by hand. ProVerif and Tamarin are built to prove secrecy against an active network attacker _(recalled)_. The tools are engineering's choice, recorded in an ADR; they're listed here because the PM named TLA+.
-  - **(i):** the hosted relay makes the project itself the operator of strangers' plans. The written model plus the protocol proof is about a slice, and the TLA+ spec of the relay is another _(priors)_.
-- Status: open.
-
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -697,3 +680,24 @@ Entry format:
 - Status: answered 2026-10-10: "let's accept".
   - Engineering's reading, which the PM confirmed the same day: the PM accepts sprints 3–13 and the blank-plan slice now, and acceptance works as (b) from here on. The PM accepts a sprint once they've used its build and found nothing blocking, and the tester sessions feed the backlog instead of gating.
   - Recorded in `CLAUDE.md`, the backlog and the sprint 11 plan.
+
+### Q79: What "the relay operator can never read a plan" covers
+- Context: Requirements 30 and 37, the architecture rule that the relay only sees encrypted payloads, ADRs 0017 and 0018, and the backlog's theme N. On 2026-10-15 the PM asked for a threat model of the relay and its encryption, in a formal language like TLA+. The property has three readings, and the scope of the work depends on which is meant:
+  1. **Content:** card titles, values, links, people's names and history. Everything the relay stores or forwards is sealed in the browser, and engineering believes this reading holds.
+  2. **Code:** a relay that also serves the app could serve an altered app that reads the key from the link (ADR 0017). Links send people to the relay's own copy of the app, unless the page and the relay are both https (ADR 0018). So this covers every pilot on a laptop and most self-hosted relays. Closing it changes the architecture; a proof alone doesn't.
+  3. **Metadata:** which plans exist, who connects, from which address, when, and how large each change is. The relay sees all of this by design, and change sizes hint at how much a plan moved.
+- Options:
+  - **Scope:** (a) content only, with code and metadata stated as accepted limits; (b) content and code; (c) all three.
+  - **Code, if it's in scope:** (d) the app never comes from the relay. It's always opened from a published, attested build, and the relay carries only data. (e) The relay keeps serving the app, and the app shows its build's hash, so anyone can check it against the release's `SHA256SUMS` (Q77).
+  - **Tools:** (f) TLA+ for all of it; (g) a protocol verifier (ProVerif or Tamarin) for secrecy, and TLA+ for the relay's rooms and sync; (h) a written threat model with no formal spec.
+  - **When:** (i) before sprint 14's hosted demo relay; (j) after M2.
+- Recommendation: (b), (g) and (i).
+  - **(b):** reading 2 is the likeliest way an operator reads a plan. A threat model that leaves it out would certify the part that's already strongest. The hosted relay can have (d) at little cost, since the public build on Pages and an https relay already keep the app and the relay apart. A laptop pilot over plain http can't have (d), because an https page can only reach an https or `localhost` relay (Q70), so it gets (e). The threat model then says plainly what (e) leaves open: a check is only as good as the people who make it.
+  - **Metadata:** the relay's README and `SECURITY.md` already list it as visible. The threat model records it as an accepted limit, rather than adding padding or hiding addresses, which a relay can't do.
+  - **(g):** TLA+ is strong on concurrent state machines, but it has no built-in attacker or cryptography, so both would be written by hand. ProVerif and Tamarin are built to prove secrecy against an active network attacker _(recalled)_. The tools are engineering's choice, recorded in an ADR; they're listed here because the PM named TLA+.
+  - **(i):** the hosted relay makes the project itself the operator of strangers' plans. The written model plus the protocol proof is about a slice, and the TLA+ spec of the relay is another _(priors)_.
+- Status: answered 2026-10-15: (b), (g) and (i), as recommended.
+  - **What the property means:** the relay's operator can never read a plan's content, neither from what the relay stores and forwards, nor through app code the relay serves. Metadata stays visible, as an accepted limit the threat model writes down.
+  - **Code:** (d) for the hosted demo relay, and (e) wherever a relay serves the app, as on a pilot's laptop over plain http.
+  - **Tools:** a protocol verifier for secrecy and TLA+ for the relay, with the choice between ProVerif and Tamarin made in an ADR.
+  - **When:** in sprint 14, before its hosted demo relay slice. Sprint 14's planning sets the slices.
