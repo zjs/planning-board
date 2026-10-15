@@ -35,7 +35,7 @@ The PM's answers (2026-10-08):
 - the public demo relay is decided after the research;
 - go deepest on live collisions, who changed what, and offline divergence.
 
-**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four were accepted on 2026-10-10. Sprint 14 makes the relay safe to host ([`docs/sprint-14.md`](sprint-14.md), theme N), and sprint 15 is since you were away. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is six sprints (10–15, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, the relay made safe to host, and since you were away. The PM put the safe relay first on 2026-10-15. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
+**Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four were accepted on 2026-10-10. Sprint 14 makes the relay safe to host ([`docs/sprint-14.md`](sprint-14.md), theme N), and sprint 15 is since you were away. Sprint 9 explored and planned M2 ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is six sprints (10–15, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, the relay made safe to host, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37). On 2026-10-15, the PM put the safe relay first.
 
 ### N. Showing the relay can't read a plan
 
@@ -317,7 +317,7 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
-- **Maintenance pass, 2026-10-15,** before planning sprint 14. Read-only; its one fix is merged in sprint 14, slice 0.
+- **Maintenance pass, 2026-10-15,** before planning sprint 14. Read-only. Its one update, Dependabot's #93, merges on its own.
   - **Dependabot:** one PR, #93, @types/node 26.6.4 → 26.6.5.
   - **npm:** nothing else to take. TypeScript 7 and `braces` are still blocked.
   - **CI actions:** all on current majors, and the Docker actions are pinned by SHA.

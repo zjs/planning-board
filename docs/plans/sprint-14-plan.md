@@ -41,7 +41,7 @@ M2's plan put "since you were away" in sprint 14, with the threat model (Q79) an
 
 Slices 2, 3 and 4 are independent of each other. Slice 5 waits for the PM's answer to Q80. Slice 6 needs slice 5's no-app mode, whatever Q80's answer is, because Q79 already settled that the hosted relay never serves the app.
 
-**The PM widened the formal scope in planning (2026-10-15):** collaboration correctness, including offline work, and not only the operator. It's scoped to code we wrote. Yjs's own merging is already proven in the literature _(recalled)_, so the specs model it abstractly, as a set of operations merged by union.
+**The PM widened the formal scope in planning (2026-10-15):** collaboration correctness, including offline work, and not only the operator. It's scoped to code we wrote. Yjs's own merging is assumed correct, as its authors argue _(recalled)_. It isn't verified here, so the specs model it abstractly, as a set of operations merged by union, and the threat model lists this as an assumption.
 
 ## How each slice is built
 
@@ -107,7 +107,6 @@ Slices 2, 3 and 4 are independent of each other. Slice 5 waits for the PM's answ
   - **after a restore,** a client whose cursor is ahead resends what's missing;
   - **writes:** a retired room accepts none, and neither does a connection without the token;
   - **after Make new links,** an old-link client's unshared edits stay on its own computer, as the "Link replaced" banner says;
-  - **idle expiry** (slice 6) never drops a room that has had a connection within its window.
 - **TLC** runs on small bounds in the "Formal" CI job. A real finding is fixed in `relay/` or `src/store/` in this slice, with a test that reproduces it.
 
 ### 4. Loop repair, and the real code under random schedules
@@ -131,7 +130,7 @@ Added if the PM picks Q80 (a): it becomes the recommended way for every relay, w
 
 ### 6. The hosted demo relay
 - **On the relay:**
-  - **idle expiry** (checked in slice 3's spec): a room with no connection for 30 days is deleted (`-expire-idle`, off by default);
+  - **idle expiry:** a room with no connection for 30 days is deleted (`-expire-idle`, off by default). `Sync.tla` gains it too, and checks that a room used within its window is never dropped;
   - public limits set as flags: rooms, bytes, share rate, and connection rate;
   - `-serve-app=false`;
   - a `/privacy` page.

@@ -1671,7 +1671,7 @@ function Workspace({
 
   // Sharing (requirements 30 and 33): the dialog, and replacing a shared plan from a file (Q58).
   const [sharing, setSharing] = useState(false);
-  // Opening a share link asks for your name once per browser (Q61), so others don't see "Someone".
+  // Opening a share link asks for your name until this browser has one (Q61), so others don't see "Someone".
   const [askingName, setAskingName] = useState(() => start?.askName === true && myName() === null);
   const replaceInput = useRef<HTMLInputElement>(null);
   const [replacing, setReplacing] = useState(false);

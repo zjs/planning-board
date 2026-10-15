@@ -69,9 +69,9 @@ function LinkField({ label, link, hint, testId }: { label: string; link: string;
 type RelayStep = { kind: 'looking' } | { kind: 'here'; info: RelayInfo } | { kind: 'ask' };
 
 /**
- * Your name on shared plans, asked once per browser (Q61): when you first
- * share a plan, and when you first open a share link. `onSkip` offers
- * "Not now", which leaves you unnamed until the avatar menu.
+ * Your name on shared plans (Q61), asked when you share a plan or open a
+ * share link, until this browser has one. `onSkip` offers "Not now", which
+ * leaves you unnamed until the next link, or until the avatar menu names you.
  */
 export function NameForm({ onNamed, onSkip }: { onNamed: () => void; onSkip?: () => void }) {
   const [name, setName] = useState(() => myName() ?? '');

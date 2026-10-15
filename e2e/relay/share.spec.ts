@@ -81,6 +81,11 @@ test('share a plan, open its links on two other computers, and edit it together'
   // Cy has the view link, and skips giving a name: the plan, live, and no way to change it.
   const cy = await person(browser);
   await openLink(cy, links.view);
+  // Not now holds until the next link: opened again, in another tab, it asks again.
+  const again = await cy.context().newPage();
+  await again.goto(links.view);
+  await expect(again.getByTestId('name-dialog')).toBeVisible();
+  await again.close();
   await expect(cy.getByTestId('read-only-banner')).toContainText('view link');
   await expect(cy.getByTestId('connection-state')).toHaveText('View only');
   await pickAxes(cy, 'time', 'system');
