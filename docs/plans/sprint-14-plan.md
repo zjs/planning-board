@@ -149,7 +149,7 @@ Added if the PM picks Q80 (a): it becomes the recommended way for every relay, w
 - **The host is Fly.io,** with one small machine and a volume, at about $5/month _(recalled)_. It runs the published image as is, and its TLS is automatic. The deploy doc stays generic enough for any container host.
 - **The demo relay's address** is the host's default subdomain until you want a domain.
 - **Demo limits:** 30 days idle, 5 MB per plan, 2,000 plans, and 10 new shared plans per hour per address.
-- **The formal specs run in CI on every push** (seconds to a minute), so they can't drift from the code.
+- **The formal specs run in CI on every push** (about ten minutes, beside the other jobs), so they can't drift from the code.
 - **Signing updates (Ed25519)** to close "an operator holding a view link can write" is queued, not built, unless the threat model finds it matters for the demo.
 
 ## Risks
@@ -162,6 +162,6 @@ Added if the PM picks Q80 (a): it becomes the recommended way for every relay, w
 ## Verification
 - The randomized schedules: a few hundred seeds in `npm run check`, a few dozen against the real relay in e2e.
 - `npm run check`, `cd relay && go test -race ./...`, and `npm run build && npm run e2e`, including `e2e/relay/`.
-- The new CI job proves the ProVerif queries and runs TLC on the spec. A deliberately broken variant (additional data without the room) is checked locally to show the proof would catch it. In the same way, a broken resend (skipping the shadow) shows TLC and the randomized schedules both catching a lost offline edit.
+- The new CI job proves the ProVerif queries and runs TLC on the spec. Each model's broken variants, such as additional data without the room, run in CI too, and must fail. In the same way, a broken resend (skipping the shadow) shows TLC and the randomized schedules both catching a lost offline edit.
 - In a browser: join prompt. Relay with `-serve-app=false` from the release HTML. After deploy, Share from https://zjs.github.io/planning-board/ and join from a second profile.
 - Self-review on each PR per `docs/self-review.md`, and screenshots for UI slices.

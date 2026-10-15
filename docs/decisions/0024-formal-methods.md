@@ -25,7 +25,7 @@ A model only says something about the code if it stays next to it and runs when 
 - **CI runs each broken variant too, and requires it to fail.** A config that shrinks below where it can find the bug then fails CI, rather than passing quietly. The state count also goes in the job summary.
 - **Every model is checked against a broken variant** before it's trusted: a mutation of the rule it's about, which must fail. Without that, a model too small to reach the bug passes as easily as a correct one. With three moves, the tree model passed a broken repair; it takes four moves to reach the failure.
 
-**What the first runs found,** while this was being decided:
+**What the first runs found,** while this was being decided. These come from local drafts of the models, which land in the repository with slices 2–4:
 - **The sync model found a bug** (the threat model's F10). A browser whose first catch-up is cut short before the relay's `synced` message has a cursor but no epoch, so after a restore it can't tell the room changed, and it misses the new room's first changes. The fix, starting again from nothing when there's a cursor but no epoch, passes the model, and is built with it.
 - **It also shows why `-restored` matters.** Restoring a backup without it lets a browser keep believing the relay holds changes it lost, so they never reach anyone else.
 - **The tree model passes** with three moves (11,485 states, 7 seconds) and four (244,525 states, 2 minutes).
@@ -35,7 +35,7 @@ A model only says something about the code if it stays next to it and runs when 
 
 **Randomized schedules bridge the models and the code.** A seeded generator drives the real app and relay through what the models describe, and checks the same properties. A failing seed prints itself so it can be replayed. It needs no new dependency.
 
-**In CI,** built by slices 2–4 of sprint 14: a third job, "Formal: protocol, sync and grouping". Until then, the models and the results below are local drafts, not yet in the repository.
+**In CI,** built by slices 2–4 of sprint 14: a third job, "Formal: protocol, sync and grouping". Until then, the models are local drafts, not yet in the repository.
 - ProVerif 2.05 is built from its source tarball, `https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz`, pinned by SHA-256 `4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4`, with Ubuntu's `ocaml-nox`. That takes seconds.
 - TLC is `tla2tools.jar` from `https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar`, pinned by SHA-256 `0f56d6a813368c48008dfbecb23a73ab43a4a5e1bf09f026782a674aa9d4b3c9`, on the runner's Java. The 1.8.0 release may be rebuilt in place _(recalled)_. If so, the hash check fails with a message saying so, and the pin is updated after checking the new build gives the same results. The cache is keyed by the hash, so a rebuild upstream never changes a run silently. The stable 1.7.4 was tried, and is far too slow: still running after 18 minutes on the three-move tree model, which 1.8.0 checks in 7 seconds.
 - Both are cached.
@@ -50,6 +50,6 @@ A model only says something about the code if it stays next to it and runs when 
 
 ## Consequences
 
-- **CI gains a job of a minute or two.** A change to the protocol, the relay or loop repair that breaks a model fails CI like a failing test.
+- **CI gains a job of about ten minutes,** most of it the sync model: its draft's config takes 8 minutes on four cores. It runs beside the other jobs, so it adds little to how long CI takes. A change to the protocol, the relay or loop repair that breaks a model fails CI like a failing test.
 - **A change to sealing, links, the protocol, sync or loop repair changes its model in the same PR.** Slice 2 adds this to the definition of done (`docs/housekeeping.md`), once `npm run formal` exists for it to point at.
 - **The models prove what they model.** The threat model says what each covers and what it leaves out: the primitives, the browser, Yjs itself, and anyone who already has a link.
