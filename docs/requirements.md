@@ -127,7 +127,7 @@ The model is a pivot table you manipulate by hand. Items carry properties. A vie
 - history;
 - fallbacks where a hosted relay isn't allowed: a relay on one person's computer, and changes by file.
 
-The relay is written in Go. The build plan is `docs/plans/m2-plan.md`, in five sprints.
+The relay is written in Go. The build plan is `docs/plans/m2-plan.md`, in six sprints.
 
 **Later.** Merging between scenarios, typed dependencies, Jira sync, and undo history that survives a reload.
 

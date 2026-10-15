@@ -113,7 +113,7 @@ Entry format:
   - (b) **The relay keeps serving the app, and trusting its operator is stated as the condition,** as ADR 0017 and the relay's README already say. Only the hosted demo relay uses (a).
   - (c) **(b), plus a check outside the page:** fetch the page, for example with `curl`, and compare it with the published hash. It catches an operator who swaps the app for everyone. It misses one who serves the altered app only to the person they're after, so it promises more than it delivers _(priors)_.
 - Recommendation: (a), the default on the hosted demo relay and available on every relay, with (b) stated plainly for a relay that serves the app. Only (a) makes Q79's property true; (b) is where it isn't, and people choose it knowingly. A company's own relay is run by its IT, who already control the computers the app runs on _(priors)_. A pilot's laptop is run by one of the planners. (c) is left out, since a check that misses the targeted case invites false confidence.
-- Status: open.
+- Status: open. PM, 2026-10-15: decided after the threat model. Sprint 14's slice 1 rewrites this entry from its findings, and slice 5 builds the answer. Whatever the answer, the hosted demo relay serves no app (Q79), so a relay mode that serves no app and a checksum and attestation for the app's HTML are built anyway.
 
 ## Answered
 
@@ -511,6 +511,7 @@ Entry format:
 - Recommendation: (a) now and (d) later. The connection pill says plainly what offline means ("7 changes not shared yet"). Mockups: artboards 4 and 5.
 - Status: answered 2026-10-08: (a). Offline is always allowed and merges automatically, and "Since you were away" shows what happened. (d), keeping offline changes as a scenario, waits for scenarios. M2: the connection pill in sprint 11, "Since you were away" in its own sprint (Q65).
   - The connection pill built in sprint 11, slice 4: Live, Reconnecting… after 3 seconds, and Offline with the number of cards not shared yet, louder after an hour or 25 cards ("Others may be changing the same cards").
+  - PM, 2026-10-15, planning sprint 14: "Since you were away" is a quiet offer. Changed cards get markers, and a notice says "12 changes by Ada and Bo since you were last here · Show". The panel opens by itself only when one of your own changes didn't stick. It moved to sprint 15, after the relay's threat model.
 
 ### Q60: Two people reaching for one card
 - Context: Requirements 2, 3 and 31. In a live session, two people can drag the same card within the same second. Today's schema leaves a single-valued property holding two values (L1 in `merge-results.md`). After the schema change, one value wins.
@@ -564,6 +565,7 @@ Entry format:
 - Options: (a) add these to the requirements as M2 items, with the build plan in `docs/plans/m2-plan.md`; (b) keep M2 at requirements 30–32, and leave the rest for later.
 - Recommendation: (a). Without "since you were away" and history, the PM's three priorities (live collisions, who changed what, offline divergence) are answered only by "it merges". The build plan is four sprints, each ending in something usable.
 - Status: answered 2026-10-08: (a), with "since you were away" and history as additional sprints. M2 is now five sprints (`docs/plans/m2-plan.md`): foundations, the relay, seeing each other, then history, then "since you were away". Following is out (Q61). The requirements gain 33–36.
+  - 2026-10-15: M2 is now six sprints. The PM put the relay's threat model and the hosted demo relay first, in sprint 14, and "since you were away" moved to sprint 15.
 
 ### Q64: A relay for the public demo
 - Context: Requirement 30, Q31, and Q52 and Q53 (optimize for strangers arriving from a public link). GitHub Pages can't run a relay. The PM left this for after the research (2026-10-08). The options are costed in `docs/research/collaboration/relay-and-sync.md`.
@@ -593,6 +595,7 @@ Entry format:
     If the PM doesn't want to run a hosted relay at all, sprint 14's slice drops, and the public build offers (d), (e) and (f).
   - It becomes requirement 37 and an amendment to ADR 0017.
   - (e) and (f) built in sprint 12: `docs/hosting.md` covers a pilot on a laptop and moving it to a server (slice 3), and changes by file is ADR 0022 (slice 4).
+  - PM, 2026-10-15: yes to (a). Engineering writes the relay changes, the privacy note and the deploy steps. The PM creates the host account and runs the first deploy. Sprint 14, slice 6.
 
 ### Q66: What Open, Import and New do on a plan that isn't shared
 - Context: Requirement 34 and Q58 cover shared plans: Open, Import and New blank plan make a new plan, so nobody overwrites a shared board. Sprint 10 brings several plans per browser before anything is shared, so local plans need a rule too. Today these replace the board after asking (Q26, Q51).
@@ -719,3 +722,4 @@ Entry format:
     - Superseded by Q80, the same day. The PR's self-review found that (e) can't work as engineering described it: an altered app would show the real build's hash, so a hash the page shows about itself proves nothing against the operator. (d) also costs more than "little": the relay always serves the app, with no flag to turn that off, and the Pages build isn't attested. The rest of this answer stands.
   - **Tools:** a protocol verifier for secrecy and TLA+ for the relay, with the choice between ProVerif and Tamarin made in an ADR.
   - **When:** in sprint 14, before its hosted demo relay slice. Sprint 14's planning sets the slices.
+  - Sprint 14's planning (2026-10-15): the written model, a protocol proof, and TLA+ are slices 1–3. The PM widened the scope to collaboration correctness, offline work included. That adds slice 4, loop repair in TLA+ and random schedules run against the real code (`docs/plans/sprint-14-plan.md`).
