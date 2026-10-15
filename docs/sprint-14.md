@@ -30,9 +30,9 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 1. The threat model (Q79)
 
-- [ ] `docs/security/threat-model.md`: the attacker, what's protected and where it lives, each claim and how it's established, and findings, each one fixed, queued or accepted.
-- [ ] ADR 0024: which formal tools, and how CI runs them.
-- [ ] Q80 rewritten from the findings, for the PM.
+- [x] `docs/security/threat-model.md`: the attacker, what's protected and where it lives, each claim and how it's established, and findings, each one fixed, queued or accepted.
+- [x] ADR 0024: which formal tools, and how CI runs them.
+- [x] Q80 rewritten from the findings, for the PM.
 
 ### 2. The protocol proof
 

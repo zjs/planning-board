@@ -62,6 +62,7 @@ Read by people who know nothing of our sprints, questions or ADRs. Each is writt
 | Help panel (`src/ui/Legend.tsx`) | Someone using the board | A gesture, control or word on the board changes |
 | `relay/README.md`, also in each relay download | Whoever runs a relay, often with only the download | A flag, a default, or what it prints changes; anything it links moves |
 | `docs/hosting.md` | IT, or a pilot user running it for a team | Deploying, upgrading, backups, HTTPS, or what needs a newer relay |
+| `docs/security/threat-model.md` | A security reviewer, someone running a relay, or someone deciding whether to trust one | Anything changes in sealing, keys, links, the protocol, what the relay serves or stores, or a finding's status; a formal model is added or changes its results |
 | `SECURITY.md` | A security researcher, or a reviewer at a company | What leaves the browser changes: sharing, a new file type, a new service |
 | `CONTRIBUTING.md` and `.github/ISSUE_TEMPLATE/` | Someone reporting a problem | A control they're told to find is renamed or moved; a new way to open the app |
 | `docs/releases/vX.Y.Z.md`, published as the release's page | Someone choosing which relay to run, or upgrading one | Written once per release; links must be absolute |

@@ -11,7 +11,7 @@ const root = resolve(import.meta.dirname, '..');
 const RELEASE_NOTES = readdirSync(join(root, 'docs/releases'))
   .filter((f) => f.endsWith('.md'))
   .map((f) => `docs/releases/${f}`);
-const USER_DOCS = ['README.md', 'SECURITY.md', 'CONTRIBUTING.md', 'relay/README.md', 'docs/hosting.md', ...RELEASE_NOTES];
+const USER_DOCS = ['README.md', 'SECURITY.md', 'CONTRIBUTING.md', 'relay/README.md', 'docs/hosting.md', 'docs/security/threat-model.md', ...RELEASE_NOTES];
 /** Read by people finding their way around the repo: their links must work, but they may cite our numbering. */
 const LINKED_DOCS = ['docs/README.md'];
 const TEMPLATES = ['bug.yml', 'feedback.yml', 'import.yml', 'config.yml'].map((f) => `.github/ISSUE_TEMPLATE/${f}`);

@@ -27,3 +27,4 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0021](0021-plans-per-browser.md) | Several plans per browser: a list in localStorage, a database per plan, viewer state per plan, a link per plan | Accepted |
 | [0022](0022-changes-by-file.md) | Changes by file: a shared plan with no relay travels as whole boards, sealed with the plan's key; the key goes once, in a link | Accepted |
 | [0023](0023-versions-and-releases.md) | Versions and releases: the version in `package.json`, released after CI passes on `main`, with checksums and attestations; programs name their commit | Accepted |
+| [0024](0024-formal-methods.md) | Formal checks: ProVerif for the protocol, TLA+ for sync and grouping, each checked against a broken variant, and run in CI | Accepted |
