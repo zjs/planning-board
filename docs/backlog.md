@@ -37,6 +37,25 @@ The PM's answers (2026-10-08):
 
 **Lands:** sprint 10 built M2's foundations ([`docs/sprint-10.md`](sprint-10.md)), and sprint 11 the relay, sharing and the connection pill ([`docs/sprint-11.md`](sprint-11.md)); and sprint 12 presence, collisions, making new links, hosting docs and changes by file ([`docs/sprint-12.md`](sprint-12.md)); and sprint 13 history, with Activity and a card's history ([`docs/sprint-13.md`](sprint-13.md)); all four were accepted on 2026-10-10. Sprint 14, since you were away, is next. Sprint 9 explored and planned it ([`docs/sprint-9.md`](sprint-9.md)). The summary is [`research/collaboration/README.md`](research/collaboration/README.md). The PM answered Q58–Q63 and Q65 on 2026-10-08, and they're now requirements 31–36. M2 is five sprints (10–14, [`plans/m2-plan.md`](plans/m2-plan.md)): foundations, the relay, seeing each other, history, and since you were away. The PM answered Q64 the same day: where a hosted relay is blocked, the relay from a pilot's laptop and changes by file, with no WebRTC (requirement 37).
 
+### N. Showing the relay can't read a plan
+
+The relay may never read plan content: it's an architecture rule, and ADRs 0017 and 0018, `SECURITY.md` and the relay's README all claim it. Nothing has checked that claim beyond the relay's and the app's own tests.
+
+**Feedback** (the PM, 2026-10-15):
+
+- *A threat model, formally.* "Can we queue a threat model analysis for the relay, including the encryption, using a formal language like TLA+? The operator of the relay should never be able to read the data."
+
+**Generalization:** a threat model treats the relay's operator as the attacker and checks each thing they control against the claim:
+
+- **What it stores and forwards:** updates, snapshots and presence, sealed with XChaCha20-Poly1305, with the room, the kind and a snapshot's `upto` bound in as additional data (ADR 0018).
+- **What it decides:** numbering, timestamps, epochs, retiring a room, and the write token it sees on every connection. That one is about writing, not reading: an operator who also holds a view link could write (ADR 0018).
+- **The code, when it serves the app:** it could serve an altered app that reads the key from the link (ADR 0017). Today that covers every pilot on a laptop and most self-hosted relays, and no proof about the protocol reaches it.
+- **Metadata:** which plans exist, who connects, from where and when, and how large each change is.
+
+Formal methods fit two parts. The first is secrecy and the binding of additional data under an active attacker, where a protocol verifier such as ProVerif or Tamarin is the usual tool. The second is the relay as a state machine: retiring, epochs and cursors after a restore, view links that can't write, and nothing acknowledged being lost. That's TLA+'s home ground. → [Q79](questions.md#q79-what-the-relay-operator-can-never-read-a-plan-covers)
+
+**Lands:** queued, not yet scheduled. It's a candidate to run before sprint 14's hosted demo relay, which makes the project itself an operator for strangers' plans.
+
 ### H. Arranging and moving cards
 
 Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.
