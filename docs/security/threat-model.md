@@ -8,7 +8,7 @@ It's written for anyone deciding whether to trust a relay with a plan: a securit
 
 **What an operator can't do, if the app didn't come from them:**
 - Read a plan's content: card titles, descriptions, values, links, names, history, or who's pointing at what.
-- Change a plan, or pass one message off as another, without a link that can edit.
+- Change a plan, or pass one message off as another, without any link to the plan. With a Can view link, they can write (below).
 
 **What an operator can do:**
 - **See metadata:** which plans exist, who connects, from which address, when, and how large each change is.
@@ -16,7 +16,7 @@ It's written for anyone deciding whether to trust a relay with a plan: a securit
 - **Shift the times** history shows, within what their clock claims.
 - **Write to a plan,** if they also hold its Can view link. A Can view link is meant to read only.
 - **Read everything, through the app they serve,** if people open the app from their relay. This is the largest gap, and it's open (see [Code](#code-the-app-itself)).
-- **Restore an old backup.** Browsers notice and send what it lacks, but only if the relay is started once with `-restored` after the restore. Without it, a browser can go on believing the relay holds changes the backup lacks, so those changes never reach anyone else. The sync model finds this in seconds.
+- **Restore an old backup.** Started once with `-restored` afterwards, the relay gives every plan a new epoch, and browsers send what the backup lacks. Without it, a browser notices only while the restored relay is behind its cursor. Once others' changes have taken the relay past that point, a browser can go on believing the relay holds changes the backup lacks, so those changes never reach anyone else. A draft of the sync model finds this in seconds.
 
 ## The system
 
@@ -106,10 +106,10 @@ A relay that serves the app can serve an altered one, which reads the key from t
 | F4 | **Holding back is silent.** The relay can withhold changes, show people different versions, or label a change with a later number so a client never asks for the ones in between, while the pill says Live | Medium: integrity, not secrecy | **Accepted for now.** Signed sequence heads, or a hash chain over changes, would let clients notice. Queued in the backlog. |
 | F5 | **An operator with a Can view link can write** (L1) | Low for the demo relay, whose links nobody shares with the operator | **Accepted;** signing each change is queued |
 | F6 | **History times follow the relay's clock** when an author's is off by more than a minute, so an operator can misdate entries | Low | **Accepted** |
-| F7 | **No forward secrecy.** The relay keeps sealed content until the room is deleted, so a link leaked later reveals the whole plan, deleted cards and history included. Making new links doesn't change what old links can read. | Medium | **Accepted.** The demo relay will delete plans left idle for 30 days, and its privacy note will say so. |
-| F8 | **Every page opened from disk shares one browser storage,** so any HTML file someone opens locally can read the plans and keys of the app opened from disk | Medium, and it weighs on F2: one way to keep a laptop relay out of the code has people open the app from disk | **Weighed with F2** |
+| F7 | **No forward secrecy.** The relay keeps sealed content for as long as it keeps the room, which today is forever, so a link leaked later reveals the whole plan, deleted cards and history included. Making new links doesn't change what old links can read. | Medium | **Accepted.** The demo relay will delete plans left idle for 30 days, and its privacy note will say so. |
+| F8 | **In Chromium-based browsers, every page opened from disk shares one browser storage,** so any HTML file someone opens locally can read the plans and keys of the app opened from disk. Firefox gives each file its own _(recalled)_; Firefox and Safari are still to be checked. | Medium, and it weighs on F2: one way to keep a laptop relay out of the code has people open the app from disk | **Weighed with F2** |
 | F9 | **A share link is a password,** and it can end up in browser history and in history synced to a browser account. The app takes the key out of the address bar once it's saved. | Low | **Accepted** |
-| F10 | **A first catch-up cut short could miss changes after a restore.** A browser opening a link for the first time takes the epoch from the relay's last message. If the connection drops before that message, and the relay is then restored from a backup, the browser reconnects with a cursor from the old room and never fetches the new room's first changes. Found by the sync model on its first run. | Medium: rare, and silent | **Being fixed,** with the model: a cursor with no epoch starts again from nothing |
+| F10 | **A first catch-up cut short could miss changes after a restore.** A browser opening a link for the first time takes the epoch from the relay's last message. If the connection drops before that message, and the relay is then restored from a backup, the browser reconnects with a cursor from the old room and never fetches the new room's first changes. Found by the first run of a draft of the sync model, and confirmed by reading `src/store/relay.ts`. | Medium: rare, and silent | **Being fixed,** with the model: a cursor with no epoch starts again from nothing |
 
 ## Metadata the operator sees
 
@@ -117,11 +117,11 @@ Room IDs, and how many plans there are. Which addresses connect, when, how often
 
 ## What the formal models cover, and what they don't
 
-The models are being written now; the claims table says which have run.
+The models are being written now, and land in the repository with the slices that build them; until then the paths below are where they'll live, and the claims table says which have run. The results quoted in this document (F10, and the restore without `-restored`) come from local drafts.
 
-- **The protocol model** (`formal/proverif/`) covers key derivation, sealing with additional data, Can edit and Can view links, write tokens, and Make new links, against an attacker who is the network plus the relay.
-- **The sync model** (`formal/tla/Sync.tla`) covers the relay's log, snapshots, compaction, retirement, epochs and restores, and each client's document, shadow, cursor and resends. It includes going offline, crashing mid-save, reloading and the relay restarting.
-- **The tree model** (`formal/tla/Tree.tla`) covers concurrent moves and loop repair.
-- **Random schedules** (`e2e/relay/schedules.spec.ts`) run the real app and relay through offline work, reloads, restarts and restores, and check the sync model's properties on what actually happened.
+- **The protocol model** (to live in `formal/proverif/`) covers key derivation, sealing with additional data, Can edit and Can view links, write tokens, and Make new links, against an attacker who is the network plus the relay.
+- **The sync model** (to live in `formal/tla/Sync.tla`) covers the relay's log, snapshots, compaction, retirement, epochs and restores, and each client's document, shadow, cursor and resends. It includes going offline, crashing mid-save, reloading and the relay restarting.
+- **The tree model** (to live in `formal/tla/Tree.tla`) covers concurrent moves and loop repair.
+- **Random schedules** (to live in `e2e/relay/schedules.spec.ts`) run the real app and relay through offline work, reloads, restarts and restores, and check the sync model's properties on what actually happened.
 
 Not covered: the browser and its storage, the cryptographic primitives themselves, side channels, denial of service, and anyone who already has a link.

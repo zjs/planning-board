@@ -41,6 +41,7 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 ### 3. Sync, offline included (TLA+)
 
 - [ ] The relay and its clients: offline work, crashes, reloads, restarts, restores and new links. Checked: everyone who reconnects converges, no offline edit is lost, nothing acknowledged is lost, and retired rooms and view links can't write.
+- [ ] A cursor with no epoch starts again from nothing (the threat model's F10), with a test.
 
 ### 4. Loop repair, and the real code
 
@@ -49,6 +50,7 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 5. Keeping the operator out of the app (Q80)
 
+- [ ] Links keep the sharer's page for an https relay, whatever `/config` says (F1).
 - [ ] A relay mode that serves no app.
 - [ ] The app's HTML is checksummed and attested, and the docs say how to check it.
 - [ ] Whatever else Q80's answer adds.

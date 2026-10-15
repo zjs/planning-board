@@ -83,7 +83,7 @@ Slices 2, 3 and 4 are independent of each other. Slice 5 waits for the PM's answ
   - correspondence: a client accepts an update for room *r* only if a holder of `K` sealed it for room *r* as an update, and the same for snapshots with their `upto`;
   - presence can't be passed off as an update.
 - **The known limit is stated as an expected attack:** an operator who also holds a view link can write.
-- **CI:** a third job, "Formal: protocol and relay", fails if any query's result changes.
+- **CI:** a third job, "Formal: protocol, sync and grouping", fails if any query's result changes.
 
 ### 3. TLA+: the relay and its clients (`formal/tla/Sync.tla`)
 - **The relay side:** rooms, the numbered log, client snapshots with `upto`, compaction and kept segments, retirement, epochs and `-restored`. The level of detail follows `relay/PROTOCOL.md`.
