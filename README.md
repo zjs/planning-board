@@ -77,7 +77,7 @@ CI runs on every pull request and every change to `main`, and nothing is publish
 - **Old plans keep opening.** Plan files, changes files and browser boards saved by the build at the end of each round of work, and by the last build before each change to the format, are kept as fixtures. Every build must open each one with nothing lost.
 - **End-to-end tests** drive the built app in Chromium, opened from disk: each round of work's exit criteria, step by step. The sharing tests run several browsers against a real relay.
 - **The relay** has its own tests, run with Go's race detector.
-- **Formal models** check what tests can't reach: a protocol proof that whoever runs a relay can't read or forge a plan, with more models of sync and grouping to come. Each is checked against deliberately broken versions of itself, which it must catch ([`formal/`](formal/README.md), and the [threat model](docs/security/threat-model.md)).
+- **Formal models** check what tests can't reach: a protocol proof that whoever runs a relay can't read or forge a plan, and models of syncing, offline work included, and of grouping, run against random schedules of the real code. Each is checked against deliberately broken versions of itself, which it must catch ([`formal/`](formal/README.md), and the [threat model](docs/security/threat-model.md)).
 
 Each CI run's summary lists every step with its test counts, and links the build it made, which opens straight in a browser.
 

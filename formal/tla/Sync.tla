@@ -22,6 +22,9 @@ EXTENDS Naturals, FiniteSets, Sequences, TLC
 
 CONSTANTS Clients, MaxEdits, MaxCrashes, MaxRestores, MaxConnects, RestoreBumpsEpoch
 
+\* The two people are interchangeable, so TLC checks one of each pair of mirror-image states.
+Symmetry == Permutations(Clients)
+
 Ids == 1..MaxEdits
 None == 0
 
@@ -35,13 +38,16 @@ VARIABLES
   \* The connection: frames to the client, and to the relay, in order.
   inbox, outbox,
   \* Bookkeeping for the bounds, and for the properties.
-  made, crashes, restores, connects
+  made, crashes, restores, connects,
+  \* Not part of the system: how many people were live when the relay was last restored, so the bounds can be
+  \* shown to reach the case -restored is for.
+  syncedAtRestore
 
 relay == <<log, head, snap, epoch, backup>>
 client == <<doc, shadow, cursor, seen, conn, pending, nextRef>>
 saved == <<savedDoc, savedRec>>
 wire == <<inbox, outbox>>
-count == <<made, crashes, restores, connects>>
+count == <<made, crashes, restores, connects, syncedAtRestore>>
 vars == <<relay, client, saved, wire, count>>
 
 \* Everything the relay holds, in its snapshot and log.
@@ -60,7 +66,7 @@ Init ==
   /\ savedDoc = [c \in Clients |-> {}]
   /\ savedRec = [c \in Clients |-> [cursor |-> 0, seen |-> None, shadow |-> {}]]
   /\ inbox = [c \in Clients |-> <<>>] /\ outbox = [c \in Clients |-> <<>>]
-  /\ made = {} /\ crashes = 0 /\ restores = 0 /\ connects = 0
+  /\ made = {} /\ crashes = 0 /\ restores = 0 /\ connects = 0 /\ syncedAtRestore = 0
 
 \* Send one update: remembered as pending until its ack.
 SendUpdate(c, ups) ==
@@ -76,17 +82,23 @@ Edit(c) ==
      /\ doc' = [doc EXCEPT ![c] = @ \cup {id}]
      /\ savedDoc' = [savedDoc EXCEPT ![c] = @ \cup {id}]
      /\ IF conn[c] = "live" THEN SendUpdate(c, {id}) ELSE UNCHANGED <<pending, nextRef, outbox>>
-  /\ UNCHANGED <<relay, shadow, cursor, seen, conn, savedRec, inbox, crashes, restores, connects>>
+  /\ UNCHANGED <<relay, shadow, cursor, seen, conn, savedRec, inbox, crashes, restores, connects, syncedAtRestore>>
 
 \* Connect: the relay sends what's after the cursor, a snapshot first if the cursor is behind it, then synced.
 Connect(c) ==
   /\ conn[c] = "off" /\ connects < MaxConnects
-  /\ LET from == IF cursor[c] < snap.upto /\ snap.upto > 0 THEN snap.upto ELSE cursor[c]
-         first == IF from # cursor[c] THEN <<[type |-> "snapshot", upto |-> snap.upto, ups |-> snap.ups]>> ELSE <<>>
-     IN inbox' = [inbox EXCEPT ![c] = first \o UpdateFrames(After(from)) \o <<[type |-> "synced", head |-> head, epoch |-> epoch]>>]
+  \* A cursor with no epoch was left by a catch-up cut short before synced: it says nothing about which room it
+  \* counted in, so start again from nothing (src/store/relay.ts, `connect`; without this, F10 in the threat model).
+  /\ LET stale == seen[c] = None /\ cursor[c] > 0
+         at == IF stale THEN 0 ELSE cursor[c]
+         from == IF at < snap.upto /\ snap.upto > 0 THEN snap.upto ELSE at
+         first == IF from # at THEN <<[type |-> "snapshot", upto |-> snap.upto, ups |-> snap.ups]>> ELSE <<>>
+     IN /\ inbox' = [inbox EXCEPT ![c] = first \o UpdateFrames(After(from)) \o <<[type |-> "synced", head |-> head, epoch |-> epoch]>>]
+        /\ cursor' = [cursor EXCEPT ![c] = at]
+        /\ shadow' = [shadow EXCEPT ![c] = IF stale THEN {} ELSE @]
   /\ conn' = [conn EXCEPT ![c] = "joining"]
   /\ connects' = connects + 1
-  /\ UNCHANGED <<relay, doc, shadow, cursor, seen, pending, nextRef, saved, outbox, made, crashes, restores>>
+  /\ UNCHANGED <<relay, doc, seen, pending, nextRef, saved, outbox, made, crashes, restores, syncedAtRestore>>
 
 \* The connection drops: frames on the way are lost, and so is what was pending.
 Drop(c) ==
@@ -121,14 +133,17 @@ Receive(c) ==
             /\ inbox' = [inbox EXCEPT ![c] = Tail(@)]
             /\ UNCHANGED <<doc, seen, conn, nextRef, outbox>>
        [] f.type = "synced" ->
-            \* A cursor with no epoch came from a catch-up cut short before synced: it says nothing about this epoch
-            \* (src/store/relay.ts; without this, F10 in docs/security/threat-model.md).
-            IF (seen[c] # None /\ f.epoch # seen[c]) \/ (seen[c] = None /\ cursor[c] > 0) \/ f.head < cursor[c]
-            THEN \* Replaced or restored: start again from what this copy has, and reconnect.
+            IF (seen[c] # None /\ f.epoch # seen[c]) \/ f.head < cursor[c]
+            THEN \* Replaced or restored: start again from what this copy has, and reconnect at once (`reconnectNow`),
+                 \* asking for everything. The new connection doesn't count against MaxConnects; a drop on the way is
+                 \* Drop's to model.
                  /\ Reset(c)
                  /\ seen' = [seen EXCEPT ![c] = f.epoch]
-                 /\ conn' = [conn EXCEPT ![c] = "off"]
-                 /\ inbox' = [inbox EXCEPT ![c] = <<>>] /\ outbox' = [outbox EXCEPT ![c] = <<>>]
+                 /\ conn' = [conn EXCEPT ![c] = "joining"]
+                 /\ inbox' = [inbox EXCEPT ![c] =
+                       (IF snap.upto > 0 THEN <<[type |-> "snapshot", upto |-> snap.upto, ups |-> snap.ups]>> ELSE <<>>)
+                       \o UpdateFrames(After(snap.upto)) \o <<[type |-> "synced", head |-> head, epoch |-> epoch]>>]
+                 /\ outbox' = [outbox EXCEPT ![c] = <<>>]
                  /\ pending' = [pending EXCEPT ![c] = {}]
                  /\ UNCHANGED <<doc, nextRef>>
             ELSE /\ seen' = [seen EXCEPT ![c] = f.epoch]
@@ -170,10 +185,13 @@ Snapshot(c) ==
   /\ UNCHANGED <<relay, client, saved, inbox, count>>
 
 \* Saving: the sync record (shadow, cursor and epoch together), or the document.
+\* Saves matter only to a crash still to come, so after the last one they stop, which keeps the state space small.
 SaveRecord(c) ==
+  /\ crashes < MaxCrashes
   /\ savedRec' = [savedRec EXCEPT ![c] = [cursor |-> cursor[c], seen |-> seen[c], shadow |-> shadow[c]]]
   /\ UNCHANGED <<relay, client, savedDoc, wire, count>>
 SaveDoc(c) ==
+  /\ crashes < MaxCrashes
   /\ savedDoc' = [savedDoc EXCEPT ![c] = doc[c]]
   /\ UNCHANGED <<relay, client, savedRec, wire, count>>
 
@@ -190,10 +208,12 @@ Crash(c) ==
      ELSE /\ shadow' = [shadow EXCEPT ![c] = {}] /\ cursor' = [cursor EXCEPT ![c] = 0] /\ seen' = [seen EXCEPT ![c] = None]
   /\ conn' = [conn EXCEPT ![c] = "off"] /\ pending' = [pending EXCEPT ![c] = {}]
   /\ inbox' = [inbox EXCEPT ![c] = <<>>] /\ outbox' = [outbox EXCEPT ![c] = <<>>]
-  /\ UNCHANGED <<relay, nextRef, saved, made, restores, connects>>
+  /\ UNCHANGED <<relay, nextRef, saved, made, restores, connects, syncedAtRestore>>
 
 \* Whoever runs the relay backs it up, and later restores the backup, starting once with `-restored`.
+\* Likewise backups, to a restore still to come.
 Backup ==
+  /\ restores < MaxRestores
   /\ backup' = [log |-> log, head |-> head, snap |-> snap]
   /\ UNCHANGED <<log, head, snap, epoch, client, saved, wire, count>>
 
@@ -202,6 +222,7 @@ Restore ==
   /\ restores' = restores + 1
   /\ log' = backup.log /\ head' = backup.head /\ snap' = backup.snap
   /\ epoch' = IF RestoreBumpsEpoch THEN epoch + 1 ELSE epoch
+  /\ syncedAtRestore' = Cardinality({c \in Clients : conn[c] = "live"})
   /\ conn' = [c \in Clients |-> "off"]
   /\ inbox' = [c \in Clients |-> <<>>] /\ outbox' = [c \in Clients |-> <<>>]
   /\ pending' = [c \in Clients |-> {}]
@@ -227,6 +248,10 @@ NothingLost == \A id \in made : id \in Held \/ \E c \in Clients : id \in savedDo
 \* Once everyone is connected, caught up and quiet, every copy holds every change.
 Quiet == \A c \in Clients : conn[c] = "live" /\ inbox[c] = <<>> /\ outbox[c] = <<>> /\ pending[c] = {}
 Converged == Quiet => \A c \in Clients : doc[c] = made
+
+\* Not a property of the system: a witness, which the bounds must break (`npm run formal` checks they do). It shows
+\* they reach a quiet state after a restore made while everyone was live and in sync, the case -restored is for.
+NoQuietAfterRestoreWithEveryoneLive == ~(restores > 0 /\ syncedAtRestore = Cardinality(Clients) /\ Quiet)
 
 \* What a caught-up client's cursor says it has seen, its shadow holds. A snapshot is the
 \* shadow, said to reach the cursor, so if this failed a snapshot could drop a change.

@@ -89,7 +89,9 @@ query k: bitstring, u: bitstring, m: bitstring;
 query k: bitstring, u: bitstring, m: bitstring;
   event(Accepted(roomNew, k, u, m)) ==> event(Sealed(roomNew, k, u, m)).
 
-(* Making new links: someone kept the old link, and the new room's content stays secret. *)
+(* Making new links: someone kept the old link, and the new room's content stays secret. This holds by
+   construction, since the new secret is fresh and never sent: the query checks the model says so, and that
+   nothing about the old room leaks the new one. *)
 query attacker(contentNew).
 
 (* L1, the expected attack: an operator holding a Can view link can write.

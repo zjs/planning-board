@@ -93,6 +93,7 @@ No decision needed: each one goes into the next sprint. The table keeps the ones
 | Expanding an epic inside an expanded initiative folds the initiative instead (theme G). | PM testing, 2026-10-02 | Shipped in sprint 5, slice 2 |
 | On a shared plan, the board went blank for everyone else once a second person joined. The layer that draws pointers covered the board, with the board's background color. | PM testing of sprint 12, 2026-10-09 | Fixed 2026-10-09 |
 | Opening a share link never asks for a name, as Q61 says it should, so the person shows as "S" (Someone) to others and "Y" (You) to themselves until they name themselves from the avatar menu. | Engineering, 2026-10-09, from the same test | Fixed in sprint 14, slice 0 |
+| A change the relay refuses for a reason that passes, such as too many changes at once or a full room, isn't sent again until the next reconnect, so everyone can look live while one copy holds a change the others don't. It should be retried, and the connection pill should count it as not shared yet. | Engineering, 2026-10-15, from the self-review of the sync model | Next sprint |
 
 ## Shipped themes
 

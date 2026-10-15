@@ -9,56 +9,48 @@
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const tools = join(root, 'formal', '.tools');
 
 // TLA+ publishes its tools only as builds that are replaced in place, so one is kept in the repository (ADR 0024):
-// the nightly 2026.10.15.145915, from https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar.
+// the nightly 2026.10.15.145915 (manifest: 2.0 2026-10-15, git revision 932d35ec2b9fdb3d3e4d0a3321689c634a1f6b43),
+// from https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar.
 const TLC = {
   jar: join(root, 'formal', 'tools', 'tla2tools.jar'),
   sha256: '15d103b7e5617780bcc904c0af12f1ad242e2b345c0301136c5be4588f17edac',
 };
 
+// ProVerif's source is kept here too, from https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz, so
+// neither CI nor the deploys that wait on it depend on that server (ADR 0024).
 const PROVERIF = {
   version: '2.05',
-  url: 'https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz',
+  tarball: join(root, 'formal', 'tools', 'proverif2.05.tar.gz'),
   sha256: '4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4',
 };
 
-/** A file, downloaded once and checked against its pinned hash. */
-function fetchPinned(url: string, sha256: string, to: string): void {
-  if (!existsSync(to)) {
-    mkdirSync(dirname(to), { recursive: true });
-    // curl rather than fetch: it honours the proxy settings of CI and of development containers.
-    execFileSync('curl', ['-sSfL', '--retry', '3', '-o', to, url], { stdio: 'inherit' });
-  }
-  const actual = createHash('sha256').update(readFileSync(to)).digest('hex');
-  if (actual !== sha256) {
-    throw new Error(
-      `${url} has SHA-256 ${actual}, not the pinned ${sha256}. If upstream rebuilt it, check the new build gives the same results, then update the pin in scripts/formal.ts and ADR 0024.`,
-    );
-  }
+/** A file kept in formal/tools, checked against its recorded hash: a new version is a change of its own. */
+function checked(file: string, sha256: string): string {
+  const actual = createHash('sha256').update(readFileSync(file)).digest('hex');
+  if (actual !== sha256) throw new Error(`${file} has SHA-256 ${actual}, not ${sha256}. A new version of a tool is a change of its own: update both, and ADR 0024.`);
+  return file;
 }
 
 function proverif(): string {
   const dir = join(tools, `proverif${PROVERIF.version}`);
   const binary = join(dir, 'proverif');
   if (existsSync(binary)) return binary;
-  const tarball = join(tools, `proverif${PROVERIF.version}.tar.gz`);
-  fetchPinned(PROVERIF.url, PROVERIF.sha256, tarball);
-  execFileSync('tar', ['xzf', tarball, '-C', tools]);
+  mkdirSync(tools, { recursive: true });
+  execFileSync('tar', ['xzf', checked(PROVERIF.tarball, PROVERIF.sha256), '-C', tools]);
   execFileSync('./build', ['-nointeract'], { cwd: dir, stdio: 'ignore' });
   return binary;
 }
 
 function tlc(): string {
-  const actual = createHash('sha256').update(readFileSync(TLC.jar)).digest('hex');
-  if (actual !== TLC.sha256) throw new Error(`${TLC.jar} has SHA-256 ${actual}, not ${TLC.sha256}. A new TLA+ build is a change of its own: update both, and ADR 0024.`);
-  return TLC.jar;
+  return checked(TLC.jar, TLC.sha256);
 }
 
 /** A ProVerif model's results, one line per query, in the tool's own words. */
@@ -80,8 +72,10 @@ function runTlc(spec: string, config: string): { ok: boolean; violated: string |
     maxBuffer: 256 * 1024 * 1024,
   });
   const output = `${run.stdout}${run.stderr}`;
-  const violated = /Error: (Invariant \w+ is violated|Temporal properties were violated)/.exec(output)?.[1] ?? null;
-  const states = /([\d,]+) distinct states found, 0 states left on queue/.exec(output)?.[1] ?? '?';
+  const violated = /Error: (Invariant \w+ is violated|Temporal propert(?:y \w+ was|ies were) violated)/.exec(output)?.[1] ?? null;
+  // TLC prints the count with commas on some runs and without on others.
+  const found = /([\d,]+) distinct states found, 0 states left on queue/.exec(output)?.[1];
+  const states = found ? Number(found.replaceAll(',', '')).toLocaleString('en-US') : '?';
   return { ok: output.includes('Model checking completed. No error has been found.'), violated, states, output };
 }
 
@@ -131,6 +125,15 @@ const MODELS: Model[] = [
         ],
         breaks: 'RESULT event(Accepted(roomA[]',
       },
+      {
+        // Without the reach, an old snapshot could be passed off as a newer one.
+        name: "a snapshot's reach left out of the additional data",
+        edits: [
+          ['aead(kdfEnc(s), n, ad(room, kind, upto), m)', 'aead(kdfEnc(s), n, ad(room, kind, noUpto), m)'],
+          ['aeadOpen(k, n, ad(room, kind, upto), x)', 'aeadOpen(k, n, ad(room, kind, noUpto), x)'],
+        ],
+        breaks: 'RESULT event(Accepted(roomA[]',
+      },
     ],
   },
   {
@@ -141,12 +144,36 @@ const MODELS: Model[] = [
       {
         // As built before the fix for F10: a cursor with no epoch was trusted after a restore.
         name: 'a cursor with no epoch trusted (F10)',
-        edits: [['\\/ (seen[c] = None /\\ cursor[c] > 0) ', '']],
+        edits: [['LET stale == seen[c] = None /\\ cursor[c] > 0', 'LET stale == FALSE']],
+      },
+      {
+        // Not a broken system but a witness: the bounds must reach a quiet state after a restore made while everyone
+        // was in sync, or they're too small to say anything about the case -restored is for.
+        name: 'the bounds reach a restore after everyone was in sync (a witness)',
+        edits: [],
+        config: [['INVARIANTS ShadowIsTrue', 'INVARIANTS NoQuietAfterRestoreWithEveryoneLive ShadowIsTrue']],
       },
       {
         name: 'a backup restored without -restored',
         edits: [],
         config: [['RestoreBumpsEpoch = TRUE', 'RestoreBumpsEpoch = FALSE']],
+      },
+    ],
+  },
+  {
+    tool: 'tlc',
+    file: 'formal/tla/Tree.tla',
+    expected: 'formal/tla/Tree.cfg',
+    broken: [
+      {
+        // A loser sent back to the group it left even when that group is now inside it: the repair makes a loop.
+        name: 'a repair that can loop',
+        edits: [['back == IF prev # Top /\\ ~Within(P, prev, loser) THEN prev ELSE Top', 'back == prev']],
+      },
+      {
+        // Without loop repair, two people nesting cards inside each other's leave a loop for good.
+        name: 'no loop repair',
+        edits: [['Repair(c) ==\n  /\\ ~Acyclic(Parents(seen[c]))', 'Repair(c) ==\n  /\\ FALSE\n  /\\ ~Acyclic(Parents(seen[c]))']],
       },
     ],
   },
@@ -203,6 +230,7 @@ for (const model of MODELS) {
   }
 }
 
+rmSync(scratch, { recursive: true, force: true });
 const text = summary.join('\n');
 console.log(text);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${text}\n`);

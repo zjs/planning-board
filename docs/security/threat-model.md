@@ -78,8 +78,8 @@ Everything below rests on these. None of them is checked here.
 | C3 | Presence can't be passed off as a change, nor history as the board | **Proved:** the kind and room are in the additional data | Proved: [`formal/proverif/relay.pv`](../../formal/proverif/relay.pv) |
 | C4 | A Can view link can't write, if the relay is honest | **Tested** in Go (`relay/relay_test.go`). The sync model leaves view links out, since the relay's check is one comparison | Tested |
 | C5 | A retired room accepts no write, and old links can't reach the new room | **Tested** in Go and end to end (`e2e/relay/renew.spec.ts`) | Tested |
-| C6 | With an honest relay, nothing acknowledged is lost, and everyone who reconnects converges, offline work included | **Checked** by the sync model, through dropped connections, crashes and restores, and tested against the real code with random schedules | Checked: [`formal/tla/Sync.tla`](../../formal/tla/Sync.tla); random schedules pending |
-| C7 | Grouping never makes a cycle, even when two people nest cards at once | **Checked** by the tree model | Pending |
+| C6 | With an honest relay, nothing acknowledged is lost, and everyone who reconnects converges, offline work included | **Checked** by the sync model, through dropped connections, crashes and restores, and tested against the real code with random schedules | Checked: [`formal/tla/Sync.tla`](../../formal/tla/Sync.tla), and [`src/commands/schedules.test.ts`](../../src/commands/schedules.test.ts) |
+| C7 | Grouping never makes a cycle, even when two people nest cards at once | **Checked** by the tree model, and tested against the real code with random schedules | Checked: [`formal/tla/Tree.tla`](../../formal/tla/Tree.tla) |
 | L1 | Write enforcement trusts the relay | **Accepted limit.** An operator holding a Can view link can write. Signing each change would close this. | Accepted |
 | L2 | The operator can hold back changes without anyone knowing | **Accepted limit** (see F4) | Accepted |
 | L3 | Metadata is visible | **Accepted limit** | Accepted |
@@ -117,11 +117,17 @@ Room IDs, and how many plans there are. Which addresses connect, when, how often
 
 ## What the formal models cover, and what they don't
 
-The models land in the repository one at a time, and CI checks each from then on (`npm run formal`). The protocol and sync models are in. The tree model and the random schedules are still to come, so the paths below for them are where they'll live.
+The models land in the repository one at a time, and CI checks each from then on (`npm run formal`). All four are in the repository, and CI runs them on every change.
 
 - **The protocol model** ([`formal/proverif/relay.pv`](../../formal/proverif/relay.pv)) covers key derivation, sealing with additional data, Can edit and Can view links, write tokens, and Make new links, against an attacker who is the network plus the relay. Two broken variants, the room or the kind left out of the additional data, must each break a result, and do.
-- **The sync model** ([`formal/tla/Sync.tla`](../../formal/tla/Sync.tla)) covers the relay's log, snapshots, compaction, epochs and restores, and each client's document, shadow, cursor and resends. It includes going offline, dropped connections, a tab crashing between saving the document and saving its cursor, and restoring a backup. It leaves out view links and retirement (tested in Go), Make new links, and the history room, which syncs the same way. Its broken variants: the code as it was before F10's fix, and a restore without `-restored`.
-- **The tree model** (to live in `formal/tla/Tree.tla`) covers concurrent moves and loop repair.
-- **Random schedules** (to live in `e2e/relay/schedules.spec.ts`) run the real app and relay through offline work, reloads, restarts and restores, and check the sync model's properties on what actually happened.
+- **The sync model** ([`formal/tla/Sync.tla`](../../formal/tla/Sync.tla)) covers the relay's log, snapshots, compaction, epochs and restores, and each client's document, shadow, cursor and resends. It includes going offline, dropped connections, a tab crashing between saving the document and saving its cursor, and restoring a backup. It leaves out:
+  - view links and retirement, which the relay's Go tests cover;
+  - the relay refusing a change for being too large, too fast, or over a room's or the relay's limit. In the app, that change waits until the next reconnect, so "everyone connected and quiet" doesn't yet mean "everyone has it";
+  - asking for every kept update when a snapshot can't be read;
+  - Make new links, and the history room, which syncs the same way under another name.
+
+  A witness, checked in CI, shows its bounds reach a quiet state after a restore made while everyone was in sync. Its broken variants: the code as it was before F10's fix, and a restore without `-restored`.
+- **The tree model** ([`formal/tla/Tree.tla`](../../formal/tla/Tree.tla)) covers concurrent moves and loop repair, with Yjs's way of settling concurrent writes. Its broken variants: a repair that can loop, and no repair.
+- **Random schedules** ([`src/commands/schedules.test.ts`](../../src/commands/schedules.test.ts), and [`e2e/relay/schedules.spec.ts`](../../e2e/relay/schedules.spec.ts) through real browsers and the Go relay) run the real code through offline work, crashes, first visits, restarts and restores, and check the models' properties on what actually happened. The code as it was before F10's fix fails them.
 
 Not covered: the browser and its storage, the cryptographic primitives themselves, side channels, denial of service, and anyone who already has a link.

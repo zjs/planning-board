@@ -45,8 +45,8 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 4. Loop repair, and the real code
 
-- [ ] Concurrent nesting never leaves a cycle and converges (requirement 14).
-- [ ] Random offline and online schedules through the real app and relay, checked for the same properties, with failing seeds replayable.
+- [x] Concurrent nesting never leaves a cycle and converges (requirement 14).
+- [x] Random offline and online schedules through the real app and relay, checked for the same properties, with failing seeds replayable.
 
 ### 5. Keeping the operator out of the app (Q80)
 
