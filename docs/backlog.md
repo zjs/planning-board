@@ -56,6 +56,11 @@ Formal methods fit two parts. The first is secrecy and the binding of additional
 
 **Lands:** in sprint 14, before its hosted demo relay, which makes the project itself an operator for strangers' plans. The PM answered Q79 on 2026-10-15: the operator must never read a plan's content, either from what the relay stores and forwards or through app code it serves. Metadata is an accepted limit. How the app's code is kept out of the operator's hands is Q80, reopened after the answer's option (e) turned out not to work. → [Q80](questions.md#q80-keeping-a-relays-operator-out-of-the-apps-code) The work uses a protocol verifier for secrecy and TLA+ for the relay. Sprint 14 ([`docs/sprint-14.md`](sprint-14.md)) is planned around it, on 2026-10-15. The PM widened its scope to the correctness of collaboration, offline work included. Q80 is answered after the written model.
 
+**The threat model** ([`security/threat-model.md`](security/threat-model.md), 2026-10-15) queued three things beyond this sprint:
+- **Notice a relay holding changes back** (F4): signed sequence heads, or a hash chain over changes, so clients can tell when they're shown different versions.
+- **Sign each change** (F5), so an operator holding a Can view link can't write.
+- **A domain of its own for the public build** (F3) is part of Q80, so it's decided with it.
+
 ### H. Arranging and moving cards
 
 Dragging writes values (the core bet), but some arranging is still awkward: the order of cards within a cell, moving several cards at once, and moving cards between groups.

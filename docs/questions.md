@@ -101,19 +101,29 @@ Entry format:
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
 ### Q80: Keeping a relay's operator out of the app's code
-- Context: Requirement 30, Q79 and the backlog's theme N. Q79 put the app's code in scope: the operator must not be able to read a plan through app code the relay serves. Its option (e), a hash the app shows about itself, doesn't work, since an altered app would show the real hash. Facts that shape the choice:
-  - The relay always serves the app; `-static` only swaps in another file.
-  - Links send people to the relay's own copy of the app, unless the page and the relay are both https (ADR 0018).
-  - The app opened as a file from disk can already use a relay (`-allow-file-pages`).
-  - The release's `SHA256SUMS` and attestations cover only the relay downloads, not the app's HTML, and the Pages build isn't attested.
-  - Browsers have no built-in way to check a page against a published hash before running it _(recalled)_.
-  - On the hosted demo relay, the project is both the relay's operator and the app's publisher. Keeping the two apart protects strangers only as far as the published app can be checked against its public source, which needs the attestation above.
+- Context: Requirement 30, Q79 and the backlog's theme N. Q79 made the app's code part of the promise: the operator must not be able to read a plan through code the relay serves. The threat model (`docs/security/threat-model.md`, slice 1 of sprint 14) found:
+  - **The relay always serves the app,** with no setting to stop it. Links send people to the relay's copy of the app, unless the page and the relay are both https.
+  - **F1, fixed in slice 5 whatever the answer:** even from the public build, a relay's `/config` answer could make links send people to the relay's copy. A relay behind an https proxy, started with neither `-public-url` nor `-trust-forwarded`, does it by mistake.
+  - **A page can't vouch for itself:** an altered app would show the real build's hash.
+  - **F3:** the public build shares its browser origin with every site under `zjs.github.io`. Anything published there could read its plans and keys.
+  - **F8:** every page opened from disk shares one browser storage. So "open the release's HTML file from disk", the way to keep a laptop relay's operator out of the code, lets any other HTML file someone opens from disk read their plans.
+  - The hosted demo relay is https, so the public build can use it directly. A pilot's laptop relay is plain http, and an https page can't reach it (except on the same computer).
 - Options:
-  - (a) **The app never comes from the relay.** People open it from the public build, for an https relay, or from the release's HTML file, checked once against a published, attested hash, for any relay, including a laptop over plain http. The relay gains a mode that serves no app, and links name the app and the relay separately. Costs: a pilot's colleagues download and open a file instead of opening an address, and the release and the Pages build gain the app's checksum and attestation.
-  - (b) **The relay keeps serving the app, and trusting its operator is stated as the condition,** as ADR 0017 and the relay's README already say. Only the hosted demo relay uses (a).
-  - (c) **(b), plus a check outside the page:** fetch the page, for example with `curl`, and compare it with the published hash. It catches an operator who swaps the app for everyone. It misses one who serves the altered app only to the person they're after, so it promises more than it delivers _(priors)_.
-- Recommendation: (a), the default on the hosted demo relay and available on every relay, with (b) stated plainly for a relay that serves the app. Only (a) makes Q79's property true; (b) is where it isn't, and people choose it knowingly. A company's own relay is run by its IT, who already control the computers the app runs on _(priors)_. A pilot's laptop is run by one of the planners. (c) is left out, since a check that misses the targeted case invites false confidence.
-- Status: open. PM, 2026-10-15: decided after the threat model. Sprint 14's slice 1 rewrites this entry from its findings, and slice 5 builds the answer. Whatever the answer, the hosted demo relay serves no app (Q79), so a relay mode that serves no app and a checksum and attestation for the app's HTML are built anyway.
+  - (a) **The app never comes from a relay.** People use the public build for https relays, and the release's HTML file, checked against a published checksum, for http ones. Relays gain a mode that serves no app, and links name the app and the relay separately. Cost: a pilot's colleagues download, check and open a file instead of opening an address, and F8 then applies to them.
+  - (b) **Relays keep serving the app, and trusting whoever runs it is stated plainly,** in the relay's README, `hosting.md` and the Share dialog. The hosted demo relay serves no app.
+  - (c) **(a) for https relays, (b) for plain http ones.** The hosted relay and any self-hosted relay with TLS are used from a build the operator doesn't control: the public build, or a company's own copy at a separate address. A laptop pilot over http keeps today's arrangement, stated plainly. On a team's own network, the colleague running the relay is already trusted with the plan _(priors)_.
+  - Separately, for F3: (d) move the public build to a domain of its own, such as `planning-board.app`, so no other site shares its origin. The costs:
+    - a domain, about $10–20 a year _(recalled)_, and a DNS setting on GitHub Pages;
+    - **plans people keep in the public build stay behind.** Browser storage is per origin, so the plan list, the boards, and the edit links of shared plans at `zjs.github.io` won't appear at the new address. People would save files and open them again, or the app would need a way to carry them over;
+    - **relays already running refuse the new address** until they're upgraded, since `-allow-origin` defaults to `zjs.github.io`;
+    - links to update: the public build's address in the app (which links shared by file use), the README and `CLAUDE.md`.
+
+    The second and third costs grow with every person using the public build, which argues for doing it before the demo relay invites strangers.
+- Recommendation: (c) and (d).
+  - (c) keeps the promise wherever it can be kept cheaply, which includes every stranger on the demo relay. It doesn't push pilots onto files from disk, which F8 makes a worse trade than it looked.
+  - (d) matters before the demo relay invites strangers, since the public build is what they'll use.
+  - The build work: `-serve-app=false`, links that keep the sharer's page for an https relay (F1), and a checksum and attestation for the app's HTML. It fits slice 5 either way. (a) adds the from-disk path and its docs, about another half slice.
+- Status: open. Held for the threat model (PM, 2026-10-15), and rewritten from it the same day. Slice 5 builds the answer.
 
 ## Answered
 

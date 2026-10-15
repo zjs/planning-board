@@ -52,13 +52,18 @@ test('see who is here, and what they point at and select, in your own view', asy
   await card(ada, id).first().hover({ position: { x: 20, y: 10 } });
   const pointer = bo.locator('.presence-pointer[data-person="Ada"]');
   await expect(pointer).toHaveCount(1);
-  // The pointer sits on that card on Bo's board, wherever the card is there.
-  const at = (await pointer.boundingBox())!;
-  const target = (await card(bo, id).first().boundingBox())!;
-  expect(at.x).toBeGreaterThanOrEqual(target.x - 1);
-  expect(at.x).toBeLessThanOrEqual(target.x + target.width);
-  expect(at.y).toBeGreaterThanOrEqual(target.y - 1);
-  expect(at.y).toBeLessThanOrEqual(target.y + target.height);
+  // The pointer sits on that card on Bo's board, wherever the card is there. The layer redraws by replacing its
+  // marks whenever presence or the layout changes, so a pointer measured a moment ago may already be a new element:
+  // poll until one measurement finds it inside the card.
+  await expect
+    .poll(async () => {
+      const at = await pointer.boundingBox();
+      const target = await card(bo, id).first().boundingBox();
+      if (!at || !target) return 'not measured';
+      const inside = at.x >= target.x - 1 && at.x <= target.x + target.width && at.y >= target.y - 1 && at.y <= target.y + target.height;
+      return inside ? 'on the card' : `at ${at.x},${at.y}, card at ${target.x},${target.y} ${target.width}×${target.height}`;
+    })
+    .toBe('on the card');
   await expect(bo.locator('.presence-tag.pointer[data-person="Ada"]')).toContainText('Ada');
 
   // A selection is outlined on every copy of the card, in Ada's color.
