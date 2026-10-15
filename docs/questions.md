@@ -100,6 +100,21 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
+### Q80: Keeping a relay's operator out of the app's code
+- Context: Requirement 30, Q79 and the backlog's theme N. Q79 put the app's code in scope: the operator must not be able to read a plan through app code the relay serves. Its option (e), a hash the app shows about itself, doesn't work, since an altered app would show the real hash. Facts that shape the choice:
+  - The relay always serves the app; `-static` only swaps in another file.
+  - Links send people to the relay's own copy of the app, unless the page and the relay are both https (ADR 0018).
+  - The app opened as a file from disk can already use a relay (`-allow-file-pages`).
+  - The release's `SHA256SUMS` and attestations cover only the relay downloads, not the app's HTML, and the Pages build isn't attested.
+  - Browsers have no built-in way to check a page against a published hash before running it _(recalled)_.
+  - On the hosted demo relay, the project is both the relay's operator and the app's publisher. Keeping the two apart protects strangers only as far as the published app can be checked against its public source, which needs the attestation above.
+- Options:
+  - (a) **The app never comes from the relay.** People open it from the public build, for an https relay, or from the release's HTML file, checked once against a published, attested hash, for any relay, including a laptop over plain http. The relay gains a mode that serves no app, and links name the app and the relay separately. Costs: a pilot's colleagues download and open a file instead of opening an address, and the release and the Pages build gain the app's checksum and attestation.
+  - (b) **The relay keeps serving the app, and trusting its operator is stated as the condition,** as ADR 0017 and the relay's README already say. Only the hosted demo relay uses (a).
+  - (c) **(b), plus a check outside the page:** fetch the page, for example with `curl`, and compare it with the published hash. It catches an operator who swaps the app for everyone. It misses one who serves the altered app only to the person they're after, so it promises more than it delivers _(priors)_.
+- Recommendation: (a), the default on the hosted demo relay and available on every relay, with (b) stated plainly for a relay that serves the app. Only (a) makes Q79's property true; (b) is where it isn't, and people choose it knowingly. A company's own relay is run by its IT, who already control the computers the app runs on _(priors)_. A pilot's laptop is run by one of the planners. (c) is left out, since a check that misses the targeted case invites false confidence.
+- Status: open.
+
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -701,5 +716,6 @@ Entry format:
 - Status: answered 2026-10-15: (b), (g) and (i), as recommended.
   - **What the property means:** the relay's operator can never read a plan's content, neither from what the relay stores and forwards, nor through app code the relay serves. Metadata stays visible, as an accepted limit the threat model writes down.
   - **Code:** (d) for the hosted demo relay, and (e) wherever a relay serves the app, as on a pilot's laptop over plain http.
+    - Superseded by Q80, the same day. The PR's self-review found that (e) can't work as engineering described it: an altered app would show the real build's hash, so a hash the page shows about itself proves nothing against the operator. (d) also costs more than "little": the relay always serves the app, with no flag to turn that off, and the Pages build isn't attested. The rest of this answer stands.
   - **Tools:** a protocol verifier for secrecy and TLA+ for the relay, with the choice between ProVerif and Tamarin made in an ADR.
   - **When:** in sprint 14, before its hosted demo relay slice. Sprint 14's planning sets the slices.
