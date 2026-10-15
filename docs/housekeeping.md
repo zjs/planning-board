@@ -32,6 +32,7 @@ Part of the slice's own PR, checked during self-review. Nothing here waits for a
 
 Part of the sprint's last slice ("tester-ready"), so `main` is tidy before the PM accepts it.
 
+- [ ] **The version** (ADR 0023): set `package.json`'s version to `0.N.0` for sprint N, and write `docs/releases/v0.N.0.md` for someone on the release page: what's new, that older plans still open, anything to know before upgrading a relay, and how to check a download. Move the pinned version in the user-facing docs along (a test checks they match). The release is published when this PR merges and CI passes on `main`; check it appeared, with its checksums and the image tag.
 - [ ] **Compatibility fixtures:** add the sprint's last commit to `VERSIONS` and run `npm run compat:fixtures`. Do it after the merge, in the next PR.
 - [ ] **User-facing docs:** read each one in [the list](#user-facing-docs) as its reader, who has never seen the project. The README's "Works today" and "Not yet" match the build, and anything the list says goes stale on the sprint's kind of change is checked.
 - [ ] **Help panel:** read top to bottom, as a tester on their first visit. Is every gesture on the board there, and is everything there still true?
@@ -44,6 +45,7 @@ Part of the sprint's last slice ("tester-ready"), so `main` is tidy before the P
 
 Done at the start of sprint planning, so its findings can be scheduled with everything else. The sprint cadence here is days, not weeks, so this works out to about weekly. If sprints stretch past a month, do it monthly instead.
 
+- [ ] Dependabot's pull requests (weekly, Q49) are merged or answered. A major version gets its own PR; take it or record what's blocking it. A Go module it adds needs `npm run notices:relay`.
 - [ ] `npm outdated` and `npm audit`. Take patch and minor updates. Look at each major, and either take it or record in the backlog's Housekeeping what's blocking it (TypeScript 7, for example).
 - [ ] CI actions in `.github/workflows/` are on their current majors. Actions on retired Node runtimes stop working without warning.
 - [ ] Node: CI and `CLAUDE.md` name a supported LTS version, with a move to the next one scheduled well before end of life.
@@ -62,7 +64,8 @@ Read by people who know nothing of our sprints, questions or ADRs. Each is writt
 | `docs/hosting.md` | IT, or a pilot user running it for a team | Deploying, upgrading, backups, HTTPS, or what needs a newer relay |
 | `SECURITY.md` | A security researcher, or a reviewer at a company | What leaves the browser changes: sharing, a new file type, a new service |
 | `CONTRIBUTING.md` and `.github/ISSUE_TEMPLATE/` | Someone reporting a problem | A control they're told to find is renamed or moved; a new way to open the app |
-| The release notes in `.github/workflows/release.yml` | Someone on the relay download page | What's in the download, or where its docs live |
+| `docs/releases/vX.Y.Z.md`, published as the release's page | Someone choosing which relay to run, or upgrading one | Written once per release; links must be absolute |
+| The `relay-latest` notes in `.github/workflows/release.yml` | Someone on the relay download page | What's in the download, or where its docs live |
 
 `npm run check` runs `scripts/user-docs.test.ts`, which fails on the mechanical part of this: a link inside the repo that doesn't resolve, a relative link in the relay's README (which ships without the repo around it), and sprint, question or requirement numbers in any of these. Whether a doc is still true and clear needs a reader.
 
@@ -84,7 +87,8 @@ Can't be automated, because each needs a reader:
 - Tidying tenses and supersessions.
 - Judging a major upgrade.
 
-Could be automated, and needs the PM's decision (Q49):
+Automated since 2026-10-11 (Q49): **Dependabot**, weekly, for npm, Go modules and GitHub Actions, with minor and patch updates grouped into one PR per ecosystem (`.github/dependabot.yml`). Its PRs go through CI and self-review like engineering's.
 
-- **Dependabot** for npm and GitHub Actions, monthly, with minor and patch updates grouped into one PR. It would open pull requests that engineering merges on green. The repo already takes engineering's PRs this way, but it adds traffic to the repo's PR list.
+Could be automated, and needs the PM's decision:
+
 - **A scheduled routine** that runs pass 3 on its own and opens one PR with the results. It's useful if sprints pause for a while, and redundant while they don't.
