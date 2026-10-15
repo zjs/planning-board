@@ -73,9 +73,9 @@ Everything below rests on these. None of them is checked here.
 
 | # | Claim | How | Status |
 |---|---|---|---|
-| C1 | The operator can't learn a plan's content from anything the relay stores or forwards | **Proved** by the protocol model: secrecy of content and of `K`, against an attacker who controls the network and holds `T` | Pending: the protocol model |
-| C2 | The operator can't make a client accept a message that someone holding `K` didn't seal for that room and kind, nor an old snapshot as a newer one | **Proved:** correspondence, from the additional data | Pending: the protocol model |
-| C3 | Presence can't be passed off as a change, nor history as the board | **Proved:** the kind and room are in the additional data | Pending: the protocol model |
+| C1 | The operator can't learn a plan's content from anything the relay stores or forwards | **Proved** by the protocol model: secrecy of content and of `K`, against an attacker who controls the network and holds `T` | Proved: [`formal/proverif/relay.pv`](../../formal/proverif/relay.pv) |
+| C2 | The operator can't make a client accept a message that someone holding `K` didn't seal for that room and kind, nor an old snapshot as a newer one | **Proved:** correspondence, from the additional data | Proved: [`formal/proverif/relay.pv`](../../formal/proverif/relay.pv) |
+| C3 | Presence can't be passed off as a change, nor history as the board | **Proved:** the kind and room are in the additional data | Proved: [`formal/proverif/relay.pv`](../../formal/proverif/relay.pv) |
 | C4 | A Can view link can't write, if the relay is honest | **Checked** by the sync model, and tested in Go | Tested; model pending |
 | C5 | A retired room accepts no write, and old links can't reach the new room | **Checked** by the sync model, and tested | Tested; model pending |
 | C6 | With an honest relay, nothing acknowledged is lost, and everyone who reconnects converges, offline work included | **Checked** by the sync model, and tested against the real code with random schedules | Pending |
@@ -117,9 +117,9 @@ Room IDs, and how many plans there are. Which addresses connect, when, how often
 
 ## What the formal models cover, and what they don't
 
-The models are being written now, and land in the repository with the slices that build them; until then the paths below are where they'll live, and the claims table says which have run. The results quoted in this document (F10, and the restore without `-restored`) come from local drafts.
+The models land in the repository one at a time, and CI checks each from then on (`npm run formal`). The protocol model is in; the sync and tree models are still local drafts, so the paths below for them are where they'll live, and the results quoted from them (F10, and the restore without `-restored`) can't yet be reproduced from the repository.
 
-- **The protocol model** (to live in `formal/proverif/`) covers key derivation, sealing with additional data, Can edit and Can view links, write tokens, and Make new links, against an attacker who is the network plus the relay.
+- **The protocol model** ([`formal/proverif/relay.pv`](../../formal/proverif/relay.pv)) covers key derivation, sealing with additional data, Can edit and Can view links, write tokens, and Make new links, against an attacker who is the network plus the relay. Two broken variants, the room or the kind left out of the additional data, must each break a result, and do.
 - **The sync model** (to live in `formal/tla/Sync.tla`) covers the relay's log, snapshots, compaction, retirement, epochs and restores, and each client's document, shadow, cursor and resends. It includes going offline, crashing mid-save, reloading and the relay restarting.
 - **The tree model** (to live in `formal/tla/Tree.tla`) covers concurrent moves and loop repair.
 - **Random schedules** (to live in `e2e/relay/schedules.spec.ts`) run the real app and relay through offline work, reloads, restarts and restores, and check the sync model's properties on what actually happened.

@@ -1,0 +1,10 @@
+RESULT not attacker(contentA[]) is true.
+RESULT not attacker(presenceA[]) is true.
+RESULT not attacker(historyA[]) is true.
+RESULT not attacker(secretA[]) is true.
+RESULT not attacker(kdfEnc(secretA[])) is true.
+RESULT event(Accepted(roomA[],k_21,u,m_21)) ==> event(Sealed(roomA[],k_21,u,m_21)) is true.
+RESULT event(Accepted(historyRoom(roomA[]),k_21,u,m_21)) ==> event(Sealed(historyRoom(roomA[]),k_21,u,m_21)) is true.
+RESULT event(Accepted(roomNew[],k_21,u,m_21)) ==> event(Sealed(roomNew[],k_21,u,m_21)) is true.
+RESULT not attacker(contentNew[]) is true.
+RESULT event(Accepted(roomV[],kUpdate,noUpto,m_21)) ==> event(Sealed(roomV[],kUpdate,noUpto,m_21)) is false.

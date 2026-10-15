@@ -180,6 +180,28 @@ jobs:
 
   # The relay for each computer, with the app built above inside it (Q69). The downloads people use come from
   # the relay-latest release (release.yml); these are attached to every run, like the HTML file.
+  formal:
+    name: 'Formal: protocol, sync and grouping'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # ProVerif is built from its pinned source with OCaml. Short apt timeouts move on from a stalled mirror (2026-10-07).
+      - name: Install OCaml
+        timeout-minutes: 5
+        run: |
+          echo 'Acquire::http::Timeout "20"; Acquire::https::Timeout "20"; Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ocaml-nox
+
+      # Each model's results must match the ones recorded beside it, and each broken variant must be caught (ADR 0024).
+      - name: Formal models
+        run: npm run formal
+
   relay-build:
     name: Relay download (${{ matrix.target.os }}, ${{ matrix.target.arch }})
     needs: [check, relay-test]

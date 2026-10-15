@@ -36,7 +36,7 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 2. The protocol proof
 
-- [ ] Secrecy of a plan's content and keys against the operator, and that a client accepts only messages sealed for that room and kind. The known limit (an operator holding a view link can write) is stated as an expected attack.
+- [x] Secrecy of a plan's content and keys against the operator, and that a client accepts only messages sealed for that room and kind. The known limit (an operator holding a view link can write) is stated as an expected attack.
 
 ### 3. Sync, offline included (TLA+)
 
