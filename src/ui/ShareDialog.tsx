@@ -4,6 +4,9 @@ import type { SharedPlan } from '../commands/plans.ts';
 import {
   appForFileLinks,
   appForLinks,
+  linksOpenRelaysApp,
+  PUBLIC_APP,
+  publicRelayFor,
   checkRelay,
   isLocalOnly,
   linksFor,
@@ -163,7 +166,7 @@ export function ShareDialog({
     if (sharedRelay === null) return;
     let live = true;
     void checkRelay(sharedRelay).then((info) => {
-      if (live) setPublicRelay(info ? info.publicUrl.replace(/\/$/, '') : sharedRelay);
+      if (live) setPublicRelay(info ? publicRelayFor(sharedRelay, info.publicUrl) : sharedRelay);
     });
     return () => {
       live = false;
@@ -197,10 +200,10 @@ export function ShareDialog({
   if (shared) {
     const byFile = shared.relay === undefined;
     const links = byFile
-      ? linksFor(shared, appForFileLinks())
+      ? linksFor(shared, appForFileLinks(relayStep.kind === 'here'))
       : publicRelay === null || shared.pending || replaced
         ? null
-        : linksFor(shared, appForLinks(publicRelay), publicRelay);
+        : linksFor(shared, appForLinks(shared.relay ?? publicRelay, publicRelay, location, relayStep.kind === 'here'), publicRelay);
     return (
       <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
         {replaced ? (
@@ -250,6 +253,12 @@ export function ShareDialog({
               The relay never sees your plan: it’s encrypted with a key that’s only in the link, after the #, which
               browsers don’t send to any server.
             </p>
+            {publicRelay !== null && linksOpenRelaysApp(shared.relay ?? publicRelay, publicRelay) && (
+              <p className="share-note" data-testid="links-trust">
+                These links open the app from the relay, over plain http, so whoever runs it could change the app, and the
+                app can read the plan. Share them with people who trust whoever runs it, as on a team’s own network.
+              </p>
+            )}
             {isLocalOnly(publicRelay ?? '') && (
               <p className="share-problem">
                 These links say <code>localhost</code>, so they only open on this computer. Start the relay on a computer
@@ -351,6 +360,17 @@ export function ShareDialog({
             Your plan is shared through the relay this page came from, <code>{relayStep.info.publicUrl}</code>. Anyone
             with a link sees the plan you’re on now, and its changes from then on.
           </p>
+          {location.protocol === 'http:' ? (
+            <p data-testid="share-trust">
+              This relay also serves the app you’re using, so whoever runs it could change the app, and the app can read
+              the plan. Share through it only if you trust them, as on a team’s own network.
+            </p>
+          ) : (
+            <p data-testid="share-public-app">
+              Links open Planning Board at <code>{new URL(PUBLIC_APP).host}</code>, not this relay’s copy of the app, so
+              whoever runs the relay can’t change the app the people you share with use.
+            </p>
+          )}
           {isLocalOnly(relayStep.info.publicUrl) && (
             <p className="share-problem">
               This address only works on this computer, so colleagues can’t open its links. Open the app from the
@@ -407,10 +427,12 @@ export function ShareDialog({
             </p>
           )}
           <details className="share-move">
-            <summary>Or open the app from your relay</summary>
+            <summary>Or open the app from a relay on your network</summary>
             <p>
-              A relay serves the app too, at the address it prints. Links from there work for everyone who can reach it.
-              Each address keeps its own plans, so save this one to a file first, then open the file there.
+              A page like this one can’t reach a relay over plain http, such as one on a laptop for a pilot. That relay
+              serves the app too, at the address it prints, and links from there work for everyone who can reach it.
+              Whoever runs it is then trusted with the plan. Each address keeps its own plans, so save this one to a
+              file first, then open the file there.
             </p>
             <button type="button" onClick={onSaveFile}>
               Save plan to file

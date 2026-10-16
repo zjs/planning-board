@@ -59,7 +59,7 @@ Formal methods fit two parts. The first is secrecy and the binding of additional
 **The threat model** ([`security/threat-model.md`](security/threat-model.md), 2026-10-15) queued three things beyond this sprint:
 - **Notice a relay holding changes back** (F4): signed sequence heads, or a hash chain over changes, so clients can tell when they're shown different versions.
 - **Sign each change** (F5), so an operator holding a Can view link can't write.
-- **A domain of its own for the public build** (F3) is part of Q80, so it's decided with it.
+- **A domain of its own for the public build** (F3) was decided with Q80 on 2026-10-16: yes, with the old address kept until the new one is validated, and plans moving across with their owners. Slice 5 prepares it; the PM buys the domain and picks the host.
 
 ### H. Arranging and moving cards
 

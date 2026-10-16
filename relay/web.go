@@ -50,6 +50,41 @@ func serveApp(static string) http.HandlerFunc {
 	}
 }
 
+// publicApp is the public build, which a relay that serves no app points to.
+// The app names the same address (PUBLIC_APP in src/commands/sharing.ts).
+const publicApp = "https://zjs.github.io/planning-board/"
+
+// releasesPage is where the app's HTML file can be downloaded and checked.
+const releasesPage = "https://github.com/zjs/planning-board/releases"
+
+// noAppPage is what a relay started with -serve-app=false shows at /: where
+// to open the app instead, so its operator can't serve an altered one (Q80).
+var noAppPage = []byte(`<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planning Board relay</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem}</style>
+<h1>Planning Board relay</h1>
+<p>This relay carries encrypted plans between browsers. It doesn't serve the app, so whoever runs it can't change the app you use.</p>
+<p>Open the app at <a href="` + publicApp + `">` + publicApp + `</a>, or download its HTML file, <code>planning-board.html</code>, from the <a href="` + releasesPage + `">releases</a>, check it, and open it. Share links say which relay a plan uses. A page served over HTTPS can only reach a relay over HTTPS.</p>
+</html>
+`)
+
+// serveNoApp answers / for a relay that serves no app. Anything else isn't here.
+func serveNoApp() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/" && req.URL.Path != "/index.html" {
+			http.NotFound(w, req)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Write(noAppPage)
+	}
+}
+
 // relayInfo is what /config tells the app: the protocol this relay speaks;
 // the address to put in share links, so a link made on the relay's own
 // computer doesn't say "localhost" when colleagues need its network address;

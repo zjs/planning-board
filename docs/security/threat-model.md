@@ -15,7 +15,7 @@ It's written for anyone deciding whether to trust a relay with a plan: a securit
 - **Hold back changes,** from everyone or from some people, without anyone being told.
 - **Shift the times** history shows, within what their clock claims.
 - **Write to a plan,** if they also hold its Can view link. A Can view link is meant to read only.
-- **Read everything, through the app they serve,** if people open the app from their relay. This is the largest gap, and it's open (see [Code](#code-the-app-itself)).
+- **Read everything, through the app they serve,** if people open the app from their relay. Through an https relay, links never send anyone there; over plain http, on a laptop, they do, and whoever runs the relay is trusted with the plan (see [Code](#code-the-app-itself)).
 - **Restore an old backup.** Started once with `-restored` afterwards, the relay gives every plan a new epoch, and browsers send what the backup lacks. Without it, a browser notices only while the restored relay is behind its cursor. Once others' changes have taken the relay past that point, a browser can go on believing the relay holds changes the backup lacks, so those changes never reach anyone else. The sync model finds this in seconds, and CI requires it to.
 
 ## The system
@@ -83,26 +83,25 @@ Everything below rests on these. None of them is checked here.
 | L1 | Write enforcement trusts the relay | **Accepted limit.** An operator holding a Can view link can write. Signing each change would close this. | Accepted |
 | L2 | The operator can hold back changes without anyone knowing | **Accepted limit** (see F4) | Accepted |
 | L3 | Metadata is visible | **Accepted limit** | Accepted |
-| L4 | Code served by the relay can read everything | **Open** (see [Code](#code-the-app-itself)) | Open: see F2 |
+| L4 | Code served by the relay can read everything | **Accepted limit for plain http relays,** where people open the relay's own address and the Share dialog says whoever runs it is trusted. Through an https relay, links never open the relay's copy (see [Code](#code-the-app-itself)) | Accepted over http; closed over https |
 
 Each pending entry becomes **Proved** or **Checked** when its model runs in CI, alongside the code it describes.
 
 ## Code: the app itself
 
-A relay that serves the app can serve an altered one, which reads the key from the link and sends it, or the plan, anywhere. No proof about the protocol reaches this. Today:
+A relay that serves the app can serve an altered one, which reads the key from the link and sends it, or the plan, anywhere. No proof about the protocol reaches this. The answer (2026-10-16) splits by transport:
 
-- **The relay always serves the app.** There's no setting that stops it.
-- **Links send people to the relay's own copy of the app,** unless the page and the relay are both https. So every pilot on a laptop, and most self-hosted relays, depend on trusting whoever runs the relay.
-- **A page can't check itself.** An altered app would show the real build's hash.
-- **The app's HTML has no published checksum or attestation.** Only the relay downloads do.
+- **Through an https relay, the app never comes from the relay.** Links open the page the plan was shared from: the public build, or a company's own copy at an address of its own. Shared from the relay's own copy, or from a page opened from disk, they open the public build. `/config` can't change this (F1), and `-serve-app=false` turns the relay's own copy off, which the hosted demo relay does.
+- **Over plain http, on a laptop for a pilot,** an https page can't reach the relay, so people open the relay's own address, and the relay serves the app. The Share dialog says so: whoever runs the relay is trusted with the plan, as on a team's own network.
+- **A page can't check itself.** An altered app would show the real build's hash. What can be checked is a copy: each release's `planning-board.html`, the same file the public build serves, has a checksum and a build attestation.
 
 ## Findings
 
 | # | Finding | Severity | Plan |
 |---|---|---|---|
-| F1 | **`/config` decides where links open the app,** even when sharing from the public build. If a relay reports an `http` address, links send everyone to the relay's own copy of the app, which the operator controls. A relay behind an https proxy, started with neither `-public-url` nor `-trust-forwarded`, reports `http` by mistake, so even an honest relay can do it. | High, for any https relay | **Being fixed:** links keep the page they were made on whenever the relay the sharer chose is https, whatever `/config` says |
-| F2 | **Code served by the relay** (above) | High where the app comes from the relay | **Being decided.** Whatever the answer, the hosted demo relay serves no app. |
-| F3 | **Every site under `zjs.github.io` shares one browser origin** with the public build, so any of them could read its plans and keys | Medium: today they're all the same publisher's, but each brings its own code | **Proposed:** move the public build to an origin of its own, a domain of its own, before the demo relay invites strangers |
+| F1 | **`/config` decides where links open the app,** even when sharing from the public build. If a relay reports an `http` address, links send everyone to the relay's own copy of the app, which the operator controls. A relay behind an https proxy, started with neither `-public-url` nor `-trust-forwarded`, reports `http` by mistake, so even an honest relay can do it. | High, for any https relay | **Fixed:** through an https relay, links keep the page they were made on (or name the public build, from the relay's own copy or a page opened from disk), and the relay's address in them stays https, whatever `/config` says |
+| F2 | **Code served by the relay** (above) | High where the app comes from the relay | **Decided:** never through an https relay; over plain http, stated plainly in the Share dialog and the docs. The hosted demo relay serves no app. |
+| F3 | **Every site under `zjs.github.io` shares one browser origin** with the public build, so any of them could read its plans and keys | Medium: today they're all the same publisher's, but each brings its own code | **Decided:** the public build moves to a domain of its own, before the demo relay invites strangers. Plans kept at the old address move with their owners; the current site stays until the new one is validated. |
 | F4 | **Holding back is silent.** The relay can withhold changes, show people different versions, or label a change with a later number so a client never asks for the ones in between, while the pill says Live | Medium: integrity, not secrecy | **Accepted for now.** Signed sequence heads, or a hash chain over changes, would let clients notice. Queued in the backlog. |
 | F5 | **An operator with a Can view link can write** (L1) | Low for the demo relay, whose links nobody shares with the operator | **Accepted;** signing each change is queued |
 | F6 | **History times follow the relay's clock** when an author's is off by more than a minute, so an operator can misdate entries | Low | **Accepted** |

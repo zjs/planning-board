@@ -21,8 +21,9 @@ func main() {
 	addr := flag.String("addr", ":8787", "address to listen on")
 	data := flag.String("data", defaultDataDir(), "directory for each shared plan's encrypted log and snapshot")
 	static := flag.String("static", "", "serve the app from this directory's index.html instead of the built-in one")
+	serveTheApp := flag.Bool("serve-app", true, "serve the app at /; false shows where to open it instead, so people never use a copy this relay could change")
 	publicURL := flag.String("public-url", "", "the address people use to reach this relay, for share links (such as https://plans.example.com)")
-	allowOrigins := flag.String("allow-origin", strings.Join(defaults.Origins.Hosts, ","), "other web hosts whose pages may use this relay, comma-separated, or * for any")
+	allowOrigins := flag.String("allow-origin", strings.Join(defaults.Origins.Hosts, ","), "web hosts whose pages may use this relay, comma-separated, or * for any; it replaces the default, so keep zjs.github.io for the hosted page")
 	allowNull := flag.Bool("allow-file-pages", defaults.Origins.Null, "let the app opened as a file from disk use this relay")
 	maxMessage := flag.Int64("max-message", defaults.MaxMessage, "largest single change or snapshot, in bytes")
 	maxRoom := flag.Int64("max-room", defaults.MaxRoom, "most one shared plan may hold, in bytes (0: no limit)")
@@ -47,6 +48,10 @@ func main() {
 		app, _ := appPage(*static)
 		fmt.Print(licenses(app))
 		return
+	}
+
+	if !*serveTheApp && *static != "" {
+		log.Fatal("-static serves the app, and -serve-app=false serves none: use one or the other")
 	}
 
 	cfg := DefaultConfig(*data)
@@ -81,14 +86,18 @@ func main() {
 	mux.Handle("GET /rooms/{id}", relay)
 	mux.HandleFunc("GET /config", serveConfig(*publicURL, *trustForwarded))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok\n")) })
-	mux.HandleFunc("GET /", serveApp(*static))
+	if *serveTheApp {
+		mux.HandleFunc("GET /", serveApp(*static))
+	} else {
+		mux.HandleFunc("GET /", serveNoApp())
+	}
 
 	listener, err := net.Listen("tcp", *addr)
 	if err != nil {
 		log.Fatalf("can't listen on %s: %v", *addr, err)
 	}
 	if *announce {
-		printAddresses(listener.Addr(), *publicURL, *data)
+		printAddresses(listener.Addr(), *publicURL, *data, *serveTheApp, *trustForwarded)
 	} else {
 		log.Printf("Planning Board relay, build %s, listening on %s", buildName(), listener.Addr())
 	}
@@ -106,18 +115,32 @@ func defaultDataDir() string {
 	return filepath.Join(filepath.Dir(exe), "planning-board-data")
 }
 
-func printAddresses(addr net.Addr, publicURL, data string) {
+func printAddresses(addr net.Addr, publicURL, data string, servesApp, trustForwarded bool) {
 	port := "8787"
 	if tcp, ok := addr.(*net.TCPAddr); ok {
 		port = fmt.Sprint(tcp.Port)
 	}
 	fmt.Printf("Planning Board is running (build %s).\n", buildName())
+	if !servesApp {
+		fmt.Printf("  It serves no app: people open %s and share through this relay's address.\n", publicApp)
+		if !strings.HasPrefix(publicURL, "https://") && !trustForwarded {
+			fmt.Println("  That page can only reach a relay over HTTPS: put this one behind a proxy that answers on HTTPS, with -public-url or -trust-forwarded.")
+		}
+	}
 	if publicURL != "" {
-		fmt.Printf("  Open: %s\n", publicURL)
+		label := "Open"
+		if !servesApp {
+			label = "Relay"
+		}
+		fmt.Printf("  %s: %s\n", label, publicURL)
 	} else {
-		fmt.Printf("  On this computer: http://localhost:%s\n", port)
+		here, network := "On this computer", "On your network: "
+		if !servesApp {
+			here, network = "Relay, here      ", "Relay, on network"
+		}
+		fmt.Printf("  %s: http://localhost:%s\n", here, port)
 		for _, ip := range networkAddresses() {
-			fmt.Printf("  On your network:  http://%s\n", net.JoinHostPort(ip, port))
+			fmt.Printf("  %s: http://%s\n", network, net.JoinHostPort(ip, port))
 		}
 	}
 	fmt.Printf("  Shared plans are kept, encrypted, in %s\n", data)

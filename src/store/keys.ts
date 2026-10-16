@@ -133,7 +133,9 @@ export function isNewerLink(hash: string): boolean {
  * the app, they're the same and the link doesn't name the relay.
  */
 export function shareLinks(app: string, link: ShareLink): { edit: string | null; view: string } {
-  const base = app.replace(/[#?].*$/, '').replace(/\/?$/, '/');
+  // A page served as a file name (`…/planning-board.html`) keeps it; a directory gets its slash.
+  const page = app.replace(/[#?].*$/, '');
+  const base = /\.html?$/i.test(page) ? page : page.replace(/\/?$/, '/');
   const relay = link.file ? '&file=1' : link.relay && sameOrigin(link.relay, base) ? '' : link.relay ? `&relay=${encodeURIComponent(link.relay)}` : '';
   const head = `${base}#v=${KEY_VERSION}&room=${link.room}`;
   return {
