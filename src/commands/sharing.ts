@@ -200,10 +200,12 @@ export function startSharingByFile(id: PlanId): SharedPlan {
 
 /**
  * Where a link to a plan shared by file opens the app: this page, unless it
- * was opened from disk, whose address means nothing on another computer.
+ * was opened from disk, whose address means nothing on another computer, or
+ * a relay served it. A plan shared by file needs no relay, so its links never
+ * open a relay's copy of the app, which whoever runs it could change (Q80).
  */
-export function appForFileLinks(): string {
-  return location.protocol.startsWith('http') ? location.href : PUBLIC_APP;
+export function appForFileLinks(pageIsRelay: boolean, page: { protocol: string; href: string } = location): string {
+  return page.protocol.startsWith('http') && !pageIsRelay ? page.href : PUBLIC_APP;
 }
 
 /** The public build, on GitHub Pages (Q31). */
@@ -234,7 +236,7 @@ export function publicRelayFor(relay: string, publicUrl: string): string {
  * app itself: its own address works for anyone who can reach it on a network,
  * and whoever runs it is trusted with the plan.
  */
-export function appForLinks(relay: string, publicRelay: string, page: { protocol: string; href: string } = location): string {
+export function appForLinks(relay: string, publicRelay: string, page: { protocol: string; href: string } = location, pageIsRelay = false): string {
   if (!relay.startsWith('https:') && !publicRelay.startsWith('https:')) return `${publicRelay.replace(/\/$/, '')}/`;
   const origin = (address: string) => {
     try {
@@ -245,7 +247,8 @@ export function appForLinks(relay: string, publicRelay: string, page: { protocol
   };
   const here = origin(page.href);
   const relays = new Set([origin(relay), origin(publicRelay)]);
-  return page.protocol.startsWith('http') && here !== null && !relays.has(here) ? page.href : PUBLIC_APP;
+  // A page some relay served is that relay's copy, even when this plan goes through another.
+  return page.protocol.startsWith('http') && here !== null && !relays.has(here) && !pageIsRelay ? page.href : PUBLIC_APP;
 }
 
 /** Whether links through this relay open the relay's own copy of the app, so whoever runs it is trusted with the plan. */

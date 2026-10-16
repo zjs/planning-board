@@ -13,7 +13,7 @@ Either a container:
 ```
 docker run -d --name planning-board --restart unless-stopped \
   -p 127.0.0.1:8787:8787 -v planning-board-data:/data \
-  ghcr.io/zjs/planning-board:0.13.0 -public-url https://plans.example.com -trust-forwarded -serve-app=false
+  ghcr.io/zjs/planning-board:0.13.0 -public-url https://plans.example.com -trust-forwarded
 ```
 
 Or the Linux download from the [latest release](https://github.com/zjs/planning-board/releases/latest), under systemd, as `/etc/systemd/system/planning-board.service`:
@@ -24,7 +24,7 @@ Description=Planning Board relay
 After=network-online.target
 
 [Service]
-ExecStart=/opt/planning-board/planning-board-relay -addr 127.0.0.1:8787 -data /var/lib/planning-board -public-url https://plans.example.com -trust-forwarded -serve-app=false -announce=false
+ExecStart=/opt/planning-board/planning-board-relay -addr 127.0.0.1:8787 -data /var/lib/planning-board -public-url https://plans.example.com -trust-forwarded -announce=false
 DynamicUser=yes
 StateDirectory=planning-board
 Restart=on-failure
@@ -42,7 +42,7 @@ Either way, it listens only on the server itself, and a reverse proxy in front o
 
 - **`-public-url`** is the relay's address, as people's browsers reach it. Share links name it.
 - **`-trust-forwarded`** lets the relay see each person's address, from the proxy's `X-Forwarded-For`, rather than the proxy's own. Its rate limits are per address, so without it, everyone shares one limit. Set it only behind a proxy that sets that header.
-- **`-serve-app=false`** keeps the app off the relay, so whoever runs it can't change the app people use: `/` says where to open it instead. Links shared through a relay on HTTPS never open the relay's own copy anyway; this makes sure nobody opens it by hand.
+- **`-serve-app=false`,** from version 0.14.0, keeps the app off the relay, so whoever runs it can't change the app people use: `/` says where to open it instead. Links shared through a relay on HTTPS never open the relay's own copy anyway; this makes sure nobody opens it by hand. Add it to the examples above once you run 0.14.0 or later.
 
 ### HTTPS, with a reverse proxy
 
@@ -82,7 +82,7 @@ server {
 
 **Checking it.** `https://plans.example.com/healthz` says `ok`, and `/config` names the public address and the relay's build. Open the [hosted page](https://zjs.github.io/planning-board/), load the sample, **Share**, and give the relay's address: the pill should say **Live**.
 
-**Where people open the app.** On a relay with HTTPS, people open the [hosted page](https://zjs.github.io/planning-board/), or a copy of the app's HTML, `planning-board.html` from a release, that your company keeps at an address of its own and checks ([how](https://github.com/zjs/planning-board/blob/main/relay/README.md#checking-a-download)). Add that address's host with `-allow-origin`. Links open the page they were made on, so whoever runs the relay can't change the app the people you share with use. Shared from the relay's own copy of the app, or from a file opened from disk, they open the hosted page. A page served over HTTPS can't reach a plain `http` relay, except one on the same computer.
+**Where people open the app.** On a relay with HTTPS, people open the [hosted page](https://zjs.github.io/planning-board/), or a copy of the app's HTML, `planning-board.html` from a release, that your company keeps at an address of its own and checks ([how](https://github.com/zjs/planning-board/blob/main/relay/README.md#checking-a-download)). Let the relay accept it with `-allow-origin`, which replaces the default list rather than adding to it, so keep the hosted page's host in it: `-allow-origin zjs.github.io,intranet.example.com`. Links open the page they were made on, so whoever runs the relay can't change the app the people you share with use. Shared from the relay's own copy of the app, or from a file opened from disk, they open the hosted page, so people's networks need to reach `zjs.github.io`. A page served over HTTPS can't reach a plain `http` relay, except one on the same computer.
 
 ### Upgrading
 

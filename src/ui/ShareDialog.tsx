@@ -200,10 +200,10 @@ export function ShareDialog({
   if (shared) {
     const byFile = shared.relay === undefined;
     const links = byFile
-      ? linksFor(shared, appForFileLinks())
+      ? linksFor(shared, appForFileLinks(relayStep.kind === 'here'))
       : publicRelay === null || shared.pending || replaced
         ? null
-        : linksFor(shared, appForLinks(shared.relay ?? publicRelay, publicRelay), publicRelay);
+        : linksFor(shared, appForLinks(shared.relay ?? publicRelay, publicRelay, location, relayStep.kind === 'here'), publicRelay);
     return (
       <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
         {replaced ? (

@@ -56,6 +56,11 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 - [x] Over plain http, the Share dialog says whoever runs the relay is trusted with the plan (Q80 c).
 - [ ] Ready for a domain of its own (Q80 d), with the current site kept until the new one is validated: plans move from the old address browser to browser, and a stub for the switch sends links on.
 
+### 5, carried to the release pass
+
+- [ ] The release notes tell people running a relay on HTTPS that links shared from the relay's own page now open the hosted page, so their networks need to reach it, and that `-allow-origin` must keep `zjs.github.io`.
+- [ ] `docs/hosting.md`'s examples pin the new version, with `-serve-app=false`.
+
 ### 6. The hosted demo relay (Q64 a)
 
 - [ ] Idle plans expire after 30 days, with public limits and a privacy note.

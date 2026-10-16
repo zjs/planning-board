@@ -63,7 +63,7 @@ Every release has a `SHA256SUMS` file, and a build attestation for each download
 | `-addr` | `:8787` | Where to listen. |
 | `-data` | `planning-board-data` next to the program | Where shared plans are kept, encrypted. |
 | `-public-url` | the address it was reached on | The address people use, for share links. Set it behind a proxy. |
-| `-allow-origin` | `zjs.github.io` | Other web hosts whose pages may use this relay, or `*`. The relay's own pages are always allowed. |
+| `-allow-origin` | `zjs.github.io` | Web hosts whose pages may use this relay, comma-separated, or `*`. It replaces the default, so keep `zjs.github.io` in the list for the hosted page. The relay's own pages are always allowed. |
 | `-allow-file-pages` | on | Let the app opened as a file from disk use this relay. |
 | `-max-message` | 4 MB | The largest single change or snapshot. |
 | `-max-room` | 200 MB | The most one shared plan may hold. |

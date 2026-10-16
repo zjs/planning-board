@@ -3,7 +3,7 @@ import { Frame, FrameReader, FrameWriter, HelloFlag } from '../store/frames.ts';
 import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
 import type { RelaySocket } from '../store/relay.ts';
 import { addPlan, findPlan, findShared, markDeleted } from './plans.ts';
-import { PUBLIC_APP, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
+import { PUBLIC_APP, appForFileLinks, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
 
 // The plan list falls back to memory here, as it does in a browser that won't give localStorage.
 const relay = 'http://192.168.1.23:8787';
@@ -65,6 +65,19 @@ describe('where links open the app (Q80, F1 in the threat model)', () => {
     expect(appForLinks(relay, relay, own)).toBe(PUBLIC_APP);
     // Behind a proxy whose /config said http: the relay's own page is still its copy.
     expect(appForLinks(relay, publicRelayFor(relay, 'http://plans.example.com/'), own)).toBe(PUBLIC_APP);
+  });
+
+  it('sends people to the public build from a page another relay served', () => {
+    const otherRelay = { protocol: 'https:', href: 'https://a.example.com/#plan=p1' };
+    expect(appForLinks('https://b.example.com', 'https://b.example.com', otherRelay, true)).toBe(PUBLIC_APP);
+  });
+
+  it('never opens a relay’s copy for a plan shared by file, which needs no relay', () => {
+    const relayPage = { protocol: 'https:', href: 'https://plans.example.com/#plan=p1' };
+    expect(appForFileLinks(true, relayPage)).toBe(PUBLIC_APP);
+    expect(appForFileLinks(true, { protocol: 'http:', href: 'http://192.168.1.23:8787/' })).toBe(PUBLIC_APP);
+    expect(appForFileLinks(false, { protocol: 'https:', href: 'https://intranet.example.com/planning-board.html' })).toBe('https://intranet.example.com/planning-board.html');
+    expect(appForFileLinks(false, { protocol: 'file:', href: 'file:///Users/ada/planning-board.html' })).toBe(PUBLIC_APP);
   });
 
   it('keeps a company’s own copy at an address apart from the relay, over http too', () => {
