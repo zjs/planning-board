@@ -722,7 +722,8 @@ func TestTheRelayServesTheAppAndItsConfig(t *testing.T) {
 
 func TestARelayThatServesNoAppSaysWhereToOpenIt(t *testing.T) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", serveNoApp())
+	mux.HandleFunc("GET /", serveNoApp(true))
+	mux.HandleFunc("GET /privacy", servePrivacy([]byte("<p>Kept 30 days.</p>")))
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	res, err := http.Get(srv.URL + "/")
@@ -738,7 +739,69 @@ func TestARelayThatServesNoAppSaysWhereToOpenIt(t *testing.T) {
 	if !strings.Contains(page, publicApp) || !strings.Contains(page, releasesPage) || strings.Contains(page, "<script") {
 		t.Fatalf("page: %s", page)
 	}
+	if !strings.Contains(page, `href="privacy"`) {
+		t.Fatalf("the page doesn't link to the privacy note: %s", page)
+	}
+	res, err = http.Get(srv.URL + "/privacy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	note, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	if string(note) != "<p>Kept 30 days.</p>" {
+		t.Fatalf("privacy note: %q", note)
+	}
 	if res, _ := http.Get(srv.URL + "/elsewhere"); res.StatusCode != http.StatusNotFound {
 		t.Fatalf("other paths: %d", res.StatusCode)
+	}
+}
+
+func TestPlansNobodyOpensExpireAndOpenOnesNeverDo(t *testing.T) {
+	dir := t.TempDir()
+	cfg, c := testConfig(t, dir)
+	cfg.ExpireIdle = 30 * 24 * time.Hour
+	relay, err := NewRelay(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	open := func(id string) *Room {
+		room, err := relay.acquire(id, true, []byte("token-"+id), "192.0.2.1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return room
+	}
+	quiet, visited, held := "quiet-plan-000000000", "visited-plan-0000000", "held-open-plan-00000"
+	relay.release(open(quiet))
+	relay.release(open(visited))
+	busy := open(held)
+
+	// 29 days on, nothing has gone; someone opens one of them.
+	c.Add(29 * 24 * time.Hour)
+	if n := relay.ExpireIdle(); n != 0 {
+		t.Fatalf("expired %d plans within 30 days", n)
+	}
+	relay.release(open(visited))
+
+	// 31 days after they were made: the quiet one goes, the visited one stays, and the open one stays however long.
+	c.Add(2 * 24 * time.Hour)
+	if n := relay.ExpireIdle(); n != 1 {
+		t.Fatalf("expired %d plans, want 1", n)
+	}
+	if isRoom(filepath.Join(dir, quiet)) || !isRoom(filepath.Join(dir, visited)) || !isRoom(filepath.Join(dir, held)) {
+		t.Fatal("the wrong plans expired")
+	}
+	if _, ok := relay.sizes[quiet]; ok {
+		t.Fatal("an expired plan still counts toward the relay's limits")
+	}
+	c.Add(400 * 24 * time.Hour)
+	relay.ExpireIdle()
+	if !isRoom(filepath.Join(dir, held)) {
+		t.Fatal("a plan someone has open expired")
+	}
+	relay.release(busy)
+	// An expired plan is unknown, so its board's Put it back makes it again.
+	if _, err := relay.acquire(quiet, false, nil, "192.0.2.1"); err == nil {
+		t.Fatal("an expired plan can still be opened")
 	}
 }

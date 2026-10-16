@@ -55,6 +55,10 @@ type Config struct {
 	RoomsPerHour         float64
 	Origins              OriginPolicy
 	TrustForwarded       bool
+	// ExpireIdle deletes a room nobody has opened for this long (0: never), as
+	// the hosted demo relay does with 30 days (Q64 a). A room that's open is
+	// never deleted, however long ago it was made.
+	ExpireIdle time.Duration
 	// Restored gives every room a new epoch at start-up, after the data was
 	// restored from a backup: each board then sends whatever the backup is
 	// missing, rather than trusting what it sent before.
@@ -179,6 +183,7 @@ func (r *Relay) acquire(id string, create bool, token []byte, address string) (*
 		}
 		r.open[id] = room
 	}
+	touch(room.dir, r.cfg.Now())
 	if create && !room.canWrite(token) {
 		if room.users == 0 {
 			room.close()
@@ -194,10 +199,40 @@ func (r *Relay) release(room *Room) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	room.users--
+	touch(room.dir, r.cfg.Now())
 	if room.users == 0 {
 		room.close()
 		delete(r.open, room.id)
 	}
+}
+
+// ExpireIdle deletes the rooms nobody has opened for cfg.ExpireIdle, and
+// says how many. Rooms open now are skipped. main runs it hourly.
+func (r *Relay) ExpireIdle() int {
+	if r.cfg.ExpireIdle <= 0 {
+		return 0
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	now := r.cfg.Now()
+	expired := 0
+	for id, size := range r.sizes {
+		if _, open := r.open[id]; open {
+			continue
+		}
+		dir := filepath.Join(r.cfg.DataDir, id)
+		if now.Sub(lastSeen(dir)) <= r.cfg.ExpireIdle {
+			continue
+		}
+		if err := os.RemoveAll(dir); err != nil {
+			log.Printf("room %s: couldn't expire: %v", id, err)
+			continue
+		}
+		r.total -= size
+		delete(r.sizes, id)
+		expired++
+	}
+	return expired
 }
 
 // reserve accounts for a room growing by delta bytes, if the relay's total

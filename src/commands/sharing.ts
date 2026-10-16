@@ -5,7 +5,7 @@ import { newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type Share
 import { historyRoom } from '../store/history.ts';
 import { retireRoom, type OpenSocket, type RetireResult } from '../store/relay.ts';
 import { addSharedPlan, findPlan, findShared, markDrafted, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
-import { PUBLIC_APP } from '../move/addresses.ts';
+import { PUBLIC_APP, testOverride } from '../move/addresses.ts';
 
 export { isNewerLink, parseShareLink, type ShareLink } from '../store/keys.ts';
 
@@ -39,6 +39,18 @@ export function setMyName(name: string): void {
 }
 
 /** The relay last used to share from this browser, to offer next time. */
+/**
+ * The hosted demo relay the project runs (Q64 a), offered by default where no
+ * relay was used before: null until it's deployed (docs/hosting-demo.md).
+ */
+export const DEMO_RELAY: string | null = null;
+/** Points Share at a stand-in for the demo relay, only for tests. */
+const DEMO_KEY = 'planning-board:demo-relay';
+
+export function demoRelay(): string | null {
+  return testOverride(DEMO_KEY) ?? DEMO_RELAY;
+}
+
 export function rememberedRelay(): string | null {
   return read(RELAY_KEY);
 }

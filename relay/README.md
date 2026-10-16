@@ -75,6 +75,8 @@ Every release has a `SHA256SUMS` file, and a build attestation for each download
 | `-share-rate` | 60 | New shared plans per hour from one address. |
 | `-trust-forwarded` | off | Behind a proxy, read `X-Forwarded-For` and `X-Forwarded-Proto`. |
 | `-static` | | Serve the app from this directory's `index.html` instead of the built-in one. |
+| `-expire-idle` | never | Delete a shared plan nobody has opened for this long, such as `720h` for 30 days. A plan someone has open is never deleted. |
+| `-privacy-note` | | An HTML file served at `/privacy`, saying what the relay keeps and for how long. |
 | `-serve-app` | on | Serve the app at `/`. Off, `/` says where to open it instead, so nobody uses a copy of the app this relay could change. |
 | `-announce` | on | Print the addresses colleagues can open. |
 | `-version` | | Print which build this is, and stop. |

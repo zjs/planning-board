@@ -21,6 +21,7 @@ func main() {
 	addr := flag.String("addr", ":8787", "address to listen on")
 	data := flag.String("data", defaultDataDir(), "directory for each shared plan's encrypted log and snapshot")
 	static := flag.String("static", "", "serve the app from this directory's index.html instead of the built-in one")
+	privacyNote := flag.String("privacy-note", "", "an HTML file to serve at /privacy, saying what this relay keeps and for how long")
 	serveTheApp := flag.Bool("serve-app", true, "serve the app at /; false shows where to open it instead, so people never use a copy this relay could change")
 	publicURL := flag.String("public-url", "", "the address people use to reach this relay, for share links (such as https://plans.example.com)")
 	allowOrigins := flag.String("allow-origin", strings.Join(defaults.Origins.Hosts, ","), "web hosts whose pages may use this relay, comma-separated, or * for any; it replaces the default, so keep zjs.github.io for the hosted page")
@@ -35,6 +36,7 @@ func main() {
 	createRate := flag.Float64("share-rate", defaults.RoomsPerHour, "new shared plans per hour from one address (0: no limit)")
 	trustForwarded := flag.Bool("trust-forwarded", false, "behind a proxy, use X-Forwarded-For and X-Forwarded-Proto")
 	announce := flag.Bool("announce", true, "print the addresses colleagues can open")
+	expireIdle := flag.Duration("expire-idle", 0, "delete a shared plan nobody has opened for this long, such as 720h for 30 days (0: never)")
 	restored := flag.Bool("restored", false, "after restoring the data from a backup, start once with this: boards then send whatever the backup is missing")
 	version := flag.Bool("version", false, "print which build this is, and stop")
 	showLicenses := flag.Bool("licenses", false, "print the licenses of the open-source software inside, and stop")
@@ -60,6 +62,7 @@ func main() {
 	cfg.PresencePerSecond = *presenceRate
 	cfg.TrustForwarded = *trustForwarded
 	cfg.Restored = *restored
+	cfg.ExpireIdle = *expireIdle
 	cfg.Origins = OriginPolicy{Null: *allowNull}
 	for _, host := range strings.Split(*allowOrigins, ",") {
 		switch host = strings.TrimSpace(host); host {
@@ -82,14 +85,31 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't use %s for data: %v", *data, err)
 	}
+	if cfg.ExpireIdle > 0 {
+		go func() {
+			for {
+				if n := relay.ExpireIdle(); n > 0 {
+					log.Printf("deleted %d shared plans nobody had opened for %s", n, cfg.ExpireIdle)
+				}
+				time.Sleep(time.Hour)
+			}
+		}()
+	}
 	mux := http.NewServeMux()
 	mux.Handle("GET /rooms/{id}", relay)
 	mux.HandleFunc("GET /config", serveConfig(*publicURL, *trustForwarded))
+	if *privacyNote != "" {
+		page, err := os.ReadFile(*privacyNote)
+		if err != nil {
+			log.Fatalf("can't read -privacy-note: %v", err)
+		}
+		mux.HandleFunc("GET /privacy", servePrivacy(page))
+	}
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok\n")) })
 	if *serveTheApp {
 		mux.HandleFunc("GET /", serveApp(*static))
 	} else {
-		mux.HandleFunc("GET /", serveNoApp())
+		mux.HandleFunc("GET /", serveNoApp(*privacyNote != ""))
 	}
 
 	listener, err := net.Listen("tcp", *addr)
