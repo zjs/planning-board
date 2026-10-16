@@ -28,3 +28,4 @@ Short ADRs: context, decision, alternatives, consequences. Each one should make 
 | [0022](0022-changes-by-file.md) | Changes by file: a shared plan with no relay travels as whole boards, sealed with the plan's key; the key goes once, in a link | Accepted |
 | [0023](0023-versions-and-releases.md) | Versions and releases: the version in `package.json`, released after CI passes on `main`, with checksums and attestations; programs name their commit | Accepted |
 | [0024](0024-formal-methods.md) | Formal checks: ProVerif for the protocol, TLA+ for sync and grouping, each checked against a broken variant, and run in CI | Accepted |
+| [0025](0025-a-domain-of-its-own.md) | A domain of its own for the public build: plans move browser to browser from the old address, which becomes a stub that sends links on | Accepted |

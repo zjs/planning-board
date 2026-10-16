@@ -5,6 +5,7 @@ import { newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type Share
 import { historyRoom } from '../store/history.ts';
 import { retireRoom, type OpenSocket, type RetireResult } from '../store/relay.ts';
 import { addSharedPlan, findPlan, findShared, markDrafted, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
+import { PUBLIC_APP } from '../move/addresses.ts';
 
 export { isNewerLink, parseShareLink, type ShareLink } from '../store/keys.ts';
 
@@ -208,8 +209,8 @@ export function appForFileLinks(pageIsRelay: boolean, page: { protocol: string; 
   return page.protocol.startsWith('http') && !pageIsRelay ? page.href : PUBLIC_APP;
 }
 
-/** The public build, on GitHub Pages (Q31). */
-export const PUBLIC_APP = 'https://zjs.github.io/planning-board/';
+// The public build (Q31), kept with the addresses of its move to a domain of its own (Q80 d).
+export { PUBLIC_APP };
 
 /** The relay confirmed the room. */
 export function sharingConfirmed(id: PlanId, shared: SharedPlan): void {
