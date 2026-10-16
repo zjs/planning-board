@@ -17,7 +17,7 @@ A collaborative planning whiteboard for product leadership (PMs, EMs, tech leads
 
 Sprints 3–13 and the blank-plan slice were accepted on 2026-10-10 (Q78). From now on, the PM accepts a sprint once they've used its build and found nothing blocking. Tester sessions feed the backlog rather than gating acceptance. The combined session for sprints 3–8, which opens with a cold start, is `docs/demos/sprint-5-session.md`. Tester feedback goes into `docs/backlog.md`.
 
-Sprint 14 is under way: the relay made safe to host, with a threat model, formal checks of the relay and of sync with offline work, and a hosted demo relay (`docs/sprint-14.md`, `docs/plans/sprint-14-plan.md`). The PM answers Q80 after the threat model, before slice 5. The rest of M2 is sprint 15, since you were away (`docs/plans/m2-plan.md`).
+Sprint 14 is under way: the relay made safe to host, with a threat model, formal checks of the relay and of sync with offline work, and a hosted demo relay (`docs/sprint-14.md`, `docs/plans/sprint-14-plan.md`). The PM answered Q80 on 2026-10-16: no app from https relays, and a domain of its own, with the current site kept until the new one is validated. The rest of M2 is sprint 15, since you were away (`docs/plans/m2-plan.md`).
 
 What's built, for orientation: sprint 9 designed collaboration (summary in `docs/research/collaboration/README.md`; its spikes are in `spikes/`, out of lint, typecheck and CI). Sprints 10–13 built it: schema 2 and several plans per browser, the relay (Go, in `relay/`, with `e2e/relay/` testing the app against it), presence and changes by file, and history. Each sprint's demo note is `docs/demos/sprint-N.md`.
 

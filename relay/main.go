@@ -21,6 +21,7 @@ func main() {
 	addr := flag.String("addr", ":8787", "address to listen on")
 	data := flag.String("data", defaultDataDir(), "directory for each shared plan's encrypted log and snapshot")
 	static := flag.String("static", "", "serve the app from this directory's index.html instead of the built-in one")
+	serveTheApp := flag.Bool("serve-app", true, "serve the app at /; false shows where to open it instead, so people never use a copy this relay could change")
 	publicURL := flag.String("public-url", "", "the address people use to reach this relay, for share links (such as https://plans.example.com)")
 	allowOrigins := flag.String("allow-origin", strings.Join(defaults.Origins.Hosts, ","), "other web hosts whose pages may use this relay, comma-separated, or * for any")
 	allowNull := flag.Bool("allow-file-pages", defaults.Origins.Null, "let the app opened as a file from disk use this relay")
@@ -81,14 +82,18 @@ func main() {
 	mux.Handle("GET /rooms/{id}", relay)
 	mux.HandleFunc("GET /config", serveConfig(*publicURL, *trustForwarded))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok\n")) })
-	mux.HandleFunc("GET /", serveApp(*static))
+	if *serveTheApp {
+		mux.HandleFunc("GET /", serveApp(*static))
+	} else {
+		mux.HandleFunc("GET /", serveNoApp())
+	}
 
 	listener, err := net.Listen("tcp", *addr)
 	if err != nil {
 		log.Fatalf("can't listen on %s: %v", *addr, err)
 	}
 	if *announce {
-		printAddresses(listener.Addr(), *publicURL, *data)
+		printAddresses(listener.Addr(), *publicURL, *data, *serveTheApp)
 	} else {
 		log.Printf("Planning Board relay, build %s, listening on %s", buildName(), listener.Addr())
 	}
@@ -106,14 +111,21 @@ func defaultDataDir() string {
 	return filepath.Join(filepath.Dir(exe), "planning-board-data")
 }
 
-func printAddresses(addr net.Addr, publicURL, data string) {
+func printAddresses(addr net.Addr, publicURL, data string, servesApp bool) {
 	port := "8787"
 	if tcp, ok := addr.(*net.TCPAddr); ok {
 		port = fmt.Sprint(tcp.Port)
 	}
 	fmt.Printf("Planning Board is running (build %s).\n", buildName())
+	if !servesApp {
+		fmt.Printf("  It serves no app: people open %s and share through this relay's address.\n", publicApp)
+	}
 	if publicURL != "" {
-		fmt.Printf("  Open: %s\n", publicURL)
+		label := "Open"
+		if !servesApp {
+			label = "Relay"
+		}
+		fmt.Printf("  %s: %s\n", label, publicURL)
 	} else {
 		fmt.Printf("  On this computer: http://localhost:%s\n", port)
 		for _, ip := range networkAddresses() {

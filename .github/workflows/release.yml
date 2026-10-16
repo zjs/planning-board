@@ -11,6 +11,9 @@ name: Release the relay
 #   image tag X.Y.Z (ADR 0023).
 # - Every download has a checksum in SHA256SUMS and a build attestation, so
 #   anyone can check it came from this workflow (`gh attestation verify`).
+#   So does the app's HTML, planning-board.html: the same file the hosted page
+#   serves, and the one inside each relay, to open from disk or host apart from
+#   any relay.
 #
 # The image waits for the downloads job, which creates the version's tag, so a
 # version tag on the image never runs ahead of the release, and is never pushed
@@ -104,15 +107,30 @@ jobs:
           fi
           test "$(ls downloads | wc -l)" -eq 5
 
+      - name: Fetch the app CI built and tested
+        uses: actions/download-artifact@v8
+        with:
+          name: planning-board-${{ github.event.workflow_run.head_sha }}.html
+          path: app
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Name the app's file
+        run: |
+          cp app/*.html downloads/planning-board.html
+          test -s downloads/planning-board.html
+
       - name: Checksums
         run: |
-          (cd downloads && sha256sum planning-board-relay-* > SHA256SUMS)
+          (cd downloads && sha256sum planning-board-relay-* planning-board.html > SHA256SUMS)
           cat downloads/SHA256SUMS
 
       - name: Attest where each download came from
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: downloads/planning-board-relay-*
+          subject-path: |
+            downloads/planning-board-relay-*
+            downloads/planning-board.html
 
       - name: Replace the relay-latest release
         env:
@@ -127,7 +145,7 @@ jobs:
             --latest=false \
             --target "$SHA" \
             --title "Relay (latest main)" \
-            --notes "The Planning Board relay, with the app inside, built from ${SHA}. It's rebuilt from every change to main, so this is always the newest; for a version to pin, take the latest numbered release. Download the archive for your computer, unpack it, and run planning-board-relay. Check a download with SHA256SUMS or gh attestation verify. Mac, Windows and container steps: https://github.com/zjs/planning-board/blob/main/relay/README.md. Running it for a team: https://github.com/zjs/planning-board/blob/main/docs/hosting.md."
+            --notes "The Planning Board relay, with the app inside, built from ${SHA}. It's rebuilt from every change to main, so this is always the newest; for a version to pin, take the latest numbered release. Download the archive for your computer, unpack it, and run planning-board-relay. planning-board.html is the app on its own, the same file as the hosted page. Check a download with SHA256SUMS or gh attestation verify. Mac, Windows and container steps: https://github.com/zjs/planning-board/blob/main/relay/README.md. Running it for a team: https://github.com/zjs/planning-board/blob/main/docs/hosting.md."
 
       - name: Publish the new version
         if: needs.version.outputs.new == 'true'

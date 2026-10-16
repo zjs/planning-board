@@ -216,13 +216,27 @@ export function sharingConfirmed(id: PlanId, shared: SharedPlan): void {
 }
 
 /**
- * Where share links send people to open the app. A relay serves the app
- * itself, so its own address works for anyone who can reach it, over plain
- * http on a network too. Only when this page and the relay are both https
- * do links keep this page, so people open the same build you're using.
+ * The relay's address as others reach it, for links: what its /config says,
+ * unless this browser reaches it over https and /config doesn't. A relay
+ * behind an https proxy, started with neither -public-url nor
+ * -trust-forwarded, reports plain http by mistake (F1 in the threat model).
  */
-export function appForLinks(publicRelay: string): string {
-  return location.protocol === 'https:' && publicRelay.startsWith('https:') ? location.href : `${publicRelay.replace(/\/$/, '')}/`;
+export function publicRelayFor(relay: string, publicUrl: string): string {
+  const said = publicUrl.replace(/\/$/, '');
+  return relay.startsWith('https:') && !said.startsWith('https:') ? relay.replace(/\/$/, '') : said;
+}
+
+/**
+ * Where share links send people to open the app (Q80). Through an https
+ * relay, never the relay's own copy, which its operator could have changed,
+ * whatever its /config says (F1): this page if it's https, and otherwise (a
+ * page opened from disk) the public build. A plain http relay serves the app
+ * itself: its own address works for anyone who can reach it on a network, and
+ * whoever runs it is trusted with the plan.
+ */
+export function appForLinks(relay: string, publicRelay: string, page: { protocol: string; href: string } = location): string {
+  if (relay.startsWith('https:') || publicRelay.startsWith('https:')) return page.protocol === 'https:' ? page.href : PUBLIC_APP;
+  return `${publicRelay.replace(/\/$/, '')}/`;
 }
 
 /**

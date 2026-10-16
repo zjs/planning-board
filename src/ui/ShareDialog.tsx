@@ -4,6 +4,7 @@ import type { SharedPlan } from '../commands/plans.ts';
 import {
   appForFileLinks,
   appForLinks,
+  publicRelayFor,
   checkRelay,
   isLocalOnly,
   linksFor,
@@ -163,7 +164,7 @@ export function ShareDialog({
     if (sharedRelay === null) return;
     let live = true;
     void checkRelay(sharedRelay).then((info) => {
-      if (live) setPublicRelay(info ? info.publicUrl.replace(/\/$/, '') : sharedRelay);
+      if (live) setPublicRelay(info ? publicRelayFor(sharedRelay, info.publicUrl) : sharedRelay);
     });
     return () => {
       live = false;
@@ -200,7 +201,7 @@ export function ShareDialog({
       ? linksFor(shared, appForFileLinks())
       : publicRelay === null || shared.pending || replaced
         ? null
-        : linksFor(shared, appForLinks(publicRelay), publicRelay);
+        : linksFor(shared, appForLinks(shared.relay ?? publicRelay, publicRelay), publicRelay);
     return (
       <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
         {replaced ? (
@@ -351,6 +352,12 @@ export function ShareDialog({
             Your plan is shared through the relay this page came from, <code>{relayStep.info.publicUrl}</code>. Anyone
             with a link sees the plan you’re on now, and its changes from then on.
           </p>
+          {location.protocol === 'http:' && (
+            <p data-testid="share-trust">
+              This relay also serves the app you’re using, so whoever runs it could change the app, and the app can read
+              the plan. Share through it only if you trust them, as on a team’s own network.
+            </p>
+          )}
           {isLocalOnly(relayStep.info.publicUrl) && (
             <p className="share-problem">
               This address only works on this computer, so colleagues can’t open its links. Open the app from the

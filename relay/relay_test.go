@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -713,6 +714,29 @@ func TestTheRelayServesTheAppAndItsConfig(t *testing.T) {
 	json.NewDecoder(res.Body).Decode(&info)
 	if info.Protocol != ProtocolVersion || info.PublicURL == "" || info.Build != buildName() || res.Header.Get("Access-Control-Allow-Origin") != "*" {
 		t.Fatalf("config: %+v %v", info, res.Header)
+	}
+	if res, _ := http.Get(srv.URL + "/elsewhere"); res.StatusCode != http.StatusNotFound {
+		t.Fatalf("other paths: %d", res.StatusCode)
+	}
+}
+
+func TestARelayThatServesNoAppSaysWhereToOpenIt(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", serveNoApp())
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	res, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	if res.StatusCode != http.StatusOK || !strings.HasPrefix(res.Header.Get("Content-Type"), "text/html") {
+		t.Fatalf("status %d, headers %v", res.StatusCode, res.Header)
+	}
+	page := string(body)
+	if !strings.Contains(page, publicApp) || !strings.Contains(page, latestRelease) || strings.Contains(page, "<script") {
+		t.Fatalf("page: %s", page)
 	}
 	if res, _ := http.Get(srv.URL + "/elsewhere"); res.StatusCode != http.StatusNotFound {
 		t.Fatalf("other paths: %d", res.StatusCode)

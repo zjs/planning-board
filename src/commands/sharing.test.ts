@@ -3,7 +3,7 @@ import { Frame, FrameReader, FrameWriter, HelloFlag } from '../store/frames.ts';
 import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
 import type { RelaySocket } from '../store/relay.ts';
 import { addPlan, findPlan, findShared, markDeleted } from './plans.ts';
-import { joinFromLink, linksFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
+import { PUBLIC_APP, appForLinks, joinFromLink, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
 
 // The plan list falls back to memory here, as it does in a browser that won't give localStorage.
 const relay = 'http://192.168.1.23:8787';
@@ -32,6 +32,34 @@ describe('sharing a plan', () => {
     expect(links.edit).not.toContain('localhost');
     expect(parseShareLink(new URL(links.edit!).hash)).toMatchObject({ room: shared.room, secret: shared.secret });
     expect(parseShareLink(new URL(links.view).hash)).toEqual({ room: shared.room, viewKey: shared.viewKey });
+  });
+});
+
+describe('where links open the app (Q80, F1 in the threat model)', () => {
+  const page = { protocol: 'https:', href: 'https://zjs.github.io/planning-board/#plan=p1' };
+
+  it('keeps this page for an https relay, even when its /config says plain http', () => {
+    const relay = 'https://plans.example.com';
+    const publicRelay = publicRelayFor(relay, 'http://plans.example.com/');
+    expect(publicRelay).toBe('https://plans.example.com');
+    expect(appForLinks(relay, publicRelay, page)).toBe(page.href);
+  });
+
+  it('keeps the address /config gives when it is https', () => {
+    expect(publicRelayFor('https://localhost:8787', 'https://plans.example.com/')).toBe('https://plans.example.com');
+    expect(publicRelayFor('http://localhost:8787', 'http://192.168.1.23:8787/')).toBe('http://192.168.1.23:8787');
+  });
+
+  it('sends people to a plain http relay, which serves the app itself', () => {
+    const local = { protocol: 'http:', href: 'http://192.168.1.23:8787/#plan=p1' };
+    expect(appForLinks('http://192.168.1.23:8787', 'http://192.168.1.23:8787', local)).toBe('http://192.168.1.23:8787/');
+    // An https page can reach a relay on its own computer over http; colleagues can't use this page with it.
+    expect(appForLinks('http://localhost:8787', 'http://192.168.1.23:8787', page)).toBe('http://192.168.1.23:8787/');
+  });
+
+  it('sends people to the public build from a page opened from disk, never to an https relay’s own copy', () => {
+    const disk = { protocol: 'file:', href: 'file:///Users/ada/planning-board.html' };
+    expect(appForLinks('https://plans.example.com', 'https://plans.example.com', disk)).toBe(PUBLIC_APP);
   });
 });
 

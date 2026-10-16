@@ -100,31 +100,6 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
-### Q80: Keeping a relay's operator out of the app's code
-- Context: Requirement 30, Q79 and the backlog's theme N. Q79 made the app's code part of the promise: the operator must not be able to read a plan through code the relay serves. The threat model (`docs/security/threat-model.md`, slice 1 of sprint 14) found:
-  - **The relay always serves the app,** with no setting to stop it. Links send people to the relay's copy of the app, unless the page and the relay are both https.
-  - **F1, fixed in slice 5 whatever the answer:** even from the public build, a relay's `/config` answer could make links send people to the relay's copy. A relay behind an https proxy, started with neither `-public-url` nor `-trust-forwarded`, does it by mistake.
-  - **A page can't vouch for itself:** an altered app would show the real build's hash.
-  - **F3:** the public build shares its browser origin with every site under `zjs.github.io`. Anything published there could read its plans and keys.
-  - **F8:** every page opened from disk shares one browser storage. So "open the release's HTML file from disk", the way to keep a laptop relay's operator out of the code, lets any other HTML file someone opens from disk read their plans.
-  - The hosted demo relay is https, so the public build can use it directly. A pilot's laptop relay is plain http, and an https page can't reach it (except on the same computer).
-- Options:
-  - (a) **The app never comes from a relay.** People use the public build for https relays, and the release's HTML file, checked against a published checksum, for http ones. Relays gain a mode that serves no app, and links name the app and the relay separately. Cost: a pilot's colleagues download, check and open a file instead of opening an address, and F8 then applies to them.
-  - (b) **Relays keep serving the app, and trusting whoever runs it is stated plainly,** in the relay's README, `hosting.md` and the Share dialog. The hosted demo relay serves no app.
-  - (c) **(a) for https relays, (b) for plain http ones.** The hosted relay and any self-hosted relay with TLS are used from a build the operator doesn't control: the public build, or a company's own copy at a separate address. A laptop pilot over http keeps today's arrangement, stated plainly. On a team's own network, the colleague running the relay is already trusted with the plan _(priors)_.
-  - Separately, for F3: (d) move the public build to a domain of its own, such as `planning-board.app`, so no other site shares its origin. The costs:
-    - a domain, about $10–20 a year _(recalled)_, and a DNS setting on GitHub Pages;
-    - **plans people keep in the public build stay behind.** Browser storage is per origin, so the plan list, the boards, and the edit links of shared plans at `zjs.github.io` won't appear at the new address. People would save files and open them again, or the app would need a way to carry them over;
-    - **relays already running refuse the new address** until they're upgraded, since `-allow-origin` defaults to `zjs.github.io`;
-    - links to update: the public build's address in the app (which links shared by file use), the README and `CLAUDE.md`.
-
-    The second and third costs grow with every person using the public build, which argues for doing it before the demo relay invites strangers.
-- Recommendation: (c) and (d).
-  - (c) keeps the promise wherever it can be kept cheaply, which includes every stranger on the demo relay. It doesn't push pilots onto files from disk, which F8 makes a worse trade than it looked.
-  - (d) matters before the demo relay invites strangers, since the public build is what they'll use.
-  - The build work: `-serve-app=false`, links that keep the sharer's page for an https relay (F1), and a checksum and attestation for the app's HTML. It fits slice 5 either way. (a) adds the from-disk path and its docs, about another half slice.
-- Status: open. Held for the threat model (PM, 2026-10-15), and rewritten from it the same day. Slice 5 builds the answer.
-
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?
@@ -734,3 +709,35 @@ Entry format:
   - **Tools:** a protocol verifier for secrecy and TLA+ for the relay, with the choice between ProVerif and Tamarin made in an ADR.
   - **When:** in sprint 14, before its hosted demo relay slice. Sprint 14's planning sets the slices.
   - Sprint 14's planning (2026-10-15): the written model, a protocol proof, and TLA+ are slices 1–3. The PM widened the scope to collaboration correctness, offline work included. That adds slice 4, loop repair in TLA+ and random schedules run against the real code (`docs/plans/sprint-14-plan.md`).
+
+### Q80: Keeping a relay's operator out of the app's code
+- Context: Requirement 30, Q79 and the backlog's theme N. Q79 made the app's code part of the promise: the operator must not be able to read a plan through code the relay serves. The threat model (`docs/security/threat-model.md`, slice 1 of sprint 14) found:
+  - **The relay always serves the app,** with no setting to stop it. Links send people to the relay's copy of the app, unless the page and the relay are both https.
+  - **F1, fixed in slice 5 whatever the answer:** even from the public build, a relay's `/config` answer could make links send people to the relay's copy. A relay behind an https proxy, started with neither `-public-url` nor `-trust-forwarded`, does it by mistake.
+  - **A page can't vouch for itself:** an altered app would show the real build's hash.
+  - **F3:** the public build shares its browser origin with every site under `zjs.github.io`. Anything published there could read its plans and keys.
+  - **F8:** every page opened from disk shares one browser storage. So "open the release's HTML file from disk", the way to keep a laptop relay's operator out of the code, lets any other HTML file someone opens from disk read their plans.
+  - The hosted demo relay is https, so the public build can use it directly. A pilot's laptop relay is plain http, and an https page can't reach it (except on the same computer).
+- Options:
+  - (a) **The app never comes from a relay.** People use the public build for https relays, and the release's HTML file, checked against a published checksum, for http ones. Relays gain a mode that serves no app, and links name the app and the relay separately. Cost: a pilot's colleagues download, check and open a file instead of opening an address, and F8 then applies to them.
+  - (b) **Relays keep serving the app, and trusting whoever runs it is stated plainly,** in the relay's README, `hosting.md` and the Share dialog. The hosted demo relay serves no app.
+  - (c) **(a) for https relays, (b) for plain http ones.** The hosted relay and any self-hosted relay with TLS are used from a build the operator doesn't control: the public build, or a company's own copy at a separate address. A laptop pilot over http keeps today's arrangement, stated plainly. On a team's own network, the colleague running the relay is already trusted with the plan _(priors)_.
+  - Separately, for F3: (d) move the public build to a domain of its own, such as `planning-board.app`, so no other site shares its origin. The costs:
+    - a domain, about $10–20 a year _(recalled)_, and a DNS setting on GitHub Pages;
+    - **plans people keep in the public build stay behind.** Browser storage is per origin, so the plan list, the boards, and the edit links of shared plans at `zjs.github.io` won't appear at the new address. People would save files and open them again, or the app would need a way to carry them over;
+    - **relays already running refuse the new address** until they're upgraded, since `-allow-origin` defaults to `zjs.github.io`;
+    - links to update: the public build's address in the app (which links shared by file use), the README and `CLAUDE.md`.
+
+    The second and third costs grow with every person using the public build, which argues for doing it before the demo relay invites strangers.
+- Recommendation: (c) and (d).
+  - (c) keeps the promise wherever it can be kept cheaply, which includes every stranger on the demo relay. It doesn't push pilots onto files from disk, which F8 makes a worse trade than it looked.
+  - (d) matters before the demo relay invites strangers, since the public build is what they'll use.
+  - The build work: `-serve-app=false`, links that keep the sharer's page for an https relay (F1), and a checksum and attestation for the app's HTML. It fits slice 5 either way. (a) adds the from-disk path and its docs, about another half slice.
+- Status: answered 2026-10-16: (c) and (d). For (d), find a way to move people from the `zjs.github.io` address, such as a stub there that offers to download their plans and then redirects. Prepare for the new domain, but keep the current site until the new one is bought, deployed and validated. The host and the name are decided later.
+  - Engineering's reading of (d)'s stub, as a reversible default:
+    - **Plans move browser to browser.** The new address opens a page at the old one, in a tab of its own, which hands over every plan, with its sharing, history and settings, after the person confirms. Download stays as the fallback.
+    - **Links still work.** At the switch, the old address becomes a stub that sends share links on to the new one. The key stays after the `#`, so it never reaches a server.
+    - **Where it's hosted:** GitHub sends a project's `github.io` address to its custom domain _(recalled)_. So the app at the new domain is served from somewhere other than this repository's Pages site, which keeps serving the old address.
+  - Sprint 14, slice 5:
+    - (c) is built in its first PR: links through an https relay never open the relay's copy, whatever `/config` says (F1); relays gain `-serve-app=false`; the Share dialog says so when a plain http relay serves the app; and each release's `planning-board.html` has a checksum and an attestation.
+    - (d)'s preparation is the second PR.

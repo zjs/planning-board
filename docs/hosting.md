@@ -42,6 +42,7 @@ Either way, it listens only on the server itself, and a reverse proxy in front o
 
 - **`-public-url`** is the address people open. Share links use it.
 - **`-trust-forwarded`** lets the relay see each person's address, from the proxy's `X-Forwarded-For`, rather than the proxy's own. Its rate limits are per address, so without it, everyone shares one limit. Set it only behind a proxy that sets that header.
+- **`-serve-app=false`** keeps the app off the relay. People open the [hosted page](https://zjs.github.io/planning-board/), or a copy of the app's HTML your company keeps at an address of its own, and share through the relay. Whoever runs the relay then can't change the app people use, and over HTTPS links never send anyone to the relay's copy anyway. A copy at your own address needs `-allow-origin` set to that address's host.
 
 ### HTTPS, with a reverse proxy
 

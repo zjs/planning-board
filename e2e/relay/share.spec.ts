@@ -27,6 +27,8 @@ async function share(page: Page, name: string): Promise<{ edit: string; view: st
   await page.getByTestId('share-button').click();
   await page.getByTestId('share-name').fill(name);
   await page.getByRole('button', { name: 'Continue' }).click();
+  // The page came from this relay over plain http, so the dialog says whoever runs it is trusted with the plan.
+  await expect(page.getByTestId('share-trust')).toBeVisible();
   await page.getByTestId('share-start').click();
   const edit = await page.getByTestId('edit-link').inputValue();
   const view = await page.getByTestId('view-link').inputValue();
