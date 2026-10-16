@@ -181,7 +181,7 @@ jobs:
   formal:
     name: 'Formal: protocol, sync and grouping'
     runs-on: ubuntu-latest
-    # The sync model takes about 10 minutes on the runner's four cores, and the whole job about 15.
+    # The whole job took about 7 minutes on 2026-10-15, most of it the sync model.
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7

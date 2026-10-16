@@ -222,7 +222,8 @@ Restore ==
   /\ restores' = restores + 1
   /\ log' = backup.log /\ head' = backup.head /\ snap' = backup.snap
   /\ epoch' = IF RestoreBumpsEpoch THEN epoch + 1 ELSE epoch
-  /\ syncedAtRestore' = Cardinality({c \in Clients : conn[c] = "live"})
+  \* For the witness: how many were in sync, caught up to this epoch with nothing on the way.
+  /\ syncedAtRestore' = Cardinality({c \in Clients : conn[c] = "live" /\ seen[c] = epoch /\ pending[c] = {} /\ inbox[c] = <<>> /\ outbox[c] = <<>>})
   /\ conn' = [c \in Clients |-> "off"]
   /\ inbox' = [c \in Clients |-> <<>>] /\ outbox' = [c \in Clients |-> <<>>]
   /\ pending' = [c \in Clients |-> {}]

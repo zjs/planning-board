@@ -4,9 +4,19 @@
    Each card has two keys in the shared document: `parent`, which moves and
    repairs write, and `move`, which only moves write: the group the card left
    and the move's stamp. Yjs settles concurrent writes to one key the same way
-   on every computer: a write wins over every write its author had already
-   seen, and between writes made apart, the client ID decides. The stamps
-   on moves are a separate Lamport clock, as in the code.
+   on every computer. With two people, which is all this model has, that
+   means: a write wins over every write its author had already seen, and
+   between writes made apart, the client ID decides. With three or more, Yjs
+   orders writes by YATA, where the answer can also depend on the client of a
+   write both of them saw; that isn't modeled, and the ASSUME below keeps the
+   model to two.
+
+   The stamps on moves are a Lamport clock, counting further than the code's
+   (`latestMoveCounter` in src/store/schema.ts counts only each card's
+   current move, and repairs carry no stamp): an over-approximation, which a
+   copy counting the code's way also passes. Each move here is one card; a
+   drag of several cards (`moveItems`) gives them one stamp, and ties fall to
+   the card ID, which isn't modeled.
 
    A client's document is the set of writes it has seen, so syncing is union.
    A move is refused on screen if it would put a card inside itself
@@ -21,6 +31,9 @@ CONSTANTS Items, Clients, MaxMoves, Top
 
 ASSUME Top \notin Items
 
+\* `Beats` below is how Yjs settles two writers, not three or more (see the header).
+ASSUME Cardinality(Clients) = 2
+
 Stamp == [n: Nat, c: Clients]
 
 VARIABLES seen, moves
@@ -34,7 +47,7 @@ Write == [item: Items, key: {"parent", "move"}, val: Items \cup {Top}, st: Stamp
 ClientOrder == CHOOSE f \in [Clients -> 1..Cardinality(Clients)] : \A a, b \in Clients : a # b => f[a] # f[b]
 ItemOrder == CHOOSE f \in [Items -> 1..Cardinality(Items)] : \A a, b \in Items : a # b => f[a] # f[b]
 
-\* Yjs: the later of two writes to one key is the one that saw the other; if neither did, the client ID decides.
+\* Yjs, with two people: the later of two writes to one key is the one that saw the other; if neither did, the client ID decides.
 Beats(w, v) == v.st \in w.past \/ (w.st \notin v.past /\ ClientOrder[w.st.c] > ClientOrder[v.st.c])
 
 \* The winning write to a key, if any.

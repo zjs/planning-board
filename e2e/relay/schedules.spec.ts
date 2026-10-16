@@ -5,7 +5,9 @@ import { dragTo, pickAxes } from '../app.ts';
 // Random schedules through the real app and the real relay (ADR 0024): the slow companion to
 // src/commands/schedules.test.ts, which runs hundreds of schedules in memory. Here two people in their own browsers
 // drag cards, go offline and reload, on a seeded schedule, through the Go relay and IndexedDB. Afterwards, with both
-// online, they must have one plan. A failing seed is in the test's name.
+// online, they must have one plan, and every drag must have stuck: each dragged card is in a quarter someone dragged
+// it to, and in at least one area someone dragged it to (two drags of one card made apart can each win one axis).
+// A failing seed is in the test's name.
 
 const SEEDS = [1, 2, 3];
 const STEPS = 14;
@@ -69,6 +71,9 @@ for (const seed of SEEDS) {
       { name: 'Bo', page: bo, online: true },
     ];
     for (const p of people) await pickAxes(p.page, 'time', 'system');
+    const before = await placements(ada);
+    // For each card dragged, the rows and columns it was dragged to.
+    const dragged = new Map<string, { rows: Set<string>; columns: Set<string> }>();
 
     for (let i = 0; i < STEPS; i++) {
       const p = rng.pick(people);
@@ -80,6 +85,10 @@ for (const seed of SEEDS) {
         const id = rng.pick(cards);
         const [row, column] = rng.pick(cells).split('|');
         await dragTo(p.page, p.page.locator(`.card[data-item="${id}"]:not(.via-children)`).first(), p.page.locator(`.cell[data-row="${row}"][data-column="${column}"]`));
+        const to = dragged.get(id) ?? { rows: new Set(), columns: new Set() };
+        to.rows.add(row!);
+        to.columns.add(column!);
+        dragged.set(id, to);
         log.push(`${p.name} drags ${id} to ${row}/${column}`);
       } else if (roll < 0.85) {
         p.online = !p.online;
@@ -100,5 +109,14 @@ for (const seed of SEEDS) {
     }
     await expect.poll(async () => JSON.stringify(await placements(ada)) === JSON.stringify(await placements(bo)), { message: log.join('\n'), timeout: 30_000 }).toBe(true);
     expect(await save(bo), log.join('\n')).toEqual(await save(ada));
+    const after = await placements(ada);
+    for (const [id, to] of dragged) {
+      const copies = after.filter((p) => p.startsWith(`${id}@`)).map((p) => p.slice(id.length + 1).split('/'));
+      expect(copies.length, `${id} is on the board\n${log.join('\n')}`).toBeGreaterThan(0);
+      expect(copies.every(([, column]) => to.columns.has(column!)), `${id} is in a quarter it was dragged to: ${JSON.stringify(copies)}\n${log.join('\n')}`).toBe(true);
+      expect(copies.some(([row]) => to.rows.has(row!)), `${id} is in an area it was dragged to: ${JSON.stringify(copies)}\n${log.join('\n')}`).toBe(true);
+    }
+    // And at least one drag changed something, so a run where no drag landed fails.
+    if (dragged.size > 0) expect(after, log.join('\n')).not.toEqual(before);
   });
 }

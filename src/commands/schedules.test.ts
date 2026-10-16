@@ -1,8 +1,8 @@
 // Random schedules against the real code (ADR 0024, sprint 14, slice 4): the
 // bridge between formal/tla/Sync.tla and Tree.tla, which prove a design, and
-// the code that's meant to follow it. Three people edit one plan through the
-// real commands and the real relay provider, over the fake relay in
-// src/store/fakeRelay.ts. A seeded schedule mixes edits and nesting with going
+// the code that's meant to follow it. Three people, and up to two more who open
+// the link later, edit one plan through the real commands and the real relay
+// provider, over the fake relay in src/store/fakeRelay.ts. A seeded schedule mixes edits and nesting with going
 // offline, connections dropped part-way through a catch-up, tabs crashing
 // between saves, the relay dropping everyone, and restores from a backup.
 // Afterwards, with everyone online, the models' properties must hold of what

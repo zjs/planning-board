@@ -127,7 +127,7 @@ The models land in the repository one at a time, and CI checks each from then on
   - Make new links, and the history room, which syncs the same way under another name.
 
   A witness, checked in CI, shows its bounds reach a quiet state after a restore made while everyone was in sync. Its broken variants: the code as it was before F10's fix, and a restore without `-restored`.
-- **The tree model** ([`formal/tla/Tree.tla`](../../formal/tla/Tree.tla)) covers concurrent moves and loop repair, with Yjs's way of settling concurrent writes. Its broken variants: a repair that can loop, and no repair.
+- **The tree model** ([`formal/tla/Tree.tla`](../../formal/tla/Tree.tla)) covers concurrent moves and loop repair, with Yjs's way of settling concurrent writes between two people; with three or more Yjs's ordering isn't modeled. Its broken variants: a repair that can loop, and no repair.
 - **Random schedules** ([`src/commands/schedules.test.ts`](../../src/commands/schedules.test.ts), and [`e2e/relay/schedules.spec.ts`](../../e2e/relay/schedules.spec.ts) through real browsers and the Go relay) run the real code through offline work, crashes, first visits, restarts and restores, and check the models' properties on what actually happened. The code as it was before F10's fix fails them.
 
 Not covered: the browser and its storage, the cryptographic primitives themselves, side channels, denial of service, and anyone who already has a link.

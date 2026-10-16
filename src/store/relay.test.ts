@@ -5,7 +5,7 @@ import { Frame, FrameReader, RelayError } from './frames.ts';
 import { memorySyncStore, RelayProvider, retireRoom, roomUrl, SNAPSHOT_EVERY, type SyncStore } from './relay.ts';
 import { PresenceChannel, SILENT_MS } from './presence.ts';
 import type { PeerState } from '../domain/presence.ts';
-import { FakeRelay, settle, timers } from './fakeRelay.ts';
+import { FakeRelay, settle, timers, type FakeSocket } from './fakeRelay.ts';
 
 function setup() {
   const relay = new FakeRelay();
@@ -215,6 +215,45 @@ describe('syncing through a relay (ADR 0017)', () => {
     // Bob's cursor (1) is from the old room. Asking only for what comes after it would skip the new update 1.
     make(bob, { sync });
     await settle(clock);
+    expect(cards(bob)).toEqual({ a: 'A', b: 'B' });
+  });
+
+  it('a first catch-up cut short, then a restore before the retry, is noticed without a reload (F10)', async () => {
+    const { relay, clock, room, make } = setup();
+    const alice = new Y.Doc();
+    alice.getMap('cards').set('a', 'A');
+    make(alice, { create: true });
+    await settle(clock);
+    // Bob opens the link, and his first catch-up drops after update 1 and before synced: in memory, he has a cursor
+    // and no epoch. He stays offline while the relay is restored.
+    let cutOnce = true;
+    relay.cutCatchUp = () => {
+      const cut = cutOnce;
+      cutOnce = false;
+      return cut;
+    };
+    let bobOffline = false;
+    const open = relay.open;
+    relay.open = (url) => {
+      const socket = open(url) as FakeSocket;
+      if (bobOffline) queueMicrotask(() => socket.drop());
+      return socket;
+    };
+    const bob = new Y.Doc();
+    const b = make(bob);
+    for (let i = 0; i < 20; i++) await Promise.resolve();
+    bobOffline = true;
+    expect(cards(bob)).toEqual({ a: 'A' });
+    expect(b.status).not.toBe('live');
+    // The relay is restored to before anything was sent, with a new epoch, and Alice sends everything again as the
+    // restored room's update 1, which Bob's cursor (1) would skip.
+    relay.restore(room, { ...relay.backup(room), head: 0, log: [] });
+    alice.getMap('cards').set('b', 'B');
+    await settle(clock);
+    expect(relay.rooms.get(room)!.head).toBe(1);
+    bobOffline = false;
+    await settle(clock);
+    expect(b.status).toBe('live');
     expect(cards(bob)).toEqual({ a: 'A', b: 'B' });
   });
 
