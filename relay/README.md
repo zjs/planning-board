@@ -86,7 +86,7 @@ Every release has a `SHA256SUMS` file, and a build attestation for each download
 - **It can't read plans:** every change is encrypted in the browser before it's sent. How the keys and links work is in [ADR 0018](https://github.com/zjs/planning-board/blob/main/docs/decisions/0018-keys-and-links.md).
 - **It does see:** which shared plans exist, when people connect and from which addresses, and how large the changes are.
 - **When it serves the app,** whoever runs it could serve an altered app, which could read the plans opened in it. That's the same trust as any website. Over plain `http`, on a network you don't trust, someone in between could do the same.
-  - **Over HTTPS,** links never send people to the relay's copy: they open the page the plan was shared from, such as the [hosted page](https://zjs.github.io/planning-board/), or that page when it was opened from a file. Run the relay with `-serve-app=false` and nobody can open its copy by accident.
+  - **Over HTTPS,** links never send people to the relay's copy: they open the page the plan was shared from, such as the [hosted page](https://zjs.github.io/planning-board/), or a copy at your company's own address. Shared from the relay's own copy, or from a file opened from disk, they open the hosted page. Run the relay with `-serve-app=false` and nobody can open its copy by accident.
   - **Over plain `http`,** on a laptop for a pilot, people open the relay's own address, so the person running it is trusted with the plan.
 
 ## Building it

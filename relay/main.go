@@ -50,6 +50,10 @@ func main() {
 		return
 	}
 
+	if !*serveTheApp && *static != "" {
+		log.Fatal("-static serves the app, and -serve-app=false serves none: use one or the other")
+	}
+
 	cfg := DefaultConfig(*data)
 	cfg.MaxMessage, cfg.MaxRoom, cfg.MaxData, cfg.MaxRooms = *maxMessage, *maxRoom, *maxData, *maxRooms
 	cfg.UpdatesPerSecond, cfg.ConnectionsPerMinute, cfg.RoomsPerHour = *updateRate, *connRate, *createRate
@@ -119,6 +123,9 @@ func printAddresses(addr net.Addr, publicURL, data string, servesApp bool) {
 	fmt.Printf("Planning Board is running (build %s).\n", buildName())
 	if !servesApp {
 		fmt.Printf("  It serves no app: people open %s and share through this relay's address.\n", publicApp)
+		if !strings.HasPrefix(publicURL, "https://") {
+			fmt.Println("  That page can only reach a relay over HTTPS: put this one behind a proxy that answers on HTTPS, and set -public-url.")
+		}
 	}
 	if publicURL != "" {
 		label := "Open"

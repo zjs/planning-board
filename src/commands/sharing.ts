@@ -229,15 +229,27 @@ export function publicRelayFor(relay: string, publicUrl: string): string {
 /**
  * Where share links send people to open the app (Q80). Through an https
  * relay, never the relay's own copy, which its operator could have changed,
- * whatever its /config says (F1): this page if it's https, and otherwise (a
- * page opened from disk) the public build. A plain http relay serves the app
- * itself: its own address works for anyone who can reach it on a network, and
- * whoever runs it is trusted with the plan.
+ * whatever its /config says (F1): this page, unless it's that copy or was
+ * opened from disk, and then the public build. A plain http relay serves the
+ * app itself: its own address works for anyone who can reach it on a network,
+ * and whoever runs it is trusted with the plan.
  */
 export function appForLinks(relay: string, publicRelay: string, page: { protocol: string; href: string } = location): string {
-  if (relay.startsWith('https:') || publicRelay.startsWith('https:')) return page.protocol === 'https:' ? page.href : PUBLIC_APP;
-  return `${publicRelay.replace(/\/$/, '')}/`;
+  if (!relay.startsWith('https:') && !publicRelay.startsWith('https:')) return `${publicRelay.replace(/\/$/, '')}/`;
+  const origin = (address: string) => {
+    try {
+      return new URL(address).origin;
+    } catch {
+      return null;
+    }
+  };
+  const here = origin(page.href);
+  const relays = new Set([origin(relay), origin(publicRelay)]);
+  return page.protocol.startsWith('http') && here !== null && !relays.has(here) ? page.href : PUBLIC_APP;
 }
+
+/** Whether links through this relay open the relay's own copy of the app, so whoever runs it is trusted with the plan. */
+export const linksOpenRelaysApp = (relay: string, publicRelay: string): boolean => !relay.startsWith('https:') && !publicRelay.startsWith('https:');
 
 /**
  * A shared plan's links. `app` is where people open the app; `publicRelay`

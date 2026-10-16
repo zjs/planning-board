@@ -54,8 +54,8 @@ func serveApp(static string) http.HandlerFunc {
 // The app names the same address (PUBLIC_APP in src/commands/sharing.ts).
 const publicApp = "https://zjs.github.io/planning-board/"
 
-// latestRelease is where the app's HTML file can be downloaded and checked.
-const latestRelease = "https://github.com/zjs/planning-board/releases/latest"
+// releasesPage is where the app's HTML file can be downloaded and checked.
+const releasesPage = "https://github.com/zjs/planning-board/releases"
 
 // noAppPage is what a relay started with -serve-app=false shows at /: where
 // to open the app instead, so its operator can't serve an altered one (Q80).
@@ -67,7 +67,7 @@ var noAppPage = []byte(`<!doctype html>
 <style>body{font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem}</style>
 <h1>Planning Board relay</h1>
 <p>This relay carries encrypted plans between browsers. It doesn't serve the app, so whoever runs it can't change the app you use.</p>
-<p>Open the app at <a href="` + publicApp + `">` + publicApp + `</a>, or download its HTML file from the <a href="` + latestRelease + `">latest release</a>, check it, and open it. Share links say which relay a plan uses.</p>
+<p>Open the app at <a href="` + publicApp + `">` + publicApp + `</a>, or download its HTML file, <code>planning-board.html</code>, from the <a href="` + releasesPage + `">releases</a>, check it, and open it. Share links say which relay a plan uses. A page served over HTTPS can only reach a relay over HTTPS.</p>
 </html>
 `)
 

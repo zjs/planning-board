@@ -735,7 +735,7 @@ func TestARelayThatServesNoAppSaysWhereToOpenIt(t *testing.T) {
 		t.Fatalf("status %d, headers %v", res.StatusCode, res.Header)
 	}
 	page := string(body)
-	if !strings.Contains(page, publicApp) || !strings.Contains(page, latestRelease) || strings.Contains(page, "<script") {
+	if !strings.Contains(page, publicApp) || !strings.Contains(page, releasesPage) || strings.Contains(page, "<script") {
 		t.Fatalf("page: %s", page)
 	}
 	if res, _ := http.Get(srv.URL + "/elsewhere"); res.StatusCode != http.StatusNotFound {

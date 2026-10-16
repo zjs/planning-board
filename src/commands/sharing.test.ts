@@ -3,7 +3,7 @@ import { Frame, FrameReader, FrameWriter, HelloFlag } from '../store/frames.ts';
 import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
 import type { RelaySocket } from '../store/relay.ts';
 import { addPlan, findPlan, findShared, markDeleted } from './plans.ts';
-import { PUBLIC_APP, appForLinks, joinFromLink, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
+import { PUBLIC_APP, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
 
 // The plan list falls back to memory here, as it does in a browser that won't give localStorage.
 const relay = 'http://192.168.1.23:8787';
@@ -55,6 +55,21 @@ describe('where links open the app (Q80, F1 in the threat model)', () => {
     expect(appForLinks('http://192.168.1.23:8787', 'http://192.168.1.23:8787', local)).toBe('http://192.168.1.23:8787/');
     // An https page can reach a relay on its own computer over http; colleagues can't use this page with it.
     expect(appForLinks('http://localhost:8787', 'http://192.168.1.23:8787', page)).toBe('http://192.168.1.23:8787/');
+    expect(linksOpenRelaysApp('http://localhost:8787', 'http://192.168.1.23:8787')).toBe(true);
+    expect(linksOpenRelaysApp('https://plans.example.com', 'http://plans.example.com')).toBe(false);
+  });
+
+  it('sends people to the public build from the https relay’s own copy of the app, never back to it', () => {
+    const relay = 'https://plans.example.com';
+    const own = { protocol: 'https:', href: 'https://plans.example.com/#plan=p1' };
+    expect(appForLinks(relay, relay, own)).toBe(PUBLIC_APP);
+    // Behind a proxy whose /config said http: the relay's own page is still its copy.
+    expect(appForLinks(relay, publicRelayFor(relay, 'http://plans.example.com/'), own)).toBe(PUBLIC_APP);
+  });
+
+  it('keeps a company’s own copy at an address apart from the relay, over http too', () => {
+    const company = { protocol: 'http:', href: 'http://intranet.example.com/planning-board.html' };
+    expect(appForLinks('https://plans.example.com', 'https://plans.example.com', company)).toBe(company.href);
   });
 
   it('sends people to the public build from a page opened from disk, never to an https relay’s own copy', () => {

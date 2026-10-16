@@ -77,6 +77,13 @@ describe('keys and links (ADR 0018)', () => {
     expect(parseShareLink(new URL(links.edit!).hash)).toEqual({ room, secret: s, viewKey: viewKeyOf(s), file: true });
   });
 
+  it('keeps a page served under a file name, such as a company’s own copy of the app', () => {
+    const { room, secret } = newRoom();
+    const s = toBase64Url(secret);
+    const links = shareLinks('https://intranet.example.com/tools/planning-board.html#plan=p1', { room, secret: s, viewKey: viewKeyOf(s), relay: 'https://plans.example.com' });
+    expect(links.edit).toBe(`https://intranet.example.com/tools/planning-board.html#v=1&room=${room}&key=${s}&relay=${encodeURIComponent('https://plans.example.com')}`);
+  });
+
   it("a view link can't be turned into an edit link", () => {
     const { secret } = newRoom();
     const { key, token } = deriveKeys(secret);
