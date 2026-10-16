@@ -54,7 +54,7 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 - [x] A relay mode that serves no app.
 - [x] The app's HTML is checksummed and attested, and the docs say how to check it.
 - [x] Over plain http, the Share dialog says whoever runs the relay is trusted with the plan (Q80 c).
-- [ ] Ready for a domain of its own (Q80 d), with the current site kept until the new one is validated: plans move from the old address browser to browser, and a stub for the switch sends links on.
+- [x] Ready for a domain of its own (Q80 d), with the current site kept until the new one is validated: plans move from the old address browser to browser, and a stub for the switch sends links on. The PM's steps: `docs/domain-move.md`.
 
 ### 5, carried to the release pass
 

@@ -740,4 +740,4 @@ Entry format:
     - **Where it's hosted:** GitHub sends a project's `github.io` address to its custom domain _(recalled)_. So the app at the new domain is served from somewhere other than this repository's Pages site, which keeps serving the old address.
   - Sprint 14, slice 5:
     - (c) is built in its first PR: links through an https relay never open the relay's copy, whatever `/config` says (F1); relays gain `-serve-app=false`; the Share dialog says so when a plain http relay serves the app; and each release's `planning-board.html` has a checksum and an attestation.
-    - (d)'s preparation is the second PR.
+    - (d)'s preparation is the second PR (ADR 0025), with the PM's steps in `docs/domain-move.md`. It's ready for a name and a host; until then the current site is unchanged, but for `move.html` beside it.

@@ -61,7 +61,7 @@ import {
   type PlanId,
   type SharedPlan,
 } from '../commands/plans.ts';
-import { isNewerLink, joinFromLink, linkInHash, myName, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
+import { PUBLIC_APP, isNewerLink, joinFromLink, linkInHash, myName, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
 import { openPlanWithHistory, recordShared, type History, type HistoryEntry } from '../commands/history.ts';
 import { CHANGES_FILE_EXTENSION, changesFileFor, changesTarget, describeMerge, mergeChanges } from '../commands/changesFile.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
@@ -136,6 +136,7 @@ import { Avatars } from './Avatars.tsx';
 import { ConnectionPill } from './ConnectionPill.tsx';
 import { usePresence } from './usePresence.ts';
 import { watchCollisions, type CollisionWatch } from '../commands/collisions.ts';
+import { MoveDialog, asksToMove, canBringPlans } from './MoveDialog.tsx';
 import { NameForm, ShareDialog, useConnection } from './ShareDialog.tsx';
 import { ActivityPanel } from './ActivityPanel.tsx';
 import { useHistory } from './useHistory.ts';
@@ -162,6 +163,14 @@ function samplePlan(): Plan {
 
 // The address the page was opened with, read before anything can replace it: a share link's key is in it.
 const initialHash = typeof location === 'undefined' ? '' : location.hash;
+
+// Opened to bring plans from the public build's old address (Q80 d): `#moved`, or a share link it sent on. Offered once.
+let moveOffered = typeof location !== 'undefined' && asksToMove(initialHash) && canBringPlans();
+function takeMoveOffer(): boolean {
+  const offered = moveOffered;
+  moveOffered = false;
+  return offered;
+}
 
 // Plans are opened once per page and plan, outside React, so StrictMode's
 // double effects don't attach two storage providers to the same database.
@@ -1671,6 +1680,8 @@ function Workspace({
 
   // Sharing (requirements 30 and 33): the dialog, and replacing a shared plan from a file (Q58).
   const [sharing, setSharing] = useState(false);
+  // Bringing plans from the public build's old address (Q80 d): offered once when the page was opened for it.
+  const [moving, setMoving] = useState(takeMoveOffer);
   // Opening a share link asks for your name until this browser has one (Q61), so others don't see "Someone".
   const [askingName, setAskingName] = useState(() => start?.askName === true && myName() === null);
   const replaceInput = useRef<HTMLInputElement>(null);
@@ -1743,6 +1754,15 @@ function Workspace({
                 onSelect: sendChanges,
                 disabled: empty,
                 title: 'Download the plan as an encrypted changes file, to send by email or a shared drive',
+              },
+            ] satisfies MenuEntry[])
+          : []),
+        ...(canBringPlans()
+          ? ([
+              {
+                label: `Bring plans from ${new URL(PUBLIC_APP).host}…`,
+                onSelect: () => setMoving(true),
+                title: 'Copy the plans this browser kept at the old address, with their sharing and history',
               },
             ] satisfies MenuEntry[])
           : []),
@@ -2158,6 +2178,17 @@ function Workspace({
             onSkip={() => setAskingName(false)}
           />
         </Dialog>
+      )}
+      {moving && !askingName && (
+        <MoveDialog
+          onClose={() => setMoving(false)}
+          onMoved={(moves) => {
+            // The plans are in this browser's storage now; open the first, with everything read afresh.
+            const first = moves[0];
+            if (first) location.hash = hashFor(first.to);
+            location.reload();
+          }}
+        />
       )}
       {sharing && (
         <ShareDialog

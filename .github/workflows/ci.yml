@@ -98,6 +98,17 @@ jobs:
           archive: false
           if-no-files-found: error
 
+      # The pages for the public build's old address (Q80 d): move.html now, stub.html once it has moved. Pages deploys them.
+      - name: Attach the old address's pages
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: old-address-pages-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            dist/move.html
+            dist/stub.html
+          if-no-files-found: error
+
       # Every step, how it went, the test counts, and the build to download (scripts/ci-summary.ts).
       - name: Summary
         if: ${{ !cancelled() }}
