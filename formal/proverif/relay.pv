@@ -1,0 +1,111 @@
+(* Planning Board's sharing protocol, against a relay operator (docs/security/threat-model.md).
+
+   The channel c is the network and the relay together: the attacker reads, drops, replays,
+   reorders and makes up every message on it. It also learns the write token T of every
+   connection that can write, since the relay sees it.
+
+   Keys (src/store/keys.ts, ADR 0018): a link's secret S yields the encryption key K and
+   the write token T through HKDF, modeled as two independent one-way functions. A Can view
+   link carries K only. Every message is sealed with an AEAD under K, with a fresh nonce,
+   and the additional data binds the room, the kind of message, and a snapshot's upto. *)
+
+set preciseActions = true.
+
+free c: channel.
+
+type key.
+type nonce.
+
+(* HKDF-SHA256 with different info strings: one-way, and unrelated to each other. *)
+fun kdfEnc(bitstring): key.
+fun kdfWrite(bitstring): bitstring.
+
+(* XChaCha20-Poly1305: opening needs the key, nonce and additional data it was sealed with. *)
+fun aead(key, nonce, bitstring, bitstring): bitstring.
+reduc forall k: key, n: nonce, a: bitstring, m: bitstring; aeadOpen(k, n, a, aead(k, n, a, m)) = m.
+
+(* The additional data, `planning-board|1|<room>|<kind>|<upto>`: parsed unambiguously. *)
+fun ad(bitstring, bitstring, bitstring): bitstring [data].
+const kUpdate, kSnapshot, kPresence, kFile, kHistoryFile: bitstring.
+const noUpto: bitstring.
+
+(* A history room is derived from its board's room (`<room>_h`). *)
+fun historyRoom(bitstring): bitstring [data].
+
+(* Plans and their links. Room ids are public: the relay sees them. *)
+free roomA, roomB, roomV, roomOld, roomNew: bitstring.
+free secretA, secretV, secretOld, secretNew: bitstring [private].
+(* Plan B's whole link is the attacker's: an operator can always share a plan of their own. *)
+free secretB: bitstring.
+
+(* What people put in plans. *)
+free contentA, presenceA, historyA, contentNew: bitstring [private].
+(* What the attacker's own plan holds, and what the old room held, are theirs to read. *)
+free contentB, contentOld: bitstring.
+
+event Sealed(bitstring, bitstring, bitstring, bitstring).
+event Accepted(bitstring, bitstring, bitstring, bitstring).
+
+(* Someone who can edit: seals a message of a kind, for a room, and sends it to the relay
+   along with the write token, as a connection that writes does. *)
+let send(s: bitstring, room: bitstring, kind: bitstring, upto: bitstring, m: bitstring) =
+  new n: nonce;
+  event Sealed(room, kind, upto, m);
+  out(c, kdfWrite(s));
+  out(c, (n, aead(kdfEnc(s), n, ad(room, kind, upto), m))).
+
+(* Anyone with K: accepts what opens under the room, kind and upto it expects. *)
+let receive(k: key, room: bitstring, kind: bitstring) =
+  in(c, (upto: bitstring, n: nonce, x: bitstring));
+  let m = aeadOpen(k, n, ad(room, kind, upto), x) in
+  event Accepted(room, kind, upto, m).
+
+let plan(s: bitstring, room: bitstring, content: bitstring, presence: bitstring, history: bitstring) =
+  (* Changes, snapshots at any reach the relay asks for, presence, history, and changes files. *)
+    ! send(s, room, kUpdate, noUpto, content)
+  | ! (in(c, upto: bitstring); send(s, room, kSnapshot, upto, content))
+  | ! send(s, room, kPresence, noUpto, presence)
+  | ! send(s, historyRoom(room), kUpdate, noUpto, history)
+  | ! send(s, room, kFile, noUpto, content)
+  | ! send(s, room, kHistoryFile, noUpto, history)
+  | ! receive(kdfEnc(s), room, kUpdate)
+  | ! receive(kdfEnc(s), room, kSnapshot)
+  | ! receive(kdfEnc(s), room, kPresence)
+  | ! receive(kdfEnc(s), historyRoom(room), kUpdate)
+  | ! receive(kdfEnc(s), room, kFile).
+
+(* C1: the operator never learns a plan's content, its secret or its key. *)
+query attacker(contentA).
+query attacker(presenceA).
+query attacker(historyA).
+query attacker(secretA).
+query attacker(kdfEnc(secretA)).
+
+(* C2, C3: what a client accepts was sealed for that room, that kind and that reach. *)
+query k: bitstring, u: bitstring, m: bitstring;
+  event(Accepted(roomA, k, u, m)) ==> event(Sealed(roomA, k, u, m)).
+query k: bitstring, u: bitstring, m: bitstring;
+  event(Accepted(historyRoom(roomA), k, u, m)) ==> event(Sealed(historyRoom(roomA), k, u, m)).
+query k: bitstring, u: bitstring, m: bitstring;
+  event(Accepted(roomNew, k, u, m)) ==> event(Sealed(roomNew, k, u, m)).
+
+(* Making new links: someone kept the old link, and the new room's content stays secret. This holds by
+   construction, since the new secret is fresh and never sent: the query checks the model says so, and that
+   nothing about the old room leaks the new one. *)
+query attacker(contentNew).
+
+(* L1, the expected attack: an operator holding a Can view link can write.
+   ProVerif should find this false. *)
+query m: bitstring;
+  event(Accepted(roomV, kUpdate, noUpto, m)) ==> event(Sealed(roomV, kUpdate, noUpto, m)).
+
+process
+    plan(secretA, roomA, contentA, presenceA, historyA)
+  | plan(secretB, roomB, contentB, contentB, contentB)
+  (* Plan V: its Can view link is the attacker's. Edits there are by its editors. *)
+  | out(c, kdfEnc(secretV))
+  | ! receive(kdfEnc(secretV), roomV, kUpdate)
+  (* New links: the old room's link was kept by someone who's now the attacker. *)
+  | out(c, secretOld)
+  | plan(secretOld, roomOld, contentOld, contentOld, contentOld)
+  | plan(secretNew, roomNew, contentNew, contentNew, contentNew)

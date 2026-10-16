@@ -304,6 +304,10 @@ export class RelayProvider {
 
   private connect() {
     if (this.destroyed) return;
+    // A cursor with no epoch was left by a catch-up cut short before synced, which brings the epoch: it can't say
+    // which room it counted in, and after a restore it would skip the new room's first updates (the threat model's
+    // F10, found by formal/tla/Sync.tla). Start again from nothing. A catch-up that reaches synced never gets here.
+    if (this.epoch === null && this.cursor > 0) this.reset();
     const socket = this.open(roomUrl(this.options.relay, this.options.room));
     this.socket = socket;
     socket.onopen = () => {

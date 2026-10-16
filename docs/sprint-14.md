@@ -36,17 +36,17 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 2. The protocol proof
 
-- [ ] Secrecy of a plan's content and keys against the operator, and that a client accepts only messages sealed for that room and kind. The known limit (an operator holding a view link can write) is stated as an expected attack.
+- [x] Secrecy of a plan's content and keys against the operator, and that a client accepts only messages sealed for that room and kind. The known limit (an operator holding a view link can write) is stated as an expected attack.
 
 ### 3. Sync, offline included (TLA+)
 
-- [ ] The relay and its clients: offline work, crashes, reloads, restarts, restores and new links. Checked: everyone who reconnects converges, no offline edit is lost, nothing acknowledged is lost, and retired rooms and view links can't write.
-- [ ] A cursor with no epoch starts again from nothing (the threat model's F10), with a test.
+- [x] The relay and its clients: offline work, dropped connections, crashes, reloads and restores. Checked: everyone who reconnects converges, no change is lost, and nothing acknowledged is lost. Retired rooms and view links stay covered by the relay's Go tests, and Make new links by its end-to-end test.
+- [x] A cursor with no epoch starts again from nothing (the threat model's F10), with a test.
 
 ### 4. Loop repair, and the real code
 
-- [ ] Concurrent nesting never leaves a cycle and converges (requirement 14).
-- [ ] Random offline and online schedules through the real app and relay, checked for the same properties, with failing seeds replayable.
+- [x] Concurrent nesting never leaves a cycle and converges (requirement 14).
+- [x] Random offline and online schedules through the real app and relay, checked for the same properties, with failing seeds replayable.
 
 ### 5. Keeping the operator out of the app (Q80)
 

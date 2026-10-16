@@ -17,6 +17,7 @@
     "sample:jira": "node scripts/generate-jira-sample.ts",
     "notices:relay": "node scripts/relay-notices.ts",
     "compat:fixtures": "node scripts/generate-compat-fixtures.ts",
+    "formal": "node scripts/formal.ts",
     "check": "npm run typecheck && npm run lint && npm test"
   },
   "devDependencies": {

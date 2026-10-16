@@ -1,157 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { deriveKeys, fromBase64Url, newRoom, toBase64Url, unseal, viewKeyOf } from './keys.ts';
-import { Frame, FrameReader, FrameWriter, HelloFlag, RelayError } from './frames.ts';
-import { memorySyncStore, RelayProvider, retireRoom, roomUrl, SNAPSHOT_EVERY, type RelaySocket, type SyncStore } from './relay.ts';
+import { Frame, FrameReader, RelayError } from './frames.ts';
+import { memorySyncStore, RelayProvider, retireRoom, roomUrl, SNAPSHOT_EVERY, type SyncStore } from './relay.ts';
 import { PresenceChannel, SILENT_MS } from './presence.ts';
 import type { PeerState } from '../domain/presence.ts';
-
-/**
- * A relay in memory that speaks the same protocol as relay/ (PROTOCOL.md),
- * delivering frames a microtask later, as a network would. Tests drive
- * time by running its queue and the providers' timers.
- */
-class FakeRelay {
-  rooms = new Map<string, { token: string; epoch: Uint8Array; head: number; log: { seq: number; data: Uint8Array }[]; snapshot?: { upto: number; data: Uint8Array }; peers: Set<FakeSocket>; retired?: boolean }>();
-  down = false;
-  /** A relay from before sprint 12: no `retired` in synced, and no retiring. */
-  legacy = false;
-  sockets = new Set<FakeSocket>();
-  private nextPeer = 0;
-  open = (url: string): RelaySocket => {
-    const socket = new FakeSocket(this, url.split('/rooms/')[1]!, ++this.nextPeer);
-    this.sockets.add(socket);
-    queueMicrotask(() => (this.down ? socket.drop() : socket.onopen?.()));
-    return socket;
-  };
-  /** Every connection drops, as when the network goes. */
-  cut() {
-    for (const s of [...this.sockets]) s.drop();
-  }
-  receive(socket: FakeSocket, frame: Uint8Array) {
-    const r = new FrameReader(frame);
-    const room = this.rooms.get(socket.room);
-    if (r.kind === Frame.Hello) {
-      r.uint();
-      const token = toBase64Url(r.bytes());
-      const after = r.uint();
-      const flags = r.uint();
-      let target = room;
-      if (!target) {
-        if (!(flags & HelloFlag.Create) || !token) { socket.refuse(RelayError.UnknownRoom); return; }
-        target = { token, epoch: crypto.getRandomValues(new Uint8Array(16)), head: 0, log: [], peers: new Set() };
-        this.rooms.set(socket.room, target);
-      } else if (flags & HelloFlag.Create && token !== target.token) {
-        socket.refuse(RelayError.RoomTaken); return;
-      }
-      socket.canWrite = token !== '' && token === target.token;
-      if (flags & HelloFlag.Retire && !this.legacy) {
-        if (!socket.canWrite) { socket.refuse(RelayError.ReadOnly); return; }
-        if (!target.retired) {
-          target.retired = true;
-          for (const peer of target.peers) peer.deliver(new FrameWriter(Frame.Error).uint(RelayError.Replaced).bytes(new TextEncoder().encode('replaced')).done());
-        }
-      }
-      let from = after;
-      if (target.snapshot && after < target.snapshot.upto) {
-        socket.deliver(new FrameWriter(Frame.SnapshotOut).uint(target.snapshot.upto).uint(0).bytes(target.snapshot.data).done());
-        from = target.snapshot.upto;
-      }
-      for (const e of target.log) if (e.seq > from) socket.deliver(new FrameWriter(Frame.UpdateOut).uint(e.seq).uint(0).bytes(e.data).done());
-      const upto = target.snapshot?.upto ?? 0;
-      const synced = new FrameWriter(Frame.Synced).uint(target.head).uint(upto).bytes(target.epoch).uint(socket.id).uint(socket.canWrite ? 1 : 0);
-      socket.deliver((this.legacy ? synced : synced.uint(target.retired ? 1 : 0)).done());
-      target.peers.add(socket);
-      return;
-    }
-    if (!room) return;
-    if (r.kind === Frame.Update) {
-      const ref = r.uint();
-      const data = r.bytes();
-      if (room.retired) { socket.deliver(new FrameWriter(Frame.Error).uint(RelayError.Replaced).bytes(new TextEncoder().encode('replaced')).uint(ref).done()); return; }
-      if (!socket.canWrite) { socket.deliver(new FrameWriter(Frame.Error).uint(RelayError.ReadOnly).bytes(new TextEncoder().encode('view only')).uint(ref).done()); return; }
-      const seq = ++room.head;
-      room.log.push({ seq, data });
-      for (const peer of room.peers) if (peer !== socket) peer.deliver(new FrameWriter(Frame.UpdateOut).uint(seq).uint(0).bytes(data).done());
-      socket.deliver(new FrameWriter(Frame.Ack).uint(ref).uint(seq).uint(0).done());
-    } else if (r.kind === Frame.Ephemeral && !room.retired) {
-      // Presence is forwarded to everyone else, view links included, and never kept.
-      const data = r.bytes();
-      for (const peer of room.peers) if (peer !== socket) peer.deliver(new FrameWriter(Frame.EphemeralOut).uint(socket.id).bytes(data).done());
-    } else if (r.kind === Frame.Snapshot && socket.canWrite) {
-      const upto = r.uint();
-      room.snapshot = { upto, data: r.bytes() };
-      room.log = room.log.filter((e) => e.seq > upto);
-    }
-  }
-}
-
-class FakeSocket implements RelaySocket {
-  onopen: (() => void) | null = null;
-  onmessage: ((frame: Uint8Array) => void) | null = null;
-  onclose: (() => void) | null = null;
-  canWrite = false;
-  private closed = false;
-  constructor(
-    private readonly relay: FakeRelay,
-    readonly room: string,
-    readonly id: number,
-  ) {}
-  send(frame: Uint8Array) {
-    if (this.closed) return;
-    const copy = frame.slice();
-    queueMicrotask(() => !this.closed && this.relay.receive(this, copy));
-  }
-  deliver(frame: Uint8Array) {
-    queueMicrotask(() => !this.closed && this.onmessage?.(frame));
-  }
-  refuse(code: number) {
-    this.deliver(new FrameWriter(Frame.Error).uint(code).bytes(new TextEncoder().encode('refused')).done());
-    queueMicrotask(() => this.drop());
-  }
-  close() {
-    this.drop();
-  }
-  drop() {
-    if (this.closed) return;
-    this.closed = true;
-    this.relay.sockets.delete(this);
-    for (const room of this.relay.rooms.values()) {
-      if (!room.peers.delete(this)) continue;
-      for (const peer of room.peers) peer.deliver(new FrameWriter(Frame.Left).uint(this.id).done());
-    }
-    queueMicrotask(() => this.onclose?.());
-  }
-}
-
-/** Timers the test runs by hand. */
-function timers() {
-  const queue = new Set<() => void>();
-  return {
-    setTimer: (fn: () => void) => {
-      queue.add(fn);
-      return fn;
-    },
-    clearTimer: (t: unknown) => void queue.delete(t as () => void),
-    run() {
-      const due = [...queue];
-      queue.clear();
-      for (const fn of due) fn();
-      return due.length;
-    },
-  };
-}
-
-/** Let messages flow, and run timers, until nothing is left to do. */
-async function settle(clock: ReturnType<typeof timers>) {
-  for (let i = 0; i < 50; i++) {
-    for (let j = 0; j < 20; j++) await Promise.resolve();
-    if (clock.run() === 0) {
-      for (let j = 0; j < 20; j++) await Promise.resolve();
-      if (clock.run() === 0) return;
-    }
-  }
-}
+import { FakeRelay, settle, timers, type FakeSocket } from './fakeRelay.ts';
 
 function setup() {
   const relay = new FakeRelay();
@@ -310,6 +164,97 @@ describe('syncing through a relay (ADR 0017)', () => {
     make(fresh);
     await settle(clock);
     expect(cards(fresh)).toEqual({ a: 'A' });
+  });
+
+  it('someone opening a link catches up in one connection, however much the room holds', async () => {
+    const { relay, clock, make } = setup();
+    const alice = new Y.Doc();
+    const a = make(alice, { create: true });
+    await settle(clock);
+    for (let i = 0; i < 5; i++) alice.getMap('cards').set(`c${i}`, `Card ${i}`);
+    await settle(clock);
+    expect(a.status).toBe('live');
+    let opened = 0;
+    const open = relay.open;
+    relay.open = (url) => {
+      opened++;
+      return open(url);
+    };
+    const bob = new Y.Doc();
+    const b = make(bob);
+    await settle(clock);
+    expect(b.status).toBe('live');
+    expect(Object.keys(cards(bob))).toHaveLength(5);
+    expect(opened).toBe(1);
+  });
+
+  it('a first catch-up cut short before synced still notices a restore (F10, found by formal/tla/Sync.tla)', async () => {
+    const { relay, clock, room, make } = setup();
+    const alice = new Y.Doc();
+    alice.getMap('cards').set('a', 'A');
+    const a = make(alice, { create: true });
+    await settle(clock);
+    // Bob's first catch-up got update 1 and saved its cursor, but the connection dropped before synced, which
+    // carries the room's epoch: his record has a cursor and no epoch.
+    const bob = new Y.Doc();
+    bob.getMap('cards').set('a', 'A');
+    const sync = memorySyncStore();
+    sync.record = { room, cursor: 1, epoch: null, shadow: Y.encodeStateAsUpdate(bob) };
+    // Meanwhile the relay is restored from an older backup: same room, new epoch, nothing in it.
+    relay.down = true;
+    relay.cut();
+    await settle(clock);
+    alice.getMap('cards').set('b', 'B');
+    const old = relay.rooms.get(room)!;
+    relay.rooms.set(room, { ...old, epoch: crypto.getRandomValues(new Uint8Array(16)), head: 0, log: [], peers: new Set() });
+    relay.down = false;
+    await settle(clock);
+    // Alice notices the new epoch and sends everything again, as update 1 of the restored room.
+    expect(a.status).toBe('live');
+    expect(relay.rooms.get(room)!.head).toBe(1);
+    // Bob's cursor (1) is from the old room. Asking only for what comes after it would skip the new update 1.
+    make(bob, { sync });
+    await settle(clock);
+    expect(cards(bob)).toEqual({ a: 'A', b: 'B' });
+  });
+
+  it('a first catch-up cut short, then a restore before the retry, is noticed without a reload (F10)', async () => {
+    const { relay, clock, room, make } = setup();
+    const alice = new Y.Doc();
+    alice.getMap('cards').set('a', 'A');
+    make(alice, { create: true });
+    await settle(clock);
+    // Bob opens the link, and his first catch-up drops after update 1 and before synced: in memory, he has a cursor
+    // and no epoch. He stays offline while the relay is restored.
+    let cutOnce = true;
+    relay.cutCatchUp = () => {
+      const cut = cutOnce;
+      cutOnce = false;
+      return cut;
+    };
+    let bobOffline = false;
+    const open = relay.open;
+    relay.open = (url) => {
+      const socket = open(url) as FakeSocket;
+      if (bobOffline) queueMicrotask(() => socket.drop());
+      return socket;
+    };
+    const bob = new Y.Doc();
+    const b = make(bob);
+    for (let i = 0; i < 20; i++) await Promise.resolve();
+    bobOffline = true;
+    expect(cards(bob)).toEqual({ a: 'A' });
+    expect(b.status).not.toBe('live');
+    // The relay is restored to before anything was sent, with a new epoch, and Alice sends everything again as the
+    // restored room's update 1, which Bob's cursor (1) would skip.
+    relay.restore(room, { ...relay.backup(room), head: 0, log: [] });
+    alice.getMap('cards').set('b', 'B');
+    await settle(clock);
+    expect(relay.rooms.get(room)!.head).toBe(1);
+    bobOffline = false;
+    await settle(clock);
+    expect(b.status).toBe('live');
+    expect(cards(bob)).toEqual({ a: 'A', b: 'B' });
   });
 
   it('a room the relay has never heard of is refused, and can be made again from this copy', async () => {

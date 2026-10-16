@@ -149,7 +149,7 @@ Added if the PM picks Q80 (a): it becomes the recommended way for every relay, w
 - **The host is Fly.io,** with one small machine and a volume, at about $5/month _(recalled)_. It runs the published image as is, and its TLS is automatic. The deploy doc stays generic enough for any container host.
 - **The demo relay's address** is the host's default subdomain until you want a domain.
 - **Demo limits:** 30 days idle, 5 MB per plan, 2,000 plans, and 10 new shared plans per hour per address.
-- **The formal specs run in CI on every push** (about ten minutes, beside the other jobs), so they can't drift from the code.
+- **The formal specs run in CI on every push** (about 7 minutes, beside the other jobs), so they can't drift from the code.
 - **Signing updates (Ed25519)** to close "an operator holding a view link can write" is queued, not built, unless the threat model finds it matters for the demo.
 
 ## Risks

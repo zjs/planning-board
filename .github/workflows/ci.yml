@@ -178,6 +178,40 @@ jobs:
             echo "| $(mark "$STEP_TEST") Tests, with the race detector | $tests |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  formal:
+    name: 'Formal: protocol, sync and grouping'
+    runs-on: ubuntu-latest
+    # The whole job took about 7 minutes on 2026-10-15, most of it the sync model.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # ProVerif is built from the source kept in formal/tools, with OCaml. Short apt timeouts move on from a stalled mirror (2026-10-07).
+      - name: Install OCaml
+        timeout-minutes: 5
+        run: |
+          echo 'Acquire::http::Timeout "20"; Acquire::https::Timeout "20"; Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ocaml-nox
+
+      # TLC runs from formal/tools/tla2tools.jar on the runner's own Java.
+      - name: Java
+        run: java -version
+
+      # Each model's results must match the ones recorded beside it, and each broken variant must be caught (ADR 0024).
+      - name: Formal models
+        run: npm run formal
+
+      # The bridge from the models to the code: `npm run check` runs 200 seeds, and this runs ten times as many.
+      - name: Random schedules (2,000 seeds)
+        run: SCHEDULE_SEEDS=2000 npx vitest run src/commands/schedules.test.ts
+
   # The relay for each computer, with the app built above inside it (Q69). The downloads people use come from
   # the relay-latest release (release.yml); these are attached to every run, like the HTML file.
   relay-build:
