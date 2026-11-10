@@ -63,7 +63,7 @@ export function pillState(p: PillInput): Pill {
       return {
         tone: 'problem',
         label: 'Not on the relay',
-        title: 'The relay doesn’t have this plan any more, perhaps after a restore from a backup. Your copy is safe here.',
+        title: 'The relay doesn’t have this plan any more: it may have been deleted after going unused, or the relay was restored from a backup. Your copy is safe here.',
         canRecreate: !p.viewOnly,
       };
     }

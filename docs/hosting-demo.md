@@ -41,5 +41,6 @@ Then tell engineering the address. A pull request sets it as the demo relay (`DE
 - **Upgrading:** change the image tag in `fly.toml` to the new version and run `fly deploy`. Shared plans are on the volume and survive it.
 - **Watching it:** `fly logs` shows start-ups, expired plans and errors. It never shows plan content, and the relay logs no internet addresses; Fly's own proxy keeps its logs.
 - **If it fills up:** people see "This relay is full". Plans expire after 30 days unused, so it empties by itself; raise `-max-rooms` or the volume, if it's being used for real.
-- **Abuse:** the limits are per address and per plan. A relay that's being misused can be stopped with `fly scale count 0`, which keeps the volume.
+- **Abuse:** the limits are per address and per plan, and the address is Fly's `Fly-Client-IP`, which nobody can set from outside. A relay that's being misused can be stopped with `fly scale count 0`, which keeps the volume.
+- **Stopping it for a while:** time stopped counts as unused. The relay waits an hour after starting before it deletes anything, so boards that reconnect in that hour keep their plans, but after a stop of 30 days or more, every plan nobody opens in that hour is deleted. For a long stop, start it again without `-expire-idle` first, and put the flag back once people have had a chance to come back.
 - **Backups:** none, by design. It's a demo, and its privacy note says plans on it can be lost.

@@ -55,6 +55,9 @@ type Config struct {
 	RoomsPerHour         float64
 	Origins              OriginPolicy
 	TrustForwarded       bool
+	// ClientAddressHeader names a header the proxy sets to each person's
+	// address, such as Fly-Client-IP. It wins over X-Forwarded-For.
+	ClientAddressHeader string
 	// ExpireIdle deletes a room nobody has opened for this long (0: never), as
 	// the hosted demo relay does with 30 days (Q64 a). A room that's open is
 	// never deleted, however long ago it was made.
@@ -135,6 +138,14 @@ func NewRelay(cfg Config) (*Relay, error) {
 			if cfg.Restored {
 				if err := newEpoch(dir); err != nil {
 					return nil, fmt.Errorf("room %s: new epoch: %w", d.Name(), err)
+				}
+			}
+			// A room from before -expire-idle was turned on has no seen
+			// file. Its count starts now, so turning expiry on never deletes
+			// a plan people opened recently but didn't change.
+			if cfg.ExpireIdle > 0 {
+				if _, err := os.Stat(filepath.Join(dir, "seen")); errors.Is(err, os.ErrNotExist) {
+					touch(dir, cfg.Now())
 				}
 			}
 			size := roomSize(dir)
@@ -267,7 +278,7 @@ func (r *Relay) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "this page may not use this relay", http.StatusForbidden)
 		return
 	}
-	address := clientAddress(req, r.cfg.TrustForwarded)
+	address := clientAddress(req, r.cfg.TrustForwarded, r.cfg.ClientAddressHeader)
 	if !r.connections.Allow(address) {
 		http.Error(w, "too many connections", http.StatusTooManyRequests)
 		return

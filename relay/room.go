@@ -375,14 +375,13 @@ func touch(dir string, now time.Time) {
 	}
 }
 
-// lastSeen is when a room was last opened or closed. A room from before
-// -expire-idle has no seen file: its latest change stands in.
+// lastSeen is when a room was last opened, closed or changed: the latest of
+// its seen file and its other files. A change counts even when the seen file
+// is older, as after a spell running without -expire-idle, or a restore that
+// kept the files' times.
 func lastSeen(dir string) time.Time {
-	if info, err := os.Stat(filepath.Join(dir, "seen")); err == nil {
-		return info.ModTime()
-	}
 	var latest time.Time
-	for _, name := range []string{"room.json", "log.jsonl", "snapshot.json"} {
+	for _, name := range []string{"seen", "room.json", "log.jsonl", "snapshot.json"} {
 		if info, err := os.Stat(filepath.Join(dir, name)); err == nil && info.ModTime().After(latest) {
 			latest = info.ModTime()
 		}

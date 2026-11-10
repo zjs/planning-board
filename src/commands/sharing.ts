@@ -5,7 +5,7 @@ import { newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type Share
 import { historyRoom } from '../store/history.ts';
 import { retireRoom, type OpenSocket, type RetireResult } from '../store/relay.ts';
 import { addSharedPlan, findPlan, findShared, markDrafted, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
-import { PUBLIC_APP, testOverride } from '../move/addresses.ts';
+import { NEW_PUBLIC_APP, OLD_PUBLIC_APP, PUBLIC_APP, testOverride } from '../move/addresses.ts';
 
 export { isNewerLink, parseShareLink, type ShareLink } from '../store/keys.ts';
 
@@ -38,7 +38,6 @@ export function setMyName(name: string): void {
   write(NAME_KEY, name.trim());
 }
 
-/** The relay last used to share from this browser, to offer next time. */
 /**
  * The hosted demo relay the project runs (Q64 a), offered by default where no
  * relay was used before: null until it's deployed (docs/hosting-demo.md).
@@ -47,10 +46,19 @@ export const DEMO_RELAY: string | null = null;
 /** Points Share at a stand-in for the demo relay, only for tests. */
 const DEMO_KEY = 'planning-board:demo-relay';
 
-export function demoRelay(): string | null {
-  return testOverride(DEMO_KEY) ?? DEMO_RELAY;
+/**
+ * The demo relay, offered only on the public build itself. A company's own
+ * copy of the app, or the release file opened from disk, offers no relay, so
+ * a confidential plan is never one click from the project's public one.
+ */
+export function demoRelay(page: { href: string } = location, demo: string | null = DEMO_RELAY): string | null {
+  const stand = testOverride(DEMO_KEY);
+  if (stand) return stand;
+  if (!demo) return null;
+  return [OLD_PUBLIC_APP, PUBLIC_APP, NEW_PUBLIC_APP].some((app) => page.href.startsWith(app)) ? demo : null;
 }
 
+/** The relay last used to share from this browser, to offer next time. */
 export function rememberedRelay(): string | null {
   return read(RELAY_KEY);
 }

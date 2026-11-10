@@ -41,7 +41,7 @@ Then `systemctl enable --now planning-board`.
 Either way, it listens only on the server itself, and a reverse proxy in front of it answers on HTTPS.
 
 - **`-public-url`** is the relay's address, as people's browsers reach it. Share links name it.
-- **`-trust-forwarded`** lets the relay see each person's address, from the proxy's `X-Forwarded-For`, rather than the proxy's own. Its rate limits are per address, so without it, everyone shares one limit. Set it only behind a proxy that sets that header.
+- **`-trust-forwarded`** lets the relay see each person's address, from the proxy's `X-Forwarded-For`, rather than the proxy's own. Its rate limits are per address, so without it, everyone shares one limit. It reads the header's last entry, the one your proxy added, since the entries before it come from the person's own request. Set it only behind one proxy that adds that entry, as the Caddy and nginx examples below do. A proxy that sets a header of its own instead, such as Fly.io's `Fly-Client-IP`, is read with `-client-address-header`.
 - **`-serve-app=false`,** from version 0.14.0, keeps the app off the relay, so whoever runs it can't change the app people use: `/` says where to open it instead. Links shared through a relay on HTTPS never open the relay's own copy anyway; this makes sure nobody opens it by hand. Add it to the examples above once you run 0.14.0 or later.
 
 ### HTTPS, with a reverse proxy
