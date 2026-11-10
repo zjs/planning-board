@@ -42,6 +42,7 @@ const VERSIONS: { name: string; commit: string }[] = [
   { name: 'sprint-12', commit: '3043bc8' },
   // The first history document, and the first changes file with history in it (ADR 0020).
   { name: 'sprint-13', commit: 'd979a16' },
+  { name: 'sprint-14', commit: '36464aa' },
 ];
 
 const repo = new URL('..', import.meta.url).pathname;

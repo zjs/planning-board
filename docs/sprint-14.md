@@ -72,7 +72,7 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 - [x] A demo note (`docs/demos/sprint-14.md`), exit-criteria tests, the user-facing docs, and the release pass (v0.14.0).
 - [x] A relay that serves no app says so at `/config`, and links through it never name it as the app. **File › Open a share link…** opens a link in the HTML file from disk (Q81, built as a reversible default).
-- [ ] Compatibility fixtures for this release, in the next PR.
+- [x] Compatibility fixtures for this release, in the next PR.
 
 ## Deferred (don't build)
 

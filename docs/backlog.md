@@ -324,6 +324,8 @@ Repo and tooling work, kept here so it isn't lost between sprints. [`docs/housek
 
 **Done**
 
+- **Compatibility fixtures for sprint 14** (2026-11-10), the release pass's last step: v0.14.0's plan file, imported plan, browser board, changes file and history open in every later build.
+
 - **Maintenance pass, 2026-10-15,** before planning sprint 14. Read-only. Its one update, Dependabot's #93, merges on its own.
   - **Dependabot:** one PR, #93, @types/node 26.6.4 → 26.6.5.
   - **npm:** nothing else to take. TypeScript 7 and `braces` are still blocked.
