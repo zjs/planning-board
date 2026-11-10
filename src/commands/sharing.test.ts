@@ -3,7 +3,7 @@ import { Frame, FrameReader, FrameWriter, HelloFlag } from '../store/frames.ts';
 import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
 import type { RelaySocket } from '../store/relay.ts';
 import { addPlan, findPlan, findShared, markDeleted } from './plans.ts';
-import { PUBLIC_APP, appForFileLinks, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
+import { PUBLIC_APP, appForFileLinks, demoRelay, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
 
 // The plan list falls back to memory here, as it does in a browser that won't give localStorage.
 const relay = 'http://192.168.1.23:8787';
@@ -115,6 +115,21 @@ function retiringRelay(down = new Set<string>()) {
   };
   return { open, retired };
 }
+
+describe('the demo relay (Q64 a)', () => {
+  const demo = 'https://relay.example';
+  it('is offered on the public build', () => {
+    expect(demoRelay({ href: `${PUBLIC_APP}#plan=p1` }, demo)).toBe(demo);
+  });
+  it('is never offered on a company’s own copy of the app, or a file from disk', () => {
+    expect(demoRelay({ href: 'https://plans.example.com/' }, demo)).toBeNull();
+    expect(demoRelay({ href: 'file:///home/ada/planning-board.html' }, demo)).toBeNull();
+    expect(demoRelay({ href: 'https://zjs.github.io/another-project/' }, demo)).toBeNull();
+  });
+  it('is offered nowhere until it’s deployed', () => {
+    expect(demoRelay({ href: PUBLIC_APP }, null)).toBeNull();
+  });
+});
 
 describe('making new links (Q62)', () => {
   it('moves the plan to a new room, and retires the old one once it can', async () => {

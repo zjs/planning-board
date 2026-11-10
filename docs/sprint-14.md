@@ -63,9 +63,10 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 6. The hosted demo relay (Q64 a)
 
-- [ ] Idle plans expire after 30 days, with public limits and a privacy note.
-- [ ] Deploy steps for the PM.
-- [ ] Share on the public build offers the demo relay by default.
+- [x] Idle plans expire after 30 days (`-expire-idle`), with public limits and a privacy note (`-privacy-note`, `deploy/demo-relay/privacy.html`).
+- [x] Deploy steps for the PM: `docs/hosting-demo.md`, with `deploy/demo-relay/fly.toml`, after the 0.14.0 release.
+- [x] Share offers the demo relay by default on the public build only, once its address is set (`DEMO_RELAY`), with a note on what it keeps. A company’s own copy of the app, or the release file, offers none.
+- [ ] The PM deploys it, and a pull request sets its address.
 
 ### 7. Tester-ready
 

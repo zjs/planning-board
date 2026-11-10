@@ -40,7 +40,7 @@ const SCOPED = ['planning-board:view', 'planning-board:holding-collapsed', 'plan
  * plans by id, the tests' stand-ins, and the relay last used for Share, so a
  * relay set by another site under the old address (F3) doesn't come along.
  */
-const LEFT_BEHIND = new Set([PLANS_KEY, 'planning-board:guide', 'planning-board:guide-plan', 'planning-board:move-from', 'planning-board:move-to', 'planning-board:relay']);
+const LEFT_BEHIND = new Set([PLANS_KEY, 'planning-board:guide', 'planning-board:guide-plan', 'planning-board:move-from', 'planning-board:move-to', 'planning-board:demo-relay', 'planning-board:relay']);
 
 /** A plan in a bundle, and where it goes here: a new entry, or into a plan already here. */
 export interface MovedPlan {

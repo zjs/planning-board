@@ -114,13 +114,26 @@ func (l *Limiter) sweep(now time.Time) {
 }
 
 // clientAddress is who a request is from, for rate limits. Behind a proxy
-// every request comes from the proxy, so -trust-forwarded reads the address
-// the proxy says it came from.
-func clientAddress(req *http.Request, trustForwarded bool) string {
+// every request comes from the proxy. A proxy that puts each person's address
+// in a header of its own, such as Fly's Fly-Client-IP, is read from there.
+// Otherwise -trust-forwarded reads the last X-Forwarded-For entry, the one
+// the proxy in front of the relay added: the entries before it came from the
+// person's own request, so they could say anything.
+func clientAddress(req *http.Request, trustForwarded bool, header string) string {
+	if header != "" {
+		if address := strings.TrimSpace(req.Header.Get(header)); address != "" {
+			return address
+		}
+	}
 	if trustForwarded {
-		if fwd := req.Header.Get("X-Forwarded-For"); fwd != "" {
-			first, _, _ := strings.Cut(fwd, ",")
-			return strings.TrimSpace(first)
+		if fwds := req.Header.Values("X-Forwarded-For"); len(fwds) > 0 {
+			last := fwds[len(fwds)-1]
+			if i := strings.LastIndex(last, ","); i >= 0 {
+				last = last[i+1:]
+			}
+			if address := strings.TrimSpace(last); address != "" {
+				return address
+			}
 		}
 	}
 	host, _, err := net.SplitHostPort(req.RemoteAddr)

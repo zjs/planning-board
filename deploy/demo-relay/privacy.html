@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planning Board demo relay: privacy</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:38rem;margin:3rem auto;padding:0 1rem}h2{font-size:1.1rem;margin-top:2rem}</style>
+<h1>The Planning Board demo relay</h1>
+<p>This relay is run by the Planning Board project so anyone can try sharing a plan. It's a demo: it comes with no warranty, it can be down, and plans on it can be lost. For a plan that matters, keep a copy with <strong>File › Save plan to file</strong>, and for a confidential one, <a href="https://github.com/zjs/planning-board/blob/main/docs/hosting.md">run a relay of your own</a>.</p>
+
+<h2>What it can't see</h2>
+<p>Everything about a plan is encrypted in your browser before it's sent, with a key that's only in the share link, after the <code>#</code>. Browsers never send that part to a server. So the relay stores and forwards ciphertext it can't read: card titles, values, links, history and people's names included. It doesn't serve the app either, so it can't change the code you use.</p>
+
+<h2>What it does see</h2>
+<ul>
+<li>Which shared plans exist, by a random name, and how large each is.</li>
+<li>When people connect, and from which internet address.</li>
+<li>How large each change is, and when it's made.</li>
+</ul>
+<p>Internet addresses are used only for rate limits, in memory, and aren't written to disk. The hosting provider keeps its own logs.</p>
+
+<h2>How long plans are kept</h2>
+<p>A shared plan that nobody opens for 30 days is deleted, with everything the relay held for it. Opening it from any link, by anyone, starts the 30 days again. A board that still has the plan offers <strong>Put it back</strong>, which shares it again from that copy.</p>
+
+<h2>Limits</h2>
+<p>Each shared plan's board, and its history, may hold up to 5 MB each. The relay keeps up to 2,000 shared plans, and each internet address may share up to 10 new plans an hour. Making new links for a plan counts as sharing a new one.</p>
+
+<h2>Questions</h2>
+<p>Ask in the project's <a href="https://github.com/zjs/planning-board/issues">issues</a>. Never paste a share link there: anyone with it can open the plan.</p>
+</html>

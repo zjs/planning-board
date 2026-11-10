@@ -1,0 +1,49 @@
+# The hosted demo relay (Q64 a), on Fly.io: docs/hosting-demo.md has the steps.
+# It runs the published image, pinned by version; upgrading is changing the
+# tag below and running `fly deploy` again.
+
+# Fly app names are global: set yours with `fly launch --copy-config --no-deploy` (docs/hosting-demo.md).
+app = "planning-board-relay"
+primary_region = "ams"
+
+[build]
+  image = "ghcr.io/zjs/planning-board:0.14.0"
+
+# The image's entrypoint already sets -data /data and -announce=false; these
+# flags are added to it. Each shared plan is two rooms on the relay, its board
+# and its history, so the room limits are twice the plan limits people are
+# told: 5 MB for each room, 2,000 plans (-max-rooms 4000), 10 new shared plans
+# an hour from one address (-share-rate 20), 800 MB in all on a 1 GB volume,
+# and plans nobody opens for 30 days deleted. Fly's edge sets Fly-Client-IP
+# itself, so it's the address the limits count, not X-Forwarded-For.
+[processes]
+  app = "-serve-app=false -trust-forwarded -client-address-header Fly-Client-IP -privacy-note /etc/planning-board/privacy.html -expire-idle 720h -max-room 5242880 -max-rooms 4000 -max-data 838860800 -share-rate 20"
+
+[[files]]
+  guest_path = "/etc/planning-board/privacy.html"
+  local_path = "privacy.html"
+
+# Fly gives the volume to the image's own (non-root) user.
+[mounts]
+  source = "relay_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  # A relay holds live connections, so it stays up rather than sleeping between requests.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

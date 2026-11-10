@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"io/fs"
@@ -72,8 +73,25 @@ var noAppPage = []byte(`<!doctype html>
 </html>
 `)
 
+// servePrivacy serves the operator's privacy note at /privacy, read once at
+// start-up, as -privacy-note names it. The hosted demo relay has one (Q64 a).
+func servePrivacy(page []byte) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Write(page)
+	}
+}
+
 // serveNoApp answers / for a relay that serves no app. Anything else isn't here.
-func serveNoApp() http.HandlerFunc {
+// With a privacy note, the page links to it.
+func serveNoApp(privacy bool) http.HandlerFunc {
+	page := noAppPage
+	if privacy {
+		page = bytes.Replace(noAppPage, []byte("</html>"), []byte(`<p>What this relay keeps, and for how long: <a href="privacy">its privacy note</a>.</p>
+</html>`), 1)
+	}
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" && req.URL.Path != "/index.html" {
 			http.NotFound(w, req)
@@ -82,7 +100,7 @@ func serveNoApp() http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Write(noAppPage)
+		w.Write(page)
 	}
 }
 

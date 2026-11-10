@@ -4,6 +4,7 @@ import type { SharedPlan } from '../commands/plans.ts';
 import {
   appForFileLinks,
   appForLinks,
+  demoRelay,
   linksOpenRelaysApp,
   PUBLIC_APP,
   publicRelayFor,
@@ -141,7 +142,8 @@ export function ShareDialog({
 }) {
   const [named, setNamed] = useState(() => myName() !== null);
   const [relayStep, setRelayStep] = useState<RelayStep>({ kind: 'looking' });
-  const [typed, setTyped] = useState(() => rememberedRelay() ?? '');
+  const demo = demoRelay();
+  const [typed, setTyped] = useState(() => rememberedRelay() ?? demo ?? '');
   const [problem, setProblem] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   // The relay's address as others reach it, for the links.
@@ -407,7 +409,8 @@ export function ShareDialog({
         >
           <p>
             A shared plan goes through a relay, which passes changes between you and keeps an encrypted copy. It can’t
-            read the plan. Run one on your own computer (<code>planning-board-relay</code>), or use your company’s.
+            read the plan. Run one on your own computer (<code>planning-board-relay</code>), or use your company’s
+            {demo ? ', or the demo relay to try it out' : ''}.
           </p>
           <label className="share-field">
             Relay address
@@ -418,8 +421,16 @@ export function ShareDialog({
               data-testid="share-relay"
             />
           </label>
-          {location.protocol === 'https:' && (
-            <p className="share-note">From this page, a relay must use https, or run on this computer (localhost).</p>
+          {demo !== null && typed.trim().replace(/\/$/, '') === demo.replace(/\/$/, '') ? (
+            <p className="share-note" data-testid="share-demo">
+              This is the demo relay the Planning Board project runs, for trying sharing out. Plans nobody opens for 30
+              days are deleted. <a href={`${demo.replace(/\/$/, '')}/privacy`} target="_blank" rel="noreferrer">What it keeps</a>.
+              For a confidential plan, use your company’s own relay.
+            </p>
+          ) : (
+            location.protocol === 'https:' && (
+              <p className="share-note">From this page, a relay must use https, or run on this computer (localhost).</p>
+            )
           )}
           {problem && (
             <p className="share-problem" role="alert">

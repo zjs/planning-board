@@ -55,6 +55,13 @@ type Config struct {
 	RoomsPerHour         float64
 	Origins              OriginPolicy
 	TrustForwarded       bool
+	// ClientAddressHeader names a header the proxy sets to each person's
+	// address, such as Fly-Client-IP. It wins over X-Forwarded-For.
+	ClientAddressHeader string
+	// ExpireIdle deletes a room nobody has opened for this long (0: never), as
+	// the hosted demo relay does with 30 days (Q64 a). A room that's open is
+	// never deleted, however long ago it was made.
+	ExpireIdle time.Duration
 	// Restored gives every room a new epoch at start-up, after the data was
 	// restored from a backup: each board then sends whatever the backup is
 	// missing, rather than trusting what it sent before.
@@ -133,6 +140,14 @@ func NewRelay(cfg Config) (*Relay, error) {
 					return nil, fmt.Errorf("room %s: new epoch: %w", d.Name(), err)
 				}
 			}
+			// A room from before -expire-idle was turned on has no seen
+			// file. Its count starts now, so turning expiry on never deletes
+			// a plan people opened recently but didn't change.
+			if cfg.ExpireIdle > 0 {
+				if _, err := os.Stat(filepath.Join(dir, "seen")); errors.Is(err, os.ErrNotExist) {
+					touch(dir, cfg.Now())
+				}
+			}
 			size := roomSize(dir)
 			r.sizes[d.Name()] = size
 			r.total += size
@@ -179,6 +194,7 @@ func (r *Relay) acquire(id string, create bool, token []byte, address string) (*
 		}
 		r.open[id] = room
 	}
+	r.seen(room)
 	if create && !room.canWrite(token) {
 		if room.users == 0 {
 			room.close()
@@ -194,10 +210,48 @@ func (r *Relay) release(room *Room) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	room.users--
+	r.seen(room)
 	if room.users == 0 {
 		room.close()
 		delete(r.open, room.id)
 	}
+}
+
+// seen marks a room as opened or closed now, on a relay that expires idle
+// rooms. Other relays never write the file.
+func (r *Relay) seen(room *Room) {
+	if r.cfg.ExpireIdle > 0 {
+		touch(room.dir, r.cfg.Now())
+	}
+}
+
+// ExpireIdle deletes the rooms nobody has opened for cfg.ExpireIdle, and
+// says how many. Rooms open now are skipped. main runs it hourly.
+func (r *Relay) ExpireIdle() int {
+	if r.cfg.ExpireIdle <= 0 {
+		return 0
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	now := r.cfg.Now()
+	expired := 0
+	for id, size := range r.sizes {
+		if _, open := r.open[id]; open {
+			continue
+		}
+		dir := filepath.Join(r.cfg.DataDir, id)
+		if now.Sub(lastSeen(dir)) <= r.cfg.ExpireIdle {
+			continue
+		}
+		if err := os.RemoveAll(dir); err != nil {
+			log.Printf("room %s: couldn't expire: %v", id, err)
+			continue
+		}
+		r.total -= size
+		delete(r.sizes, id)
+		expired++
+	}
+	return expired
 }
 
 // reserve accounts for a room growing by delta bytes, if the relay's total
@@ -224,7 +278,7 @@ func (r *Relay) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "this page may not use this relay", http.StatusForbidden)
 		return
 	}
-	address := clientAddress(req, r.cfg.TrustForwarded)
+	address := clientAddress(req, r.cfg.TrustForwarded, r.cfg.ClientAddressHeader)
 	if !r.connections.Allow(address) {
 		http.Error(w, "too many connections", http.StatusTooManyRequests)
 		return

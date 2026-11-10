@@ -8,6 +8,8 @@ package main
 //   log.jsonl        every update since that snapshot, one per line
 //   segments/        updates a snapshot replaced, kept 30 days so a bad
 //                    snapshot can be replaced by a full replay
+//   seen             empty; its time is when a connection last opened or
+//                    closed the room, for -expire-idle
 //
 // Data is ciphertext, written as base64 by encoding/json. Nothing here can
 // read it.
@@ -360,6 +362,31 @@ func writeAtomic(path string, b []byte) error {
 		return err
 	}
 	return os.Rename(tmp, path)
+}
+
+// touch marks a room as seen now, for -expire-idle.
+func touch(dir string, now time.Time) {
+	path := filepath.Join(dir, "seen")
+	if err := os.Chtimes(path, now, now); errors.Is(err, os.ErrNotExist) {
+		if f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0o600); err == nil {
+			f.Close()
+			os.Chtimes(path, now, now)
+		}
+	}
+}
+
+// lastSeen is when a room was last opened, closed or changed: the latest of
+// its seen file and its other files. A change counts even when the seen file
+// is older, as after a spell running without -expire-idle, or a restore that
+// kept the files' times.
+func lastSeen(dir string) time.Time {
+	var latest time.Time
+	for _, name := range []string{"seen", "room.json", "log.jsonl", "snapshot.json"} {
+		if info, err := os.Stat(filepath.Join(dir, name)); err == nil && info.ModTime().After(latest) {
+			latest = info.ModTime()
+		}
+	}
+	return latest
 }
 
 // roomSize reads a room's size from disk without opening it, for the
