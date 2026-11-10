@@ -183,7 +183,7 @@ func (r *Relay) acquire(id string, create bool, token []byte, address string) (*
 		}
 		r.open[id] = room
 	}
-	touch(room.dir, r.cfg.Now())
+	r.seen(room)
 	if create && !room.canWrite(token) {
 		if room.users == 0 {
 			room.close()
@@ -199,10 +199,18 @@ func (r *Relay) release(room *Room) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	room.users--
-	touch(room.dir, r.cfg.Now())
+	r.seen(room)
 	if room.users == 0 {
 		room.close()
 		delete(r.open, room.id)
+	}
+}
+
+// seen marks a room as opened or closed now, on a relay that expires idle
+// rooms. Other relays never write the file.
+func (r *Relay) seen(room *Room) {
+	if r.cfg.ExpireIdle > 0 {
+		touch(room.dir, r.cfg.Now())
 	}
 }
 
