@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { item, plan } from '../domain/__fixtures__/tiny-plan.ts';
@@ -16,6 +17,7 @@ import {
   type KeyValue,
   type PlanEntry,
 } from './plans.ts';
+import { readPlan } from '../store/schema.ts';
 import { createPlanStore, loadPlan } from './store.ts';
 
 function memory(list?: PlanEntry[]): KeyValue & { map: Map<string, string> } {
@@ -28,6 +30,7 @@ function memory(list?: PlanEntry[]): KeyValue & { map: Map<string, string> } {
 function writer(full: string[] = []) {
   const docs = new Map<string, Uint8Array[]>();
   const syncs = new Map<string, unknown>();
+  const dropped: string[] = [];
   const w: MoveWriter = {
     mergeDoc: (name, updates) => {
       docs.set(name, [...(docs.get(name) ?? []), ...updates]);
@@ -38,8 +41,12 @@ function writer(full: string[] = []) {
       return Promise.resolve();
     },
     boardIsEmpty: (name) => Promise.resolve(!full.includes(name) && !docs.has(name)),
+    dropPlan: (id) => {
+      dropped.push(id);
+      return Promise.resolve();
+    },
   };
-  return { w, docs, syncs };
+  return { w, docs, syncs, dropped };
 }
 
 /** A board with one card, as y-indexeddb stores it: one update. */
@@ -172,5 +179,76 @@ describe('bringing plans from the old address (Q80 d)', () => {
     expect(here.getItem('planning-board:me')).toBe('Bo');
     expect(here.getItem('planning-board:me-id')).toBe('ada-1');
     expect(here.getItem('planning-board:relay')).toBeNull();
+  });
+});
+
+describe('bringing plans: the edges the second review found', () => {
+  it('moves a plan with structure but no cards, and one with only a history left', () => {
+    const doc = new Y.Doc();
+    loadPlan(createPlanStore(doc), plan());
+    const structure = Y.encodeStateAsUpdate(doc);
+    const b = bundle(
+      [entry('p1', 'Untitled plan'), entry('p2', 'Untitled plan')],
+      [db(planDatabase('p1'), structure), db(historyDatabase('p2', 'local'), new Uint8Array([1]))],
+    );
+    expect(movablePlans(b).map((e) => e.id)).toEqual(['p1', 'p2']);
+  });
+
+  it('moves a board a browser kept only from before schema 2, migrated as the app would', async () => {
+    const v1 = new Uint8Array(readFileSync(new URL('../domain/__fixtures__/compat/sprint-9.board.yjs', import.meta.url)));
+    const b = bundle(undefined, [db('planning-board:v1:default', v1)]);
+    expect(movablePlans(b).map((e) => e.name)).toEqual(['My plan']);
+    const here = memory([]);
+    const { w, docs } = writer();
+    const [move] = await applyMove(b, w, here);
+    const moved = new Y.Doc();
+    Y.applyUpdate(moved, Y.mergeUpdates(docs.get(planDatabase(move!.to))!));
+    expect(Object.keys(readPlan(moved).items).length).toBeGreaterThan(0);
+  });
+
+  it('takes sharing a plan gained at the old address after it was first moved', async () => {
+    const here = memory([]);
+    const { w, syncs } = writer();
+    await applyMove(bundle([entry('p1', 'Idea')], [db(planDatabase('p1'), board())]), w, here);
+    const [again] = await applyMove(bundle([entry('p1', 'Idea', { shared })], [db(planDatabase('p1'), board()), sync(syncDatabase('p1'), { cursor: 2 })]), w, here);
+    expect(again).toMatchObject({ to: 'p1', into: 'existing', sharing: 'adopted' });
+    expect(listPlans(here)[0]!.shared?.room).toBe(room);
+    expect(syncs.get(syncDatabase('p1'))).toMatchObject({ cursor: 2 });
+    // Shared through another room here: it keeps its own, and the dialog says so.
+    const other = { ...shared, room: 'o'.repeat(22) };
+    const [third] = await applyMove(bundle([entry('p1', 'Idea', { shared: other })], [db(planDatabase('p1'), board())]), w, here);
+    expect(third!.sharing).toBe('differs');
+    expect(listPlans(here)[0]!.shared?.room).toBe(room);
+  });
+
+  it('says a plan deleted here comes back', async () => {
+    const here = memory([]);
+    const { w } = writer();
+    const b = bundle([entry('p1', 'Idea')], [db(planDatabase('p1'), board())]);
+    await applyMove(b, w, here);
+    markDeleted('p1', here);
+    const [move] = await applyMove(b, w, here);
+    expect(move).toMatchObject({ into: 'existing', restored: true });
+    expect(listPlans(here).map((e) => e.id)).toEqual(['p1']);
+  });
+
+  it('drops the untouched empty first plan’s databases, and finishes a move cut short into it without adding it twice', async () => {
+    const here = memory([{ id: 'default', name: 'My plan', created: 0, opened: 0 }]);
+    const { w, dropped } = writer();
+    await applyMove(bundle([entry('p1', 'Idea')], [db(planDatabase('p1'), board())]), w, here);
+    expect(dropped).toEqual(['default']);
+
+    const there = memory([{ id: 'default', name: 'My plan', created: 0, opened: 0 }]);
+    const b = bundle([entry('default', 'My plan', { created: 0 })], [db(planDatabase('default'), board()), db(historyDatabase('default', 'local'), new Uint8Array([1]))]);
+    const flaky = writer();
+    let fail = true;
+    const cut: MoveWriter = {
+      ...flaky.w,
+      mergeDoc: (name, updates) => (fail && name === historyDatabase('default', 'local') ? Promise.reject(new Error('cut short')) : flaky.w.mergeDoc(name, updates)),
+    };
+    await expect(applyMove(b, cut, there)).rejects.toThrow('cut short');
+    fail = false;
+    await applyMove(b, cut, there);
+    expect(allPlanEntries(there).map((e) => e.id)).toEqual(['default']);
   });
 });

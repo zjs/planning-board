@@ -22,7 +22,22 @@ function local(): Record<string, string> {
   return all;
 }
 
-/** How many plans this browser keeps here that are worth moving: not an empty board nobody named or shared. */
+/**
+ * Whether this browser might keep plans here, without reading them: a plan named or shared, a plan other than the
+ * first, or a board from before schema 2. Enough for a share link's `&moved=1`, which the new address checks properly.
+ */
+function mightHold(): boolean {
+  const all = local();
+  try {
+    const list: unknown = JSON.parse(all['planning-board:plans'] ?? '[]');
+    if (Array.isArray(list) && list.some((e: { id?: string; named?: boolean; shared?: unknown; deletedAt?: number }) => e.deletedAt === undefined && (e.id !== 'default' || e.named === true || e.shared !== undefined))) return true;
+  } catch {
+    // A damaged list: the full count decides.
+  }
+  return false;
+}
+
+/** How many plans this browser keeps here that are worth moving: not an empty plan nobody named or shared. */
 async function held(): Promise<number> {
   try {
     return movablePlans(await collect()).length;
@@ -46,11 +61,9 @@ async function forget(): Promise<void> {
   );
 }
 
-void held().then((count) => {
-  if (isShareLink) {
-    location.replace(`${base}${hash}${count > 0 ? '&moved=1' : ''}`);
-    return;
-  }
+// A share link goes on at once: reading every plan first could take seconds on a long history.
+if (isShareLink) location.replace(`${base}${hash}${mightHold() ? '&moved=1' : ''}`);
+else void held().then((count) => {
   if (count === 0) {
     // A plan's own address (#plan=…) names an id that may differ at the new address.
     location.replace(base);

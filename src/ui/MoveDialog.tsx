@@ -141,7 +141,13 @@ export function MoveDialog({ onClose, onMoved }: { onClose: () => void; onMoved:
                 <li key={m.entry.id}>
                   {m.entry.name}
                   {m.entry.shared && <span className="muted">{m.entry.shared.secret ? ', shared, and you can edit it' : ', shared with you to view'}</span>}
-                  {m.into === 'existing' && <span className="muted"> (already here: its changes are added to it)</span>}
+                  {m.into === 'existing' && (
+                    <span className="muted">
+                      {m.restored ? ' (deleted here: it comes back, with its changes)' : ' (already here: its changes are added to it)'}
+                      {m.sharing === 'adopted' && ' It was shared at the old address since, and takes that sharing.'}
+                      {m.sharing === 'differs' && ' Here it’s shared through another link, which it keeps; the old address’s link still opens the other copy.'}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

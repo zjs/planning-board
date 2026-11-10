@@ -19,11 +19,11 @@ GitHub sends a project's `github.io` address to the custom domain set on it _(re
 - **What it sends:** it reads every localStorage key and IndexedDB database of ours, record by record, without knowing what's in them. It posts them to the page that opened it, with the new address as the only origin allowed to receive them.
 - **The new side:** it accepts one message, from the tab it opened, at the old address. It shows the plans by name, and writes nothing until the person confirms.
 - **How each plan arrives (`src/commands/move.ts`):**
-  - an empty board nobody named or shared stays behind, such as the first plan a browser makes just by opening the app;
+  - an empty plan (no properties and no cards, the app's own rule) with no history of its own, nobody named or shared, stays behind, such as the first plan a browser makes just by opening the app; a board kept only from before schema 2 is migrated, as opening the app would;
   - its boards and histories are merged in as Yjs updates, each stored before its entry is listed;
   - its sync records come along, so the relay sends only what's missing;
   - it keeps its id, unless that id is taken here, when it gets a new one; a moved first plan takes the place of this browser's first plan if that one is an untouched empty board;
-  - a plan already here, a shared one by its room or one moved before by its old id (`movedFrom`), takes in the moved copy's changes instead of being added twice, so moving twice adds nothing twice;
+  - a plan already here, a shared one by its room or one moved before by its old id (`movedFrom`), takes in the moved copy's changes instead of being added twice, so moving twice adds nothing twice; if it was shared at the old address since, it takes that sharing, and a plan deleted here comes back, as the dialog says;
   - settings come along only where this browser has none, except the relay last used for Share, which stays behind.
 
 **At the switch, the old address serves a stub (`stub.html`).**

@@ -1,14 +1,37 @@
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import { indexedDbSyncStore, type SyncRecord } from '../store/relay.ts';
-import { readPlan } from '../store/schema.ts';
+import { isEmpty } from '../store/schema.ts';
 import type { MoveWriter } from './move.ts';
+import { dropPlanDatabase } from './plans.ts';
 
-/** Open a document's database here, with what it holds loaded. */
+const OPEN_TIMEOUT_MS = 8000;
+
+/**
+ * Open a document's database here, with what it holds loaded. Like `persist`, it gives up rather than wait for good:
+ * when the browser won't open IndexedDB, or another tab holds the database while it upgrades.
+ */
 async function open(name: string): Promise<{ doc: Y.Doc; provider: IndexeddbPersistence }> {
   const doc = new Y.Doc();
   const provider = new IndexeddbPersistence(name, doc);
-  await provider.whenSynced;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const fail = (why: string) => new Error(`This browser couldn’t save the plans here (${why}). Try again, or save them to files at the old address.`);
+  try {
+    await Promise.race([
+      provider.whenSynced,
+      provider._db.then(
+        () => new Promise<never>(() => undefined),
+        () => Promise.reject(fail('its storage is unavailable')),
+      ),
+      new Promise<never>((_, reject) => (timer = setTimeout(() => reject(fail('its storage didn’t answer')), OPEN_TIMEOUT_MS))),
+    ]);
+  } catch (error) {
+    void provider.destroy().catch(() => undefined);
+    doc.destroy();
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
   return { doc, provider };
 }
 
@@ -42,9 +65,10 @@ export const browserWriter: MoveWriter = {
   },
   async boardIsEmpty(name) {
     const { doc, provider } = await open(name);
-    const empty = Object.keys(readPlan(doc).items).length === 0;
+    const empty = isEmpty(doc);
     await provider.destroy();
     doc.destroy();
     return empty;
   },
+  dropPlan: (id) => dropPlanDatabase(id),
 };
