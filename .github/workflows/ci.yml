@@ -206,9 +206,20 @@ jobs:
 
       - run: npm ci
 
-      # ProVerif is built from the source kept in formal/tools, with OCaml. Short apt timeouts move on from a stalled mirror (2026-10-07).
+      # ProVerif is built from the source kept in formal/tools, with OCaml, and the build is kept between runs: OCaml
+      # is about 137 MB from Ubuntu's mirrors, which took over five minutes on 2026-11-10. The key names the source
+      # and the runner's image, so a new version or a new image builds again.
+      - name: Built ProVerif, from an earlier run
+        id: proverif
+        uses: actions/cache@v6
+        with:
+          path: formal/.tools/proverif2.05
+          key: proverif-${{ runner.os }}-${{ runner.arch }}-ubuntu-24.04-${{ hashFiles('formal/tools/proverif2.05.tar.gz') }}
+
+      # Only when there's no build to reuse. Short apt timeouts move on from a stalled mirror (2026-10-07).
       - name: Install OCaml
-        timeout-minutes: 5
+        if: steps.proverif.outputs.cache-hit != 'true'
+        timeout-minutes: 10
         run: |
           echo 'Acquire::http::Timeout "20"; Acquire::https::Timeout "20"; Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
           sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ocaml
