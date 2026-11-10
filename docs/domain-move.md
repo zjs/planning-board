@@ -14,7 +14,8 @@ Then tell engineering the name and the host.
 ## 2. Engineering points the build at it
 
 In one pull request:
-- `NEW_PUBLIC_APP` in `src/move/addresses.ts` becomes the new address.
+- `NEW_PUBLIC_APP` in `src/move/addresses.ts` becomes the new address. `PUBLIC_APP` beside it stays the old address until step 6; `OLD_PUBLIC_APP` stays as it is for good, since the move reads from it.
+- `publicApp` in `relay/web.go`, which a relay serving no app points people to, waits for step 6 too.
 - The relay's default `-allow-origin` (`relay/relay.go`) gains the new host, beside `zjs.github.io`.
 - A deploy job publishes each tested build at the new address, after CI passes on `main`, as `pages.yml` does today.
 - A release (the next version) carries the relay that allows both, with a note in its release notes for anyone running a relay.
@@ -36,6 +37,8 @@ Hosted relays, the demo relay included, move to the release from step 2. A relay
 The README, `CLAUDE.md` and the docs name the new address; engineering changes them in one pull request. Links already sent keep working through the stub.
 
 ## 6. Switch the old address to the stub
+
+First, in one pull request, `PUBLIC_APP` in `src/move/addresses.ts` and `publicApp` in `relay/web.go` become the new address, so links that can't name the page they were made on name the new address, and a relay that serves no app points there. Merge it, then:
 
 In Settings › Secrets and variables › Actions › Variables, set `OLD_ADDRESS_SERVES` to `stub`, then re-run the latest Pages workflow. The old address now:
 - sends share links on to the new one, keys and all;

@@ -85,6 +85,22 @@ test('plans shared at the old address move to the new one, and keep syncing; the
   await fresh.keyboard.press('Enter');
   await expect(old.getByTestId('plan-name')).toHaveText('Moved roadmap');
 
+  // Bringing them again adds nothing twice: the plan is already here, and takes in any changes.
+  const plans = async () => {
+    await fresh.getByTestId('file-menu').click();
+    const n = await fresh.getByRole('menuitem').filter({ hasText: /plan|roadmap/i }).count();
+    await fresh.keyboard.press('Escape');
+    return n;
+  };
+  const before = await plans();
+  await fresh.getByTestId('file-menu').click();
+  await fresh.getByRole('menuitem', { name: /Bring plans from 127\.0\.0\.1/ }).click();
+  await fresh.getByTestId('move-open').click();
+  await expect(fresh.getByTestId('move-plans')).toContainText('already here');
+  await fresh.getByTestId('move-add').click();
+  await expect(fresh.getByTestId('plan-name')).toHaveText('Moved roadmap');
+  expect(await plans()).toBe(before);
+
   // After the switch, the old address's stub sends a share link on, key and all, saying plans are kept there.
   const visitor = await context.newPage();
   await visitor.goto(`${MOVE_OLD}/stub.html${new URL(link).hash}`);

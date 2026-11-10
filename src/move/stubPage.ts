@@ -4,10 +4,11 @@
 // kept here is offered to move them, or to open the old copy of the app,
 // kept beside this page at ./app/, to save them to files.
 
-import { MOVE_TO_KEY, NEW_PUBLIC_APP, OURS } from './addresses.ts';
-import { ourDatabases, plansHeld } from './collect.ts';
+import { MOVE_TO_KEY, NEW_PUBLIC_APP, OURS, testOverride } from './addresses.ts';
+import { movablePlans } from '../commands/move.ts';
+import { collect, ourDatabases } from './collect.ts';
 
-const to = new URL(localStorage.getItem(MOVE_TO_KEY) ?? NEW_PUBLIC_APP);
+const to = new URL(testOverride(MOVE_TO_KEY) ?? NEW_PUBLIC_APP);
 const base = to.href.replace(/[#?].*$/, '');
 const hash = location.hash;
 const isShareLink = /^#v=\d+&room=/.test(hash);
@@ -21,11 +22,13 @@ function local(): Record<string, string> {
   return all;
 }
 
+/** How many plans this browser keeps here that are worth moving: not an empty board nobody named or shared. */
 async function held(): Promise<number> {
   try {
-    return plansHeld(local(), await ourDatabases());
+    return movablePlans(await collect()).length;
   } catch {
-    return plansHeld(local(), []);
+    // A browser that can't list its databases: the move can't read them either, so offer the old app.
+    return Object.keys(local()).length > 0 ? 1 : 0;
   }
 }
 

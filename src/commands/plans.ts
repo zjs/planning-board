@@ -22,6 +22,8 @@ export interface PlanEntry {
   shared?: SharedPlan;
   /** Drafted here before it was shared, so this computer keeps its history from before (Q73). */
   drafted?: boolean;
+  /** Brought from the public build's old address (Q80 d, ADR 0025): its id there, so bringing it again merges into it. */
+  movedFrom?: PlanId;
 }
 
 /**
@@ -158,6 +160,11 @@ export function addPlan(name: string, store = defaultStore(), now = Date.now()):
   const entry: PlanEntry = { id: newPlanId(), name, created: now, opened: now };
   writeAll(store, [...readAll(store), entry]);
   return entry;
+}
+
+/** Every entry, deleted ones included: for moving plans in, which must not reuse an id a deleted plan still holds. */
+export function allPlanEntries(store = defaultStore()): PlanEntry[] {
+  return readAll(store);
 }
 
 /** Whether an id is in use here, by a plan in the list or one deleted and not yet dropped. */

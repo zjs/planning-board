@@ -59,15 +59,3 @@ export async function collect(): Promise<MoveBundle> {
   for (const name of await ourDatabases()) databases.push(await readDatabase(name));
   return { format: 'planning-board-move', version: 1, local, databases };
 }
-
-/** How many plans this browser keeps here, deleted ones left out. */
-export function plansHeld(local: Record<string, string>, databases: readonly string[]): number {
-  const raw = local['planning-board:plans'];
-  if (raw === undefined) return databases.some((name) => name.endsWith(':default')) ? 1 : 0;
-  try {
-    const list: unknown = JSON.parse(raw);
-    return Array.isArray(list) ? list.filter((e: unknown) => typeof e === 'object' && e !== null && !('deletedAt' in e)).length : 0;
-  } catch {
-    return 0;
-  }
-}

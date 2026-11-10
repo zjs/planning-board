@@ -2,8 +2,15 @@
 // own (Q80 d, ADR 0025). Plain constants, with no imports, so the small pages
 // served at the old address (move.html, stub.html) can use them without the app.
 
-/** The public build today, on GitHub Pages (Q31). Share links made from a page opened from disk name it. */
-export const PUBLIC_APP = 'https://zjs.github.io/planning-board/';
+/** The public build's first address, on GitHub Pages (Q31): where plans are moved from, whatever PUBLIC_APP becomes. */
+export const OLD_PUBLIC_APP = 'https://zjs.github.io/planning-board/';
+
+/**
+ * The public build, which share links name when the page they were made on
+ * can't be (a file opened from disk, or a relay's own copy of the app). It
+ * becomes NEW_PUBLIC_APP at the switch (docs/domain-move.md).
+ */
+export const PUBLIC_APP = OLD_PUBLIC_APP;
 
 /**
  * The public build's own domain, once it's bought and deployed (Q80 d). A
@@ -13,11 +20,26 @@ export const PUBLIC_APP = 'https://zjs.github.io/planning-board/';
 export const NEW_PUBLIC_APP = 'https://planning-board.example/';
 
 /** The page at the old address that hands its plans to the new one. */
-export const MOVE_PAGE = `${PUBLIC_APP}move.html`;
+export const MOVE_PAGE = `${OLD_PUBLIC_APP}move.html`;
 
 /** localStorage keys that point the move somewhere else, only for tests, which run both addresses on this computer. */
 export const MOVE_FROM_KEY = 'planning-board:move-from';
 export const MOVE_TO_KEY = 'planning-board:move-to';
+
+/**
+ * A test's stand-in for an address, from localStorage. It's read only on this
+ * computer's own addresses, where the tests run: anywhere else, such as under
+ * `zjs.github.io`, another site sharing the storage could set it to send
+ * people, and their links' keys, somewhere of its choosing.
+ */
+export function testOverride(key: string): string | null {
+  try {
+    if (!['localhost', '127.0.0.1'].includes(location.hostname)) return null;
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
 
 /** What move.html posts to the new address: everything the app kept at the old one. */
 export interface MoveBundle {

@@ -4,14 +4,15 @@
 // storage. It reads everything the app keeps here and posts it to the page
 // that opened it, which only that address can receive, then closes.
 
-import { MOVE_TO_KEY, NEW_PUBLIC_APP } from './addresses.ts';
-import { collect, plansHeld } from './collect.ts';
+import { MOVE_TO_KEY, NEW_PUBLIC_APP, testOverride } from './addresses.ts';
+import { movablePlans } from '../commands/move.ts';
+import { collect } from './collect.ts';
 
 const say = (text: string) => {
   document.getElementById('status')!.textContent = text;
 };
 
-const to = new URL(localStorage.getItem(MOVE_TO_KEY) ?? NEW_PUBLIC_APP);
+const to = new URL(testOverride(MOVE_TO_KEY) ?? NEW_PUBLIC_APP);
 const opener = window.opener as Window | null;
 
 if (!opener) {
@@ -20,7 +21,7 @@ if (!opener) {
   collect().then(
     (bundle) => {
       opener.postMessage(bundle, to.origin);
-      const count = plansHeld(bundle.local, bundle.databases.map((db) => db.name));
+      const count = movablePlans(bundle).length;
       say(`Sent ${count === 1 ? '1 plan' : `${count} plans`} to ${to.origin}. You can close this tab.`);
       setTimeout(() => window.close(), 400);
     },

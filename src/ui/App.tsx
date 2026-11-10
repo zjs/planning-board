@@ -61,7 +61,7 @@ import {
   type PlanId,
   type SharedPlan,
 } from '../commands/plans.ts';
-import { PUBLIC_APP, isNewerLink, joinFromLink, linkInHash, myName, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
+import { isNewerLink, joinFromLink, linkInHash, myName, renewLinks, retireReplaced, sharingConfirmed, startSharing, startSharingByFile } from '../commands/sharing.ts';
 import { openPlanWithHistory, recordShared, type History, type HistoryEntry } from '../commands/history.ts';
 import { CHANGES_FILE_EXTENSION, changesFileFor, changesTarget, describeMerge, mergeChanges } from '../commands/changesFile.ts';
 import { parseCsv, type CsvTable } from '../domain/csv.ts';
@@ -136,7 +136,7 @@ import { Avatars } from './Avatars.tsx';
 import { ConnectionPill } from './ConnectionPill.tsx';
 import { usePresence } from './usePresence.ts';
 import { watchCollisions, type CollisionWatch } from '../commands/collisions.ts';
-import { MoveDialog, asksToMove, canBringPlans } from './MoveDialog.tsx';
+import { MoveDialog, asksToMove, canBringPlans, moveSourceHost } from './MoveDialog.tsx';
 import { NameForm, ShareDialog, useConnection } from './ShareDialog.tsx';
 import { ActivityPanel } from './ActivityPanel.tsx';
 import { useHistory } from './useHistory.ts';
@@ -1760,7 +1760,7 @@ function Workspace({
         ...(canBringPlans()
           ? ([
               {
-                label: `Bring plans from ${new URL(PUBLIC_APP).host}…`,
+                label: `Bring plans from ${moveSourceHost()}…`,
                 onSelect: () => setMoving(true),
                 title: 'Copy the plans this browser kept at the old address, with their sharing and history',
               },

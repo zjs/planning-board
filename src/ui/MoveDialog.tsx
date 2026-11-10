@@ -1,26 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { applyMove, planMove, type MovedPlan } from '../commands/move.ts';
 import { browserWriter } from '../commands/moveWriter.ts';
-import { MOVE_FROM_KEY, MOVE_PAGE, MOVE_TO_KEY, NEW_PUBLIC_APP, isMoveBundle, type MoveBundle } from '../move/addresses.ts';
+import { MOVE_FROM_KEY, MOVE_PAGE, MOVE_TO_KEY, NEW_PUBLIC_APP, isMoveBundle, testOverride, type MoveBundle } from '../move/addresses.ts';
 import { Dialog } from './Dialog.tsx';
-
-function stored(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
 
 /** The page at the old address that hands its plans over (move.html). Tests point it at this computer. */
 function movePage(): URL {
-  return new URL(stored(MOVE_FROM_KEY) ?? MOVE_PAGE);
+  return new URL(testOverride(MOVE_FROM_KEY) ?? MOVE_PAGE);
 }
+
+/** The old address plans are brought from, as a host for labels. */
+export const moveSourceHost = () => movePage().host;
 
 /** Whether this page is the public build at its new address, where plans can be brought from the old one (Q80 d). */
 export function canBringPlans(): boolean {
   try {
-    return location.origin === new URL(stored(MOVE_TO_KEY) ?? NEW_PUBLIC_APP).origin;
+    return location.origin === new URL(testOverride(MOVE_TO_KEY) ?? NEW_PUBLIC_APP).origin;
   } catch {
     return false;
   }
@@ -52,11 +47,25 @@ export function MoveDialog({ onClose, onMoved }: { onClose: () => void; onMoved:
       // Only the tab this dialog opened, at the old address, is listened to.
       if (popup.current === null || e.source !== popup.current || e.origin !== from.origin) return;
       popup.current = null;
-      if (isMoveBundle(e.data)) setStep({ kind: 'review', bundle: e.data, moves: planMove(e.data) });
-      else setStep({ kind: 'failed', reason: 'Your plans couldn’t be read at the old address.' });
+      if (isMoveBundle(e.data)) {
+        setStep({ kind: 'review', bundle: e.data, moves: planMove(e.data) });
+        return;
+      }
+      const reason = (e.data as { reason?: unknown } | null)?.reason;
+      setStep({ kind: 'failed', reason: `Your plans couldn’t be read at the old address${typeof reason === 'string' ? `: ${reason}` : '.'}` });
     };
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    // A tab closed before it sent anything won't send anything.
+    const watch = setInterval(() => {
+      if (popup.current?.closed) {
+        popup.current = null;
+        setStep((s) => (s.kind === 'waiting' ? { kind: 'failed', reason: 'The tab at the old address closed before it sent your plans.' } : s));
+      }
+    }, 500);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      clearInterval(watch);
+    };
   }, [from.origin]);
 
   const open = () => {
@@ -123,11 +132,15 @@ export function MoveDialog({ onClose, onMoved }: { onClose: () => void; onMoved:
           </>
         ) : (
           <>
-            <p>These plans are kept at {oldHost}. They’re added here, with their sharing and history.</p>
+            <p>
+              These plans are kept at {oldHost}. They’re added here, with their sharing and history. If one isn’t yours, cancel:
+              another site under {oldHost} could have put it there.
+            </p>
             <ul data-testid="move-plans">
               {step.moves.map((m) => (
                 <li key={m.entry.id}>
                   {m.entry.name}
+                  {m.entry.shared && <span className="muted">{m.entry.shared.secret ? ', shared, and you can edit it' : ', shared with you to view'}</span>}
                   {m.into === 'existing' && <span className="muted"> (already here: its changes are added to it)</span>}
                 </li>
               ))}
