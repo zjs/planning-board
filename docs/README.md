@@ -7,6 +7,7 @@ What's here, for anyone finding their way around the repository. Some documents 
 - [`requirements.md`](requirements.md): what the tool is for, its requirements, and what's out of scope.
 - [`decisions/`](decisions/README.md): architecture decision records, one per significant choice, with an index and their statuses.
 - [`hosting.md`](hosting.md): running the relay for a team, from a laptop pilot to a server.
+- [`domain-move.md`](domain-move.md): the PM's steps for moving the public build to a domain of its own.
 - [`security/threat-model.md`](security/threat-model.md): what whoever runs a relay can and can't do, how each claim is established, and the findings still open.
 - [`releases/`](releases/): the notes for each numbered release.
 - [`housekeeping.md`](housekeeping.md): how the repository is kept tidy, including the definition of done for every change.

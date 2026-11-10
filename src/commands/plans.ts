@@ -22,6 +22,8 @@ export interface PlanEntry {
   shared?: SharedPlan;
   /** Drafted here before it was shared, so this computer keeps its history from before (Q73). */
   drafted?: boolean;
+  /** Brought from the public build's old address (Q80 d, ADR 0025): its id there, so bringing it again merges into it. */
+  movedFrom?: PlanId;
 }
 
 /**
@@ -100,7 +102,7 @@ function defaultStore(): KeyValue {
   }
 }
 
-const isEntry = (v: unknown): v is PlanEntry =>
+export const isEntry = (v: unknown): v is PlanEntry =>
   typeof v === 'object' &&
   v !== null &&
   typeof (v as PlanEntry).id === 'string' &&
@@ -148,7 +150,7 @@ export function findPlan(id: PlanId, store = defaultStore()): PlanEntry | null {
   return listPlans(store).find((e) => e.id === id) ?? null;
 }
 
-function newPlanId(): PlanId {
+export function newPlanId(): PlanId {
   const bytes = crypto.getRandomValues(new Uint8Array(9));
   return 'p' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
@@ -158,6 +160,21 @@ export function addPlan(name: string, store = defaultStore(), now = Date.now()):
   const entry: PlanEntry = { id: newPlanId(), name, created: now, opened: now };
   writeAll(store, [...readAll(store), entry]);
   return entry;
+}
+
+/** Every entry, deleted ones included: for moving plans in, which must not reuse an id a deleted plan still holds. */
+export function allPlanEntries(store = defaultStore()): PlanEntry[] {
+  return readAll(store);
+}
+
+/** Whether an id is in use here, by a plan in the list or one deleted and not yet dropped. */
+export function planIdTaken(id: PlanId, store = defaultStore()): boolean {
+  return readAll(store).some((e) => e.id === id);
+}
+
+/** Add a plan exactly as given: one moved from another address, keeping its id, sharing and dates (Q80 d). */
+export function importPlanEntry(entry: PlanEntry, store = defaultStore()): void {
+  writeAll(store, [...readAll(store).filter((e) => e.id !== entry.id), entry]);
 }
 
 /** Remember that a plan was drafted here before it was shared: its earlier history stays on this computer (Q73). */

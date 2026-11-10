@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Planning Board has moved</title>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; max-width: 34rem; margin: 3rem auto; padding: 0 1rem; color: #1d1d1f; background: #fff; }
+      a.button { display: inline-block; padding: 0.5rem 1rem; border-radius: 6px; background: #3456d6; color: #fff; text-decoration: none; }
+      button { font: inherit; padding: 0.4rem 0.9rem; }
+      @media (prefers-color-scheme: dark) { body { color: #f2f2f2; background: #1d1d1f; } a { color: #9db2ff; } a.button { color: #fff; } }
+    </style>
+  </head>
+  <body>
+    <h1>Planning Board has moved</h1>
+    <noscript><p>Planning Board has a new address. Turn on JavaScript to go there and bring your plans.</p></noscript>
+    <section id="held" hidden>
+      <p>Planning Board is now at <strong id="new-address"></strong>. This browser still keeps <span id="count"></span> at the old address.</p>
+      <p><a id="move" class="button" data-testid="stub-move">Move my plans to the new address</a></p>
+      <p>The new address asks you to confirm, then copies them across, with their sharing and history.</p>
+      <p>Or <a href="./app/">open the old copy of the app here</a> and save each plan to a file.</p>
+      <p>Once they’re at the new address: <button type="button" id="forget">Delete my plans from this address</button></p>
+    </section>
+    <p id="forgotten" role="status" hidden>Deleted. Nothing of Planning Board is kept at this address in this browser any more.</p>
+    <script type="module" src="/src/move/stubPage.ts"></script>
+  </body>
+</html>

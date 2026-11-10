@@ -3,7 +3,7 @@
 Models of how sharing works, checked by tools rather than by tests, for the claims in [`docs/security/threat-model.md`](../docs/security/threat-model.md). Why these tools, and how they run: [ADR 0024](../docs/decisions/0024-formal-methods.md).
 
 Run them with `npm run formal`. It needs:
-- **OCaml,** for ProVerif, which it builds into `formal/.tools/` on first use (`apt-get install ocaml-nox` on Ubuntu, `brew install ocaml` on a Mac);
+- **OCaml,** for ProVerif, which it builds into `formal/.tools/` on first use (`apt-get install ocaml` on Ubuntu 24.04, `brew install ocaml` on a Mac);
 - **Java,** for TLC.
 
 Both tools are kept in [`tools/`](tools/), so nothing is downloaded, and their hashes are checked on every run: `tla2tools.jar` is the TLA+ nightly 2026.10.15.145915 (git revision `932d35ec2b9fdb3d3e4d0a3321689c634a1f6b43`), MIT-licensed, with its own and its libraries' licenses inside; `proverif2.05.tar.gz` is ProVerif's source, GPL v2, unmodified, with its license. Neither is part of the app or the relay. Why they're kept here: ADR 0024.

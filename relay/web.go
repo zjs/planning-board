@@ -51,7 +51,8 @@ func serveApp(static string) http.HandlerFunc {
 }
 
 // publicApp is the public build, which a relay that serves no app points to.
-// The app names the same address (PUBLIC_APP in src/commands/sharing.ts).
+// The app names the same address (PUBLIC_APP in src/move/addresses.ts); both
+// change at the switch to the public build's own domain (docs/domain-move.md).
 const publicApp = "https://zjs.github.io/planning-board/"
 
 // releasesPage is where the app's HTML file can be downloaded and checked.

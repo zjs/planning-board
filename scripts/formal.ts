@@ -5,7 +5,7 @@
 // a result depends on, must change that result: a model too weak to notice its
 // own broken variant proves nothing. ProVerif is pinned by URL and SHA-256,
 // installed into formal/.tools on first use, and built from source, which
-// needs OCaml (`ocaml-nox` on Ubuntu). TLC runs from the jar in formal/tools, on Java.
+// needs OCaml (`ocaml` on Ubuntu 24.04). TLC runs from the jar in formal/tools, on Java.
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';

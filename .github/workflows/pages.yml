@@ -6,6 +6,14 @@ name: Pages
 # GitHub Actions. To redeploy, re-run the latest Pages run: an older one would
 # publish an older build, and CI keeps its artifacts for 90 days.
 
+# What the address serves (Q80 d, ADR 0025) is set by the repository variable
+# OLD_ADDRESS_SERVES, in Settings › Secrets and variables › Actions:
+# - unset or `app`: the app, with move.html beside it, which hands this
+#   address's plans to the public build's new one when someone asks there;
+# - `stub`: once the new address is live and checked (docs/domain-move.md),
+#   stub.html in the app's place, move.html, and the old app at ./app/, so
+#   people can still save their plans to files.
+
 # Only after CI passes on main, so a red build never reaches the public page.
 on:
   workflow_run:
@@ -38,11 +46,30 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
+      - name: Fetch the old address's pages
+        uses: actions/download-artifact@v8
+        with:
+          name: old-address-pages-${{ github.event.workflow_run.head_sha }}
+          path: pages
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
       - name: Lay it out as the site
+        env:
+          SERVES: ${{ vars.OLD_ADDRESS_SERVES || 'app' }}
         run: |
           mkdir site
-          cp app/*.html site/index.html
-          test -s site/index.html
+          cp pages/move.html site/move.html
+          case "$SERVES" in
+            app) cp app/*.html site/index.html ;;
+            stub)
+              cp pages/stub.html site/index.html
+              mkdir site/app
+              cp app/*.html site/app/index.html ;;
+            *) echo "OLD_ADDRESS_SERVES is '$SERVES': it must be app or stub."; exit 1 ;;
+          esac
+          test -s site/index.html && test -s site/move.html
+          ls -laR site
 
       - uses: actions/upload-pages-artifact@v5
         with:

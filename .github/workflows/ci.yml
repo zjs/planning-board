@@ -98,6 +98,17 @@ jobs:
           archive: false
           if-no-files-found: error
 
+      # The pages for the public build's old address (Q80 d): move.html now, stub.html once it has moved. Pages deploys them.
+      - name: Attach the old address's pages
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: old-address-pages-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            dist/move.html
+            dist/stub.html
+          if-no-files-found: error
+
       # Every step, how it went, the test counts, and the build to download (scripts/ci-summary.ts).
       - name: Summary
         if: ${{ !cancelled() }}
@@ -180,7 +191,9 @@ jobs:
 
   formal:
     name: 'Formal: protocol, sync and grouping'
-    runs-on: ubuntu-latest
+    # Pinned: the kept ProVerif 2.05 is built and checked with Ubuntu 24.04's OCaml 4.14. ubuntu-latest moved to 26.04
+    # (OCaml 5.4, and no ocaml-nox) in November 2026; moving with it is a change of its own, with every model run.
+    runs-on: ubuntu-24.04
     # The whole job took about 7 minutes on 2026-10-15, most of it the sync model.
     timeout-minutes: 30
     steps:
@@ -198,7 +211,7 @@ jobs:
         timeout-minutes: 5
         run: |
           echo 'Acquire::http::Timeout "20"; Acquire::https::Timeout "20"; Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
-          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ocaml-nox
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ocaml
 
       # TLC runs from formal/tools/tla2tools.jar on the runner's own Java.
       - name: Java

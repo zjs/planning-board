@@ -20,6 +20,10 @@ function hasGo(): boolean {
   }
 }
 export const RELAY_PORT = 18787;
+// The public build's old and new addresses, stood in for by two local ones (e2e/relay/move.spec.ts).
+export const MOVE_OLD = 'http://127.0.0.1:18788';
+export const MOVE_NEW = 'http://localhost:18789';
+const MOVE_HOSTS = [MOVE_OLD, MOVE_NEW].map((a) => new URL(a).host).join(',');
 const withRelay = !!process.env.CI || hasGo();
 // Set once, in the main process, and inherited by the workers, so tests can look at what the relay stored.
 process.env.RELAY_E2E_DATA ??= join(mkdtempSync(join(tmpdir(), 'relay-e2e-')), 'data');
@@ -64,7 +68,7 @@ export default defineConfig({
     ? {
         webServer: {
           // A fresh, empty relay for every run, serving the app just built.
-          command: `go run . -addr 127.0.0.1:${RELAY_PORT} -public-url http://127.0.0.1:${RELAY_PORT} -static ../dist -data ${process.env.RELAY_E2E_DATA} -announce=false`,
+          command: `go run . -addr 127.0.0.1:${RELAY_PORT} -public-url http://127.0.0.1:${RELAY_PORT} -allow-origin ${MOVE_HOSTS} -static ../dist -data ${process.env.RELAY_E2E_DATA} -announce=false`,
           cwd: 'relay',
           url: `http://127.0.0.1:${RELAY_PORT}/config`,
           timeout: 180_000,
