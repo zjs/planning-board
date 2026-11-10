@@ -69,7 +69,8 @@ var noAppPage = []byte(`<!doctype html>
 <style>body{font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem}</style>
 <h1>Planning Board relay</h1>
 <p>This relay carries encrypted plans between browsers. It doesn't serve the app, so whoever runs it can't change the app you use.</p>
-<p>Open the app at <a href="` + publicApp + `">` + publicApp + `</a>, or download its HTML file, <code>planning-board.html</code>, from the <a href="` + releasesPage + `">releases</a>, check it, and open it. Share links say which relay a plan uses. A page served over HTTPS can only reach a relay over HTTPS.</p>
+<p>Open the app at <a href="` + publicApp + `">` + publicApp + `</a>, or download its HTML file, <code>planning-board.html</code>, from the <a href="` + releasesPage + `">releases</a>, check it, and open it. Share links say which relay a plan uses. A page served over HTTPS can only reach a relay over HTTPS, so for a relay over plain http, use the HTML file.</p>
+<p>Followed a link here? Copy it, open the app, and paste it into <strong>File › Open a share link…</strong>.</p>
 </html>
 `)
 
@@ -107,16 +108,19 @@ func serveNoApp(privacy bool) http.HandlerFunc {
 // relayInfo is what /config tells the app: the protocol this relay speaks;
 // the address to put in share links, so a link made on the relay's own
 // computer doesn't say "localhost" when colleagues need its network address;
-// and its build, which the cheat sheet shows for a shared plan.
+// its build, which the cheat sheet shows for a shared plan; and whether it
+// serves the app, so links made through a relay that doesn't never send
+// people to its address.
 type relayInfo struct {
 	Protocol  int    `json:"protocol"`
 	PublicURL string `json:"publicUrl"`
 	Build     string `json:"build"`
+	App       bool   `json:"app"`
 }
 
-func serveConfig(publicURL string, trustForwarded bool) http.HandlerFunc {
+func serveConfig(publicURL string, trustForwarded, servesApp bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		info := relayInfo{Protocol: ProtocolVersion, PublicURL: publicURL, Build: buildName()}
+		info := relayInfo{Protocol: ProtocolVersion, PublicURL: publicURL, Build: buildName(), App: servesApp}
 		if info.PublicURL == "" {
 			info.PublicURL = requestURL(req, trustForwarded)
 		}

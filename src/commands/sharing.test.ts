@@ -3,7 +3,7 @@ import { Frame, FrameReader, FrameWriter, HelloFlag } from '../store/frames.ts';
 import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
 import type { RelaySocket } from '../store/relay.ts';
 import { addPlan, findPlan, findShared, markDeleted } from './plans.ts';
-import { PUBLIC_APP, appForFileLinks, demoRelay, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
+import { PUBLIC_APP, appForFileLinks, demoRelay, shareFragment, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
 
 // The plan list falls back to memory here, as it does in a browser that won't give localStorage.
 const relay = 'http://192.168.1.23:8787';
@@ -115,6 +115,34 @@ function retiringRelay(down = new Set<string>()) {
   };
   return { open, retired };
 }
+
+describe('a pasted share link', () => {
+  const view = toBase64Url(new Uint8Array(32).fill(7));
+  it('opens by its fragment, whatever address it names', () => {
+    const hash = `#v=1&room=testroom_0123456789abcdef&view=${view}&relay=http%3A%2F%2Flocalhost%3A8787`;
+    expect(shareFragment(`  https://zjs.github.io/planning-board/${hash}\n`)).toEqual({ hash });
+    expect(shareFragment(`file:///home/ada/planning-board.html${hash}`)).toEqual({ hash });
+    expect(shareFragment(hash)).toEqual({ hash });
+    const byFile = `#v=1&room=testroom_0123456789abcdef&view=${view}&file=1`;
+    expect(shareFragment(`https://zjs.github.io/planning-board/${byFile}`)).toEqual({ hash: byFile });
+  });
+  it('keeps the relay a link names only by its address, as one made on the relay’s own copy of the app does', () => {
+    const hash = `#v=1&room=testroom_0123456789abcdef&view=${view}`;
+    const opened = shareFragment(`http://192.168.1.23:8787/${hash}`);
+    expect(opened).toEqual({ hash: `${hash}&relay=${encodeURIComponent('http://192.168.1.23:8787')}` });
+    expect(parseShareLink((opened as { hash: string }).hash)?.relay).toBe('http://192.168.1.23:8787');
+    // Pasted with no address, it's left to the page, as a link opened there would be.
+    expect(shareFragment(hash)).toEqual({ hash });
+  });
+  it('says when a link is from a newer version', () => {
+    expect(shareFragment('https://zjs.github.io/planning-board/#v=9&room=testroom_0123456789abcdef')).toBe('newer');
+  });
+  it('is refused when it isn’t one', () => {
+    expect(shareFragment('https://zjs.github.io/planning-board/')).toBeNull();
+    expect(shareFragment('#plan=p1')).toBeNull();
+    expect(shareFragment('hello')).toBeNull();
+  });
+});
 
 describe('the demo relay (Q64 a)', () => {
   const demo = 'https://relay.example';

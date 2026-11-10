@@ -137,6 +137,7 @@ import { ConnectionPill } from './ConnectionPill.tsx';
 import { usePresence } from './usePresence.ts';
 import { watchCollisions, type CollisionWatch } from '../commands/collisions.ts';
 import { MoveDialog, asksToMove, canBringPlans, moveSourceHost } from './MoveDialog.tsx';
+import { NEWER_LINK, OpenLinkDialog } from './OpenLinkDialog.tsx';
 import { NameForm, ShareDialog, useConnection } from './ShareDialog.tsx';
 import { ActivityPanel } from './ActivityPanel.tsx';
 import { useHistory } from './useHistory.ts';
@@ -216,7 +217,13 @@ function joinLink(hash: string): { id: PlanId; start: PlanStart } | { notice: st
   });
   const link = linkInHash(hash);
   if (!link) {
-    if (isNewerLink(hash)) return { notice: 'This link is from a newer version of Planning Board. Open it from the relay’s own address, which has the newer app.' };
+    if (isNewerLink(hash))
+      return {
+        notice:
+          relayOfPage() === null
+            ? NEWER_LINK
+            : 'This link is from a newer version of Planning Board. Open it from the relay’s own address, which has the newer app.',
+      };
     return null;
   }
   const here = relayOfPage();
@@ -1686,6 +1693,7 @@ function Workspace({
   const [askingName, setAskingName] = useState(() => start?.askName === true && myName() === null);
   const replaceInput = useRef<HTMLInputElement>(null);
   const [replacing, setReplacing] = useState(false);
+  const [openingLink, setOpeningLink] = useState(false);
   const replaceFromFile = async (file: File) => {
     const opened = readPlanFile(await file.text());
     if (!opened.ok) {
@@ -1770,6 +1778,11 @@ function Workspace({
           label: 'Merge changes…',
           onSelect: () => mergeInput.current?.click(),
           title: 'Merge a changes file someone sent you into its plan',
+        },
+        {
+          label: 'Open a share link…',
+          onSelect: () => setOpeningLink(true),
+          title: 'Open a link someone shared in this copy of the app, such as the HTML file opened from disk',
         },
         ...(planActions.shared?.secret && !byFile
           ? ([
@@ -2204,6 +2217,7 @@ function Workspace({
           onClose={() => setSharing(false)}
         />
       )}
+      {openingLink && <OpenLinkDialog onClose={() => setOpeningLink(false)} />}
       {replacing && (
         <Dialog title="Replace this shared plan?" onClose={() => setReplacing(false)} testId="replace-shared">
           <p>

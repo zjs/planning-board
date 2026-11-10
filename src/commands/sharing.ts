@@ -1,7 +1,7 @@
 // Sharing a plan through a relay (requirements 30 and 33, ADR 0018), as the
 // board sees it: who you are, which relay, making links, and opening one.
 
-import { newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type ShareLink } from '../store/keys.ts';
+import { isNewerLink, newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type ShareLink } from '../store/keys.ts';
 import { historyRoom } from '../store/history.ts';
 import { retireRoom, type OpenSocket, type RetireResult } from '../store/relay.ts';
 import { addSharedPlan, findPlan, findShared, markDrafted, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
@@ -74,6 +74,8 @@ export interface RelayInfo {
   publicUrl: string;
   /** Which build of the relay this is, such as "3d350aa (2026-10-09)". Relays from before 2026-10-09 don't say. */
   build?: string;
+  /** False when the relay serves no app (-serve-app=false). Relays from before 0.14.0 don't say, and serve it. */
+  app?: boolean;
 }
 
 async function fetchConfig(url: string): Promise<RelayInfo | null> {
@@ -84,7 +86,12 @@ async function fetchConfig(url: string): Promise<RelayInfo | null> {
     if (!response.ok) return null;
     const info = (await response.json()) as Partial<RelayInfo>;
     if (typeof info.protocol !== 'number' || typeof info.publicUrl !== 'string') return null;
-    return { protocol: info.protocol, publicUrl: info.publicUrl, ...(typeof info.build === 'string' ? { build: info.build } : {}) };
+    return {
+      protocol: info.protocol,
+      publicUrl: info.publicUrl,
+      ...(typeof info.build === 'string' ? { build: info.build } : {}),
+      ...(info.app === false ? { app: false } : {}),
+    };
   } catch {
     return null;
   } finally {
@@ -255,10 +262,17 @@ export function publicRelayFor(relay: string, publicUrl: string): string {
  * whatever its /config says (F1): this page, unless it's that copy or was
  * opened from disk, and then the public build. A plain http relay serves the
  * app itself: its own address works for anyone who can reach it on a network,
- * and whoever runs it is trusted with the plan.
+ * and whoever runs it is trusted with the plan. A relay that serves no app is
+ * never named as the app, whichever way it's reached.
  */
-export function appForLinks(relay: string, publicRelay: string, page: { protocol: string; href: string } = location, pageIsRelay = false): string {
-  if (!relay.startsWith('https:') && !publicRelay.startsWith('https:')) return `${publicRelay.replace(/\/$/, '')}/`;
+export function appForLinks(
+  relay: string,
+  publicRelay: string,
+  page: { protocol: string; href: string } = location,
+  pageIsRelay = false,
+  relayServesApp = true,
+): string {
+  if (linksOpenRelaysApp(relay, publicRelay, relayServesApp)) return `${publicRelay.replace(/\/$/, '')}/`;
   const origin = (address: string) => {
     try {
       return new URL(address).origin;
@@ -272,8 +286,35 @@ export function appForLinks(relay: string, publicRelay: string, page: { protocol
   return page.protocol.startsWith('http') && here !== null && !relays.has(here) && !pageIsRelay ? page.href : PUBLIC_APP;
 }
 
+/**
+ * What opens a pasted share link here: the part after the #, or 'newer' for a
+ * link from a newer version, or null when the text isn't a link. The key is
+ * in the fragment, so a link opens in whichever copy of the app you have, such
+ * as the HTML file opened from disk. A link made on a relay's own copy of the
+ * app names the relay only by its address, before the #, so that's carried
+ * into the fragment.
+ */
+export function shareFragment(text: string): { hash: string } | 'newer' | null {
+  const trimmed = text.trim();
+  const at = trimmed.indexOf('#');
+  if (at < 0) return null;
+  const hash = trimmed.slice(at);
+  const link = parseShareLink(hash);
+  if (!link) return isNewerLink(hash) ? 'newer' : null;
+  if (link.relay !== undefined || link.file) return { hash };
+  try {
+    const address = new URL(trimmed.slice(0, at));
+    if (address.protocol !== 'http:' && address.protocol !== 'https:') return { hash };
+    const relay = new URL('.', address).href.replace(/\/$/, '');
+    return { hash: `${hash}&relay=${encodeURIComponent(relay)}` };
+  } catch {
+    return { hash };
+  }
+}
+
 /** Whether links through this relay open the relay's own copy of the app, so whoever runs it is trusted with the plan. */
-export const linksOpenRelaysApp = (relay: string, publicRelay: string): boolean => !relay.startsWith('https:') && !publicRelay.startsWith('https:');
+export const linksOpenRelaysApp = (relay: string, publicRelay: string, relayServesApp = true): boolean =>
+  relayServesApp && !relay.startsWith('https:') && !publicRelay.startsWith('https:');
 
 /**
  * A shared plan's links. `app` is where people open the app; `publicRelay`

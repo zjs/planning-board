@@ -36,10 +36,10 @@ xattr -d com.apple.quarantine planning-board-relay
 ## In a container
 
 ```
-docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board:0.13.0 -public-url https://plans.example.com
+docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board:0.14.0 -public-url https://plans.example.com -serve-app=false
 ```
 
-The tag is a version, which never changes; `latest` follows every change to the project.
+The tag is a version, which never changes; `latest` follows every change to the project. With `-serve-app=false`, people open the [hosted page](https://zjs.github.io/planning-board/) or a copy of the app your company hosts, and the relay carries only the encrypted plans.
 
 Put it behind your company's reverse proxy for HTTPS, and pass `-trust-forwarded` so it sees each person's address rather than the proxy's. [`docs/hosting.md`](https://github.com/zjs/planning-board/blob/main/docs/hosting.md) has Caddy, nginx and systemd examples.
 
@@ -54,7 +54,7 @@ Each numbered release's notes say what changed and anything to know before upgra
 Every release has a `SHA256SUMS` file, and a build attestation for each download and for the image: a signed record that it was built by this project's release workflow, from a commit that passed its tests. That includes `planning-board.html`, the app on its own: the same file as the [hosted page](https://zjs.github.io/planning-board/), for opening from disk or hosting at an address of your own.
 
 - **The checksum,** in the folder you downloaded to: `sha256sum -c SHA256SUMS --ignore-missing`, or on a Mac, `shasum -a 256 -c SHA256SUMS --ignore-missing`.
-- **Where it was built,** with the [GitHub CLI](https://cli.github.com/): `gh attestation verify planning-board-relay-linux-amd64.tar.gz --repo zjs/planning-board`. For the image: `gh attestation verify oci://ghcr.io/zjs/planning-board:0.13.0 --repo zjs/planning-board`. For the app: `gh attestation verify planning-board.html --repo zjs/planning-board`. The hosted page checks the same way, fetched with `curl -o planning-board.html https://zjs.github.io/planning-board/` (a browser’s “Save page” can change the file).
+- **Where it was built,** with the [GitHub CLI](https://cli.github.com/): `gh attestation verify planning-board-relay-linux-amd64.tar.gz --repo zjs/planning-board`. For the image: `gh attestation verify oci://ghcr.io/zjs/planning-board:0.14.0 --repo zjs/planning-board`. For the app: `gh attestation verify planning-board.html --repo zjs/planning-board`. The hosted page checks the same way, fetched with `curl -o planning-board.html https://zjs.github.io/planning-board/` (a browser’s “Save page” can change the file).
 
 ## Options
 
@@ -78,7 +78,7 @@ Every release has a `SHA256SUMS` file, and a build attestation for each download
 | `-static` | | Serve the app from this directory's `index.html` instead of the built-in one. |
 | `-expire-idle` | never | Delete a shared plan nobody has opened or changed for this long, such as `720h` for 30 days. A plan someone has open is never deleted. Turning it on gives every plan already on the relay a full period from then. Opens while the relay ran without it aren't counted, only changes, and nothing is deleted in the first hour after starting. |
 | `-privacy-note` | | An HTML file served at `/privacy`, saying what the relay keeps and for how long. |
-| `-serve-app` | on | Serve the app at `/`. Off, `/` says where to open it instead, so nobody uses a copy of the app this relay could change. |
+| `-serve-app` | on | Serve the app at `/`. Off, `/` says where to open it instead, so nobody uses a copy of the app this relay could change, and links shared through it never name it as the app. In the app's HTML file, opened from disk, **File › Open a share link…** opens a link someone sent. |
 | `-announce` | on | Print the addresses colleagues can open. |
 | `-version` | | Print which build this is, and stop. |
 | `-licenses` | | Print the licenses of the open-source software inside, and stop. |
@@ -90,7 +90,7 @@ Every release has a `SHA256SUMS` file, and a build attestation for each download
 - **It does see:** which shared plans exist, when people connect and from which addresses, and how large the changes are.
 - **When it serves the app,** whoever runs it could serve an altered app, which could read the plans opened in it. That's the same trust as any website. Over plain `http`, on a network you don't trust, someone in between could do the same.
   - **Over HTTPS,** links never send people to the relay's copy: they open the page the plan was shared from, such as the [hosted page](https://zjs.github.io/planning-board/), or a copy at your company's own address. Shared from the relay's own copy, or from a file opened from disk, they open the hosted page. Run the relay with `-serve-app=false` and nobody can open its copy by accident.
-  - **Over plain `http`,** on a laptop for a pilot, people open the relay's own address, so the person running it is trusted with the plan.
+  - **Over plain `http`,** on a laptop for a pilot, people open the relay's own address, so the person running it is trusted with the plan. With `-serve-app=false`, everyone uses the app's HTML file from the release instead, checked against its checksum, and opens links with **File › Open a share link…**.
 
 ## Building it
 

@@ -60,7 +60,7 @@ func serve(t *testing.T, cfg Config) *httptest.Server {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("GET /rooms/{id}", relay)
-	mux.HandleFunc("GET /config", serveConfig("", false))
+	mux.HandleFunc("GET /config", serveConfig("", false, true))
 	mux.HandleFunc("GET /", serveApp(""))
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
@@ -713,7 +713,7 @@ func TestTheRelayServesTheAppAndItsConfig(t *testing.T) {
 	defer res.Body.Close()
 	var info relayInfo
 	json.NewDecoder(res.Body).Decode(&info)
-	if info.Protocol != ProtocolVersion || info.PublicURL == "" || info.Build != buildName() || res.Header.Get("Access-Control-Allow-Origin") != "*" {
+	if info.Protocol != ProtocolVersion || info.PublicURL == "" || info.Build != buildName() || !info.App || res.Header.Get("Access-Control-Allow-Origin") != "*" {
 		t.Fatalf("config: %+v %v", info, res.Header)
 	}
 	if res, _ := http.Get(srv.URL + "/elsewhere"); res.StatusCode != http.StatusNotFound {
@@ -725,6 +725,7 @@ func TestARelayThatServesNoAppSaysWhereToOpenIt(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", serveNoApp(true))
 	mux.HandleFunc("GET /privacy", servePrivacy([]byte("<p>Kept 30 days.</p>")))
+	mux.HandleFunc("GET /config", serveConfig("", false, false))
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	res, err := http.Get(srv.URL + "/")
@@ -754,6 +755,17 @@ func TestARelayThatServesNoAppSaysWhereToOpenIt(t *testing.T) {
 	}
 	if res, _ := http.Get(srv.URL + "/elsewhere"); res.StatusCode != http.StatusNotFound {
 		t.Fatalf("other paths: %d", res.StatusCode)
+	}
+	// /config says so, so the app never makes links to this relay's address.
+	res, err = http.Get(srv.URL + "/config")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var info map[string]any
+	json.NewDecoder(res.Body).Decode(&info)
+	res.Body.Close()
+	if info["app"] != false {
+		t.Fatalf("/config: %v", info)
 	}
 }
 

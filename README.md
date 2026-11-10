@@ -53,7 +53,7 @@ This is being built in the open, a sprint at a time. It's usable for trying the 
 - Scenarios, saved views, and filters that hide cards (find fades them instead).
 - Updating a plan from a fresh Jira export: each import is a new plan.
 - Seeing what others changed while you were away, marked on the board. It's next ([`docs/plans/m2-plan.md`](docs/plans/m2-plan.md)).
-- A hosted relay to share through without running your own. Until then, sharing needs a relay you or your company run.
+- A hosted relay to share through without running your own. It's built, and waiting to be set up; until then, sharing needs a relay you or your company run.
 
 What it's for, in full, is in [`docs/requirements.md`](docs/requirements.md). What's coming is in [`docs/backlog.md`](docs/backlog.md), and decisions and open product questions are in [`docs/decisions/`](docs/decisions/) and [`docs/questions.md`](docs/questions.md).
 
@@ -91,11 +91,13 @@ The relay is one program, with the app inside. Download the archive for your com
 
 To pin a version rather than take the newest, use a [numbered release](https://github.com/zjs/planning-board/releases). Every release comes with `SHA256SUMS` and build attestations, so you can check a download came from this repository's CI; [`relay/README.md`](relay/README.md#checking-a-download) says how.
 
-For a server, there's a container: `docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board`, or `ghcr.io/zjs/planning-board:0.13.0` for a fixed version. Options, Mac and Windows notes, and what the relay can and can't see are in [`relay/README.md`](relay/README.md), which comes in the download too. HTTPS behind a proxy, upgrades, backups, and a pilot on a laptop are in [`docs/hosting.md`](docs/hosting.md).
+For a server, there's a container: `docker run -p 8787:8787 -v planning-board-data:/data ghcr.io/zjs/planning-board`, or `ghcr.io/zjs/planning-board:0.14.0` for a fixed version. Options, Mac and Windows notes, and what the relay can and can't see are in [`relay/README.md`](relay/README.md), which comes in the download too. HTTPS behind a proxy, upgrades, backups, and a pilot on a laptop are in [`docs/hosting.md`](docs/hosting.md).
+
+A relay started with `-serve-app=false` carries only the encrypted plans and serves no app, so whoever runs it can't change the app you use. People then open the hosted page, a copy of the app at an address your company runs, or the app's HTML file from a release, checked against its checksum. In the file, **File › Open a share link…** opens a link someone sent.
 
 ## Other ways to run it
 
-- **Offline copy:** open the hosted page and save it (it's one self-contained file), or download a build from any CI run under **Actions**: the `planning-board-<commit>.html` artifact opens straight in a browser. The CI download needs a GitHub login.
+- **Offline copy:** download `planning-board.html` from a [release](https://github.com/zjs/planning-board/releases), which has a checksum and a build attestation, or save the hosted page (it's one self-contained file), or download a build from any CI run under **Actions**: the `planning-board-<commit>.html` artifact opens straight in a browser. The CI download needs a GitHub login.
 - **From source:** needs Node 22 or later, and Go 1.26 or later for the relay.
 
 ```sh

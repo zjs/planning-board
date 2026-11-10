@@ -100,6 +100,14 @@ Entry format:
 - Recommendation: (a) for sprint 7, then decide after the cold-start session asks testers to bucket a sequence. (b) is the strongest if they still feel they're redoing work. It's a layout change on the scale of nested axes (ADR 0012), and it needs rules for a column whose cards span quarters. (c) breaks down when one column's cards belong in different quarters.
 - Status: open. Held for the combined cold-start session (sprints 3–8), then a sprint 10 candidate.
 
+### Q81: Opening a share link in the app's HTML file
+- Context: Requirements 30 and 37, Q80 (c) and sprint 14's exit criterion 4: "start a relay that serves no app, and use it from the release's HTML file". Building its walkthrough found two gaps:
+  - **Links named the relay.** A plain http relay's links opened its own address, even with `-serve-app=false`, where that address shows only "this relay serves no app".
+  - **A file has no address to link to.** Someone using the HTML file from disk could share from it, but a colleague with their own copy of the file had no way to open the link in it, short of editing the address bar by hand.
+- Options: (a) relays say at `/config` whether they serve the app, links through one that doesn't open this page or the public build (as they already do for https relays), and **File › Open a share link…** takes a pasted link and opens it in whichever copy of the app is open; (b) only the `/config` change, and say in the docs to paste the part after `#` into the file's address bar; (c) leave `-serve-app=false` for https relays only, and say so.
+- Recommendation: (a). It's a small dialog, the key is in the fragment so the address before it never mattered, and it makes the from-disk route Q80 offers as the strongest choice usable by more than one person. The Share dialog says, for a plain http relay that serves no app, that the public build can't reach it, so everyone opens the HTML file. A link made on a relay's own copy of the app names the relay only by its address, so a pasted link keeps that address as the relay.
+- Status: open. Built (a) as a reversible default in sprint 14, slice 7.
+
 ## Answered
 
 ### Q1: Is a modifier-key drop discoverable enough for adding a value?

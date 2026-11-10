@@ -148,6 +148,7 @@ export function ShareDialog({
   const [checking, setChecking] = useState(false);
   // The relay's address as others reach it, for the links.
   const [publicRelay, setPublicRelay] = useState<string | null>(null);
+  const [relayServesApp, setRelayServesApp] = useState(true);
   const { status, problem: refused } = useConnection(connection);
   const [renewing, setRenewing] = useState(false);
   const replaced = connection?.retired === true;
@@ -168,7 +169,9 @@ export function ShareDialog({
     if (sharedRelay === null) return;
     let live = true;
     void checkRelay(sharedRelay).then((info) => {
-      if (live) setPublicRelay(info ? publicRelayFor(sharedRelay, info.publicUrl) : sharedRelay);
+      if (!live) return;
+      setPublicRelay(info ? publicRelayFor(sharedRelay, info.publicUrl) : sharedRelay);
+      setRelayServesApp(info?.app !== false);
     });
     return () => {
       live = false;
@@ -205,7 +208,11 @@ export function ShareDialog({
       ? linksFor(shared, appForFileLinks(relayStep.kind === 'here'))
       : publicRelay === null || shared.pending || replaced
         ? null
-        : linksFor(shared, appForLinks(shared.relay ?? publicRelay, publicRelay, location, relayStep.kind === 'here'), publicRelay);
+        : linksFor(
+            shared,
+            appForLinks(shared.relay ?? publicRelay, publicRelay, location, relayStep.kind === 'here', relayServesApp),
+            publicRelay,
+          );
     return (
       <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
         {replaced ? (
@@ -255,18 +262,30 @@ export function ShareDialog({
               The relay never sees your plan: it’s encrypted with a key that’s only in the link, after the #, which
               browsers don’t send to any server.
             </p>
-            {publicRelay !== null && linksOpenRelaysApp(shared.relay ?? publicRelay, publicRelay) && (
+            {publicRelay !== null && linksOpenRelaysApp(shared.relay ?? publicRelay, publicRelay, relayServesApp) && (
               <p className="share-note" data-testid="links-trust">
                 These links open the app from the relay, over plain http, so whoever runs it could change the app, and the
                 app can read the plan. Share them with people who trust whoever runs it, as on a team’s own network.
               </p>
             )}
-            {isLocalOnly(publicRelay ?? '') && (
-              <p className="share-problem">
-                These links say <code>localhost</code>, so they only open on this computer. Start the relay on a computer
-                your colleagues can reach, and open the app from the address it prints.
+            {publicRelay !== null && !relayServesApp && !publicRelay.startsWith('https:') && (
+              <p className="share-note" data-testid="links-no-app">
+                This relay serves no app, so these links name the public build, which can’t reach a relay over plain
+                http. Everyone opens the app’s HTML file, and pastes the link into Open a share link… in its File menu.
               </p>
             )}
+            {isLocalOnly(publicRelay ?? '') &&
+              (relayServesApp ? (
+                <p className="share-problem">
+                  These links say <code>localhost</code>, so they only open on this computer. Start the relay on a
+                  computer your colleagues can reach, and open the app from the address it prints.
+                </p>
+              ) : (
+                <p className="share-problem">
+                  These links say <code>localhost</code>, so they only open on this computer. Start the relay on a
+                  computer your colleagues can reach, and share through its network address.
+                </p>
+              ))}
           </>
         )}
         {links?.edit && !renewing && (

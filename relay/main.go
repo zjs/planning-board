@@ -101,7 +101,7 @@ func main() {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("GET /rooms/{id}", relay)
-	mux.HandleFunc("GET /config", serveConfig(*publicURL, *trustForwarded))
+	mux.HandleFunc("GET /config", serveConfig(*publicURL, *trustForwarded, *serveTheApp))
 	if *privacyNote != "" {
 		page, err := os.ReadFile(*privacyNote)
 		if err != nil {
@@ -148,7 +148,8 @@ func printAddresses(addr net.Addr, publicURL, data string, servesApp, trustForwa
 	if !servesApp {
 		fmt.Printf("  It serves no app: people open %s and share through this relay's address.\n", publicApp)
 		if !strings.HasPrefix(publicURL, "https://") && !trustForwarded {
-			fmt.Println("  That page can only reach a relay over HTTPS: put this one behind a proxy that answers on HTTPS, with -public-url or -trust-forwarded.")
+			fmt.Println("  That page can only reach a relay over HTTPS. Over plain http, people open the app's HTML file from the release, and open links with File › Open a share link…")
+			fmt.Println("  Or put this relay behind a proxy that answers on HTTPS, with -public-url or -trust-forwarded.")
 		}
 	}
 	if publicURL != "" {

@@ -13,7 +13,7 @@ Either a container:
 ```
 docker run -d --name planning-board --restart unless-stopped \
   -p 127.0.0.1:8787:8787 -v planning-board-data:/data \
-  ghcr.io/zjs/planning-board:0.13.0 -public-url https://plans.example.com -trust-forwarded
+  ghcr.io/zjs/planning-board:0.14.0 -public-url https://plans.example.com -trust-forwarded -serve-app=false
 ```
 
 Or the Linux download from the [latest release](https://github.com/zjs/planning-board/releases/latest), under systemd, as `/etc/systemd/system/planning-board.service`:
@@ -24,7 +24,7 @@ Description=Planning Board relay
 After=network-online.target
 
 [Service]
-ExecStart=/opt/planning-board/planning-board-relay -addr 127.0.0.1:8787 -data /var/lib/planning-board -public-url https://plans.example.com -trust-forwarded -announce=false
+ExecStart=/opt/planning-board/planning-board-relay -addr 127.0.0.1:8787 -data /var/lib/planning-board -public-url https://plans.example.com -trust-forwarded -serve-app=false -announce=false
 DynamicUser=yes
 StateDirectory=planning-board
 Restart=on-failure
@@ -42,7 +42,7 @@ Either way, it listens only on the server itself, and a reverse proxy in front o
 
 - **`-public-url`** is the relay's address, as people's browsers reach it. Share links name it.
 - **`-trust-forwarded`** lets the relay see each person's address, from the proxy's `X-Forwarded-For`, rather than the proxy's own. Its rate limits are per address, so without it, everyone shares one limit. It reads the header's last entry, the one your proxy added, since the entries before it come from the person's own request. Set it only behind one proxy that adds that entry, as the Caddy and nginx examples below do. A proxy that sets a header of its own instead, such as Fly.io's `Fly-Client-IP`, is read with `-client-address-header`.
-- **`-serve-app=false`,** from version 0.14.0, keeps the app off the relay, so whoever runs it can't change the app people use: `/` says where to open it instead. Links shared through a relay on HTTPS never open the relay's own copy anyway; this makes sure nobody opens it by hand. Add it to the examples above once you run 0.14.0 or later.
+- **`-serve-app=false`** keeps the app off the relay, so whoever runs it can't change the app people use: `/` says where to open it instead. Links shared through a relay on HTTPS never open the relay's own copy anyway; this makes sure nobody opens it by hand. People then use the [hosted page](https://zjs.github.io/planning-board/), a copy of the app your company hosts at another address (add that address with `-allow-origin`, keeping `zjs.github.io`), or the app's HTML file from the release, opened from disk, which works unless the relay is started with `-allow-file-pages=false`. In the HTML file, **File › Open a share link…** opens a link someone sent.
 
 ### HTTPS, with a reverse proxy
 
@@ -92,7 +92,13 @@ A relay and an app built at different times work together as long as they speak 
 
 New features sometimes need both. For example, **Make new links** cuts off old links only on a relay new enough to retire them. On an older relay, the app warns that old links still work, so upgrade the relay before relying on it.
 
-**Which version to run.** For a team, pin a numbered release: the image tag `ghcr.io/zjs/planning-board:0.13.0`, or that release's download. Upgrade by moving to the next one, after reading its notes. The `relay-latest` release and the container's `latest` tag follow every change to the project, which suits a pilot that wants the newest. Each release can be checked before you run it, by its checksum and build attestation ([how](https://github.com/zjs/planning-board/blob/main/relay/README.md#checking-a-download)).
+**Before adding `-serve-app=false` to a relay people already open the app from:**
+- **Plans kept only in a browser at the relay's address stay there.** A browser keeps plans per address, so once the relay serves no app, nobody can open them. Ask people to save any plan that's only in their browser (**File › Save plan to file**), and to let their offline changes go out (the pill says **Live**), before you restart it. Shared plans aren't lost: they open again from a link.
+- **Links that open the relay's address** land on a page that says it serves no app. Pasted into **File › Open a share link…**, they still open: in the HTML file from the release, or, for a relay on HTTPS, in the hosted page. New links shared after the change never name the relay as the app.
+- **Over plain `http`,** the hosted page can't reach the relay at all, so people use the HTML file.
+- **A copy of the app older than 0.14.0** doesn't know the relay serves no app, and keeps making links that name it. Use a copy from this release or later.
+
+**Which version to run.** For a team, pin a numbered release: the image tag `ghcr.io/zjs/planning-board:0.14.0`, or that release's download. Upgrade by moving to the next one, after reading its notes. The `relay-latest` release and the container's `latest` tag follow every change to the project, which suits a pilot that wants the newest. Each release can be checked before you run it, by its checksum and build attestation ([how](https://github.com/zjs/planning-board/blob/main/relay/README.md#checking-a-download)).
 
 **Which build.** `planning-board-relay -version` names the build you have, such as `build 3d350aa (2026-10-09)`: the commit it was built from, and that commit's date. The start-up message and `/config` say the same, and the app's cheat sheet shows it beside the app's own build on a shared plan. A relay that says nothing about its build was built before 2026-10-09; upgrade it.
 
