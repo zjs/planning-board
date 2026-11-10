@@ -34,6 +34,7 @@ test('who changed what: Activity names the person and the time, and restores a d
   await bo.goto(link);
   await expect(bo.getByTestId('connection-state')).toHaveText('Live');
 
+  const started = Date.now();
   await rename(ada, 'sso-enforcement-per-workspace', 'SSO enforcement, per workspace');
   await reveal(card(ada, 'passwordless-login').first());
   await card(ada, 'passwordless-login').first().click();
@@ -49,9 +50,17 @@ test('who changed what: Activity names the person and the time, and restores a d
   // Ada's two changes, close together, are one row (Q74), which opens to show each.
   const burst = rows(bo).filter({ hasText: 'Ada made 2 changes' });
   await expect(burst).toHaveCount(1);
-  const [time] = await burst.locator('time').allInnerTexts();
-  const expected = await bo.evaluate(() => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()));
-  expect(time).toBe(expected);
+  // One time, or a range when the two changes straddle a minute, each in Bo's time zone.
+  const [time = ''] = await burst.locator('time').allInnerTexts();
+  const minutes = await bo.evaluate((from) => {
+    const format = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const seen: string[] = [];
+    for (let t = from - 60_000; t <= Date.now(); t += 30_000) seen.push(format.format(new Date(t)));
+    seen.push(format.format(new Date())); // the last step can fall before a new minute
+    return [...new Set(seen)];
+  }, started);
+  expect(time).toMatch(/^\d\d:\d\d(–\d\d:\d\d)?$/);
+  for (const part of time.split('–')) expect(minutes).toContain(part);
   await burst.locator('summary').click();
   await expect(burst).toContainText('renamed “SSO enforcement per workspace” to “SSO enforcement, per workspace”');
   const deleted = burst.locator('.activity-change').filter({ hasText: 'deleted “Passwordless login”, and 3 cards inside' });
@@ -68,7 +77,7 @@ test('who changed what: Activity names the person and the time, and restores a d
   await reveal(card(bo, 'sso-enforcement-per-workspace').first());
   await card(bo, 'sso-enforcement-per-workspace').first().click();
   await bo.getByRole('button', { name: 'Inspect' }).click();
-  await expect(bo.getByTestId('last-changed')).toContainText(`Last changed by Ada, ${expected}`);
+  await expect(bo.getByTestId('last-changed')).toHaveText(new RegExp(`Last changed by Ada, (${minutes.join('|')})`));
   await expect(bo.getByTestId('card-history')).toContainText('Ada renamed “SSO enforcement per workspace” to “SSO enforcement, per workspace”');
   await expect(card(bo, 'sso-enforcement-per-workspace').first()).toHaveAttribute('title', /Last changed by Ada/);
 

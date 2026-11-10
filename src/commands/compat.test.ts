@@ -37,7 +37,7 @@ function openBoard(file: string) {
 
 describe('boards stored by earlier versions', () => {
   it('has a board from every released version', () => {
-    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-11', 'sprint-12', 'sprint-13', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
+    expect(boards).toEqual(['sprint-0', 'sprint-1', 'sprint-10', 'sprint-11-before-loop-repair', 'sprint-11', 'sprint-12', 'sprint-13', 'sprint-14', 'sprint-2', 'sprint-3', 'sprint-4', 'sprint-5', 'sprint-6', 'sprint-7-before-rank', 'sprint-7', 'sprint-8-before-related', 'sprint-8', 'sprint-9'].map((v) => `${v}.board.yjs`));
   });
 
   for (const file of boards) {
@@ -66,7 +66,7 @@ const changesKey = viewKeyOf(toBase64Url(new Uint8Array(32).fill(7)));
 
 describe('changes files written by earlier versions', () => {
   it('has a changes file from every version since sprint 12', () => {
-    expect(changesFiles).toEqual(['sprint-12.changes.pbchanges', 'sprint-13.changes.pbchanges']);
+    expect(changesFiles).toEqual(['sprint-12.changes.pbchanges', 'sprint-13.changes.pbchanges', 'sprint-14.changes.pbchanges']);
   });
 
   for (const file of changesFiles) {
@@ -91,7 +91,7 @@ const histories = readdirSync(dir).filter((f) => f.endsWith('.history.yjs')).sor
 
 describe('history written by earlier versions', () => {
   it('has a history from every version since sprint 13', () => {
-    expect(histories).toEqual(['sprint-13.history.yjs']);
+    expect(histories).toEqual(['sprint-13.history.yjs', 'sprint-14.history.yjs']);
   });
 
   for (const file of histories) {
