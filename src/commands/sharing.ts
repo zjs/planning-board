@@ -74,6 +74,8 @@ export interface RelayInfo {
   publicUrl: string;
   /** Which build of the relay this is, such as "3d350aa (2026-10-09)". Relays from before 2026-10-09 don't say. */
   build?: string;
+  /** False when the relay serves no app (-serve-app=false). Relays from before 0.14.0 don't say, and serve it. */
+  app?: boolean;
 }
 
 async function fetchConfig(url: string): Promise<RelayInfo | null> {
@@ -84,7 +86,12 @@ async function fetchConfig(url: string): Promise<RelayInfo | null> {
     if (!response.ok) return null;
     const info = (await response.json()) as Partial<RelayInfo>;
     if (typeof info.protocol !== 'number' || typeof info.publicUrl !== 'string') return null;
-    return { protocol: info.protocol, publicUrl: info.publicUrl, ...(typeof info.build === 'string' ? { build: info.build } : {}) };
+    return {
+      protocol: info.protocol,
+      publicUrl: info.publicUrl,
+      ...(typeof info.build === 'string' ? { build: info.build } : {}),
+      ...(info.app === false ? { app: false } : {}),
+    };
   } catch {
     return null;
   } finally {
@@ -255,10 +262,17 @@ export function publicRelayFor(relay: string, publicUrl: string): string {
  * whatever its /config says (F1): this page, unless it's that copy or was
  * opened from disk, and then the public build. A plain http relay serves the
  * app itself: its own address works for anyone who can reach it on a network,
- * and whoever runs it is trusted with the plan.
+ * and whoever runs it is trusted with the plan. A relay that serves no app is
+ * never named as the app, whichever way it's reached.
  */
-export function appForLinks(relay: string, publicRelay: string, page: { protocol: string; href: string } = location, pageIsRelay = false): string {
-  if (!relay.startsWith('https:') && !publicRelay.startsWith('https:')) return `${publicRelay.replace(/\/$/, '')}/`;
+export function appForLinks(
+  relay: string,
+  publicRelay: string,
+  page: { protocol: string; href: string } = location,
+  pageIsRelay = false,
+  relayServesApp = true,
+): string {
+  if (linksOpenRelaysApp(relay, publicRelay, relayServesApp)) return `${publicRelay.replace(/\/$/, '')}/`;
   const origin = (address: string) => {
     try {
       return new URL(address).origin;
@@ -272,8 +286,20 @@ export function appForLinks(relay: string, publicRelay: string, page: { protocol
   return page.protocol.startsWith('http') && here !== null && !relays.has(here) && !pageIsRelay ? page.href : PUBLIC_APP;
 }
 
+/**
+ * The part of a pasted share link that opens it here, after the #, or null
+ * when the text isn't one. The address before the # doesn't matter: the key
+ * is in the fragment, so a link opens in whichever copy of the app you have,
+ * such as the HTML file opened from disk.
+ */
+export function shareFragment(text: string): string | null {
+  const hash = text.trim().slice(text.trim().indexOf('#'));
+  return text.includes('#') && parseShareLink(hash) ? hash : null;
+}
+
 /** Whether links through this relay open the relay's own copy of the app, so whoever runs it is trusted with the plan. */
-export const linksOpenRelaysApp = (relay: string, publicRelay: string): boolean => !relay.startsWith('https:') && !publicRelay.startsWith('https:');
+export const linksOpenRelaysApp = (relay: string, publicRelay: string, relayServesApp = true): boolean =>
+  relayServesApp && !relay.startsWith('https:') && !publicRelay.startsWith('https:');
 
 /**
  * A shared plan's links. `app` is where people open the app; `publicRelay`

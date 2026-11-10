@@ -1,6 +1,6 @@
 # Sprint 14: engineering plan
 
-Status: **approved 2026-10-15.** Scope is in `docs/sprint-14.md`. This doc covers how engineering delivers it.
+Status: **approved 2026-10-15; shipped 2026-11-10 as v0.14.0.** Scope is in `docs/sprint-14.md`. This doc covers how engineering delivers it.
 
 ## Context
 

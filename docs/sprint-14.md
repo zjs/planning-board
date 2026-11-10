@@ -58,8 +58,8 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 5, carried to the release pass
 
-- [ ] The release notes tell people running a relay on HTTPS that links shared from the relay's own page now open the hosted page, so their networks need to reach it, and that `-allow-origin` must keep `zjs.github.io`.
-- [ ] `docs/hosting.md`'s examples pin the new version, with `-serve-app=false`.
+- [x] The release notes tell people running a relay on HTTPS that links shared from the relay's own page now open the hosted page, so their networks need to reach it, and that `-allow-origin` must keep `zjs.github.io`.
+- [x] `docs/hosting.md`'s examples pin the new version, with `-serve-app=false`.
 
 ### 6. The hosted demo relay (Q64 a)
 
@@ -70,7 +70,9 @@ The engineering plan is `docs/plans/sprint-14-plan.md`.
 
 ### 7. Tester-ready
 
-- [ ] A demo note (`docs/demos/sprint-14.md`), exit-criteria tests, the user-facing docs, and the release pass (v0.14.0).
+- [x] A demo note (`docs/demos/sprint-14.md`), exit-criteria tests, the user-facing docs, and the release pass (v0.14.0).
+- [x] A relay that serves no app says so at `/config`, and links through it never name it as the app. **File › Open a share link…** opens a link in the HTML file from disk (Q81, built as a reversible default).
+- [ ] Compatibility fixtures for this release, in the next PR.
 
 ## Deferred (don't build)
 

@@ -101,7 +101,7 @@ func main() {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("GET /rooms/{id}", relay)
-	mux.HandleFunc("GET /config", serveConfig(*publicURL, *trustForwarded))
+	mux.HandleFunc("GET /config", serveConfig(*publicURL, *trustForwarded, *serveTheApp))
 	if *privacyNote != "" {
 		page, err := os.ReadFile(*privacyNote)
 		if err != nil {

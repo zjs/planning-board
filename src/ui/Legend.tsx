@@ -175,6 +175,11 @@ export function Legend({ onClose, relay = null }: { onClose: () => void; relay?:
               Beside a shared plan’s name. Keep working offline: it counts what isn’t shared yet, and shares it when
               you’re back. Click it for the plan’s links.
             </dd>
+            <dt>Open a share link</dt>
+            <dd>
+              <strong>File › Open a share link…</strong> opens a link someone sent in this copy of the app, such as the
+              HTML file opened from disk, whichever address the link names.
+            </dd>
             <dt>View only</dt>
             <dd>A plan opened with its Can view link: you see changes as they happen, and can’t make any.</dd>
             <dt>Who’s here</dt>

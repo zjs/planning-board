@@ -92,7 +92,7 @@ Each pending entry becomes **Proved** or **Checked** when its model runs in CI, 
 A relay that serves the app can serve an altered one, which reads the key from the link and sends it, or the plan, anywhere. No proof about the protocol reaches this. The answer (2026-10-16) splits by transport:
 
 - **Through an https relay, the app never comes from the relay.** Links open the page the plan was shared from: the public build, or a company's own copy at an address of its own. Shared from the relay's own copy, or from a page opened from disk, they open the public build. `/config` can't change this (F1), and `-serve-app=false` turns the relay's own copy off, which the hosted demo relay does.
-- **Over plain http, on a laptop for a pilot,** an https page can't reach the relay, so people open the relay's own address, and the relay serves the app. The Share dialog says so: whoever runs the relay is trusted with the plan, as on a team's own network.
+- **Over plain http, on a laptop for a pilot,** an https page can't reach the relay, so people open the relay's own address, and the relay serves the app. The Share dialog says so: whoever runs the relay is trusted with the plan, as on a team's own network. A pilot that doesn't want that trust runs the relay with `-serve-app=false`: its `/config` then says it serves no app, links through it never name it as the app, and people use a checked copy of the release's HTML file, opening links with **File › Open a share link…**.
 - **A page can't check itself.** An altered app would show the real build's hash. What can be checked is a copy: each release's `planning-board.html`, the same file the public build serves, has a checksum and a build attestation.
 
 ## Findings

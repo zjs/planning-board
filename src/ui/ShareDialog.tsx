@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import type { Connection, ConnectionStatus, RelayProblem } from '../commands/store.ts';
-import type { SharedPlan } from '../commands/plans.ts';
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import type {
+  Connection,
+  ConnectionStatus,
+  RelayProblem,
+} from "../commands/store.ts";
+import type { SharedPlan } from "../commands/plans.ts";
 import {
   appForFileLinks,
   appForLinks,
@@ -18,8 +22,8 @@ import {
   rememberRelay,
   setMyName,
   type RelayInfo,
-} from '../commands/sharing.ts';
-import { Dialog } from './Dialog.tsx';
+} from "../commands/sharing.ts";
+import { Dialog } from "./Dialog.tsx";
 
 const NO_CONNECTION = { status: null, problem: null, canWrite: false } as const;
 
@@ -31,14 +35,31 @@ export function useConnection(connection: Connection | null): {
 } {
   const key = useSyncExternalStore(
     (listener) => connection?.subscribe(listener) ?? (() => undefined),
-    () => (connection ? `${connection.status}|${String(connection.canWrite)}|${connection.problem?.code ?? ''}|${String(connection.retired)}` : ''),
+    () =>
+      connection
+        ? `${connection.status}|${String(connection.canWrite)}|${connection.problem?.code ?? ""}|${String(connection.retired)}`
+        : "",
   );
-  if (!connection || key === '') return NO_CONNECTION;
-  return { status: connection.status, problem: connection.problem, canWrite: connection.canWrite };
+  if (!connection || key === "") return NO_CONNECTION;
+  return {
+    status: connection.status,
+    problem: connection.problem,
+    canWrite: connection.canWrite,
+  };
 }
 
 /** A link with a Copy button. Where the clipboard isn't allowed, the link is selected for copying by hand. */
-function LinkField({ label, link, hint, testId }: { label: string; link: string; hint: string; testId: string }) {
+function LinkField({
+  label,
+  link,
+  hint,
+  testId,
+}: {
+  label: string;
+  link: string;
+  hint: string;
+  testId: string;
+}) {
   const input = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -59,9 +80,15 @@ function LinkField({ label, link, hint, testId }: { label: string; link: string;
         <span className="share-link-label">{label}</span>
         <span className="share-link-hint">{hint}</span>
         <span className="share-link-row">
-          <input ref={input} readOnly value={link} data-testid={testId} onFocus={(e) => e.currentTarget.select()} />
+          <input
+            ref={input}
+            readOnly
+            value={link}
+            data-testid={testId}
+            onFocus={(e) => e.currentTarget.select()}
+          />
           <button type="button" onClick={copy}>
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? "Copied" : "Copy"}
           </button>
         </span>
       </label>
@@ -70,36 +97,52 @@ function LinkField({ label, link, hint, testId }: { label: string; link: string;
 }
 
 /** Where the relay step stands: looking for a relay that served this page, or asking for one. */
-type RelayStep = { kind: 'looking' } | { kind: 'here'; info: RelayInfo } | { kind: 'ask' };
+type RelayStep =
+  | { kind: "looking" }
+  | { kind: "here"; info: RelayInfo }
+  | { kind: "ask" };
 
 /**
  * Your name on shared plans (Q61), asked when you share a plan or open a
  * share link, until this browser has one. `onSkip` offers "Not now", which
  * leaves you unnamed until the next link, or until the avatar menu names you.
  */
-export function NameForm({ onNamed, onSkip }: { onNamed: () => void; onSkip?: () => void }) {
-  const [name, setName] = useState(() => myName() ?? '');
+export function NameForm({
+  onNamed,
+  onSkip,
+}: {
+  onNamed: () => void;
+  onSkip?: () => void;
+}) {
+  const [name, setName] = useState(() => myName() ?? "");
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (name.trim() === '') return;
+        if (name.trim() === "") return;
         setMyName(name);
         onNamed();
       }}
     >
       <label className="share-field">
         Your name
-        <input value={name} onChange={(e) => setName(e.target.value)} data-testid="share-name" autoComplete="name" />
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          data-testid="share-name"
+          autoComplete="name"
+        />
       </label>
-      <p className="share-note">Others sharing a plan with you see it. It’s kept in this browser only.</p>
+      <p className="share-note">
+        Others sharing a plan with you see it. It’s kept in this browser only.
+      </p>
       <div className="dialog-actions">
         {onSkip && (
           <button type="button" onClick={onSkip}>
             Not now
           </button>
         )}
-        <button type="submit" className="primary" disabled={name.trim() === ''}>
+        <button type="submit" className="primary" disabled={name.trim() === ""}>
           Continue
         </button>
       </div>
@@ -141,13 +184,14 @@ export function ShareDialog({
   onClose: () => void;
 }) {
   const [named, setNamed] = useState(() => myName() !== null);
-  const [relayStep, setRelayStep] = useState<RelayStep>({ kind: 'looking' });
+  const [relayStep, setRelayStep] = useState<RelayStep>({ kind: "looking" });
   const demo = demoRelay();
-  const [typed, setTyped] = useState(() => rememberedRelay() ?? demo ?? '');
+  const [typed, setTyped] = useState(() => rememberedRelay() ?? demo ?? "");
   const [problem, setProblem] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   // The relay's address as others reach it, for the links.
   const [publicRelay, setPublicRelay] = useState<string | null>(null);
+  const [relayServesApp, setRelayServesApp] = useState(true);
   const { status, problem: refused } = useConnection(connection);
   const [renewing, setRenewing] = useState(false);
   const replaced = connection?.retired === true;
@@ -155,7 +199,7 @@ export function ShareDialog({
   useEffect(() => {
     let live = true;
     void relayHere().then((info) => {
-      if (live) setRelayStep(info ? { kind: 'here', info } : { kind: 'ask' });
+      if (live) setRelayStep(info ? { kind: "here", info } : { kind: "ask" });
     });
     return () => {
       live = false;
@@ -168,7 +212,11 @@ export function ShareDialog({
     if (sharedRelay === null) return;
     let live = true;
     void checkRelay(sharedRelay).then((info) => {
-      if (live) setPublicRelay(info ? publicRelayFor(sharedRelay, info.publicUrl) : sharedRelay);
+      if (!live) return;
+      setPublicRelay(
+        info ? publicRelayFor(sharedRelay, info.publicUrl) : sharedRelay,
+      );
+      setRelayServesApp(info?.app !== false);
     });
     return () => {
       live = false;
@@ -181,11 +229,15 @@ export function ShareDialog({
     const info = await checkRelay(relay);
     setChecking(false);
     if (!info) {
-      setProblem(`There’s no relay answering at ${relay}. Check it’s running, and that this computer can reach it.`);
+      setProblem(
+        `There’s no relay answering at ${relay}. Check it’s running, and that this computer can reach it.`,
+      );
       return null;
     }
     if (info.protocol !== 1) {
-      setProblem('That relay is a different version from this app. Open the app from the relay’s own address instead.');
+      setProblem(
+        "That relay is a different version from this app. Open the app from the relay’s own address instead.",
+      );
       return null;
     }
     return info;
@@ -202,22 +254,45 @@ export function ShareDialog({
   if (shared) {
     const byFile = shared.relay === undefined;
     const links = byFile
-      ? linksFor(shared, appForFileLinks(relayStep.kind === 'here'))
+      ? linksFor(shared, appForFileLinks(relayStep.kind === "here"))
       : publicRelay === null || shared.pending || replaced
         ? null
-        : linksFor(shared, appForLinks(shared.relay ?? publicRelay, publicRelay, location, relayStep.kind === 'here'), publicRelay);
+        : linksFor(
+            shared,
+            appForLinks(
+              shared.relay ?? publicRelay,
+              publicRelay,
+              location,
+              relayStep.kind === "here",
+              relayServesApp,
+            ),
+            publicRelay,
+          );
     return (
-      <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
+      <Dialog
+        title={`Share “${planName}”`}
+        onClose={onClose}
+        testId="share-dialog"
+      >
         {replaced ? (
-          <p className="share-problem" role="alert" data-testid="share-replaced">
-            This plan was given new links, so the one you opened can only show it. Ask whoever shared it for the new link.
+          <p
+            className="share-problem"
+            role="alert"
+            data-testid="share-replaced"
+          >
+            This plan was given new links, so the one you opened can only show
+            it. Ask whoever shared it for the new link.
           </p>
         ) : refused ? (
           <p className="share-problem" role="alert">
             The relay refused this plan: {refused.message}
           </p>
-        ) : !byFile && status !== 'live' && (shared.pending || publicRelay === null) ? (
-          <p role="status">{shared.replaces?.length ? 'Making new links…' : 'Sharing…'}</p>
+        ) : !byFile &&
+          status !== "live" &&
+          (shared.pending || publicRelay === null) ? (
+          <p role="status">
+            {shared.replaces?.length ? "Making new links…" : "Sharing…"}
+          </p>
         ) : null}
         {byFile && links?.edit && (
           <>
@@ -228,13 +303,18 @@ export function ShareDialog({
               testId="edit-link"
             />
             <p className="share-note">
-              This plan travels by file, with no relay. <strong>Send changes</strong> downloads the whole plan as an
-              encrypted file, for email or a shared drive. Whoever has the link merges it with{' '}
-              <strong>File › Merge changes…</strong>, and sends theirs back the same way. A file can’t be read without the
-              link.
+              This plan travels by file, with no relay.{" "}
+              <strong>Send changes</strong> downloads the whole plan as an
+              encrypted file, for email or a shared drive. Whoever has the link
+              merges it with <strong>File › Merge changes…</strong>, and sends
+              theirs back the same way. A file can’t be read without the link.
             </p>
             <div className="dialog-actions">
-              <button type="button" onClick={onSendChanges} data-testid="send-changes">
+              <button
+                type="button"
+                onClick={onSendChanges}
+                data-testid="send-changes"
+              >
                 Send changes
               </button>
             </div>
@@ -250,28 +330,57 @@ export function ShareDialog({
                 testId="edit-link"
               />
             )}
-            <LinkField label="Can view" hint="Anyone with this link can see the plan, and not change it." link={links.view} testId="view-link" />
+            <LinkField
+              label="Can view"
+              hint="Anyone with this link can see the plan, and not change it."
+              link={links.view}
+              testId="view-link"
+            />
             <p className="share-note">
-              The relay never sees your plan: it’s encrypted with a key that’s only in the link, after the #, which
-              browsers don’t send to any server.
+              The relay never sees your plan: it’s encrypted with a key that’s
+              only in the link, after the #, which browsers don’t send to any
+              server.
             </p>
-            {publicRelay !== null && linksOpenRelaysApp(shared.relay ?? publicRelay, publicRelay) && (
-              <p className="share-note" data-testid="links-trust">
-                These links open the app from the relay, over plain http, so whoever runs it could change the app, and the
-                app can read the plan. Share them with people who trust whoever runs it, as on a team’s own network.
-              </p>
-            )}
-            {isLocalOnly(publicRelay ?? '') && (
+            {publicRelay !== null &&
+              linksOpenRelaysApp(
+                shared.relay ?? publicRelay,
+                publicRelay,
+                relayServesApp,
+              ) && (
+                <p className="share-note" data-testid="links-trust">
+                  These links open the app from the relay, over plain http, so
+                  whoever runs it could change the app, and the app can read the
+                  plan. Share them with people who trust whoever runs it, as on
+                  a team’s own network.
+                </p>
+              )}
+            {publicRelay !== null &&
+              !relayServesApp &&
+              !publicRelay.startsWith("https:") && (
+                <p className="share-note" data-testid="links-no-app">
+                  This relay serves no app, so these links open the public
+                  build. That page can reach a relay over plain http only on the
+                  relay’s own computer. Anywhere else, people open the app’s
+                  HTML file, and paste the link into Open a share link… in its
+                  File menu.
+                </p>
+              )}
+            {isLocalOnly(publicRelay ?? "") && (
               <p className="share-problem">
-                These links say <code>localhost</code>, so they only open on this computer. Start the relay on a computer
-                your colleagues can reach, and open the app from the address it prints.
+                These links say <code>localhost</code>, so they only open on
+                this computer. Start the relay on a computer your colleagues can
+                reach, and open the app from the address it prints.
               </p>
             )}
           </>
         )}
         {links?.edit && !renewing && (
           <div className="share-renew">
-            <button type="button" onClick={() => setRenewing(true)} data-testid="renew-links">
+            <button
+              type="button"
+              onClick={() => setRenewing(true)}
+              data-testid="renew-links"
+            >
               Make new links…
             </button>
           </div>
@@ -280,14 +389,17 @@ export function ShareDialog({
           <div className="share-renew" role="group" aria-label="Make new links">
             {byFile ? (
               <p>
-                The link stops working: files made with it won’t merge any more, and new files can’t be read with it.
-                People who had it keep what they already merged. Send the new link to everyone who should still have the
-                plan.
+                The link stops working: files made with it won’t merge any more,
+                and new files can’t be read with it. People who had it keep what
+                they already merged. Send the new link to everyone who should
+                still have the plan.
               </p>
             ) : (
               <p>
-                Both links stop working. Anyone who opens them sees the plan as it was, and can’t change it; people who had
-                them keep what they already saw. Send the new links to everyone who should still have the plan.
+                Both links stop working. Anyone who opens them sees the plan as
+                it was, and can’t change it; people who had them keep what they
+                already saw. Send the new links to everyone who should still
+                have the plan.
               </p>
             )}
             <div className="dialog-actions">
@@ -315,7 +427,7 @@ export function ShareDialog({
               onSubmit={(e) => {
                 e.preventDefault();
                 const address = relayAddress(typed);
-                if ('problem' in address) {
+                if ("problem" in address) {
                   setProblem(address.problem);
                   return;
                 }
@@ -328,7 +440,11 @@ export function ShareDialog({
             >
               <label className="share-field">
                 Its new address
-                <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={shared.relay} />
+                <input
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  placeholder={shared.relay}
+                />
               </label>
               {problem && <p className="share-problem">{problem}</p>}
               <div className="dialog-actions">
@@ -354,29 +470,40 @@ export function ShareDialog({
   };
 
   return (
-    <Dialog title={`Share “${planName}”`} onClose={onClose} testId="share-dialog">
-      {relayStep.kind === 'looking' && <p role="status">Looking for a relay…</p>}
-      {relayStep.kind === 'here' && (
+    <Dialog
+      title={`Share “${planName}”`}
+      onClose={onClose}
+      testId="share-dialog"
+    >
+      {relayStep.kind === "looking" && (
+        <p role="status">Looking for a relay…</p>
+      )}
+      {relayStep.kind === "here" && (
         <>
           <p>
-            Your plan is shared through the relay this page came from, <code>{relayStep.info.publicUrl}</code>. Anyone
-            with a link sees the plan you’re on now, and its changes from then on.
+            Your plan is shared through the relay this page came from,{" "}
+            <code>{relayStep.info.publicUrl}</code>. Anyone with a link sees the
+            plan you’re on now, and its changes from then on.
           </p>
-          {location.protocol === 'http:' ? (
+          {location.protocol === "http:" ? (
             <p data-testid="share-trust">
-              This relay also serves the app you’re using, so whoever runs it could change the app, and the app can read
-              the plan. Share through it only if you trust them, as on a team’s own network.
+              This relay also serves the app you’re using, so whoever runs it
+              could change the app, and the app can read the plan. Share through
+              it only if you trust them, as on a team’s own network.
             </p>
           ) : (
             <p data-testid="share-public-app">
-              Links open Planning Board at <code>{new URL(PUBLIC_APP).host}</code>, not this relay’s copy of the app, so
-              whoever runs the relay can’t change the app the people you share with use.
+              Links open Planning Board at{" "}
+              <code>{new URL(PUBLIC_APP).host}</code>, not this relay’s copy of
+              the app, so whoever runs the relay can’t change the app the people
+              you share with use.
             </p>
           )}
           {isLocalOnly(relayStep.info.publicUrl) && (
             <p className="share-problem">
-              This address only works on this computer, so colleagues can’t open its links. Open the app from the
-              relay’s network address instead, which it prints when it starts.
+              This address only works on this computer, so colleagues can’t open
+              its links. Open the app from the relay’s network address instead,
+              which it prints when it starts.
             </p>
           )}
           <div className="dialog-actions">
@@ -388,29 +515,37 @@ export function ShareDialog({
               className="primary"
               data-testid="share-start"
               // This browser reaches the relay where it found this page; links use the address others reach.
-              onClick={() => shareThrough(new URL('.', location.href).href.replace(/\/$/, ''))}
+              onClick={() =>
+                shareThrough(
+                  new URL(".", location.href).href.replace(/\/$/, ""),
+                )
+              }
             >
               Share
             </button>
           </div>
         </>
       )}
-      {relayStep.kind === 'ask' && (
+      {relayStep.kind === "ask" && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
             const address = relayAddress(typed);
-            if ('problem' in address) {
+            if ("problem" in address) {
               setProblem(address.problem);
               return;
             }
-            void tryRelay(address.relay).then((info) => info && shareThrough(address.relay));
+            void tryRelay(address.relay).then(
+              (info) => info && shareThrough(address.relay),
+            );
           }}
         >
           <p>
-            A shared plan goes through a relay, which passes changes between you and keeps an encrypted copy. It can’t
-            read the plan. Run one on your own computer (<code>planning-board-relay</code>), or use your company’s
-            {demo ? ', or the demo relay to try it out' : ''}.
+            A shared plan goes through a relay, which passes changes between you
+            and keeps an encrypted copy. It can’t read the plan. Run one on your
+            own computer (<code>planning-board-relay</code>), or use your
+            company’s
+            {demo ? ", or the demo relay to try it out" : ""}.
           </p>
           <label className="share-field">
             Relay address
@@ -421,15 +556,26 @@ export function ShareDialog({
               data-testid="share-relay"
             />
           </label>
-          {demo !== null && typed.trim().replace(/\/$/, '') === demo.replace(/\/$/, '') ? (
+          {demo !== null &&
+          typed.trim().replace(/\/$/, "") === demo.replace(/\/$/, "") ? (
             <p className="share-note" data-testid="share-demo">
-              This is the demo relay the Planning Board project runs, for trying sharing out. Plans nobody opens for 30
-              days are deleted. <a href={`${demo.replace(/\/$/, '')}/privacy`} target="_blank" rel="noreferrer">What it keeps</a>.
-              For a confidential plan, use your company’s own relay.
+              This is the demo relay the Planning Board project runs, for trying
+              sharing out. Plans nobody opens for 30 days are deleted.{" "}
+              <a
+                href={`${demo.replace(/\/$/, "")}/privacy`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                What it keeps
+              </a>
+              . For a confidential plan, use your company’s own relay.
             </p>
           ) : (
-            location.protocol === 'https:' && (
-              <p className="share-note">From this page, a relay must use https, or run on this computer (localhost).</p>
+            location.protocol === "https:" && (
+              <p className="share-note">
+                From this page, a relay must use https, or run on this computer
+                (localhost).
+              </p>
             )
           )}
           {problem && (
@@ -440,10 +586,12 @@ export function ShareDialog({
           <details className="share-move">
             <summary>Or open the app from a relay on your network</summary>
             <p>
-              A page like this one can’t reach a relay over plain http, such as one on a laptop for a pilot. That relay
-              serves the app too, at the address it prints, and links from there work for everyone who can reach it.
-              Whoever runs it is then trusted with the plan. Each address keeps its own plans, so save this one to a
-              file first, then open the file there.
+              A page like this one can’t reach a relay over plain http, such as
+              one on a laptop for a pilot. That relay serves the app too, at the
+              address it prints, and links from there work for everyone who can
+              reach it. Whoever runs it is then trusted with the plan. Each
+              address keeps its own plans, so save this one to a file first,
+              then open the file there.
             </p>
             <button type="button" onClick={onSaveFile}>
               Save plan to file
@@ -453,21 +601,31 @@ export function ShareDialog({
             <button type="button" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="primary" disabled={checking} data-testid="share-start">
-              {checking ? 'Checking…' : 'Share'}
+            <button
+              type="submit"
+              className="primary"
+              disabled={checking}
+              data-testid="share-start"
+            >
+              {checking ? "Checking…" : "Share"}
             </button>
           </div>
         </form>
       )}
-      {relayStep.kind !== 'looking' && (
+      {relayStep.kind !== "looking" && (
         <details className="share-move" data-testid="share-by-file-option">
           <summary>No relay allowed? Share by file</summary>
           <p>
-            The plan travels as encrypted files, by email or a shared drive, with no server at all. You get one link to
-            send, once, a different way from the files. Each person merges the files others send, and sends their own
-            back. It’s slower than a relay, and works anywhere.
+            The plan travels as encrypted files, by email or a shared drive,
+            with no server at all. You get one link to send, once, a different
+            way from the files. Each person merges the files others send, and
+            sends their own back. It’s slower than a relay, and works anywhere.
           </p>
-          <button type="button" onClick={onShareByFile} data-testid="share-by-file">
+          <button
+            type="button"
+            onClick={onShareByFile}
+            data-testid="share-by-file"
+          >
             Share by file
           </button>
         </details>

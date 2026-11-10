@@ -3,7 +3,7 @@ import { Frame, FrameReader, FrameWriter, HelloFlag } from '../store/frames.ts';
 import { newRoom, toBase64Url, viewKeyOf } from '../store/keys.ts';
 import type { RelaySocket } from '../store/relay.ts';
 import { addPlan, findPlan, findShared, markDeleted } from './plans.ts';
-import { PUBLIC_APP, appForFileLinks, demoRelay, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
+import { PUBLIC_APP, appForFileLinks, demoRelay, shareFragment, appForLinks, joinFromLink, linksOpenRelaysApp, linksFor, publicRelayFor, parseShareLink, relayAddress, renewLinks, retireReplaced, sharingConfirmed, startSharing } from './sharing.ts';
 
 // The plan list falls back to memory here, as it does in a browser that won't give localStorage.
 const relay = 'http://192.168.1.23:8787';
@@ -115,6 +115,20 @@ function retiringRelay(down = new Set<string>()) {
   };
   return { open, retired };
 }
+
+describe('a pasted share link', () => {
+  it('opens by its fragment, whatever address it names', () => {
+    const hash = `#v=1&room=testroom_0123456789abcdef&view=${toBase64Url(new Uint8Array(32).fill(7))}&relay=http://localhost:8787`;
+    expect(shareFragment(`  https://zjs.github.io/planning-board/${hash}\n`)).toBe(hash);
+    expect(shareFragment(`file:///home/ada/planning-board.html${hash}`)).toBe(hash);
+    expect(shareFragment(hash)).toBe(hash);
+  });
+  it('is refused when it isn’t one', () => {
+    expect(shareFragment('https://zjs.github.io/planning-board/')).toBeNull();
+    expect(shareFragment('#plan=p1')).toBeNull();
+    expect(shareFragment('hello')).toBeNull();
+  });
+});
 
 describe('the demo relay (Q64 a)', () => {
   const demo = 'https://relay.example';
