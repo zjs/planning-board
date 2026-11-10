@@ -56,6 +56,7 @@ test('who changed what: Activity names the person and the time, and restores a d
     const format = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
     const seen: string[] = [];
     for (let t = from - 60_000; t <= Date.now(); t += 30_000) seen.push(format.format(new Date(t)));
+    seen.push(format.format(new Date())); // the last step can fall before a new minute
     return [...new Set(seen)];
   }, started);
   expect(time).toMatch(/^\d\d:\d\d(–\d\d:\d\d)?$/);
