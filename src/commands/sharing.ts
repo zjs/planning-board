@@ -1,7 +1,7 @@
 // Sharing a plan through a relay (requirements 30 and 33, ADR 0018), as the
 // board sees it: who you are, which relay, making links, and opening one.
 
-import { newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type ShareLink } from '../store/keys.ts';
+import { isNewerLink, newRoom, parseShareLink, shareLinks, toBase64Url, viewKeyOf, type ShareLink } from '../store/keys.ts';
 import { historyRoom } from '../store/history.ts';
 import { retireRoom, type OpenSocket, type RetireResult } from '../store/relay.ts';
 import { addSharedPlan, findPlan, findShared, markDrafted, setShared, unmarkDeleted, type PlanEntry, type PlanId, type SharedPlan } from './plans.ts';
@@ -287,14 +287,29 @@ export function appForLinks(
 }
 
 /**
- * The part of a pasted share link that opens it here, after the #, or null
- * when the text isn't one. The address before the # doesn't matter: the key
- * is in the fragment, so a link opens in whichever copy of the app you have,
- * such as the HTML file opened from disk.
+ * What opens a pasted share link here: the part after the #, or 'newer' for a
+ * link from a newer version, or null when the text isn't a link. The key is
+ * in the fragment, so a link opens in whichever copy of the app you have, such
+ * as the HTML file opened from disk. A link made on a relay's own copy of the
+ * app names the relay only by its address, before the #, so that's carried
+ * into the fragment.
  */
-export function shareFragment(text: string): string | null {
-  const hash = text.trim().slice(text.trim().indexOf('#'));
-  return text.includes('#') && parseShareLink(hash) ? hash : null;
+export function shareFragment(text: string): { hash: string } | 'newer' | null {
+  const trimmed = text.trim();
+  const at = trimmed.indexOf('#');
+  if (at < 0) return null;
+  const hash = trimmed.slice(at);
+  const link = parseShareLink(hash);
+  if (!link) return isNewerLink(hash) ? 'newer' : null;
+  if (link.relay !== undefined || link.file) return { hash };
+  try {
+    const address = new URL(trimmed.slice(0, at));
+    if (address.protocol !== 'http:' && address.protocol !== 'https:') return { hash };
+    const relay = new URL('.', address).href.replace(/\/$/, '');
+    return { hash: `${hash}&relay=${encodeURIComponent(relay)}` };
+  } catch {
+    return { hash };
+  }
 }
 
 /** Whether links through this relay open the relay's own copy of the app, so whoever runs it is trusted with the plan. */

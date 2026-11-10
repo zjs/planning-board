@@ -69,7 +69,8 @@ var noAppPage = []byte(`<!doctype html>
 <style>body{font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem}</style>
 <h1>Planning Board relay</h1>
 <p>This relay carries encrypted plans between browsers. It doesn't serve the app, so whoever runs it can't change the app you use.</p>
-<p>Open the app at <a href="` + publicApp + `">` + publicApp + `</a>, or download its HTML file, <code>planning-board.html</code>, from the <a href="` + releasesPage + `">releases</a>, check it, and open it. Share links say which relay a plan uses. A page served over HTTPS can only reach a relay over HTTPS.</p>
+<p>Open the app at <a href="` + publicApp + `">` + publicApp + `</a>, or download its HTML file, <code>planning-board.html</code>, from the <a href="` + releasesPage + `">releases</a>, check it, and open it. Share links say which relay a plan uses. A page served over HTTPS can only reach a relay over HTTPS, so for a relay over plain http, use the HTML file.</p>
+<p>Followed a link here? Copy it, open the app, and paste it into <strong>File › Open a share link…</strong>.</p>
 </html>
 `)
 

@@ -42,7 +42,7 @@ Either way, it listens only on the server itself, and a reverse proxy in front o
 
 - **`-public-url`** is the relay's address, as people's browsers reach it. Share links name it.
 - **`-trust-forwarded`** lets the relay see each person's address, from the proxy's `X-Forwarded-For`, rather than the proxy's own. Its rate limits are per address, so without it, everyone shares one limit. It reads the header's last entry, the one your proxy added, since the entries before it come from the person's own request. Set it only behind one proxy that adds that entry, as the Caddy and nginx examples below do. A proxy that sets a header of its own instead, such as Fly.io's `Fly-Client-IP`, is read with `-client-address-header`.
-- **`-serve-app=false`** keeps the app off the relay, so whoever runs it can't change the app people use: `/` says where to open it instead. Links shared through a relay on HTTPS never open the relay's own copy anyway; this makes sure nobody opens it by hand. People then use the [hosted page](https://zjs.github.io/planning-board/), a copy of the app your company hosts at another address (add that address with `-allow-origin`, keeping `zjs.github.io`), or the app's HTML file from the release, opened from disk, which needs `-allow-file-pages`. In the HTML file, **File › Open a share link…** opens a link someone sent.
+- **`-serve-app=false`** keeps the app off the relay, so whoever runs it can't change the app people use: `/` says where to open it instead. Links shared through a relay on HTTPS never open the relay's own copy anyway; this makes sure nobody opens it by hand. People then use the [hosted page](https://zjs.github.io/planning-board/), a copy of the app your company hosts at another address (add that address with `-allow-origin`, keeping `zjs.github.io`), or the app's HTML file from the release, opened from disk, which works unless the relay is started with `-allow-file-pages=false`. In the HTML file, **File › Open a share link…** opens a link someone sent.
 
 ### HTTPS, with a reverse proxy
 
@@ -91,6 +91,12 @@ Stop the relay, replace the program or pull the new image, and start it again. B
 A relay and an app built at different times work together as long as they speak the same protocol version (`relay/PROTOCOL.md`). If they don't, the pill says **Can't use the relay**, and its message says which one to update. The hosted page is always the newest build, so keep the relay up to date.
 
 New features sometimes need both. For example, **Make new links** cuts off old links only on a relay new enough to retire them. On an older relay, the app warns that old links still work, so upgrade the relay before relying on it.
+
+**Before adding `-serve-app=false` to a relay people already open the app from:**
+- **Plans kept only in a browser at the relay's address stay there.** A browser keeps plans per address, so once the relay serves no app, nobody can open them. Ask people to save any plan that's only in their browser (**File › Save plan to file**), and to let their offline changes go out (the pill says **Live**), before you restart it. Shared plans aren't lost: they open again from a link.
+- **Links that open the relay's address** land on a page that says it serves no app. Pasted into **File › Open a share link…**, they still open: in the HTML file from the release, or, for a relay on HTTPS, in the hosted page. New links shared after the change never name the relay as the app.
+- **Over plain `http`,** the hosted page can't reach the relay at all, so people use the HTML file.
+- **A copy of the app older than 0.14.0** doesn't know the relay serves no app, and keeps making links that name it. Use a copy from this release or later.
 
 **Which version to run.** For a team, pin a numbered release: the image tag `ghcr.io/zjs/planning-board:0.14.0`, or that release's download. Upgrade by moving to the next one, after reading its notes. The `relay-latest` release and the container's `latest` tag follow every change to the project, which suits a pilot that wants the newest. Each release can be checked before you run it, by its checksum and build attestation ([how](https://github.com/zjs/planning-board/blob/main/relay/README.md#checking-a-download)).
 
